@@ -1997,31 +1997,6 @@ Base.ceil(x::Unitful.AbstractQuantity) = ceil(Unitful.ustrip.(x)) * Unitful.unit
 Base.trunc(x::Unitful.AbstractQuantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)
 Base.round(x::Unitful.AbstractQuantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
 
-# # Macro to extend functions to preserve units
-# macro unitful_preserve_units(funcs...)
-# expr = Expr(:block)
-# for f in funcs
-# push!(expr.args, quote
-#      # Extend the function for Unitful.Quantity
-#       function Base.$f(x::Unitful.Quantity)
-#       # Strip the unit, apply the function, and reattach the unit
-#       val = $f(Unitful.ustrip(x))
-#       return val * Unitful.unit(x)
-#       end
-#
-#       # # Handle rounding with a type argument (e.g., round(Int, x))
-#       # function Base.$f(::Type{T}, x::Unitful.Quantity) where {T<:Number}
-#       #     val = $f(T, ustrip(x))
-#       #     return val * unit(x)
-#       # end
-#       end)
-# end
-# return esc(expr)
-# end
-#
-# # Apply the Macro to Desired Function
-# # Extend to preserve units
-# @unitful_preserve_units round floor ceil trunc
 ",
                   paste0(get_func_Julia() %>% unname(), collapse = "\n\n"),
 

@@ -20,10 +20,11 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r libraries}
-library(insightmakeR1)
+```{r libraries, include=FALSE}
+library(sdbuildR)
 library(knitr) 
 library(kableExtra) 
+sdbuildR_setup()
 ```
 
 Stock-and-flow models represent systems as variables (stocks) that accumulate over time with processes (flows) that change these variables. Foundational to system dynamics, stock-and-flow models are widely used in fields such as epidemiology, economics, and environmental science to represent systems complicated by nonlinearities, delays, and feedback loops. In this vignette, we will explore how to build stock-and-flow models using sdbuildR. We will first go through the basics: What are the building blocks of a stock-and-flow model? How can we combine them to create a model of our system? We will then use sdbuildR to recreate a well-known predator-prey model. To show how sdbuildR can be used to iteratively develop a model, we will build a stock-and-flow model from scratch using a psychological example.
@@ -42,7 +43,7 @@ sfm = xmile() %>%
 plot(sfm)
 ```
 
-The net change in a stock is the sum of inflows minus outflows. A stock may have multiple inflows and multiple outflows. This means you can separate different processes that affect your stock. If two stocks are connected by a flow, the flow directly takes the material from the first stock to the second stock (i.e. a material flow). For example, in the Susceptible-Infected-Recovered model, susceptible individuals are moved to the infected stock by the flow of infection, and infected individuals are moved to the recovered stock by the flow of recovery.
+The net change in a stock is the sum of inflows minus outflows. A stock may have multiple inflows and multiple outflows. This means you can separate different processes that affect your stock. If two stocks are connected by a flow, the flow directly takes the material from the first stock to the second stock (i.e. a material flow). For example, in the Susceptible-Infected-Recovered model, susceptible individuals move to the infected stock through the flow of infection, and infected individuals move to the recovered stock through the flow of recovery.
 
 ```{r echo=FALSE, fig.width=2, fig.height=2}
 plot(xmile("SIR")) 
@@ -113,7 +114,7 @@ sfm = xmile()
 summary(sfm)
 ```
 
-We now add two stocks to the model: predators and prey. To add these, we use `build()`. The first argument specifies the variable's name, followed by the building block type ('stock', 'flow', 'constant', 'aux', or 'gf'), and any relevant properties specific to that type (see Table \ref{XXX}). Here, we specify the initial values of the stocks with the `eqn` property, indicating that the simulation starts with 10 predators and 50 prey. In addition, we specify the optional `label` property used for plotting. Throughout the vignette, we make use of the convenient pipe operator `%\>%` from the *magrittr* package [@XXX], which simply passes the result of an expression to the next expression as a first argument.
+We add two stocks, predators and prey. `build()` takes the variable name, building block type (`stock`, `flow`, `constant`, `aux`, or `gf`), and type-specific properties (e.g., `eqn` for equation, `label` for plotting). Here, we start the simulation with 10 predators and 50 prey. We use the `%>%` pipe from *magrittr* [@XXX] to pass the result of an expression to the next expression as a first argument.
 
 ```{r, fig.width=2, fig.height=2}
 sfm = sfm %>%
@@ -122,10 +123,9 @@ sfm = sfm %>%
 plot(sfm)
 ```
 
-How does this model evolve over time? In order to simulate a model, `sdbuildR_setup()` needs to be run once per R session. 
+How does this model evolve over time?
 
 ```{r message=FALSE, fig.width=7, fig.height=3}
-sdbuildR_setup()
 sim = simulate(sfm)
 plot(sim)
 ```
@@ -156,7 +156,7 @@ sfm = sfm %>%
                     "Birth rate of prey", "Death rate of prey by predators"))
 ```
 
-We now have a complete predator-prey model, ready to be simulated! `simulate()` compiles a Julia script which is run with the package 
+We now have a complete predator-prey model, ready to be simulated! 
 
 ```{r, fig.width=7, fig.height=3}
 sim = simulate(sfm)
@@ -195,32 +195,29 @@ kableExtra::kbl(functions_table, format = "markdown",
 
 ### Simulation specifications
 
-We may want to observe the system over a longer time period, or with a different time step. To change the simulation specifications, use `sim_specs()`. Below, we simulate from 0 to 250 days. The method is set to "euler", which is the simplest numerical integration method. Because of the longer time period, we may want fewer time points to save on storage. To decrease the size of the resulting dataframe, the simulation time step `dt` should *not* be lowered, as this can affect the accuracy of the simulation. Rather, we can save the simulation results only every 0.1 days, which preserves accuracy. For illustration, we lower the simulation time step to 0.001.
+We may want to observe the system over a longer time period, or with a different time step. To change the simulation specifications, use `sim_specs()`. Below, we simulate from 0 to 250 days. The method is set to "euler", which is the simplest numerical integration method. Because of the longer time period, we may want fewer time points to save on storage. To decrease the size of the resulting dataframe, the simulation time step `dt` should *not* be lowered, as this can affect the accuracy of the simulation. Rather, we can save the simulation results only every 0.1 days, which preserves accuracy. 
 
-```{r, fig.width=7, fig.height=3}
+```{r}
 sfm = sfm %>% sim_specs(time_units = "days",
                      start = 0,
                      stop = 250,
                      method = "euler",
                      dt = 0.001,
                      saveat = 0.1)
-plot(simulate(sfm))
 ```
 
 In case the simulation contains stochastic elements, we may want to set a seed to ensure that the simulation is reproducible. For example, the initial value of the predator and prey stocks could be a random number. The seed needs to be an integer, and can also be set with `sim_specs()`.
 
-```{r, fig.width=7, fig.height=3}
+```{r}
 sfm = sfm %>%
   build(c("predator", "prey"), eqn = "runif(1, 20, 50)") %>%
   sim_specs(seed = 1) 
-plot(simulate(sfm))
 ```
 
-In case a seed was set, this will appear in `summary()`. The seed can also be removed to ensure variation in the simulation. This is useful when running multiple simulations, for example to assess the sensitivity of a model with respect to the initial condition. 
+In case a seed was set, this will appear in `summary()`. The seed can also be removed to ensure variation in the simulation. This can be useful to for example test the sensitivity of the model to changes in the initial condition. 
 
-```{r, fig.width=7, fig.height=3}
+```{r}
 sfm = sfm %>% sim_specs(seed = NULL) 
-plot(simulate(sfm))
 ```
 
 

@@ -57,11 +57,11 @@ template = function(name){
       build("Susceptible", "stock", eqn = "99999") %>%
       build("Infected", "stock", eqn = "1") %>%
       build("Recovered", "stock", eqn = "0.0") %>%
-      build("Beta", "aux", eqn = "Effective_Contact_Rate / TotalPopulation") %>%
+      build("Beta", "aux", eqn = "Effective_Contact_Rate / Total_Population") %>%
       build("Lambda", "aux", eqn = "Beta * Infected") %>%
-      build("InfectionRate", "flow", eqn = "Susceptible * Lambda", from = "Susceptible", to = "Infected") %>%
-      build("RecoveryRate", "flow", eqn = "Infected / Delay", from = "Infected", to = "Recovered") %>%
-      build("TotalPopulation", "constant", eqn = "100000") %>%
+      build("Infection_Rate", "flow", eqn = "Susceptible * Lambda", from = "Susceptible", to = "Infected") %>%
+      build("Recovery_Rate", "flow", eqn = "Infected / Delay", from = "Infected", to = "Recovered") %>%
+      build("Total_Population", "constant", eqn = "100000") %>%
       build("Effective_Contact_Rate", "constant", eqn = "2") %>%
       build("Delay", "constant", eqn = "2")
 

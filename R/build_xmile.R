@@ -1,31 +1,7 @@
 
-#**find way to build in scenarios, like Wang's model
-
-# **to do: aliases for model_units
-
-# **debugger # **add stop() in debugger() - if no initial value is specified by the delayN depends on an aux or flow, initial value must be specified to ensure no dependencies of static on dynamic variables
-# **to do: debugger detect undefined functions
-# ** to do: debugger use of gf without source in equations
-
-# https://www.iseesystems.com/resources/help/v3/Content/08-Reference/07-Builtins/Delay_builtins.html
-# Note: The dynamic behavior of SMTHN is identical to DELAYN, except when the averaging time changes. SMTHN is conceptually a stock, and DELAYN is conceptually a flow.
-#
-# Note: If n is large, and the time delay is small, the intermediate transition times between the stocks can become smaller than DT. To prevent unstable behavior in this situation, the length of the delay will be increased to n*DT. Normally, n should be much smaller than delay_duration/DT.
-# **check order rounds to integer
-
-# ** Dimensional consistency
-
-
-# ** to do: verbal rmarkdown equations
-# ** to do: document() like vensim
-
-# **get rid of replacement_func
-# **check whether aux are constants, may show lack of understanding or model misspecification if they expect somehting to change
-
-
 #' Create a new stock-and-flow model
 #'
-#' Create a stock-and-flow model of class sdbuildR_xmile. You can either create an emty stock-and-flow model or load a template from the model library.
+#' Initialize an empty stock-and-flow model of class sdbuildR_xmile. You can either create an empty stock-and-flow model or load a template from the model library.
 #'
 #' @param name Name of the template to load. If NULL, an empty stock-and-flow model will be created with default simulation parameters and a default header.
 #'
@@ -82,7 +58,7 @@ xmile <- function(name = NULL){
 #'
 #' @param x Value
 #'
-#' @return Boolean; whether
+#' @return Boolean; whether the value is defined
 is_defined = function(x){
 
   # Safely check whether x is defined
@@ -102,11 +78,12 @@ is_defined = function(x){
 
 #' Plot stock-and-flow diagram
 #'
-#' Plot a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, which represent what it outside of the model boundary.
+#' Visualise a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, which represent what it outside of the model boundary.
 #'
 #' @param x Stock-and-flow model of class sdbuildR_xmile
 #' @param format_label If TRUE, apply default formatting to labels if labels are the same as variable names.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer.
+#' @param center_stocks If TRUE, stocks are centered in the diagram. Defaults to FALSE.
 #' @param ... Optional arguments
 #'
 #' @return Stock-and-flow diagram plotted with DiagrammeR()
@@ -117,7 +94,7 @@ is_defined = function(x){
 #' @examples
 #' sfm = xmile("SIR")
 #' plot(sfm)
-plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, ...){
+plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_stocks = FALSE, ...){
 
   check_xmile(x)
   sfm = x
@@ -198,12 +175,12 @@ plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, ...){
       # Define edges between clouds and flows and between flows and stocks
       %s
 
-      { rank = same; %s }
+      %s
     }
           ", stock_nodes %>% rev() %>% paste0(collapse = "\n\t\t"),
                     cloud_nodes %>% paste0(collapse = "\n\t\t"),
                     flow_edges %>% paste0(collapse = "\n\t\t"),
-                    paste0(stock_names, collapse = ", ")
+                    ifelse(center_stocks, paste0("{rank = same; ", paste0(stock_names, collapse = ", "), "}"), "")
 
   )
 

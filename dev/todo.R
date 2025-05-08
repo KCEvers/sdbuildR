@@ -211,3 +211,29 @@
 # devtools::test()
 
 
+#**find way to build in scenarios, like Wang's model
+
+# **to do: aliases for model_units
+
+# **debugger # **add stop() in debugger() - if no initial value is specified by the delayN depends on an aux or flow, initial value must be specified to ensure no dependencies of static on dynamic variables
+# **to do: debugger detect undefined functions
+# ** to do: debugger use of gf without source in equations
+
+# https://www.iseesystems.com/resources/help/v3/Content/08-Reference/07-Builtins/Delay_builtins.html
+# Note: The dynamic behavior of SMTHN is identical to DELAYN, except when the averaging time changes. SMTHN is conceptually a stock, and DELAYN is conceptually a flow.
+#
+# Note: If n is large, and the time delay is small, the intermediate transition times between the stocks can become smaller than DT. To prevent unstable behavior in this situation, the length of the delay will be increased to n*DT. Normally, n should be much smaller than delay_duration/DT.
+# **check order rounds to integer
+
+# ** Dimensional consistency
+
+
+# ** to do: verbal rmarkdown equations
+# ** to do: document() like vensim
+
+# **get rid of replacement_func
+# **check whether aux are constants, may show lack of understanding or model misspecification if they expect somehting to change
+
+
+
+
