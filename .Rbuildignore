@@ -8,3 +8,8 @@
 ^inst/julia
 ^doc$
 ^Meta$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
+^vignettes/articles$

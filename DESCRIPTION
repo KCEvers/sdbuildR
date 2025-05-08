@@ -3,8 +3,8 @@ Title: Stock-and-Flow Modelling in R
 Version: 0.0.0.9000
 Authors@R: 
     person("Kyra", "Evers", , "kyra.c.evers@gmail.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+           comment = c(ORCID = "0000-0001-6890-3482"))
+Description: sdbuildR makes it easy to create and simulate stock-and-flow models in R. With Julia as a backend, it combines fast performance with flexibility in a user-friendly R environment.
 License: GPL (>= 3) | file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -31,3 +31,5 @@ Suggests:
     textutils
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+URL: https://kcevers.github.io/sdbuildR/
+Config/Needs/website: rmarkdown

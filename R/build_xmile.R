@@ -1249,7 +1249,7 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 
 
 
-#' Modify simulation specifications of a stock-and-flow model
+#' Modify simulation specifications
 #'
 #' Simulation specifications are the settings that determine how the model is simulated, such as the integration method, start and stop time, and timestep. Modify these specifications for an existing stock-and-flow model.
 #'

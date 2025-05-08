@@ -1,17 +1,12 @@
 ---
-title: "Using (custom) units in stock-and-flow models"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Using (custom) units in stock-and-flow models}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+title: "Using (custom) units"
 ---
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 6,          # Set default figure width to 6 inches
+    fig.width = 6,          # Set default figure width to 6 inches
   fig.height = 4,         # Set default figure height to 4 inches
   fig.align = "center",   # Center all figures
   out.width = "80%",      # Display figures at 80% of container width
@@ -20,12 +15,13 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+
+```{r setup, eval=TRUE, echo=FALSE}
 library(sdbuildR)
 sdbuildR_setup()
 ```
 
-In this vignette, we will explore how to use units in stock-and-flow models using sdbuildR. Units, such as seconds, kilograms, or BMI, refer to the measurement units assigned to variables to quantify their magnitudes and ensure consistency in the model. Specifying units may seem like an unnecessary burden, because as we've seen in `vignette("building-blocks")`, stock-and-flow models can run without units. We'll first motivate the need and use of units for model verification and interpretation, after which we'll show how to use units in sdbuildR.
+Units, such as seconds, kilograms, or BMI, refer to the measurement units assigned to variables to quantify their magnitudes and ensure consistency in the model. Specifying units may seem like an unnecessary burden, because as we've seen in `vignette("build")`, stock-and-flow models can run without units. We'll first motivate the need and use of units for model verification and interpretation, after which we'll show how to use units in sdbuildR.
 
 ## Why units?
 
@@ -49,6 +45,7 @@ However, note that the left and right hand side of the equation do not need to b
 $$
 kcal = \frac{kcal}{hr} \cdot min
 $$
+
 Such an equation is still dimensionally consistent, as minutes and hours match and can be converted to one another. There is no need to add an additional factor to convert minutes to hours. In sdbuildR, Julia's *Unitful* package takes care of the conversion between matching units.
 
 Mathematical operations differ in their unit compatability requirements. Addition and subtraction can only be applied to variables that have the same unit, as these operations combine or compare quantities directly. For instance, it is not possible to add kilocalories to body fat in kilograms, $kg + kcal$. To specify how consuming food can add body fat, we need to translate kilocalories to kilograms. A correct formulation divides the number of kilocalories consumed by the number of kilocalories in a kilogram of body fat, which is dimensionally consistent with $kg$:
@@ -81,7 +78,7 @@ In summary, units help ensure equations are correctly formulated. If equations a
 <!-- otherwise left implicit -->
 
 
-### Model interpretation & communication:
+### Model interpretation & communication
 
 In addition to verifying the model is dimensionally consistent, units help keep variables interpretable. Units give meaning and a timescale to variables. For instance, a variable such as productivity could be defined in numerous ways. Specifying its unit as $\frac{\text{tasks}}{hr}$ clearly communicates what higher or lower productivity means and how it can be measured. Equations with puzzling constructions of units without a clear interpretation are immediately suspect, such as $kcal^3/s^2/m$ \cite{sterman, p. 866}. As such, units help to relate your model to the real world, and make it possible to compare your model results with empirical data.
 
@@ -115,7 +112,7 @@ The simulation specifications can be viewed using `summary()`:
 summary(sfm)
 ```
 
-Note that units can be specified with full words, but that they are converted to standard units of the *Unitful* package using regular expressions. For example, ``day'' is converted to ``d'', ``week'' to ``wk'', and ``year'' to ``yr''. However, ``minute'' stays ``minute'' and ``month'' stays ``month''. Perhaps unexpectedly, a year in the *Unitful* package is defined not as 365 days, but 365.25 days, as it accounts for leap years. To use time units that are not affected by leap years, such as the common year, which is 365 days, use `common_year`, `common_quarter`, `common_month`.
+Note that units can be specified with full words, but that they are converted to standard units of the *Unitful* package using regular expressions. For example, `day` is converted to `d`, `week` to `wk`, and `year`' to `yr`. However, `minute` and `month` stay unchanged. Perhaps unexpectedly, a year in the *Unitful* package is defined not as 365 days, but 365.25 days, as it accounts for leap years. To use time units that are not affected by leap years, such as the common year, which is 365 days, use `common_year`, `common_quarter`, `common_month`.
 
 For our example of the coffee cup, we'll set the simulation time unit to minutes.
 
@@ -148,7 +145,7 @@ sfm = sfm %>% build("coffee_amount", "aux", eqn = "250",
                     units = "milliliters", label = "Coffee amount")
 ```
 
-All possible prefixes can be found using `unit_prefixes()`. Note that these only work for units compatible with prefixes, where for instance the unit ``inch'' does not allow prefixes.
+All possible prefixes can be found using `unit_prefixes()`. Note that these only work for units compatible with prefixes, where for instance the unit `inch` does not allow prefixes.
 
 Similarly, we can use powers in units. For example, if we wanted to instead specify the volume of coffee in the cup in cubic centimeters, we could change it like this:
 
@@ -173,7 +170,7 @@ sfm = sfm %>% build("change", "flow",
                     label = "Cooling or heating") 
 ```
 
-The coffee temperature adapts to the room temperature. However, the equation `room_temperature - coffee_temperature` evaluates to Celsius, and the equation of the flow needs to match the specified units ``Celsius/minute''. We are missing a rate - the speed at which the coffee temperature adjusts to the room temperature. To do so, we can divide the difference by time, such as 10 minutes. To use units in equations, enclose them in `u('')`:
+The coffee temperature adapts to the room temperature. However, the equation `room_temperature - coffee_temperature` evaluates to Celsius, and the equation of the flow needs to match the specified units `Celsius/minute`. We are missing a rate - the speed at which the coffee temperature adjusts to the room temperature. To do so, we can divide the difference by time, such as 10 minutes. To use units in equations, enclose them in `u('')`:
 
 ```{r}
 sfm = sfm %>% build("change", 
@@ -191,7 +188,7 @@ When specifying fractions, take care to use the correct syntax. For example, `1/
 
 <!-- When translating R code to Julia, these are translated to u"", which is Unitful's syntax to indicate units.  -->
 
-In rare cases, you may want to convert units within an equation. For example, if we add an auxiliary variable ``rate'' which is in minutes, but we'd like to use it in hours, we can do so with `setunit()`:
+In rare cases, you may want to convert units within an equation. For example, if we add an auxiliary variable `rate` which is in minutes, but we'd like to use it in hours, we can do so with `setunit()`:
 
 ```{r}
 sfm = sfm %>% 
