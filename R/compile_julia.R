@@ -84,7 +84,7 @@ simulate_Julia = function(sfm,
     # }
 
     list(success = TRUE,
-               df = df, pars = pars_Julia, xstart = xstart_Julia,
+         df = df, pars = pars_Julia, xstart = xstart_Julia,
          units = units_Julia, script = script, filepath = filepath,
          duration = end_t - start_t) %>% utils::modifyList(argg) %>%
       structure(., class = "sdbuildR_sim")
@@ -94,7 +94,7 @@ simulate_Julia = function(sfm,
     warning("\nAn error occurred while writing or running the Julia script.")
     # print(e$message)
     list(success = FALSE, error_message = e$message,
-               script = script,
+         script = script,
          filepath = filepath) %>% utils::modifyList(argg) %>%
       structure(., class = "sdbuildR_sim")
   })
@@ -112,39 +112,31 @@ simulate_Julia = function(sfm,
 #' @return Julia script
 #'
 compile_Julia = function(sfm,
-                             format_code=TRUE,
-                             keep_nonnegative_flow = TRUE,
-                             keep_nonnegative_stock = FALSE,
-                             keep_unit = TRUE, verbose = FALSE, debug = FALSE, only_stocks = FALSE){
-
-  # print("Compiling R script...")
-
-
-
+                         format_code=TRUE,
+                         keep_nonnegative_flow = TRUE,
+                         keep_nonnegative_stock = FALSE,
+                         keep_unit = TRUE, verbose = FALSE, debug = FALSE, only_stocks = FALSE){
 
   # Add "inflow" and "outflow" entries to stocks to match flow "to" and "from" entries
-  # flow_to = sfm$model$variables$flow %>% purrr::map("to") %>% purrr::compact()
-  # flow_from = sfm$model$variables$flow %>% purrr::map("from") %>% purrr::compact()
-
   flow_df = get_flow_df(sfm)
 
   sfm$model$variables$stock = lapply(sfm$model$variables$stock,
-                                         function(x){
+                                     function(x){
 
-                                           x$inflow = flow_df[flow_df$to == x$name, "name"]
-                                           x$outflow = flow_df[flow_df$from == x$name, "name"]
-                                           # x$inflow = names(flow_to)[unname(unlist(flow_to)) == x$name]
-                                           # x$outflow = names(flow_from)[unname(unlist(flow_from)) == x$name]
+                                       x$inflow = flow_df[flow_df$to == x$name, "name"]
+                                       x$outflow = flow_df[flow_df$from == x$name, "name"]
+                                       # x$inflow = names(flow_to)[unname(unlist(flow_to)) == x$name]
+                                       # x$outflow = names(flow_from)[unname(unlist(flow_from)) == x$name]
 
-                                           if (length(x$inflow) == 0){
-                                             x$inflow = ""
-                                           }
-                                           if (length(x$outflow) == 0){
-                                             x$outflow = ""
-                                           }
+                                       if (length(x$inflow) == 0){
+                                         x$inflow = ""
+                                       }
+                                       if (length(x$outflow) == 0){
+                                         x$outflow = ""
+                                       }
 
-                                           return(x)
-                                         })
+                                       return(x)
+                                     })
 
 
   # if (length(sfm$model$variables$flow) == 0){
@@ -162,8 +154,8 @@ compile_Julia = function(sfm,
   # keep_unit = ifelse(!any(nzchar(names_df_no_flow$units) & names_df_no_flow$units != "1"), FALSE, keep_unit)
 
   all_eqns = c(sfm$model$variables %>% lapply(function(x){lapply(x, `[[`, "eqn")}) %>% unlist(),
-                                    sfm$global$eqn_Julia,
-                                    unlist(lapply(sfm$macro, `[[`, "eqn")))
+               sfm$global$eqn_Julia,
+               unlist(lapply(sfm$macro, `[[`, "eqn")))
   units_used = unlist(stringr::str_extract_all(all_eqns, "\\bu\\([\"|'](.*?)[\"|']\\)"))
 
   keep_unit = ifelse(!any(names_df_no_flow$units != "1") & length(units_used) == 0, FALSE, keep_unit)
@@ -206,10 +198,6 @@ compile_Julia = function(sfm,
   ordering = order_equations(sfm)
 
   # If there are no dynamic variables or delayed variables, set only_stocks to TRUE
-  # only_stocks = ifelse(is.null(ordering$dynamic$order) & length(delays$extra_intermediary_var) == 0, TRUE, only_stocks)
-  # intermediary = unname(sfm$model$variables) %>% purrr::list_flatten() %>%
-  #   purrr::map("intermediary") %>% purrr::compact()
-
   intermediary = lapply(sfm$model$variables, function(x){
     lapply(x, `[[`, "intermediary")
   }) %>% unlist() %>% unname()
@@ -246,7 +234,7 @@ compile_Julia = function(sfm,
                         units_def$script,
                         times$script,
                         macros$script
-                       )
+  )
 
   # Compile ODE script
   ode = compile_ode_Julia(sfm, ordering,
@@ -334,7 +322,7 @@ prep_delayN_smoothN = function(sfm){
                                        y$eqn_Julia = x[["compute"]]
                                        return(y)
                                      }) %>% stats::setNames(., names(delay_func))
-                                     )
+    )
   }
 
   return(sfm)
@@ -407,8 +395,8 @@ compile_constraints_Julia = function(sfm){
 
   # script = ifelse(length(constraint_def) > 0, get_func_Julia()[["@constraints"]], "")
   script = ifelse(length(constraint_def) > 0,
-                      sprintf("\n\n# Check constraints of minimum and maximum value\nconstraint_pairs = @constraints(", paste0(constraint_def, collapse = ", "), ")\nconstraints_str = [pair[1] for pair in constraint_pairs]\nconstraints_violated = [pair[2] for pair in constraint_pairs]\nmsg = join([\"$c: $v\" for (c, v) in zip(constraints_str, constraints_violated)], \"\n\")\n\nif any(constraints_violated)\n\tthrow(msg)\nend"),
-                      "")
+                  sprintf("\n\n# Check constraints of minimum and maximum value\nconstraint_pairs = @constraints(", paste0(constraint_def, collapse = ", "), ")\nconstraints_str = [pair[1] for pair in constraint_pairs]\nconstraints_violated = [pair[2] for pair in constraint_pairs]\nmsg = join([\"$c: $v\" for (c, v) in zip(constraints_str, constraints_violated)], \"\n\")\n\nif any(constraints_violated)\n\tthrow(msg)\nend"),
+                  "")
 
   return(list(script = script))
 }
@@ -448,21 +436,21 @@ compile_units_Julia = function(sfm, keep_unit){
 
     unit_str = lapply(sfm$model_units, function(x){
 
-         if (is_defined(x$eqn)){
-           unit_def = x$eqn
-         } else {
-           unit_def = "1"
-         }
+      if (is_defined(x$eqn)){
+        unit_def = x$eqn
+      } else {
+        unit_def = "1"
+      }
 
-          paste0("@unit ", x$name, " \"", x$name, "\" ", x$name, " u\"", unit_def, "\" ", ifelse(x$prefix, "true", "false"))
+      paste0("@unit ", x$name, " \"", x$name, "\" ", x$name, " u\"", unit_def, "\" ", ifelse(x$prefix, "true", "false"))
 
-        }) %>% paste0(collapse = sprintf("\n\tUnitful.register(%s)\n\t", P$MyCustomUnits))
+    }) %>% paste0(collapse = sprintf("\n\tUnitful.register(%s)\n\t", P$MyCustomUnits))
 
-      script = paste0("\n# Define custom units; register after each unit as some units may be defined by other units\nmodule ", P$MyCustomUnits, "\n\tusing Unitful\n\tusing Main.", P$sdbuildR_units, "\n\t",
-                           unit_str,
-                           "\n\tUnitful.register(", P$MyCustomUnits, ")\nend\n\n",
-                      P$unit_context, " = [Unitful.Unitful, ",
-                      P$sdbuildR_units, ", ", P$MyCustomUnits, "];\n\n")
+    script = paste0("\n# Define custom units; register after each unit as some units may be defined by other units\nmodule ", P$MyCustomUnits, "\n\tusing Unitful\n\tusing Main.", P$sdbuildR_units, "\n\t",
+                    unit_str,
+                    "\n\tUnitful.register(", P$MyCustomUnits, ")\nend\n\n",
+                    P$unit_context, " = [Unitful.Unitful, ",
+                    P$sdbuildR_units, ", ", P$MyCustomUnits, "];\n\n")
 
 
   }
@@ -492,19 +480,19 @@ compile_macros_Julia = function(sfm, debug){
 
   # If there are macros
   if (any(nzchar(purrr::map_vec(sfm$macro, "eqn_Julia")))){
-      # names_df = get_names(sfm)
+    # names_df = get_names(sfm)
 
-      script = paste0(script, "\n",
-                      lapply(sfm$macro, function(x){
+    script = paste0(script, "\n",
+                    lapply(sfm$macro, function(x){
 
-                        # # If a name is defined, assign macro to that name
-                        # if (nzchar(x$name)){
-                        #   paste0(x$name, " = ", x$eqn_Julia) %>% return()
-                        # } else {
-                          x$eqn_Julia %>% return()
-                        # }
+                      # # If a name is defined, assign macro to that name
+                      # if (nzchar(x$name)){
+                      #   paste0(x$name, " = ", x$eqn_Julia) %>% return()
+                      # } else {
+                      x$eqn_Julia %>% return()
+                      # }
 
-                      }) %>% unlist() %>% paste0(collapse = "\n"))
+                    }) %>% unlist() %>% paste0(collapse = "\n"))
 
   }
 
@@ -540,7 +528,7 @@ compile_times_Julia = function(sfm, keep_unit){
                    ifelse(keep_unit, paste0(" * ", P$time_units_name), "")
                    # paste0(" * ", P$time_units_name)
 
-                   )
+  )
 
   return(list(script = script))
 }
@@ -561,91 +549,84 @@ compile_static_eqn_Julia = function(sfm, ordering, keep_unit){
 
   # Graphical functions
   gf_eqn = lapply(sfm$model$variables$gf,
-    function(x){
+                  function(x){
 
-      if (is_defined(x$xpts) & is_defined(x$ypts)){
+                    if (is_defined(x$xpts) & is_defined(x$ypts)){
 
-        # Check whether xpts is defined as numeric or string
-        if (inherits(x$xpts, "numeric")){
-          xpts_str = paste0(as.character(x$xpts), collapse= ", ") %>% paste0("[", ., "]")
-        } else {
-          xpts_str = x$xpts %>% stringr::str_replace_all("^c\\(", "[")%>% stringr::str_replace_all("\\)$", "]")
-        }
+                      # Check whether xpts is defined as numeric or string
+                      if (inherits(x$xpts, "numeric")){
+                        xpts_str = paste0(as.character(x$xpts), collapse= ", ") %>% paste0("[", ., "]")
+                      } else {
+                        xpts_str = x$xpts %>% stringr::str_replace_all("^c\\(", "[")%>% stringr::str_replace_all("\\)$", "]")
+                      }
 
-        # Add units of source if defined
-        if (keep_unit){
+                      # Add units of source if defined
+                      if (keep_unit){
 
-          if (is_defined(x$source)){
-            if (x$source == "t"){
-              xpts_str = paste0(xpts_str, " .* ", P$time_units_name)
-            } else {
-              unit_source = names_df[names_df$name == x$source, "units"]
-              if (unit_source != "1"){
-                xpts_str = paste0(xpts_str, " .* u\"", unit_source, "\"")
-              }
-            }
-          }
+                        if (is_defined(x$source)){
+                          if (x$source == "t"){
+                            xpts_str = paste0(xpts_str, " .* ", P$time_units_name)
+                          } else {
+                            unit_source = names_df[names_df$name == x$source, "units"]
+                            if (unit_source != "1"){
+                              xpts_str = paste0(xpts_str, " .* u\"", unit_source, "\"")
+                            }
+                          }
+                        }
 
-        }
+                      }
 
-         # Check whether ypts is defined as numeric or string
-          if (inherits(x$ypts, "numeric")){
-            ypts_str = paste0(as.character(x$ypts), collapse= ", ") %>% paste0("[", ., "]")
-          } else {
-            ypts_str = x$ypts %>% stringr::str_replace_all("^c\\(", "[")%>% stringr::str_replace_all("\\)$", "]")
-          }
+                      # Check whether ypts is defined as numeric or string
+                      if (inherits(x$ypts, "numeric")){
+                        ypts_str = paste0(as.character(x$ypts), collapse= ", ") %>% paste0("[", ., "]")
+                      } else {
+                        ypts_str = x$ypts %>% stringr::str_replace_all("^c\\(", "[")%>% stringr::str_replace_all("\\)$", "]")
+                      }
 
-          if (keep_unit & is_defined(x$units) & x$units != "1"){
-            ypts_str = paste0(ypts_str, " .* u\"", x$units, "\"")
-          }
+                      if (keep_unit & is_defined(x$units) & x$units != "1"){
+                        ypts_str = paste0(ypts_str, " .* u\"", x$units, "\"")
+                      }
 
-        sprintf("%s = itp(%s, %s, method = \"%s\", extrapolation = \"%s\")",
-                x$name, xpts_str, ypts_str, x$interpolation, x$extrapolation) %>% return()
+                      sprintf("%s = itp(%s, %s, method = \"%s\", extrapolation = \"%s\")",
+                              x$name, xpts_str, ypts_str, x$interpolation, x$extrapolation) %>% return()
 
-        # extrapolation = 1: return NA when outside of bounds
-        # extrapolation = 2: return nearest value when outside of bounds
-        # } #else if (x$interpolation == "cubic_spline"){
-        # #   # **to do: doesn't work yet
-        # #   sprintf("%s = cubic_spline_interpolation(x_vals, y_vals,extrapolation_bc=%s)",
-        # #           y, xpts_str, ypts_str, rule_str) %>% return()
-        # # }
-      }
-    })
+                      # extrapolation = 1: return NA when outside of bounds
+                      # extrapolation = 2: return nearest value when outside of bounds
+                      # } #else if (x$interpolation == "cubic_spline"){
+                      # #   # **to do: doesn't work yet
+                      # #   sprintf("%s = cubic_spline_interpolation(x_vals, y_vals,extrapolation_bc=%s)",
+                      # #           y, xpts_str, ypts_str, rule_str) %>% return()
+                      # # }
+                    }
+                  })
 
   # Constant equations
   constant_eqn = lapply(sfm$model$variables$constant,
-    function(x){
+                        function(x){
 
-      if (keep_unit & is_defined(x$units) & x$units != "1"){
-        paste0(x$name, " = ", P$setunit, "(", x$eqn_Julia, ", u\"", x$units, "\")") %>% return()
-      } else {
-        paste0(x$name, " = ", x$eqn_Julia) %>% return()
-      }
-    })
+                          if (keep_unit & is_defined(x$units) & x$units != "1"){
+                            paste0(x$name, " = ", P$setunit, "(", x$eqn_Julia, ", u\"", x$units, "\")") %>% return()
+                          } else {
+                            paste0(x$name, " = ", x$eqn_Julia) %>% return()
+                          }
+                        })
 
   # Initial states of Stocks
   stock_eqn = lapply(sfm$model$variables$stock,
                      function(x){
-      # if (!is.null(x$delayN)){
-      #   sprintf("# Initialize delay accumulator for %s\n%s = c(%s, %s)",
-      #           y,
-      #           P$initial_value_name, P$initial_value_name, x$eqn_Julia) %>% return()
-      # } else {
+                       # if (!is.null(x$delayN)){
+                       #   sprintf("# Initialize delay accumulator for %s\n%s = c(%s, %s)",
+                       #           y,
+                       #           P$initial_value_name, P$initial_value_name, x$eqn_Julia) %>% return()
+                       # } else {
 
-      if (keep_unit & is_defined(x$units) & x$units != "1"){
-        paste0(x$name, " = ", P$setunit, "(", x$eqn_Julia, ", u\"", x$units, "\")") %>% return()
-      } else {
-        paste0(x$name, " = ", x$eqn_Julia) %>% return()
-      }
-      # }
-    })
+                       if (keep_unit & is_defined(x$units) & x$units != "1"){
+                         paste0(x$name, " = ", P$setunit, "(", x$eqn_Julia, ", u\"", x$units, "\")") %>% return()
+                       } else {
+                         paste0(x$name, " = ", x$eqn_Julia) %>% return()
+                       }
 
-  # dependencies_dict = sfm$variables[c("gf", "constant", "stock")] %>% unname() %>%
-  #   purrr::map_depth(2, "deep_dependencies") %>% purrr::list_flatten()
-  # order_idxs = topological_sort(dependencies_dict)
-  # order_idxs
-
-
+                     })
 
   # Compile and order static equations
   static_eqn_str = c(gf_eqn, constant_eqn, stock_eqn)[ordering$static$order] %>%
@@ -689,18 +670,18 @@ compile_static_eqn_Julia = function(sfm, ordering, keep_unit){
                       # Add extra comma in case there is only one Stock
                       # ",))\n"
                       ",])...]\n"
-                      )
+  )
 
   xstart_names = paste0(P$initial_value_names, " = [",
                         xstart_names,
-                       "]\n")
+                        "]\n")
 
   return(list(par_names = names(constant_eqn),
               script = paste0(
-    "\n\n# Define parameters, initial conditions, and functions in correct order\n",
-                              static_eqn_str,
-    pars_def, xstart_def, xstart_names
-  )))
+                "\n\n# Define parameters, initial conditions, and functions in correct order\n",
+                static_eqn_str,
+                pars_def, xstart_def, xstart_names
+              )))
 }
 
 
@@ -718,63 +699,61 @@ prep_stock_change_Julia = function(sfm, keep_unit){
   sfm$model$variables$stock = lapply(sfm$model$variables$stock,
                                      function(x){
 
-      # if (!is.null(x$delayN) & is_defined(x$inflow)){
-      #   # return(NULL)
-      #
-      #   x$sum_name = paste0(x$inflow, "$update")
-      #   x$sum_eqn = ""
-      # } else {
+                                       # if (!is.null(x$delayN) & is_defined(x$inflow)){
+                                       #   # return(NULL)
+                                       #
+                                       #   x$sum_name = paste0(x$inflow, "$update")
+                                       #   x$sum_eqn = ""
+                                       # } else {
 
-        inflow = outflow = ""
+                                       inflow = outflow = ""
 
-        if (x$type == "delayN"){
-          regex_find_idx = paste0("findall(n -> occursin(r\"", x$name, P$delay_acc_suffix, "[0-9]+$\", n), ", P$initial_value_names, ")")
-          x$sum_name = paste0("d", P$state_name, "dt[", regex_find_idx, "]")
-          x$unpack_state = paste0(P$state_name, "[", regex_find_idx, "]")
-        } else {
-          x$sum_name = paste0("d", P$state_name, "dt[", match(x$name, stock_names), "]")
-        }
-
-
-        # In case no inflow and no outflow is defined, update with 0
-        if (!is_defined(x$inflow) & !is_defined(x$outflow)){
-          # sprintf("%s%s = 0 # Collect Flows of %s", P$change_prefix, y, y) %>% return()
+                                       if (x$type == "delayN"){
+                                         regex_find_idx = paste0("findall(n -> occursin(r\"", x$name, P$delay_acc_suffix, "[0-9]+$\", n), ", P$initial_value_names, ")")
+                                         x$sum_name = paste0("d", P$state_name, "dt[", regex_find_idx, "]")
+                                         x$unpack_state = paste0(P$state_name, "[", regex_find_idx, "]")
+                                       } else {
+                                         x$sum_name = paste0("d", P$state_name, "dt[", match(x$name, stock_names), "]")
+                                       }
 
 
-          # If keep_unit = TRUE, flows always need to have units as the times variable has units
-          if (keep_unit){
-            # x$sum_eqn = paste0(P$setunit, "(0.0, u\"", x$units, "/", sfm$sim_specs$time_units, "\")")
-
-            # Safer: in case x evaluates to a unit but no units were set
-            x$sum_eqn = paste0(P$setunit, "(0.0, Unitful.unit.(", x$name, ")/", P$time_units_name, ")")
-
-          } else {
-            x$sum_eqn = "0.0"
-          }
+                                       # In case no inflow and no outflow is defined, update with 0
+                                       if (!is_defined(x$inflow) & !is_defined(x$outflow)){
+                                         # sprintf("%s%s = 0 # Collect Flows of %s", P$change_prefix, y, y) %>% return()
 
 
-        } else {
-          if (is_defined(x$inflow)){
-            inflow = x$inflow %>% paste0(collapse = " + ")
-          }
-          if (is_defined(x$outflow)){
-            outflow = paste0(" - ", x$outflow) %>% paste0(collapse = "")
-          }
-          x$sum_eqn = sprintf("%s%s", inflow, outflow)
-          }
+                                         # If keep_unit = TRUE, flows always need to have units as the times variable has units
+                                         if (keep_unit){
+                                           # x$sum_eqn = paste0(P$setunit, "(0.0, u\"", x$units, "/", sfm$sim_specs$time_units, "\")")
 
-        # Add units if defined
-        if (keep_unit & is_defined(x$units)){
-          # x$sum_eqn = paste0(P$setunit, "(", x$sum_eqn, ", u\"", x$units, "/", sfm$sim_specs$time_units, "\")")
-          x$sum_eqn = paste0(P$setunit, "(", x$sum_eqn, ", Unitful.unit.(", x$name, ")/", P$time_units_name, ")")
+                                           # Safer: in case x evaluates to a unit but no units were set
+                                           x$sum_eqn = paste0(P$setunit, "(0.0, Unitful.unit.(", x$name, ")/", P$time_units_name, ")")
 
-        }
-      # }
-      return(x)
+                                         } else {
+                                           x$sum_eqn = "0.0"
+                                         }
 
-    }) %>% purrr::compact()
 
-  # sfm = validate_xmile(sfm)
+                                       } else {
+                                         if (is_defined(x$inflow)){
+                                           inflow = x$inflow %>% paste0(collapse = " + ")
+                                         }
+                                         if (is_defined(x$outflow)){
+                                           outflow = paste0(" - ", x$outflow) %>% paste0(collapse = "")
+                                         }
+                                         x$sum_eqn = sprintf("%s%s", inflow, outflow)
+                                       }
+
+                                       # Add units if defined
+                                       if (keep_unit & is_defined(x$units)){
+                                         # x$sum_eqn = paste0(P$setunit, "(", x$sum_eqn, ", u\"", x$units, "/", sfm$sim_specs$time_units, "\")")
+                                         x$sum_eqn = paste0(P$setunit, "(", x$sum_eqn, ", Unitful.unit.(", x$name, ")/", P$time_units_name, ")")
+
+                                       }
+                                       # }
+                                       return(x)
+
+                                     }) %>% purrr::compact()
 
   return(sfm)
 }
@@ -805,18 +784,18 @@ compile_ode_Julia = function(sfm, ordering, prep_script, static_eqn,
   aux_eqn = lapply(sfm$model$variables$aux,
                    function(x){
 
-      if (keep_unit & is_defined(x$units) & x$units != "1"){
-        out = paste0(x$name, " = ", P$setunit, "(", x$eqn_Julia, ", u\"", x$units, "\")") %>% return()
-      } else {
-        out = paste0(x$name, " = ", x$eqn_Julia)
-      }
-      # }
+                     if (keep_unit & is_defined(x$units) & x$units != "1"){
+                       out = paste0(x$name, " = ", P$setunit, "(", x$eqn_Julia, ", u\"", x$units, "\")") %>% return()
+                     } else {
+                       out = paste0(x$name, " = ", x$eqn_Julia)
+                     }
+                     # }
 
-      if (!is.null(x$preceding_eqn)){
-        out = c(x$preceding_eqn, out)
-      }
-      return(out)
-    })
+                     if (!is.null(x$preceding_eqn)){
+                       out = c(x$preceding_eqn, out)
+                     }
+                     return(out)
+                   })
 
   # Flow equations
   # names_df = get_names(sfm)
@@ -824,39 +803,39 @@ compile_ode_Julia = function(sfm, ordering, prep_script, static_eqn,
   flow_eqn = lapply(sfm$model$variables$flow,
                     function(x){
 
-      # ** Don't add this here! If setting units on flows, other variables may do something with the flows. Only set units on sum of flows in compile_stocks()
-      # # If keep_unit = TRUE, flows always need to have units as the times variable has units
-      # if (keep_unit & x$units == "1"){
-      #   connected_stocks = flow_df[flow_df$name == x$name, ]
-      #   connected_stocks = Filter(nzchar, c(connected_stocks$from, connected_stocks$to))
-      #   stock_units = names_df[match(connected_stocks, names_df$name), "units"]
-      #   stock_unit = unique(stock_units)[1]
-      #   if (length(unique(stock_units)) > 1){
-      #     message(paste0("Flow ", x$name, " is connected to stocks with different units: ",
-      #                    paste0(paste0(connected_stocks, " (unit: ", stock_units, ")"), collapse = ", "),
-      #                    "\nSetting unit of ", x$name, " to '", stock_unit, "'..."))
-      #   }
-      #   x$units = paste0(stock_unit, "/", sfm$sim_specs$time_units)
-      # }
+                      # ** Don't add this here! If setting units on flows, other variables may do something with the flows. Only set units on sum of flows in compile_stocks()
+                      # # If keep_unit = TRUE, flows always need to have units as the times variable has units
+                      # if (keep_unit & x$units == "1"){
+                      #   connected_stocks = flow_df[flow_df$name == x$name, ]
+                      #   connected_stocks = Filter(nzchar, c(connected_stocks$from, connected_stocks$to))
+                      #   stock_units = names_df[match(connected_stocks, names_df$name), "units"]
+                      #   stock_unit = unique(stock_units)[1]
+                      #   if (length(unique(stock_units)) > 1){
+                      #     message(paste0("Flow ", x$name, " is connected to stocks with different units: ",
+                      #                    paste0(paste0(connected_stocks, " (unit: ", stock_units, ")"), collapse = ", "),
+                      #                    "\nSetting unit of ", x$name, " to '", stock_unit, "'..."))
+                      #   }
+                      #   x$units = paste0(stock_unit, "/", sfm$sim_specs$time_units)
+                      # }
 
-      out = sprintf("\n\t# Flow%s%s\n\t%s = %s%s%s%s%s",
-                    # Add comment
-                    ifelse(is_defined(x$from), paste0(" from ", x$from), ""),
-                    ifelse(is_defined(x$to), paste0(" to ", x$to), ""),
-                    x$name,
-                    ifelse(keep_unit & x$units != "1", paste0(P$setunit, "("), ""),
-                    ifelse(x$non_negative & keep_nonnegative_flow, "nonnegative(", ""),
-                    x$eqn_Julia,
-                    ifelse(x$non_negative & keep_nonnegative_flow, ")", ""),
-                    ifelse(keep_unit & x$units != "1", paste0(", u\"", x$units, "\")"), "")
+                      out = sprintf("\n\t# Flow%s%s\n\t%s = %s%s%s%s%s",
+                                    # Add comment
+                                    ifelse(is_defined(x$from), paste0(" from ", x$from), ""),
+                                    ifelse(is_defined(x$to), paste0(" to ", x$to), ""),
+                                    x$name,
+                                    ifelse(keep_unit & x$units != "1", paste0(P$setunit, "("), ""),
+                                    ifelse(x$non_negative & keep_nonnegative_flow, "nonnegative(", ""),
+                                    x$eqn_Julia,
+                                    ifelse(x$non_negative & keep_nonnegative_flow, ")", ""),
+                                    ifelse(keep_unit & x$units != "1", paste0(", u\"", x$units, "\")"), "")
 
-      )
+                      )
 
-      if (!is.null(x$preceding_eqn)){
-        out = c(x$preceding_eqn, out)
-      }
-      return(out)
-    })
+                      if (!is.null(x$preceding_eqn)){
+                        out = c(x$preceding_eqn, out)
+                      }
+                      return(out)
+                    })
 
   # Compile and order all dynamic equations
   dynamic_eqn = c(aux_eqn, flow_eqn)[ordering$dynamic$order] %>% unlist()
@@ -871,17 +850,13 @@ compile_ode_Julia = function(sfm, ordering, prep_script, static_eqn,
   # Sum change in Stock equations
   stock_change = lapply(sfm$model$variables$stock,
                         function(x){
-      # if (!is.null(x$delayN)){
-      #   return(NULL)
-      # } else {
-      sprintf("%s %s %s", x$sum_name,
-              # Broadcast assignment for delayed variables
-              ifelse(x$type == "delayN", ".=", "="),
-              x$sum_eqn)
 
+                          sprintf("%s %s %s", x$sum_name,
+                                  # Broadcast assignment for delayed variables
+                                  ifelse(x$type == "delayN", ".=", "="),
+                                  x$sum_eqn)
 
-      # }
-    }) %>% purrr::compact()
+                        }) %>% purrr::compact()
 
   stock_change_str = paste0(stock_change, collapse = "\n\t")
 
@@ -894,17 +869,17 @@ compile_ode_Julia = function(sfm, ordering, prep_script, static_eqn,
     # Create if-statement to keep selected Stocks non-negative
     nonneg_str = lapply(sfm$model$variables$stock,
                         function(x){
-        if (x$non_negative){
-          # sprintf("if (%s%s * %s + %s < 0) %s%s = %s/%s end",
-          #         P$change_prefix, y, P$timestep_name, y, P$change_prefix, y, y, P$timestep_name
-          # )
-          sprintf("if (%s * %s + %s < 0) %s = %s/%s end",
-                  x$sum_name, P$timestep_name, x$name, x$sum_name, x$name, P$timestep_name
-          )
-        } else {
-          return(NULL)
-        }
-      }) %>% purrr::compact()
+                          if (x$non_negative){
+                            # sprintf("if (%s%s * %s + %s < 0) %s%s = %s/%s end",
+                            #         P$change_prefix, y, P$timestep_name, y, P$change_prefix, y, y, P$timestep_name
+                            # )
+                            sprintf("if (%s * %s + %s < 0) %s = %s/%s end",
+                                    x$sum_name, P$timestep_name, x$name, x$sum_name, x$name, P$timestep_name
+                            )
+                          } else {
+                            return(NULL)
+                          }
+                        }) %>% purrr::compact()
 
     # Format complete string with explanation
     stock_change_str = paste0(stock_change_str,
@@ -916,14 +891,14 @@ compile_ode_Julia = function(sfm, ordering, prep_script, static_eqn,
   # Names of changing Stocks, e.g. dR for stock R
   stock_changes_names = unname(unlist(lapply(sfm$model$variables$stock, `[[`, "sum_name")))
 
-# Final update to derivative
-# state_change_str = sprintf("d%sdt[[%s]] .= %s",
-#                            P$state_name,
-#                            # ifelse(length(stock_changes_names) > 1,
-#                                   # paste0("1:", length(stock_changes_names)), "1"),
-#                            paste0(as.character(seq_along(stock_changes_names)), collapse = ", "),
-#                            paste0(stock_changes_names, collapse = ", ")
-#                            )
+  # Final update to derivative
+  # state_change_str = sprintf("d%sdt[[%s]] .= %s",
+  #                            P$state_name,
+  #                            # ifelse(length(stock_changes_names) > 1,
+  #                                   # paste0("1:", length(stock_changes_names)), "1"),
+  #                            paste0(as.character(seq_along(stock_changes_names)), collapse = ", "),
+  #                            paste0(stock_changes_names, collapse = ", ")
+  #                            )
 
   # state_change_str = sprintf("d%sdt[collect(%s)] .= %s",
   #                            P$state_name,
@@ -1004,10 +979,10 @@ compile_ode_Julia = function(sfm, ordering, prep_script, static_eqn,
     # Unpack each delayN or smoothN stock separately
     unpack_delayN = lapply(sfm$model$variables$stock,
                            function(x){
-      if (is_defined(x$unpack_state)){
-        paste0(x$name, " = ", x$unpack_state) %>% return()
-      }
-    }) %>% purrr::compact()
+                             if (is_defined(x$unpack_state)){
+                               paste0(x$name, " = ", x$unpack_state) %>% return()
+                             }
+                           }) %>% purrr::compact()
 
     unpack_state_str = paste0(unpack_nondelayN, "\n\t", paste0(unpack_delayN, collapse = "\n\t"))
 
@@ -1115,8 +1090,8 @@ function %s(%s, %s, integrator)",
 #' @inheritParams compile_R
 #'
 compile_run_ode_Julia = function(sfm,
-                                     nonneg_stocks,
-                                     only_stocks, keep_unit){
+                                 nonneg_stocks,
+                                 only_stocks, keep_unit){
 
   state_var = names(sfm$model$variables$stock)
 
@@ -1127,8 +1102,8 @@ compile_run_ode_Julia = function(sfm,
                   ifelse(sfm$sim_specs$method %in% c("euler", "rk4"),
                          paste0(", dt = ", P$timestep_name, ", adaptive=", ifelse(sfm$sim_specs$adaptive, "true", "false")), ""),
                   ifelse(!only_stocks, paste0(", ", P$callback_name, " = ", P$callback_name
-                                          # ", saveat = ", sfm$sim_specs$saveat,
-                                          # ifelse(keep_unit, paste0(" * ", P$time_units_name), "")
+                                              # ", saveat = ", sfm$sim_specs$saveat,
+                                              # ifelse(keep_unit, paste0(" * ", P$time_units_name), "")
 
                   ), ""), ")\n",
                   P$sim_df_name, " = DataFrame([
@@ -1260,8 +1235,8 @@ decode_unicode <- function(text) {
                            # "\\[\\]?u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]",
                            "(\\\\u|\\\\\\\\u)[0-9a-fA-F]{4}",
                            function(matched) {
-    # Extract the Unicode escape sequence
-    jsonlite::fromJSON(sprintf('"%s"', matched))
+                             # Extract the Unicode escape sequence
+                             jsonlite::fromJSON(sprintf('"%s"', matched))
                              # hex_code <- stringr::str_sub(matched, nchar(matched)-3, nchar(matched))  # Extract the "XXXX" part
                              # print(hex_code)
                              # # Convert the hexadecimal code to an integer
@@ -1272,7 +1247,7 @@ decode_unicode <- function(text) {
                              # print(intToUtf8(code_int))
                              # intToUtf8(code_int)
 
-  })
+                           })
 
 }
 
@@ -1284,28 +1259,28 @@ decode_unicode <- function(text) {
 #'
 get_func_Julia = function(){
   func_def = c(
-#   "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = 2)
-#
-#     # Ensure y is sorted along x
-#     idx = sortperm(x)
-#     x = x[idx]
-#     y = y[idx]
-#
-#     # Extrapolation extrapolation: What happens outside of defined values?
-#     # Rule 1: return NaN; Rule 2: return closest value
-#     rule_method = ifelse(extrapolation == 1, NaN, ifelse(extrapolation == 2, Flat(), \"?\"))
-#
-#     if method == \"constant\"
-#         func = extrapolate(interpolate((x,), y, Gridded(Constant{Previous}())), rule_method)
-#     elseif method == \"linear\"
-#         func = linear_interpolation(x, y, extrapolation_bc=rule_method)
-#     end
-#
-#     return(func)
-# end",
+    #   "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = 2)
+    #
+    #     # Ensure y is sorted along x
+    #     idx = sortperm(x)
+    #     x = x[idx]
+    #     y = y[idx]
+    #
+    #     # Extrapolation extrapolation: What happens outside of defined values?
+    #     # Rule 1: return NaN; Rule 2: return closest value
+    #     rule_method = ifelse(extrapolation == 1, NaN, ifelse(extrapolation == 2, Flat(), \"?\"))
+    #
+    #     if method == \"constant\"
+    #         func = extrapolate(interpolate((x,), y, Gridded(Constant{Previous}())), rule_method)
+    #     elseif method == \"linear\"
+    #         func = linear_interpolation(x, y, extrapolation_bc=rule_method)
+    #     end
+    #
+    #     return(func)
+    # end",
     # extrapolation = 1: return NA when outside of bounds
     # extrapolation = 2: return nearest value when outside of bounds
-      "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = \"nearest\")
+    "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = \"nearest\")
 
   # Ensure y is sorted along x
   idx = sortperm(x)
@@ -1324,24 +1299,24 @@ get_func_Julia = function(){
 
   return(func)
 end",
-      # **to do: ExtrapolationType.None throws error instead of returning NaN
+    # **to do: ExtrapolationType.None throws error instead of returning NaN
 
-#                "ramp" = "# Make ramp signal\nfunction ramp(times; start_t_ramp, end_t_ramp, start_h_ramp = 0.0, end_h_ramp = 1.0)
-#
-#     x = [start_t_ramp, end_t_ramp]
-#     y = [start_h_ramp, end_h_ramp]
-#
-#     # If the ramp is after the start time, add a zero at the start
-#     if start_t_ramp > first(times)
-#         x = [first(times); x]
-#         y = [0; y]
-#     end
-#
-#     func = itp(x, y, method = \"linear\", extrapolation = 2)
-#
-#     return(func)
-# end",
-"ramp" = "function ramp(; start_t_ramp, end_t_ramp, start_h_ramp = 0.0, end_h_ramp = 1.0)
+    #                "ramp" = "# Make ramp signal\nfunction ramp(times; start_t_ramp, end_t_ramp, start_h_ramp = 0.0, end_h_ramp = 1.0)
+    #
+    #     x = [start_t_ramp, end_t_ramp]
+    #     y = [start_h_ramp, end_h_ramp]
+    #
+    #     # If the ramp is after the start time, add a zero at the start
+    #     if start_t_ramp > first(times)
+    #         x = [first(times); x]
+    #         y = [0; y]
+    #     end
+    #
+    #     func = itp(x, y, method = \"linear\", extrapolation = 2)
+    #
+    #     return(func)
+    # end",
+    "ramp" = "function ramp(; start_t_ramp, end_t_ramp, start_h_ramp = 0.0, end_h_ramp = 1.0)
     # If times has units, but the ramp times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
         if !(eltype(start_t_ramp) <: Unitful.Quantity)
@@ -1385,22 +1360,22 @@ end",
 
     return(func)
 end ",
-#                "step" = "# Make step signal\nfunction step(times; start_t_step, h_step = 1.0)
-#
-#     x = [start_t_step, times[2]]
-#     y = [h_step, h_step]
-#
-#     # If the step is after the start time, add a zero at the start
-#     if start_t_step > first(times)
-#         x = [first(times); x]
-#         y = [0; y]
-#     end
-#
-#     func = itp(x, y, method = \"constant\", extrapolation = \"nearest\")
-#
-#     return(func)
-# end",
-"step" = "# Make step signal
+    #                "step" = "# Make step signal\nfunction step(times; start_t_step, h_step = 1.0)
+    #
+    #     x = [start_t_step, times[2]]
+    #     y = [h_step, h_step]
+    #
+    #     # If the step is after the start time, add a zero at the start
+    #     if start_t_step > first(times)
+    #         x = [first(times); x]
+    #         y = [0; y]
+    #     end
+    #
+    #     func = itp(x, y, method = \"constant\", extrapolation = \"nearest\")
+    #
+    #     return(func)
+    # end",
+    "step" = "# Make step signal
 function step(; start_t_step, h_step = 1.0)
 
     # If times has units, but the ramp times don't, convert them to the same units
@@ -1434,7 +1409,7 @@ function step(; start_t_step, h_step = 1.0)
 
     return(func)
 end",
-"@constraints" = "# Constraints macro
+    "@constraints" = "# Constraints macro
 macro constraints(exprs...)
     pairs = map(exprs) do ex
         quote
@@ -1445,41 +1420,41 @@ macro constraints(exprs...)
         [$(pairs...)]
     end
 end",
-#                "pulse" = "# Make pulse signal\nfunction pulse(times; start_t_pulse, h_pulse = 1.0, w_pulse = 1.0 * time_units, repeat_interval = nothing)
-#
-#     # Define start and end times of pulses
-#     last_time = last(times)
-#     # If no repeats, set end of pulse to after end time
-#     step_size = isnothing(repeat_interval) ? last_time * 2 : repeat_interval
-#     start_ts = collect(start_t_pulse:step_size:last_time)
-#     end_ts = start_ts .+ w_pulse
-#
-#     # Build signal as vectors of times and y-values
-#     signal_times = [start_ts; end_ts]
-#     signal_y = [fill(h_pulse, length(start_ts)); fill(0, length(end_ts))]
-#
-#     # If the first pulse is after the start time, add a zero at the start
-#     if minimum(start_ts) > first(times)
-#         signal_times = [first(times); signal_times]
-#         signal_y = [0; signal_y]
-#     end
-#
-#     # If the last pulse doesn't cover the end, add a zero at the end
-#     # (I don't fully understand why this is necessary, but otherwise it gives incorrect results with repeat_interval <= 0)
-#     if maximum(end_ts) < last_time
-#         signal_times = [signal_times; last_time]
-#         signal_y = [signal_y; 0]
-#     end
-#
-#     # Sort by time
-#     perm = sortperm(signal_times)
-#     x = signal_times[perm]
-#     y = signal_y[perm]
-#     func = itp(x, y, method = \"constant\", extrapolation = \"nearest\")
-#
-#     return(func)
-# end",
-"pulse" = "# Make pulse signal
+    #                "pulse" = "# Make pulse signal\nfunction pulse(times; start_t_pulse, h_pulse = 1.0, w_pulse = 1.0 * time_units, repeat_interval = nothing)
+    #
+    #     # Define start and end times of pulses
+    #     last_time = last(times)
+    #     # If no repeats, set end of pulse to after end time
+    #     step_size = isnothing(repeat_interval) ? last_time * 2 : repeat_interval
+    #     start_ts = collect(start_t_pulse:step_size:last_time)
+    #     end_ts = start_ts .+ w_pulse
+    #
+    #     # Build signal as vectors of times and y-values
+    #     signal_times = [start_ts; end_ts]
+    #     signal_y = [fill(h_pulse, length(start_ts)); fill(0, length(end_ts))]
+    #
+    #     # If the first pulse is after the start time, add a zero at the start
+    #     if minimum(start_ts) > first(times)
+    #         signal_times = [first(times); signal_times]
+    #         signal_y = [0; signal_y]
+    #     end
+    #
+    #     # If the last pulse doesn't cover the end, add a zero at the end
+    #     # (I don't fully understand why this is necessary, but otherwise it gives incorrect results with repeat_interval <= 0)
+    #     if maximum(end_ts) < last_time
+    #         signal_times = [signal_times; last_time]
+    #         signal_y = [signal_y; 0]
+    #     end
+    #
+    #     # Sort by time
+    #     perm = sortperm(signal_times)
+    #     x = signal_times[perm]
+    #     y = signal_y[perm]
+    #     func = itp(x, y, method = \"constant\", extrapolation = \"nearest\")
+    #
+    #     return(func)
+    # end",
+    "pulse" = "# Make pulse signal
 function pulse(; start_t_pulse, h_pulse = 1.0, w_pulse = 1.0 * time_units, repeat_interval = nothing)
     # If times has units, but the pulse times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
@@ -1543,10 +1518,10 @@ function pulse(; start_t_pulse, h_pulse = 1.0, w_pulse = 1.0 * time_units, repea
 
     return(func)
 end",
-               # ** constant interpolation is not supported with units! linear is
+    # ** constant interpolation is not supported with units! linear is
 
-               # ** other custom_func
-"IM_round" = "# Convert InsightMaker's Round() function to R\n# Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in Julia, round(.5) = 0.0\nfunction IM_round(x::Real, digits::Int=0)
+    # ** other custom_func
+    "IM_round" = "# Convert InsightMaker's Round() function to R\n# Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in Julia, round(.5) = 0.0\nfunction IM_round(x::Real, digits::Int=0)
     # Compute the fractional part after scaling by 10^digits
     scaled_x = x * 10.0^digits
     frac = scaled_x % 1
@@ -1557,13 +1532,13 @@ end",
         return round(scaled_x, digits=0) / 10.0^digits
     end
 end",
-               "logit" = "# Logit function\nfunction logit(p)
+    "logit" = "# Logit function\nfunction logit(p)
     return log(p / (1 - p))
 end",
-               "expit" = "# Expit function\nfunction expit(x)
+    "expit" = "# Expit function\nfunction expit(x)
     return 1 / (1+exp(-x))
 end",
-"sigmoid" = "function sigmoid(x; slope=1, midpoint=0)
+    "sigmoid" = "function sigmoid(x; slope=1, midpoint=0)
     @assert isfinite(slope) && isfinite(midpoint) \"slope and midpoint must be numeric\"
     1 / (1 + exp(-slope * (x - midpoint)))
 end
@@ -1574,20 +1549,20 @@ function sigmoid(x, slope, midpoint)
     1 / (1 + exp(-slope * (x - midpoint)))
 end
 ",
-               "nonnegative" = "# Prevent non-negativity\nfunction nonnegative(x)
+    "nonnegative" = "# Prevent non-negativity\nfunction nonnegative(x)
     if eltype(x) <: Unitful.Quantity
         max.(0.0, Unitful.ustrip(x)) .* Unitful.unit.(x)
     else
         max.(0.0, x)
     end
 end",
-"rbool" = "# Generate random boolean value, equivalent of RandBoolean() in InsightMaker\nfunction rbool(p)
+    "rbool" = "# Generate random boolean value, equivalent of RandBoolean() in InsightMaker\nfunction rbool(p)
     return rand() < p
 end",
-#                "rdist" = "function rdist(a,b)
-#     StatsBase.wsample(a, b, 1)
-# end",
-"rdist" = "function rdist(a::Vector{T}, b::Vector{<:Real}) where T
+    #                "rdist" = "function rdist(a,b)
+    #     StatsBase.wsample(a, b, 1)
+    # end",
+    "rdist" = "function rdist(a::Vector{T}, b::Vector{<:Real}) where T
     # Check lengths match
     if length(a) != length(b)
         throw(ArgumentError(\"Length of a and b must match\"))
@@ -1601,7 +1576,7 @@ end",
     # Sample using Categorical
     return a[rand(Distributions.Categorical(b_normalized))]
 end",
-"indexof" = "function indexof(haystack, needle)
+    "indexof" = "function indexof(haystack, needle)
     if isa(haystack, AbstractString) && isa(needle, AbstractString)
         pos = findfirst(needle, haystack)
         return isnothing(pos) ? 0 : first(pos)
@@ -1610,25 +1585,25 @@ end",
         return isnothing(pos) ? 0 : pos
     end
 end",
-# "IM_length"= "function IM_length(x)
-#     if isa(x, AbstractString)
-#         return length(x)
-#     else
-#         return length(x)
-#     end
-# end",
-"IM_contains" = "function IM_contains(haystack, needle)
+    # "IM_length"= "function IM_length(x)
+    #     if isa(x, AbstractString)
+    #         return length(x)
+    #     else
+    #         return length(x)
+    #     end
+    # end",
+    "IM_contains" = "function IM_contains(haystack, needle)
     if isa(haystack, AbstractString) && isa(needle, AbstractString)
         return occursin(needle, haystack)
     else
         return needle in haystack
     end
 end",
-"substr_i" = "function substr_i(string::AbstractString, idxs::Union{Int, Vector{Int}})
+    "substr_i" = "function substr_i(string::AbstractString, idxs::Union{Int, Vector{Int}})
     chars = collect(string)
     return join(chars[idxs])
 end",
-"IM_filter" = "function IM_filter(y::Vector{T}, condition_func::Function) where T
+    "IM_filter" = "function IM_filter(y::Vector{T}, condition_func::Function) where T
     names_y = string.(1:length(y))
     result = Dict{String,T}()
     for (key, val) in zip(names_y, y)
@@ -1639,33 +1614,33 @@ end",
     return collect(values(result)), collect(keys(result))
 end",
 
-#                "weeks" = "function weeks(t, time_units)
-#     Unitful.uconvert(u\"wk\", t * Unitful.uparse(time_units))  # Parse the string dynamically
-# end",
-#                "setunit" = "# Set or convert unit\nfunction setunit(x, unit_def)
-#
-#     # In case unit_def is not identified as a unit, extract unit
-#     if eltype(unit_def) <: Unitful.Quantity
-#         unit_def = Unitful.unit(unit_def)  # Extract the unit from a Quantity
-#     end
-#
-#     # If x already has a unit, convert
-#     if eltype(x) <: Unitful.Quantity
-#         try
-#             return Unitful.uconvert.(unit_def, x)
-#         catch e
-#             if isa(e, Unitful.DimensionError)
-#                 error(\"Cannot convert $(unit(x)) to $unit_def: incompatible dimensions\")
-#             else
-#                 rethrow(e)
-#             end
-#         end
-#     else
-#         return x .* unit_def
-#     end
-# end
-# ",
-"setunit" = sprintf("# Set or convert unit\nfunction setunit(x, unit_def)
+    #                "weeks" = "function weeks(t, time_units)
+    #     Unitful.uconvert(u\"wk\", t * Unitful.uparse(time_units))  # Parse the string dynamically
+    # end",
+    #                "setunit" = "# Set or convert unit\nfunction setunit(x, unit_def)
+    #
+    #     # In case unit_def is not identified as a unit, extract unit
+    #     if eltype(unit_def) <: Unitful.Quantity
+    #         unit_def = Unitful.unit(unit_def)  # Extract the unit from a Quantity
+    #     end
+    #
+    #     # If x already has a unit, convert
+    #     if eltype(x) <: Unitful.Quantity
+    #         try
+    #             return Unitful.uconvert.(unit_def, x)
+    #         catch e
+    #             if isa(e, Unitful.DimensionError)
+    #                 error(\"Cannot convert $(unit(x)) to $unit_def: incompatible dimensions\")
+    #             else
+    #                 rethrow(e)
+    #             end
+    #         end
+    #     else
+    #         return x .* unit_def
+    #     end
+    # end
+    # ",
+    "setunit" = sprintf("# Set or convert unit\nfunction setunit(x, unit_def)
     # Parse unit_def into a Unitful.Unit
     target_unit = if unit_def isa Unitful.Quantity
         Unitful.unit(unit_def)  # Extract unit from Quantity (e.g., 1u\"wk\" -> u\"wk\")
@@ -1699,108 +1674,108 @@ end",
         return x .* target_unit
     end
 end", P$unit_context),
-# "seasonal" = "# Create seasonal wave\nfunction seasonal(;wave_unit=u\"yr\", wave_peak=0u\"yr\")
-#     (t, u=wave_unit, p=wave_peak) -> cos.(Unitful.ustrip.(Unitful.uconvert.(u, t - p)))
-# end"
-"seasonal" = "# Create seasonal wave\nfunction seasonal(t; period = u\"1yr\", shift = u\"0yr\")
+    # "seasonal" = "# Create seasonal wave\nfunction seasonal(;wave_unit=u\"yr\", wave_peak=0u\"yr\")
+    #     (t, u=wave_unit, p=wave_peak) -> cos.(Unitful.ustrip.(Unitful.uconvert.(u, t - p)))
+    # end"
+    "seasonal" = "# Create seasonal wave\nfunction seasonal(t; period = u\"1yr\", shift = u\"0yr\")
     phase = 2 * pi * (t - shift) / period  # π radians
     return(cos(phase))
 end",
-"\\u2295" = "# Define the operator \\u2295 for the modulus
+    "\\u2295" = "# Define the operator \\u2295 for the modulus
 function \\u2295(x, y)
     return mod(x, y)
 end",
-# "retrieve_past"= "function retrieve_past(var_value, delay_time, default_value, t, var_name, single_or_interval, intermediaries, intermediary_names)
-#
-# 	# Ensure t and delay_time are of the same type
-# 	if !(eltype(delay_time) <: Unitful.Quantity) & (eltype(t) <: Unitful.Quantity)
-# 		delay_time = setunit(delay_time, t)
-# 	end
-#
-#     # Extract single value from the past
-# 	if single_or_interval == \"single\"
-# 		extract_t = t - delay_time
-#
-# 		# If trying to retrieve a value in the \"past\" (i.e. before times[1]), use default value if specified, otherwise use value at first time point
-# 		if extract_t < 0
-# 			if isnothing(default_value)
-#                 if isempty(intermediaries.saveval)
-#                     return var_value
-#                 else
-#                     return intermediaries.saveval[1][findfirst(isequal(var_name), intermediary_names)]
-#                 end
-# 			else
-# 				return default_value
-# 			end
-# 		elseif extract_t == 0 || extract_t == t
-#       return var_value
-# 		end
-#
-# 	# Or: extract interval of past values
-# 	elseif single_or_interval == \"interval\"
-#
-#         # Check if intermediaries.saveval is empty
-#         if isempty(intermediaries.saveval)
-#             return var_value
-#         end
-#
-#         # Create vector of times
-#         if !(t in intermediaries.t)
-#             extract_t = [intermediaries.t; t]
-#         else
-#             extract_t = intermediaries.t
-#         end
-#
-# 		# If no past interval is specified, access entire history
-# 		if !isnothing(delay_time)
-# 			first_time = t - delay_time
-#
-# 			if first_time < 0
-# 				first_time = intermediaries.t[1]  # Set to start time if negative
-# 			end
-#
-# 			# Extract from first_time up until t
-# 			_, first_time_idx = findmin(abs.(extract_t .- first_time))
-# 			extract_t = extract_t[first_time_idx:end]
-#
-#             if length(extract_t) == 1
-#                 return var_value
-#             end
-# 		end
-# 	end
-#
-#     # Check if intermediaries.saveval is empty
-#     if isempty(intermediaries.saveval)
-#         # If empty, return default value if specified, otherwise return NaN
-#         if isnothing(default_value)
-#             return var_value
-#         else
-#             return default_value
-#         end
-#     end
-#
-# 	## Create a DataFrame from the saved values
-# 	i#ntermediary_df = DataFrame(intermediaries.saveval, Symbol.(intermediary_names))
-#
-#     # Add t if not in intermediaries.t yet
-#     if !(t in intermediaries.t)
-#         ts = [intermediaries.t; t]
-#     else
-#         ts = intermediaries.t
-#     end
-#
-#     #ys = [intermediary_df[!, var_name]; var_value]
-#    # ys = ys[1:length(ts)]  # Ensure ys is the same length as ts
-#
-#     var_index = findfirst(==(var_name), intermediary_names)
-#     ys = [[val[var_index] for val in intermediaries.saveval]; var_value][1:length(ts)]
-#
-# 	# Define interpolation function
-#     itp(ts, ys, method = \"linear\", extrapolation = \"nearest\")(extract_t)
-#
-# end
-# ",
-"retrieve_past"= "# Function to retrieve past values
+    # "retrieve_past"= "function retrieve_past(var_value, delay_time, default_value, t, var_name, single_or_interval, intermediaries, intermediary_names)
+    #
+    # 	# Ensure t and delay_time are of the same type
+    # 	if !(eltype(delay_time) <: Unitful.Quantity) & (eltype(t) <: Unitful.Quantity)
+    # 		delay_time = setunit(delay_time, t)
+    # 	end
+    #
+    #     # Extract single value from the past
+    # 	if single_or_interval == \"single\"
+    # 		extract_t = t - delay_time
+    #
+    # 		# If trying to retrieve a value in the \"past\" (i.e. before times[1]), use default value if specified, otherwise use value at first time point
+    # 		if extract_t < 0
+    # 			if isnothing(default_value)
+    #                 if isempty(intermediaries.saveval)
+    #                     return var_value
+    #                 else
+    #                     return intermediaries.saveval[1][findfirst(isequal(var_name), intermediary_names)]
+    #                 end
+    # 			else
+    # 				return default_value
+    # 			end
+    # 		elseif extract_t == 0 || extract_t == t
+    #       return var_value
+    # 		end
+    #
+    # 	# Or: extract interval of past values
+    # 	elseif single_or_interval == \"interval\"
+    #
+    #         # Check if intermediaries.saveval is empty
+    #         if isempty(intermediaries.saveval)
+    #             return var_value
+    #         end
+    #
+    #         # Create vector of times
+    #         if !(t in intermediaries.t)
+    #             extract_t = [intermediaries.t; t]
+    #         else
+    #             extract_t = intermediaries.t
+    #         end
+    #
+    # 		# If no past interval is specified, access entire history
+    # 		if !isnothing(delay_time)
+    # 			first_time = t - delay_time
+    #
+    # 			if first_time < 0
+    # 				first_time = intermediaries.t[1]  # Set to start time if negative
+    # 			end
+    #
+    # 			# Extract from first_time up until t
+    # 			_, first_time_idx = findmin(abs.(extract_t .- first_time))
+    # 			extract_t = extract_t[first_time_idx:end]
+    #
+    #             if length(extract_t) == 1
+    #                 return var_value
+    #             end
+    # 		end
+    # 	end
+    #
+    #     # Check if intermediaries.saveval is empty
+    #     if isempty(intermediaries.saveval)
+    #         # If empty, return default value if specified, otherwise return NaN
+    #         if isnothing(default_value)
+    #             return var_value
+    #         else
+    #             return default_value
+    #         end
+    #     end
+    #
+    # 	## Create a DataFrame from the saved values
+    # 	i#ntermediary_df = DataFrame(intermediaries.saveval, Symbol.(intermediary_names))
+    #
+    #     # Add t if not in intermediaries.t yet
+    #     if !(t in intermediaries.t)
+    #         ts = [intermediaries.t; t]
+    #     else
+    #         ts = intermediaries.t
+    #     end
+    #
+    #     #ys = [intermediary_df[!, var_name]; var_value]
+    #    # ys = ys[1:length(ts)]  # Ensure ys is the same length as ts
+    #
+    #     var_index = findfirst(==(var_name), intermediary_names)
+    #     ys = [[val[var_index] for val in intermediaries.saveval]; var_value][1:length(ts)]
+    #
+    # 	# Define interpolation function
+    #     itp(ts, ys, method = \"linear\", extrapolation = \"nearest\")(extract_t)
+    #
+    # end
+    # ",
+    "retrieve_past"= "# Function to retrieve past values
 
 function retrieve_past(var_value, delay_time, default_value, t, var_name, single_or_interval, intermediaries, intermediary_names)
     # Handle empty intermediaries
@@ -1869,40 +1844,40 @@ function retrieve_past(var_value, delay_time, default_value, t, var_name, single
 
 end
 ",
-"saveat_func" = "# Function to save dataframe at specific times
+    "saveat_func" = "# Function to save dataframe at specific times
 function saveat_func(t, y, new_times)
     # Interpolate y at new_times
     itp(t, y, method = \"linear\", extrapolation = \"nearest\")(new_times)
 end",
-# "setunit_flow" = "# Define function to set unit of flow; Alleviate users from dividing the flow in the equation by the time unit if they have specified the desired units in the units property of the flow
-# function setunit_flow(x, unit_def)
-#     # If trying to set the unit throws an error
-#     try
-#         return setunit(x, unit_def)
-#     catch e
-#         if isa(e, ErrorException) | isa(e, Unitful.DimensionError)
-#             try
-#                 # In cases where e.g. x = 1u\"m\", unit_def = u\"m/d\"
-#                 # I want to find the necessary divisor.
-#                 div_required = x / unit_def
-#                 # if Unitful.unit(x / div_required) == unit_def   # this is always true
-#                 # If the unit of the divisor is a time unit, return the flow divided by the divisor
-#                 if typeof(Unitful.unit(div_required)) <: Unitful.TimeUnits
-#                     return x / div_required
-#                 else
-#                     error(\"Cannot set unit of flow: $x to $unit_def\")
-#                 end
-#
-#             catch
-#                 error(\"Cannot set unit of flow: $x to $unit_def\")
-#             end
-#         else
-#             error(\"Cannot set unit of flow: $x to $unit_def\")
-#         end
-#     end
-# end"
+    # "setunit_flow" = "# Define function to set unit of flow; Alleviate users from dividing the flow in the equation by the time unit if they have specified the desired units in the units property of the flow
+    # function setunit_flow(x, unit_def)
+    #     # If trying to set the unit throws an error
+    #     try
+    #         return setunit(x, unit_def)
+    #     catch e
+    #         if isa(e, ErrorException) | isa(e, Unitful.DimensionError)
+    #             try
+    #                 # In cases where e.g. x = 1u\"m\", unit_def = u\"m/d\"
+    #                 # I want to find the necessary divisor.
+    #                 div_required = x / unit_def
+    #                 # if Unitful.unit(x / div_required) == unit_def   # this is always true
+    #                 # If the unit of the divisor is a time unit, return the flow divided by the divisor
+    #                 if typeof(Unitful.unit(div_required)) <: Unitful.TimeUnits
+    #                     return x / div_required
+    #                 else
+    #                     error(\"Cannot set unit of flow: $x to $unit_def\")
+    #                 end
+    #
+    #             catch
+    #                 error(\"Cannot set unit of flow: $x to $unit_def\")
+    #             end
+    #         else
+    #             error(\"Cannot set unit of flow: $x to $unit_def\")
+    #         end
+    #     end
+    # end"
 
-"compute_delayN" = "function compute_delayN(inflow, accumulator, length_delay, order_delay)
+    "compute_delayN" = "function compute_delayN(inflow, accumulator, length_delay, order_delay)
     order_delay = round(Int, order_delay)
     d_accumulator = zeros(eltype(accumulator), order_delay)
     exit_rate_stage = accumulator / (length_delay / order_delay)
@@ -1915,7 +1890,7 @@ end",
     outflow = exit_rate_stage[order_delay]
     return (outflow=outflow, update=d_accumulator)
 end",
-"setup_delayN" = "function setup_delayN(initial_value, length_delay, order_delay, name::String)
+    "setup_delayN" = "function setup_delayN(initial_value, length_delay, order_delay, name::String)
     # Compute the initial value for each accumulator
     # from https://www.simulistics.com/help/equations/functions/delay.html
     order_delay = round(Int, order_delay) # Turn order into integer
@@ -1925,7 +1900,7 @@ end",
     return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
 end"
 
-)
+  )
 
   return(func_def)
 }
@@ -1952,19 +1927,19 @@ create_init = function(){
   unit_str = lapply(custom_units(),
                     function(x){
 
-      if (is_defined(x$eqn)){
-        unit_def = x$eqn
-      } else {
-        unit_def = "1"
-      }
+                      if (is_defined(x$eqn)){
+                        unit_def = x$eqn
+                      } else {
+                        unit_def = "1"
+                      }
 
-      paste0("@unit ", x$name, " \"", x$name, "\" ", x$name, " u\"", unit_def, "\" ", ifelse(x$prefix, "true", "false"))
+                      paste0("@unit ", x$name, " \"", x$name, "\" ", x$name, " u\"", unit_def, "\" ", ifelse(x$prefix, "true", "false"))
 
-    }) %>% paste0(collapse = sprintf("\n\tUnitful.register(%s)\n\t", P$sdbuildR_units))
+                    }) %>% paste0(collapse = sprintf("\n\tUnitful.register(%s)\n\t", P$sdbuildR_units))
 
   unit_str = paste0("\n\n# Define custom units; register after each unit as some units may be defined by other units\nmodule ", P$sdbuildR_units, "\n\tusing Unitful\n\t",
-                  unit_str,
-                  "\n\tUnitful.register(", P$sdbuildR_units, ")\nend\n\n", P$unit_context, " = [Unitful.Unitful, ", P$sdbuildR_units, "];\n\n")
+                    unit_str,
+                    "\n\tUnitful.register(", P$sdbuildR_units, ")\nend\n\n", P$unit_context, " = [Unitful.Unitful, ", P$sdbuildR_units, "];\n\n")
 
   script = paste0("# Load packages
 using DifferentialEquations#: ODEProblem, solve, Euler, RK4, Tsit5
@@ -2050,13 +2025,13 @@ Base.round(x::Unitful.AbstractQuantity, digits::Int) = round(Unitful.ustrip.(x),
 # # Extend to preserve units
 # @unitful_preserve_units round floor ceil trunc
 ",
-  paste0(get_func_Julia() %>% unname(), collapse = "\n\n"),
+                  paste0(get_func_Julia() %>% unname(), collapse = "\n\n"),
 
-  # Add custom functions
-  unit_str,
-  # Add initialization of sdbuildR
-  paste0("\n\n", P$init_sdbuildR, " = true"),
-  collapse = "\n\n")
+                  # Add custom functions
+                  unit_str,
+                  # Add initialization of sdbuildR
+                  paste0("\n\n", P$init_sdbuildR, " = true"),
+                  collapse = "\n\n")
 
   # Write script
   env_path <- system.file(package = "sdbuildR")
@@ -2206,10 +2181,10 @@ run_init = function(){
   # already_init = JuliaCall::julia_eval(paste0("isdefined(@__MODULE__, :", P$init_sdbuildR, ")"))
   #
   # if (!already_init){
-    message("Setting up Julia environment for sdbuildR...")
-    # Initialize set-up for sdbuildR in Julia
-    env_path <- system.file(package = "sdbuildR")
-    JuliaCall::julia_source(file.path(env_path, "init.jl"))
+  message("Setting up Julia environment for sdbuildR...")
+  # Initialize set-up for sdbuildR in Julia
+  env_path <- system.file(package = "sdbuildR")
+  JuliaCall::julia_source(file.path(env_path, "init.jl"))
   # }
 
   return(NULL)
