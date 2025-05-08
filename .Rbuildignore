@@ -1,0 +1,7 @@
+^sdbuildR\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
+^LICENSE\.md$
+^validate
+^paper
+^inst/julia

@@ -1,0 +1,30 @@
+Package: sdbuildR
+Title: Stock-and-Flow Modelling in R
+Version: 0.0.0.9000
+Authors@R: 
+    person("Kyra", "Evers", , "kyra.c.evers@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: What the package does (one paragraph).
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    dplyr,
+    igraph,
+    jsonlite,
+    JuliaCall,
+    magrittr,
+    purrr,
+    rlang,
+    rvest,
+    stringr,
+    xml2
+Suggests: 
+    deSolve,
+    DiagrammeR,
+    plotly,
+    styler,
+    testthat (>= 3.0.0),
+    textutils
+Config/testthat/edition: 3
