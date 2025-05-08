@@ -25,7 +25,7 @@ library(sdbuildR)
 sdbuildR_setup()
 ```
 
-In this vignette, we will explore how to use units in stock-and-flow models using sdbuildR. Units, such as seconds, kilograms, or BMI, refer to the measurement units assigned to variables to quantify their magnitudes and ensure consistency in the model. Specifying units may seem like an unnecessary burden, because as we've seen in ``Building Blocks'', stock-and-flow models can run without units. We'll first motivate the need and use of units for model verification and interpretation, after which we'll show how to use units in sdbuildR.
+In this vignette, we will explore how to use units in stock-and-flow models using sdbuildR. Units, such as seconds, kilograms, or BMI, refer to the measurement units assigned to variables to quantify their magnitudes and ensure consistency in the model. Specifying units may seem like an unnecessary burden, because as we've seen in `vignette("building-blocks")`, stock-and-flow models can run without units. We'll first motivate the need and use of units for model verification and interpretation, after which we'll show how to use units in sdbuildR.
 
 ## Why units?
 

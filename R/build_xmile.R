@@ -78,7 +78,7 @@ is_defined = function(x){
 
 #' Plot stock-and-flow diagram
 #'
-#' Visualise a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, which represent what it outside of the model boundary.
+#' Visualise a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary.
 #'
 #' @param x Stock-and-flow model of class sdbuildR_xmile
 #' @param format_label If TRUE, apply default formatting to labels if labels are the same as variable names.
@@ -225,7 +225,6 @@ get_flow_df = function(sfm){
 #' @param add_constants If TRUE, include constants in plot. Defaults to FALSE.
 #' @param palette Colour palette. Must be one of hcl.pals().
 #' @param title Plot title. Character. Defaults to the name in the header of the model.
-#' @param pkg Plotting package. Defaults to "plotly".
 #' @param ... Optional parameters
 #'
 #' @return Plot object
@@ -238,7 +237,10 @@ get_flow_df = function(sfm){
 #' sim = simulate(sfm)
 #' plot(sim)
 plot.sdbuildR_sim = function(x, add_constants = FALSE, palette = "Dark 2", title=x$sfm$header$name,
-                             pkg = c("plotly", "base")[1], ...){
+                             ...){
+
+
+  #@param pkg Plotting package. Defaults to "plotly".
 
   if (missing(x)){
     stop("No simulation data provided! Use simulate() to create a simulation.")
@@ -273,7 +275,7 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE, palette = "Dark 2", title
     }
   }
 
-  if (requireNamespace("plotly", quietly = TRUE) & pkg == "plotly"){
+  if (requireNamespace("plotly", quietly = TRUE)){
 
     # Put dataframe in long format
     x_col = "time"
@@ -330,6 +332,24 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE, palette = "Dark 2", title
       yaxis = list(title = "")
     )
 
+  } else {
+
+    message("No installation of plotly found, reverting to base R...")
+
+    # Fallback to base R plotting
+    plot(x$df$time, x$df[[stock_names[1]]], type = "l", col = "blue", lwd = 2,
+         xlab = paste0("Time (", x$sfm$sim_specs$time_units, ")"), ylab = "",
+         main = title)
+
+    for (var in stock_names[-1]) {
+      lines(x$df$time, x$df[[var]], lwd = 2)
+    }
+
+    if (length(nonstock_names) > 0) {
+      for (var in nonstock_names) {
+        lines(x$df$time, x$df[[var]], lwd = 2, lty = 2)
+      }
+    }
   }
 
   return(pl)

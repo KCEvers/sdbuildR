@@ -49,9 +49,8 @@ sdbuildR_setup()
 ```
 
 Stock-and-flow models can be created in three ways. Firstly, dozens of
-example models can be loaded using `xmile()`. To get an overview of the
-model, plot the stock-and-flow diagram, with stocks as boxes, flows as
-arrows, and the model boundary as double circles.
+example models can be loaded using `xmile()`. Plot the stock-and-flow
+diagram to get an overview of the model:
 
 ``` r
 sfm = xmile("SIR")
