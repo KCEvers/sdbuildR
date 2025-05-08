@@ -7,8 +7,8 @@
 <!-- badges: end -->
 
 sdbuildR makes it easy to create and simulate stock-and-flow models in
-R. With Julia’s powerful computational engine as a backend, it combines
-fast performance with flexibility in a user-friendly R environment.
+R. With Julia as a backend, it combines fast performance with
+flexibility in a user-friendly R environment.
 
 ## Installation
 
@@ -19,6 +19,23 @@ support for simulating models in R. It is thus highly recommended to
 install Julia (and the necessary packages), which is supported by the
 package JuliaCall. The first call to `sdbuildR_setup()` may take around
 5-15 minutes:
+
+``` r
+library(insightmakeR1)
+#> 
+#> Attaching package: 'insightmakeR1'
+#> The following objects are masked from 'package:stats':
+#> 
+#>     simulate, step
+#> The following object is masked from 'package:utils':
+#> 
+#>     debugger
+sdbuildR_setup()
+#> Julia version 1.11.5 at location C:\Users\kevers1\AppData\Local\R\WIN-LI~1\4.4\INSIGH~1\julia\111~1.5\JULIA-~1.5\bin will be used.
+#> Loading setup script for JuliaCall...
+#> Finish loading setup script for JuliaCall.
+#> Setting up Julia environment for sdbuildR...
+```
 
 ## Quick start
 
@@ -32,9 +49,9 @@ sdbuildR_setup()
 ```
 
 Stock-and-flow models can be created in three ways. Firstly, dozens of
-example models can be loaded using `xmile()`. The stock-and-flow
-diagram, showing stocks as boxes, flows as arrows, and the model
-boundary as double circles, is plotted with `plot()`.
+example models can be loaded using `xmile()`. To get an overview of the
+model, plot the stock-and-flow diagram, with stocks as boxes, flows as
+arrows, and the model boundary as double circles.
 
 ``` r
 sfm = xmile("SIR")
@@ -57,7 +74,7 @@ plot(sim)
 ![](man/figures/README-SIR_plot-1.png)
 
 Secondly, an [Insight Maker](https://insightmaker.com/) model can be
-imported to R using `insightmaker_to_sfm()`:
+imported to R using its URL:
 
 ``` r
 sfm = insightmaker_to_sfm(URL = "https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-2022")
@@ -68,15 +85,15 @@ plot(simulate(sfm))
 
 ![](man/figures/README-Crielaard2022_plot-1.png)
 
-And lastly, a stock-and-flow model can be created from scratch. To do
-so, we first create an XMILE object using `xmile()`, which yields a
-nested list in the structure of the XMILE standard. We make use of the
-convenient pipe operator `%\>%` from the magrittr package, which simply
-passes the result of an expression to the next expression as a first
-argument. We then use `build()` to create a logistic model of population
-growth. The simulation specifications, such as the start time, stop
-time, and simulation time step (`dt`), are set with `sim_specs()`. We
-add a custom unit for people using `model_units()`.
+And lastly, a stock-and-flow model can be created from scratch. We make
+use of the convenient pipe operator `%\>%` from the magrittr package,
+which simply passes the result of an expression to the next expression
+as a first argument. We first initialize an empty stock and flow model
+with `xmile()`, and then use `build()` to create a logistic model of
+population growth. The simulation specifications, such as the start
+time, stop time, and simulation time step (`dt`), are set with
+`sim_specs()`. Custom units such as people can be added with
+`model_units()`.
 
 ``` r
 sfm = xmile() %>%

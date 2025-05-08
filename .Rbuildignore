@@ -4,4 +4,7 @@
 ^LICENSE\.md$
 ^validate
 ^paper
+^dev
 ^inst/julia
+^doc$
+^Meta$

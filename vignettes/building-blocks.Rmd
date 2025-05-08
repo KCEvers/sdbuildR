@@ -1,0 +1,425 @@
+---
+title: "Building blocks of stock-and-flow models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Building blocks of stock-and-flow models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,          # Set default figure width to 6 inches
+  fig.height = 4,         # Set default figure height to 4 inches
+  fig.align = "center",   # Center all figures
+  out.width = "80%"      # Display figures at 80% of container width
+  # fig.retina = 2,         # Optimize for retina displays
+  # dpi = 96               # Standard DPI for web
+)
+```
+
+```{r libraries}
+library(insightmakeR1)
+library(knitr) 
+library(kableExtra) 
+```
+
+Stock-and-flow models represent systems as variables (stocks) that accumulate over time with processes (flows) that change these variables. Foundational to system dynamics, stock-and-flow models are widely used in fields such as epidemiology, economics, and environmental science to represent systems complicated by nonlinearities, delays, and feedback loops. In this vignette, we will explore how to build stock-and-flow models using sdbuildR. We will first go through the basics: What are the building blocks of a stock-and-flow model? How can we combine them to create a model of our system? We will then use sdbuildR to recreate a well-known predator-prey model. To show how sdbuildR can be used to iteratively develop a model, we will build a stock-and-flow model from scratch using a psychological example.
+
+## Stock-and-flow models
+
+Stock-and-flow models are composed of stocks, the variables that determine the state of the system, and flows, the way stocks change. Stocks accumulate material or information over time, such as people or products. Stocks are variables that can increase and decrease, and can be measured at a single moment in time. Despite what their name may imply, stocks need not be tangible, and can also be variables such as beliefs, feelings, or knowledge. 
+
+The value of a stock is increased or decreased by flows. Flows represent the rates at which stocks change, measured in units per time (e.g., people per year, dollars per month). Flows either flow from a stock, flow into a stock, or cross the model boundary. For instance, in a population model, births are an inflow, and deaths are an outflow. Usually, we don't specify where the flow of deaths is going to, meaning it is outside of the model boundary.
+
+```{r echo=FALSE, fig.width=2, fig.height=2}
+sfm = xmile() %>% 
+  build("Stock", "stock") %>%
+  build("Inflow", "flow", to = "Stock") %>%
+  build("Outflow", "flow", from = "Stock") 
+plot(sfm)
+```
+
+The net change in a stock is the sum of inflows minus outflows. A stock may have multiple inflows and multiple outflows. This means you can separate different processes that affect your stock. If two stocks are connected by a flow, the flow directly takes the material from the first stock to the second stock (i.e. a material flow). For example, in the Susceptible-Infected-Recovered model, susceptible individuals are moved to the infected stock by the flow of infection, and infected individuals are moved to the recovered stock by the flow of recovery.
+
+```{r echo=FALSE, fig.width=2, fig.height=2}
+plot(xmile("SIR")) 
+```
+
+
+<!-- XXX  However, a stock can have multiple inflows and outflows, which means that you can define different ways the stock can increase or decrease. Note that outflows are subtracted from the stock, such that a negative outflow will increase the stock. Similarly, a negative inflow will decrease the stock. -->
+<!-- XXX #' If a flow flows from one stock to another, it is a material flow, as it directly takes material from stock A to stock B.   -->
+
+<!-- Stock-and-flow models are a subtype of differential equation models, -->
+
+<!-- , which creates memory and inertia in the system -->
+
+
+To help build a stock-and-flow model, you can also use three other types of variables: constants, auxiliaries, and graphical functions. Constants are variables that do not change over the course of the simulation - they are time-independent. Think of fixed birth rates, time constants, or thresholds. Conversely, auxiliaries are dynamic, and help as intermediate computations for flows. To create custom interpolation functions, use graphical functions (also called converters, or table or lookup functions).
+
+<!-- XXX a constant is not always a number, simply a variable that is not changing -->
+
+
+
+```{r echo=FALSE}
+functions_table <- data.frame(
+  Building.Block = c("Stock", "Flow", "Constant", "Auxiliary", "Graphical Function"),
+  Description = c("Defines the state of the system",
+                  "Moves material or information to and from stocks and outside the model boundary", 
+                  "Specifies static parameters",
+                  "Computes intermediate computations dynamically in the model",
+                  "Allows custom input-output interpolation functions"),
+  Example = c("People, products, beliefs, blood sugar, CO2 in atmosphere", 
+              "Birth rates, product order rates, eating, revenue, sales", 
+              "Fixed prices, constants, coefficients, parameters", 
+              "Sum of all Stocks, ratios of flows, averages", 
+              "Interventions or events occurring at known times such as vaccines or storms")
+)
+
+kableExtra::kbl(functions_table, format = "markdown", 
+                col.names = c("Building Block", "Purpose", "Example"),
+      caption = "Stock-and-flow building blocks") %>%
+  kableExtra::kable_styling()
+```
+
+
+
+
+```{r echo=FALSE}
+functions_table <- data.frame(
+  Function = c("`xmile()`", "`build()`", "`plot()`", "`summary()`", "`as.data.frame()", "`simulate()`", "`sim_specs()`", "`model_units()`", "`macro()`", "`header()`", "`get_build_code()`", "`insightmaker_to_sfm()`"),
+  Purpose = c("Create object of class xmile or load template", "Create, modify, or remove variable from the model", "Plot model diagram or simulation", "Print summary of building blocks and variables", "Get dataframe of model", "Simulate model", "Modify simulation specifications", "Define custom units", "Define global variables", "Define header of model", "Get code to build model from scratch", "Translate Insight Maker model to xmile object")
+)
+
+kableExtra::kbl(functions_table, format = "markdown", 
+                col.names = c("Function", "Purpose"),
+      caption = "Main functions in *sdbuildR*") %>%
+   kableExtra::kable_styling()
+```
+
+
+
+
+
+
+## A Simple Example: Predator-Prey
+
+To create a stock-and-flow model from scratch, we first create an XMILE object using `xmile()`, which yields a nested list in the structure of the XMILE standard. This model is still empty, but has default simulation specifications. 
+
+```{r}
+sfm = xmile()
+summary(sfm)
+```
+
+We now add two stocks to the model: predators and prey. To add these, we use `build()`. The first argument specifies the variable's name, followed by the building block type ('stock', 'flow', 'constant', 'aux', or 'gf'), and any relevant properties specific to that type (see Table \ref{XXX}). Here, we specify the initial values of the stocks with the `eqn` property, indicating that the simulation starts with 10 predators and 50 prey. In addition, we specify the optional `label` property used for plotting. Throughout the vignette, we make use of the convenient pipe operator `%\>%` from the *magrittr* package [@XXX], which simply passes the result of an expression to the next expression as a first argument.
+
+```{r, fig.width=2, fig.height=2}
+sfm = sfm %>%
+      build("predator", "stock", eqn = 10, label = "Predator") %>%
+      build("prey", "stock", eqn = 50, label = "Prey") 
+plot(sfm)
+```
+
+How does this model evolve over time? In order to simulate a model, `sdbuildR_setup()` needs to be run once per R session. 
+
+```{r message=FALSE, fig.width=7, fig.height=3}
+sdbuildR_setup()
+sim = simulate(sfm)
+plot(sim)
+```
+
+The stocks are static! Stocks can only change through flows, and we have not yet added any flows to the model. We create four flows: the births and deaths of both the predators and prey. The rate of the flow is indicated in `eqn`. In addition, flows have to be connected to at least one stock: a stock the flow is coming from (`from`) and/or a stock the flow is flowing to (`to`). Inflows add to the stock, and outflows subtract from the stock.
+
+```{r, fig.width=2, fig.height=2}
+sfm = sfm %>%
+  build("predator_births", "flow", eqn = "delta*prey*predator",
+        label = "Predator Births", to = "predator") %>%
+  build("predator_deaths", "flow", eqn = "gamma*predator",
+        label = "Predator Deaths", from = "predator") %>%
+  build("prey_births", "flow", eqn = "alpha*prey",
+        label = "Prey Births", to = "prey") %>%
+  build("prey_deaths", "flow", eqn = "beta*prey*predator",
+        label = "Prey Deaths", from = "prey")
+plot(sfm)
+```
+ 
+The flows make use of four other variables: `delta`, `gamma`, `alpha`, and `beta`. These are constants (i.e. static variables), and also need to be defined in the model. Below, we show how variables may also be added in a vectorized manner for efficiency. In addition, we document the meaning of these variables in the optional `doc` property.
+ 
+```{r}
+sfm = sfm %>%
+      build(c("delta", "gamma", "alpha", "beta"), "constant",
+            eqn = c(.025, .5, .5, .05),
+            label = c("Delta", "Gamma", "Alpha", "Beta"),
+            doc = c("Birth rate of predators", "Death rate of predators",
+                    "Birth rate of prey", "Death rate of prey by predators"))
+```
+
+We now have a complete predator-prey model, ready to be simulated! `simulate()` compiles a Julia script which is run with the package 
+
+```{r, fig.width=7, fig.height=3}
+sim = simulate(sfm)
+plot(sim)
+```
+
+The model shows classic predator-prey dynamics, with oscillations in the populations of both species. As the number of prey rises, the population of predators grows, consuming the prey. With fewer prey, the larger number of predators don't have enough to eat, such that the predators start to dwindle. The population of prey can grow again, leading to another cycle. 
+
+###
+
+
+```{r echo=FALSE}
+functions_table <- data.frame(
+  Property = c("label", "eqn", "units", "non_negative", "min", "max", "to", "from", "xpts", "ypts", "interpolation", "extrapolation", "doc"),
+  Description = c("Name for plotting", "Equation (initial value in case of Stock)", "Units", "Enforce non-negativity", "Minimum value constraint",
+                   "Maximum value constraint", "Target variable of Flow", "Source variable of Flow", "x-domain points of GF", "y-domain points of GF", "Interpolation method of GF", "Rule determining behaviour of GF outside of x-domain", "Add documentation to variable"),
+  Example = c("`'Food intake'`", "`'sqrt(10)'`", "`'second'`", "`FALSE`", "`0`", "`300`", "`'Hunger'`", "`'Hunger'`", "`c(0, 1, 2, 3)`", "`c(10, 12, 14, 16)`", "`'linear'`", "`nearest`", "`'Subjectively assessed hunger on a scale from 0 to 10'`"),
+  Stock = c("x", "x", "x", "x",  "x", "x", "", "", "", "", "", "", "x"),
+  Flow = c("x", "x", "x", "x", "", "", "x", "x", "", "", "", "", "x"),
+  Auxiliary = c("x","x", "x", "x", "", "", "", "", "", "", "", "", "x"),
+  GF = c("x","", "x", "", "", "", "", "", "x", "x", "x", "x", "x")
+)
+
+kableExtra::kbl(functions_table, format = "markdown", 
+                col.names = c("Property", "Description", "Example", "Stock", "Flow", "Auxiliary", "GF"),
+      caption = "Properties for each building block in a stock-and-flow model") %>%
+    # add_header_above(c(" ", "$\\\\lambda$" = 1, "$\\\\lambda$" = 1, "$i$" = 1, "$h$" = 1, "$\\\\Delta$AIC" = 1, "$\\\\Delta$BIC" = 1,
+                       # "$p$" = 1, "$\\\\phi$" = 1, "$i$" = 1, "$h$" = 1, "$\\\\Delta$AIC" = 1, "$\\\\Delta$BIC" = 1),
+                     # escape = F) %>%
+  # column_spec(1, "0.4in") %>%
+    # column_spec(2:13, "0.27in") %>%
+  kableExtra::kable_styling()
+```
+
+
+
+### Simulation specifications
+
+We may want to observe the system over a longer time period, or with a different time step. To change the simulation specifications, use `sim_specs()`. Below, we simulate from 0 to 250 days. The method is set to "euler", which is the simplest numerical integration method. Because of the longer time period, we may want fewer time points to save on storage. To decrease the size of the resulting dataframe, the simulation time step `dt` should *not* be lowered, as this can affect the accuracy of the simulation. Rather, we can save the simulation results only every 0.1 days, which preserves accuracy. For illustration, we lower the simulation time step to 0.001.
+
+```{r, fig.width=7, fig.height=3}
+sfm = sfm %>% sim_specs(time_units = "days",
+                     start = 0,
+                     stop = 250,
+                     method = "euler",
+                     dt = 0.001,
+                     saveat = 0.1)
+plot(simulate(sfm))
+```
+
+In case the simulation contains stochastic elements, we may want to set a seed to ensure that the simulation is reproducible. For example, the initial value of the predator and prey stocks could be a random number. The seed needs to be an integer, and can also be set with `sim_specs()`.
+
+```{r, fig.width=7, fig.height=3}
+sfm = sfm %>%
+  build(c("predator", "prey"), eqn = "runif(1, 20, 50)") %>%
+  sim_specs(seed = 1) 
+plot(simulate(sfm))
+```
+
+In case a seed was set, this will appear in `summary()`. The seed can also be removed to ensure variation in the simulation. This is useful when running multiple simulations, for example to assess the sensitivity of a model with respect to the initial condition. 
+
+```{r, fig.width=7, fig.height=3}
+sfm = sfm %>% sim_specs(seed = NULL) 
+plot(simulate(sfm))
+```
+
+
+### Documenting
+
+To document meta-properties of the model, use `header()`. Some standard XMILE properties specified in the header are `name`, `caption`, `created` (recording the date it was created), `author` (recording the creator of the model), and `version`. In addition, any other properties useful for documenting the model may be added, such as `URL` or `doi`.
+
+```{r}
+sfm = sfm %>%
+  header(author = "Kyra Evers", doi = "10.1037/met0000484") 
+```
+
+
+### Deconstructing a model
+
+To understand how a model was built, use `get_build_code()`. This will return the R code used to build the model, omitting default specifications.
+
+```{r}
+get_build_code(xmile("logistic_model"))
+```
+
+
+## Building models in practice: The art of iteration
+
+Of course, in reality, creating a stock-and-flow model isn’t a one-shot process. The variables, connections, and equations will have to be experimented with and tweaked to accurately represent the system’s behavior. Let's explore how to iteratively build stock-and-flow models using sdbuildR by creating a simplified model of burnout, inspired by XXX https://ocw.mit.edu/courses/15-988-system-dynamics-self-study-fall-1998-spring-1999/e8bd0c07ef2848b39e55fc8ff52dcb88_generic3.pdf. 
+
+Let's say Maya has just switched from a part-time to a full-time job, and she wants to impress her supervisor. She is working hard and putting in extra hours. However, the more she works, the more projects, meetings, and emails pile on - work breeds work. This comes at the cost of her sleep, which she can only sustain for a limited time. Maya ends up working far beyond her capacity, to the point where she is unable to work at all. 
+
+Let's start by setting up our model. We change the name, and specify that we want to see Maya's burnout develop over the course of XXX months:
+
+```{r}
+sfm = xmile() %>% header(name = "Maya's Burnout") %>%
+  sim_specs(stop = 9, time_units = "month") 
+```
+
+We add a stock for Maya's work, which is the number of hours she works per day. She starts from 4 hours per day, her part-time job. We add a flow that increases Maya's daily work hours as a function of the work she's doing and a multiplier. 
+
+```{r, fig.width=7, fig.height=3}
+sfm = sfm %>% 
+  build("work", "stock", eqn = 4) %>%
+  build("work_breeds_work", "flow", eqn = "work * pile_on", to = "work") %>%
+  build("pile_on", "constant", eqn = .1) 
+
+sim = simulate(sfm)
+plot(sim)
+```
+
+Maya's work day is increasing exponentially! We're clearly missing something. We've only added an inflow, but no outflow yet. In order to keep Maya's work hours in check, we need to add a balancing feedback loop. Maya tries to adjust her hours to the normal workday, which is 8 hours. We add a new constant and an outflow:
+
+```{r, fig.width=7, fig.height=3}
+sfm = sfm %>%
+  build("normal_workday", "constant", eqn = 8) %>%
+  build("aim_for_normal", "flow", eqn = "work - normal_workday", from = "work")
+
+sim = simulate(sfm)
+plot(sim, add_constants = TRUE)
+```
+
+We can see that despite adding a balancing feedback loop, Maya's daily work hours settle above the normal work day. Her daily work hours are thus the result of the positive and negative feedback loop.
+
+Let's now add sleep to our model. We create a stock for the daily hours of sleep Maya is getting and a constant for the sleep she needs. To specify that the more she works, the less Maya sleeps, we add a outflow from sleep that depends on how much she is working and a multiplier.
+
+```{r, fig.width=7, fig.height=3}
+sfm = sfm %>%
+  build("sleep", "stock", eqn = "necessary_sleep") %>%
+  build("necessary_sleep", "constant", eqn = 8) %>%
+  build("deterioration", "flow", eqn = "work * sleep_reduction", from = "sleep") %>%
+  build("sleep_reduction", "constant", eqn = .1) 
+
+sim = simulate(sfm)
+plot(sim)
+```
+
+Maya's sleep is decreasing, but we haven't yet added the effect of her sleep deficit on how much she is working. The further Maya's sleep is from what she needs, the more she tries to reduce her work. What's more, her sleep deficit also makes itself worse, as Maya lies awake worrying about how little she is sleeping. We change the outflow from work to be determined by her work and the ratio of the sleep she needs and the sleep she is getting. In the same way, we change the outflow of sleep to get larger when Maya is sleeping less than she needs. For good measure, we increase the amount of work that piles on.
+
+```{r, fig.width=7, fig.height=3}
+sfm = sfm %>%
+  build("pile_on", eqn = 1.5) %>%
+  build("aim_for_normal", change_name = "sleep_limits_work", eqn = "work * necessary_sleep / sleep") %>%
+  build("deterioration", eqn = "work * sleep_reduction * necessary_sleep / sleep") 
+
+sim = simulate(sfm)
+plot(sim)
+```
+
+We've now created burnout in our model: Maya's work hours increase far beyond what is sustainable, to the point where she stops working completely. This is a classic example of overshoot and collapse, in which tasks beyond an individual's resources deplete their resources, making the behaviour unsustainable in the long-term.
+
+But what if rather than only decreasing, Maya's daily sleep can also recover? To do so, we change the equation of deficit to not simply increase with the hours worked per day, but to only deteriorate when the hours worked per day exceed a normal work day. When the hours worked per day are less than a normal work day, Maya's sleep will improve. We extend the length of our simulation to 15 months and increase the effect of work on sleep. What will this look like?
+
+```{r, fig.width=7, fig.height=3}
+sfm = sfm %>% sim_specs(stop = 15) %>%
+  build("deterioration", eqn = "(work - normal_workday) * sleep_reduction * necessary_sleep / sleep") %>%
+  build("sleep_reduction", eqn = .5) 
+
+sim = simulate(sfm)
+plot(sim, add_constants = TRUE)
+```
+
+We've created oscillations in the system! Maya is now trapped in a cycle of overworking, which causes her sleep to deteriorate to the point of collapse. As she takes more time off work, her sleep recovers, but this only starts the cycle anew. What's worse, the oscillations are growing in amplitude, with each cycle becoming more extreme. Though the model obviously would not work beyond this timeframe as work would exceed 24 hours a day, we've iteratively created a minimal model of burnout.
+
+
+
+
+<!-- # working model -->
+
+<!-- ```{r} -->
+<!-- sfm = xmile() %>% -->
+<!--   sim_specs(stop = 15) %>% -->
+<!--   build("work", "stock", eqn = "normal_workday") %>% -->
+<!--   build("normal_workday", "constant", eqn = 8) %>% -->
+<!--   build("work_breeds_work", "flow", eqn = "work * pile_on", to = "work") %>% -->
+<!--   build("pile_on", "constant", eqn = 1.5) %>% -->
+<!--   build("sleep_limits_work", "flow", eqn = "work * necessary_sleep / sleep", from = "work") %>% -->
+<!--   build("sleep", "stock", eqn = "necessary_sleep") %>% -->
+<!--   build("necessary_sleep", "constant", eqn = 8) %>% -->
+<!--   # build("deterioration", "flow", eqn = "(work - normal_workday) * sleep_reduction * necessary_sleep / sleep", from = "sleep") %>% -->
+<!--  build("deterioration", "flow", eqn = "work * sleep_reduction * necessary_sleep / sleep", from = "sleep") %>% -->
+<!--   build("sleep_reduction", "constant", eqn = .5)  -->
+
+<!-- # plot(sfm) -->
+<!-- sim = simulate(sfm) -->
+<!-- plot(sim) -->
+
+<!-- ``` -->
+<!-- with units, original: -->
+
+
+<!-- ```{r} -->
+
+<!-- sfm = xmile() %>% header(name = "Maya's Burnout") %>% -->
+<!--   sim_specs(start = 0, stop = 15, time_units = "months") %>% -->
+<!--   build("work", "stock", eqn = 4, units = "hours/day") %>% -->
+<!--   build("normal_workday", "constant", eqn = 8, units = "hours/day") %>% -->
+<!--   build("work_breeds_work", "flow", eqn = "work * pile_on", to = "work", units = "hours/day/week") %>% -->
+<!--   build("pile_on", "constant", eqn = 1.5, units = "1/month") %>% -->
+<!--   build("aim_for_normal", "flow", eqn = "work * necessary_sleep / sleep / u('month')", from = "work", units = "hours/day/month") %>% -->
+<!--   build("sleep", "stock", eqn = "necessary_sleep", units = "hours/day") %>% -->
+<!--   build("necessary_sleep", "constant", eqn = 8, units = "hours/day") %>% -->
+<!--   build("deterioration", "flow", eqn = "(work - normal_workday) * sleep_reduction * necessary_sleep / sleep", from = "sleep", units = "hours/day/month") %>% -->
+<!--  # build("deterioration", "flow", eqn = "work * sleep_reduction * necessary_sleep / sleep", from = "sleep") %>% -->
+<!--   build("sleep_reduction", "constant", eqn = .5, units = "1/month")  -->
+
+<!-- # plot(sfm) -->
+<!-- sim = simulate(sfm) -->
+<!-- plot(sim) -->
+
+<!-- ``` -->
+
+
+
+
+<!-- XXX non negative slows down simulation -->
+
+<!-- Something seems to go wrong here - . Let's run `debugger()` to identify some potential issues. -->
+<!-- Macros may be variables, functions, or any other object. -->
+
+## Overview
+
+
+## Changing variable names
+
+To rename a variable, use `change_name` in `build()`:
+
+```{r}
+sfm = sfm %>% build("work", change_name = "workday")
+```
+
+This will ensure that all references to ``work'' are changed to ``workday''. Both when creating variables and changing variable names, you may get a warning that the name was modified to be syntactically valid and unique. For example, you cannot use the name ``t'', as this is the current time step in the ODE. Similarly, names cannot contain spaces or special characters. Use `change_name` to adjust the name to your liking.
+
+### Erasing variables
+
+To remove a variable from the model, use `erase` in `build()`:
+
+```{r}
+sfm = sfm %>% build("sleep", erase = TRUE)
+```
+
+Note that this cannot be undone!
+
+### Changing variable types
+
+During the process of building a model, you may realize that a variable is not what you thought it was - a constant may actually be a stock, or a stock may turn out to be a flow on second thought. For example, a birth rate may not be constant throughout the simulation, but depend on other variables in the model. You could erase the variable and create a new one, but you may also use `change_type` in `build()`:
+
+```{r}
+sfm = xmile() %>%
+  build("birth_rate", "constant") %>%
+  build("birth_rate", change_type = "aux")
+```
+
+
+
+<!-- ** ### Macros -->
+
+<!-- ** ### Graphical functions -->
+
+
+<!-- ** ### Input functions -->
+
+
+
+
+<!-- XXX Have fun building your own models! -->

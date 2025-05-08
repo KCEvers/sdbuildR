@@ -125,8 +125,6 @@ compile_Julia = function(sfm,
 
                                        x$inflow = flow_df[flow_df$to == x$name, "name"]
                                        x$outflow = flow_df[flow_df$from == x$name, "name"]
-                                       # x$inflow = names(flow_to)[unname(unlist(flow_to)) == x$name]
-                                       # x$outflow = names(flow_from)[unname(unlist(flow_from)) == x$name]
 
                                        if (length(x$inflow) == 0){
                                          x$inflow = ""

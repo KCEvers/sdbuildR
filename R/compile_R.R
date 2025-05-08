@@ -24,11 +24,9 @@ simulate_R = function(sfm,
 
   # Collect arguments
   argg <- c(
-    as.list(environment())) %>%
-    # Remove NULL arguments
-    purrr::compact()
-  # Remove some elements
-  # argg[c("sfm")] = NULL
+    as.list(environment()))
+  # Remove NULL arguments
+  argg = argg[!lengths(argg) == 0]
 
   # Compile script without plot
   script = compile_R(sfm,
@@ -104,23 +102,14 @@ compile_R = function(sfm,
                      verbose = FALSE,
                      debug = FALSE){
 
-  # print("Compiling R script...")
-
-
-
-  # Add "inflow" and "outflow" entries to stocks to match flow "to" and "from" entries
-  # flow_to = sfm$model$variables$flow %>% purrr::map("to") %>% purrr::compact()
-  # flow_from = sfm$model$variables$flow %>% purrr::map("from") %>% purrr::compact()
-
+  # Get flows and connections
   flow_df = get_flow_df(sfm)
 
-  sfm$model$variables$stock = purrr::map(sfm$model$variables$stock,
+  sfm$model$variables$stock = lapply(sfm$model$variables$stock,
                                          function(x){
 
                                            x$inflow = flow_df[flow_df$to == x$name, "name"]
                                            x$outflow = flow_df[flow_df$from == x$name, "name"]
-                                           # x$inflow = names(flow_to)[unname(unlist(flow_to)) == x$name]
-                                           # x$outflow = names(flow_from)[unname(unlist(flow_from)) == x$name]
 
                                            if (length(x$inflow) == 0){
                                              x$inflow = ""
@@ -132,16 +121,6 @@ compile_R = function(sfm,
                                            return(x)
                                          })
 
-
-  # if (length(sfm$model$variables$flow) == 0){
-  #   stop("Your model contains no Flows!")
-  # }
-  # names_df = get_names(sfm)
-
-
-
-  # stock_inflow = sfm$model$variables$stock %>% purrr::map("inflow")
-  # stock_outflow = sfm$model$variables$stock %>% purrr::map("outflow")
 
   # Function to remove unit
 
@@ -222,17 +201,10 @@ compile_R = function(sfm,
 
   # # Convert conveyors
   # sfm = convert_conveyor(sfm)
-  #
-  # # Compile delays
-  # for (convert_func in c("convert_delay", "convert_delayN", "convert_past")){
-  #   # print(convert_func)
-  #   sfm = apply_convert(sfm, convert_func)
-  # }
 
   # Compile all parts of the R script
   times = compile_times(sfm)
   constraints = compile_constraints(sfm)
-  # constants = split_aux(sfm)
   ordering = order_equations(sfm)
 
   # **to do:add deep dependencies for pluck_from_ode
@@ -248,7 +220,6 @@ compile_R = function(sfm,
 
   # Static equations
   static_eqn = compile_static_eqn(sfm, ordering)
-  # globalpast = compile_past(sfm)
 
   # Stocks
   sfm = prep_stock_change(sfm)
@@ -261,11 +232,10 @@ compile_R = function(sfm,
 set.seed(%s)", as.character(sfm$sim_specs$seed)))
 
 
-  prep_script = sprintf("# Script generated on %s by sdbuildR. Please cite ***
+  prep_script = sprintf("# Script generated on %s by sdbuildR.
 
 # Load packages
-library(dplyr)
-library(ggplot2)%s
+library(dplyr)%s
 library(sdbuildR)
 
 %s
@@ -411,11 +381,11 @@ substitute_var = function(sfm){
 
   static_replacements =
     c(paste0(P$initial_value_name, "$", names(sfm$model$variables$stock)),
-      paste0(P$parameter_name, "$", names(sfm$model$variables$constant)),
-      paste0("pluck_from_ode('", dynamic_var, "', environment())"),
+      paste0(P$parameter_name, "$", names(sfm$model$variables$constant))
+      # paste0("pluck_from_ode('", dynamic_var, "', environment())"),
       # References to time for static variables (e.g. in convert_time_units) should be times[1]
-      paste0(P$times_name, "[1]")) %>% as.list() %>%
-    stats::setNames(c(static_var, dynamic_var, P$time_name)) %>%
+      ) %>% as.list() %>%
+    stats::setNames(static_var) %>%
     # Convert to expressions for substitutions
     lapply(function(x){parse(text = x)[[1]]})
 
@@ -440,8 +410,8 @@ substitute_var = function(sfm){
 
 
   # Implement replacements
-  sfm$model$variables = sfm$model$variables %>%
-    purrr::map_depth(2, function(x){
+  sfm$model$variables = lapply(sfm$model$variables, function(y){
+    lapply(y, function(x){
 
       if (x$name %in% static_var){
 
@@ -451,19 +421,11 @@ substitute_var = function(sfm){
 
         # x$eqn = stringr::str_replace_all(x$eqn, static_replacements)
 
-        # # Add units around equation
-        # if (keep_unit & is_defined(x$units) & x$units != "1"){
-        #   x$eqn = paste0("set_units(", x$eqn, ", '", x$units, "')")
-        # } else if (keep_unit & (!is_defined(x$units) | x$units == "1")){
-        #   x$eqn = paste0("drop_if_units(", x$eqn, ")")
-        # }
-
       }
 
       return(x)
     })
-
-  sfm = validate_xmile(sfm)
+  })
 
   return(sfm)
 }
@@ -653,7 +615,8 @@ compile_times = function(sfm){
   script = sprintf("
 # Define time sequence
 %s = %s
-%s <- seq(from=%s, to=%s%s, by=%s)
+%s = seq(from=%s, to=%s%s, by=%s)
+%s = %s[1]
 
 # Simulation time unit (smallest time scale in your model)
 %s = '%s' %s
@@ -663,7 +626,9 @@ compile_times = function(sfm){
                    as.character(sfm$sim_specs$start),
                    as.character(sfm$sim_specs$stop),
                    add_extra_dt, # P$timestep_name,
-                   P$timestep_name, P$time_units_name,
+                   P$timestep_name,
+                   P$time_name, P$times_name,
+                   P$time_units_name,
                    sfm$sim_specs$time_units, add_install_unit_script)
 
   return(list(script = script))
@@ -781,7 +746,7 @@ compile_static_eqn = function(sfm, ordering){
   # order_idxs
 
   # Compile and order static equations
-  static_eqn_str = c(gf_eqn, constant_eqn, stock_eqn)[ordering$static] %>% unlist() %>% paste0(collapse = "\n")
+  static_eqn_str = c(gf_eqn, constant_eqn, stock_eqn)[ordering$static$order] %>% unlist() %>% paste0(collapse = "\n")
   static_eqn_str
 
   names_df = get_names(sfm)
@@ -999,7 +964,7 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep
     })
 
   # Compile and order all dynamic equations
-  dynamic_eqn = c(aux_eqn, flow_eqn)[ordering$dynamic] %>% unlist()
+  dynamic_eqn = c(aux_eqn, flow_eqn)[ordering$dynamic$order] %>% unlist()
   dynamic_eqn
 
   # To correct a units error, e.g. 1 + set_units(2, 'second' ), we need to evaluate each line of code
@@ -1078,7 +1043,7 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep
   #   paste0(collapse = "\n\t\t")
 
   # Order Stocks alphabetically to match ordering in xstart
-  stock_changes_names = purrr::map_vec(sfm$model$variables$stock, "sum_name")
+  stock_changes_names = unlist(lapply(sfm$model$variables$stock, `[[`, "sum_name"))
 
   # state_change_names = unname(unlist(stock_changes_names[sort(names(sfm$model$variables$stock))]))
 
@@ -1148,12 +1113,6 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep
   # } else {
   S_str = sprintf("%s = as.list(%s)", P$state_name, P$state_name)
 
-  get_var_str = sprintf("# Get names of variables in environment
-    %s <- names(environment())", P$env_var_name)
-
-  new_var_str = sprintf("setdiff(names(environment()), c('%s', %s))", P$env_var_name, P$env_var_name)
-  # }
-
   # Compile
   script = sprintf("\n\n# Define ODE
 %s = function(%s, %s, %s){
@@ -1163,35 +1122,25 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep
   \n# Compute change in Stocks at current time %s
   with(c(%s, %s), {
 
-    %s
-
     # Update Auxiliaries and Flows
     %s
 
     # Collect inflows and outflows for each Stock
     %s
 
-    # Collect all newly created variables
-    %s = collect_var(environment(), %s)
-
     # Combine change in Stocks
     %s
     %s
-    return(list(d%sdt, %s%s))
+    return(list(d%sdt%s))
   })
-}", P$ode_func_name,
-                   P$time_name, P$state_name, P$parameter_name,
+}", P$ode_func_name,P$time_name, P$state_name, P$parameter_name,
                    S_str,
-                   P$time_name,
-                   P$state_name, P$parameter_name,
-                   get_var_str,
+                   P$time_name, P$state_name, P$parameter_name,
                    dynamic_eqn_str,
                    stock_change_str,
-                   # globalpast$update,
-                   P$env_update_name, new_var_str,
                    state_change_str,
                    constraints$update_ode,
-                   P$state_name, P$env_update_name, gf_str)
+                   P$state_name, gf_str)
 
   return(list(script = script))
 }
@@ -1224,18 +1173,15 @@ compile_run_ode = function(sfm, nonneg_stocks){
   #                    P$sim_df_name,   P$parameter_name, globalpast$add_archive_var)
 
   script = sprintf("\n\n# Run ODE
-%s = deSolve::%s(
+%s = as.data.frame(deSolve::%s(
   func=%s,
   y=%s,
   times=%s,
   parms=%s,
   method = '%s'%s
-)
-%s = as.data.frame(%s) %s
-", P$out_name, "ode", P$ode_func_name, P$initial_value_name, P$times_name, P$parameter_name, sfm$sim_specs$method,
+)) %s
+", P$sim_df_name, "ode", P$ode_func_name, P$initial_value_name, P$times_name, P$parameter_name, sfm$sim_specs$method,
   nonneg_stocks$root_arg,
-  P$sim_df_name, P$out_name,
-  # globalpast$add_archive_var,
   nonneg_stocks$check_root)
 
   # if (sfm$m)
