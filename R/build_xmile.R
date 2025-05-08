@@ -1727,7 +1727,8 @@ build = function(sfm, name, type,
 
     # If type is not specified, all names have to exist
     if (any(!idx_exist)){
-      stop(sprintf("%s %s not exist in your model! If you're trying to add a new variable, specify type (one of 'stock', 'flow', 'constant', 'aux', 'gf').",
+      stop(sprintf("The variable%s %s %s not exist in your model! If you're trying to add a new variable, specify type (one of 'stock', 'flow', 'constant', 'aux', 'gf').",
+                   ifelse(length(name[!idx_exist]) > 1, "s", ""),
                    paste0(name[!idx_exist], collapse = ", "),
                    ifelse(length(name[!idx_exist]) > 1, "do", "does") ))
 
@@ -1780,7 +1781,8 @@ build = function(sfm, name, type,
 
     # For erase, all names have to exist
     if (any(!idx_exist)){
-      stop(sprintf("%s %s not exist in your model!",
+      stop(sprintf("The variable%s %s %s not exist in your model!",
+                   ifelse(length(name[!idx_exist]) > 1, "s", ""),
                    paste0(name[!idx_exist], collapse = ", "),
                    ifelse(length(name[!idx_exist]) > 1, "do", "does") ))
 
@@ -2848,7 +2850,8 @@ as.data.frame.sdbuildR_xmile = function(x,
 
     idx_exist = name %in% df$name
     if (!all(idx_exist)){
-      stop(sprintf("%s %s not exist in your model!",
+      stop(sprintf("The variable%s %s %s not exist in your model!",
+                   ifelse(length(name[!idx_exist]) > 1, "s", ""),
                    paste0(name[!idx_exist], collapse = ", "),
                    ifelse(length(name[!idx_exist]) > 1, "do", "does") ))
     }
