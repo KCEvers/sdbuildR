@@ -97,7 +97,7 @@ insightmaker_to_sfm = function(URL,
   sfm = remove_brackets_from_names(sfm)
 
   # Convert equations and macros to Julia
-  sfm = convert_equations_Julia_wrapper(sfm, regex_units = regex_units, debug = debug)
+  sfm = convert_equations_julia_wrapper(sfm, regex_units = regex_units, debug = debug)
 
   # As a last step, split auxiliaries into constants and auxiliaries
   sfm = split_aux_wrapper(sfm)

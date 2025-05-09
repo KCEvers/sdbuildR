@@ -1,11 +1,11 @@
 
-#' Extract InsightMaker model XML string from URL
+#' Extract Insight Maker model XML string from URL
 #'
-#' @param URL String with URL to an InsightMaker model
-#' @param filepath_IM String with file path to an InsightMaker model with suffix .InsightMaker
+#' @param URL String with URL to an Insight Maker model
+#' @param filepath_IM String with file path to an Insight Maker model with suffix .InsightMaker
 #' @param directory Directory to save output in, optional
 #'
-#' @return String with InsightMaker model
+#' @return String with Insight Maker model
 #' @export
 #'
 url_to_IM = function(URL, filepath_IM, directory){
@@ -28,7 +28,7 @@ url_to_IM = function(URL, filepath_IM, directory){
   # Extract part of interest
   xml_str = stringr::str_match_all(script_model,
                                    stringr::regex("<mxGraphModel>(.*?)</mxGraphModel>", dotall = T))[[1]][1] %>%
-    stringr::str_replace_all("mxGraphModel", "InsightMakerModel")  %>%
+    stringr::str_replace_all("mxGraphModel", "insightmakermodel")  %>%
     # Remove escape characters for writing an XML file
     stringr::str_replace_all(stringr::fixed("\\\\\""), "\\\"") %>%
     stringr::str_replace_all(stringr::fixed("\\\""), "\"") %>%
@@ -111,11 +111,11 @@ path_sanitize <- function(filename, replacement = "") {
 #'
 #' @inheritParams url_to_IM
 #' @inheritParams insightmaker_to_sfm
-#' @param InsightMaker_version Integer with InsightMaker version the package sdbuildR was built with
+#' @param insightmaker_version Integer with Insight Maker version the package sdbuildR was built with
 #'
 #' @return Nested list in XMILE style
 #'
-IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
+IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
 
   # Read file
   xml_file = xml2::read_xml(filepath_IM)
@@ -185,18 +185,18 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
 
   # Check whether the model uses an early version of Insight Maker
   if (as.numeric(settings$Version) < 37){
-    message(sprintf("This model uses an earlier version of InsightMaker (%s), in which links were bi-directional by default. This may cause issues in translating the model. Please choose 'Clone Insight' in Insight Maker, and provide the URL to the updated model.", settings$Version))
+    message(sprintf("This model uses an earlier version of Insight Maker (%s), in which links were bi-directional by default. This may cause issues in translating the model. Please choose 'Clone Insight' in Insight Maker, and provide the URL to the updated model.", settings$Version))
   }
 
 
   # Check whether model is later version of Insight Maker than the package was made for
-  if (as.numeric(settings$Version) > InsightMaker_version){
+  if (as.numeric(settings$Version) > insightmaker_version){
     message(sprintf("This model uses Insight Maker version %s, whereas the package was based on Insight Maker version %d. Some features may not be available.", settings$Version,
-                    InsightMaker_version))
+                    insightmaker_version))
   }
 
   # Add version to header
-  header_list$InsightMaker_version = settings$Version
+  header_list$insightmaker_version = settings$Version
 
   # Change links to access_ids
   keep_idx = node_names %in% c("Link", "Flow")
@@ -240,7 +240,7 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
   stock_names = children_attrs[keep_idx][model_element_names == "Stock"] %>% get_map("name")
 
   # Variables cannot be the same name as Insight Maker functions
-  IM_func_names = get_syntax_IM()$conv_df$InsightMaker
+  IM_func_names = get_syntax_IM()$conv_df$insightmaker
   new_names = create_R_names(old_names,
                              # Normally, names_df is specified here
                              data.frame(name = NULL),
@@ -256,7 +256,7 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
       x$access = new_names[match(x$access_ids, ids)]
       x
     }) %>%
-    # Rename to eqn_InsightMaker
+    # Rename to eqn_insightmaker
     purrr::imap(function(x, y){
       # print(x)
       # print(y)
@@ -267,16 +267,16 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
       # print(idx)
 
       if (length(idx) != 0){
-        x$eqn_InsightMaker = x[[idx]]
+        x$eqn_insightmaker = x[[idx]]
 
-        if (!nzchar(x$eqn_InsightMaker)){
-          x$eqn_InsightMaker = "0.0"
+        if (!nzchar(x$eqn_insightmaker)){
+          x$eqn_insightmaker = "0.0"
         }
 
         x[idx] = NULL
       } else if (length(idx) == 0 & model_element_names[y] %in% c("Variable", "Stock", "Flow")){
         # The default value of a Stock/Flow/Variable is 0 - add in case left unspecified
-        x$eqn_InsightMaker = "0.0"
+        x$eqn_insightmaker = "0.0"
       }
 
       # Rename Note to doc
@@ -298,12 +298,12 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
     }) %>%
     # Replace old names with new names
     lapply(., function(x){
-      x$eqn_InsightMaker = stringr::str_replace_all(x$eqn_InsightMaker, stringr::fixed(c("\\n" = "\n")))
-      x$eqn_InsightMaker = replace_names_IM(x$eqn_InsightMaker,
+      x$eqn_insightmaker = stringr::str_replace_all(x$eqn_insightmaker, stringr::fixed(c("\\n" = "\n")))
+      x$eqn_insightmaker = replace_names_IM(x$eqn_insightmaker,
                                      original = old_names[ids %in% x$access_ids],
                                      replacement = new_names[ids %in% x$access_ids])
-      x$name_InsightMaker = x$name
-      x$name = replace_names_IM(x$name_InsightMaker,
+      x$name_insightmaker = x$name
+      x$name = replace_names_IM(x$name_insightmaker,
                              original = old_names[match(x$id, ids)],
                              replacement = new_names[match(x$id, ids)], with_brackets = FALSE)
       return(x)
@@ -314,12 +314,12 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
       # print(x$name)
       # print(i)
       # print("original eqn")
-      # print(x$eqn_InsightMaker)
+      # print(x$eqn_insightmaker)
 
       # Graphical functions won't have an equation
-      if (is_defined(x$eqn_InsightMaker)){
-        out = prep_eqn_IM(x$eqn_InsightMaker)
-        x$eqn_InsightMaker = out$eqn
+      if (is_defined(x$eqn_insightmaker)){
+        out = prep_eqn_IM(x$eqn_insightmaker)
+        x$eqn_insightmaker = out$eqn
         x$doc = paste0(x$doc, out$doc)
 
         # print("out$eqn")
@@ -332,7 +332,7 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
   model_elements
 
   # Converters
-  converter_prop = c("doc", "units_InsightMaker", "name_InsightMaker", "type", "name", "min", "max", "xpts", "ypts", "interpolation", "source", "extrapolation",
+  converter_prop = c("doc", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "xpts", "ypts", "interpolation", "source", "extrapolation",
                      # "access", "access_ids",
                      "id")
   model_elements[model_element_names == "Converter"] = model_elements[model_element_names == "Converter"] %>%
@@ -348,7 +348,7 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
       x$interpolation = ifelse(x$Interpolation == "None", "constant", tolower(x$Interpolation))
       x$source = ifelse(x$Source == "Time", P$time_name, new_names[x$Source == ids])
       x$extrapolation = "nearest" # Default
-      x$units_InsightMaker = x$Units
+      x$units_insightmaker = x$Units
 
       # Only keep selected properties
       x = x[names(x) %in% converter_prop]
@@ -359,12 +359,12 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
 
 
   # Variables -> Auxiliaries
-  variable_prop = c("doc", "eqn_InsightMaker", "units_InsightMaker", "name_InsightMaker", "type", "name", "min", "max",
+  variable_prop = c("doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max",
                     # "access", "access_ids",
                     "id")
   model_elements["Variable" == model_element_names] = model_elements["Variable" == model_element_names] %>%
     lapply(., function(x){
-      x$units_InsightMaker = x$Units
+      x$units_insightmaker = x$Units
 
       # Only keep selected properties
       x$type = "aux"
@@ -374,9 +374,9 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
     })
 
   # Stocks
-  stock_prop = c("doc", "units_InsightMaker", "name_InsightMaker", "type", "name", "min", "max",
+  stock_prop = c("doc", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max",
                  # "delayn",
-                 "eqn_InsightMaker",
+                 "eqn_insightmaker",
                  # "StockMode", "Delay",
                  "conveyor", "len",
                  "non_negative",
@@ -391,7 +391,7 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
     lapply(., function(x){
       # x$delayn = FALSE # Indicate it is not a delay variable
       x$non_negative = ifelse(x$NonNegative == "true", TRUE, FALSE)
-      x$units_InsightMaker = x$Units
+      x$units_insightmaker = x$Units
       x$type = "stock"
 
       if (x$StockMode == "Conveyor"){
@@ -411,7 +411,7 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
     # })
 
   # Flows
-  flow_prop = c("doc", "eqn_InsightMaker", "units_InsightMaker", "name_InsightMaker", "type", "name", "min", "max", "from", "to", "non_negative",
+  flow_prop = c("doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "from", "to", "non_negative",
                 # "access", "access_ids",
                 "id")
   model_elements["Flow" == model_element_names] = model_elements["Flow" == model_element_names] %>%
@@ -424,13 +424,13 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
       x$type = "flow"
 
       # Flows can use [Alpha] and [Omega] to refer to the stock they flow from and to, respectively. Change to new variable names
-      x$eqn_InsightMaker = stringr::str_replace_all(x$eqn_InsightMaker,
+      x$eqn_insightmaker = stringr::str_replace_all(x$eqn_insightmaker,
                                                 stringr::regex(c("\\[Alpha\\]" = paste0("[", x$from, "]"),
                                                                  "\\[Omega\\]" = paste0("[", x$to, "]")), ignore_case = T))
 
       x$non_negative = ifelse(x$OnlyPositive == "true", TRUE, FALSE)
 
-      x$units_InsightMaker = x$Units
+      x$units_insightmaker = x$Units
 
       # Only keep selected properties
       x = x[names(x) %in% flow_prop]
@@ -476,7 +476,7 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
               saveat = as.numeric(settings$TimeStep))
 
   # Header
-  # header_list = list(InsightMaker_version = settings$Version) %>% utils::modifyList(header_info)
+  # header_list = list(insightmaker_version = settings$Version) %>% utils::modifyList(header_info)
   sfm$header = sfm$header %>% utils::modifyList(header_list)
 
   # Variables
@@ -495,7 +495,7 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
   # Temporary
   sfm$model_units_str = settings$Units
   sfm$global = list(eqn = out_global$eqn,
-                        eqn_InsightMaker = out_global$eqn,
+                        eqn_insightmaker = out_global$eqn,
                         doc = out_global$doc)
 
   # ** very important: all global variable names have to be replaced by syntactically valid R names (everywhere in the model as well), before any replacement takes place. e.g. if someone creates a global variable called F, this will be replaced to false in Julia, and there is no way to trace it back.
@@ -538,11 +538,11 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
 
     sfm$model$variables = lapply(sfm$model$variables, function(x){
       lapply(x, function(y){
-        if ("eqn_InsightMaker" %in% names(y)){
-          y$eqn_InsightMaker = stringr::str_replace_all(y$eqn_InsightMaker, stringr::fixed(dict, ignore_case = T))
+        if ("eqn_insightmaker" %in% names(y)){
+          y$eqn_insightmaker = stringr::str_replace_all(y$eqn_insightmaker, stringr::fixed(dict, ignore_case = T))
 
           # Remove any left-over double bracket notations - these should be []
-          y$eqn_InsightMaker = stringr::str_replace_all(y$eqn_InsightMaker, stringr::fixed(c("[[" = "[", "]]" = "]")))
+          y$eqn_insightmaker = stringr::str_replace_all(y$eqn_insightmaker, stringr::fixed(c("[[" = "[", "]]" = "]")))
 
         }
         return(y)
@@ -563,8 +563,8 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
 
     sfm$model$variables = lapply(sfm$model$variables, function(x){
         lapply(x, function(y){
-          if ("eqn_InsightMaker" %in% names(y)){
-            y$eqn_InsightMaker = stringr::str_replace_all(y$eqn_InsightMaker, stringr::fixed(dict))
+          if ("eqn_insightmaker" %in% names(y)){
+            y$eqn_insightmaker = stringr::str_replace_all(y$eqn_insightmaker, stringr::fixed(dict))
           }
           return(y)
         })
@@ -576,15 +576,15 @@ IM_to_xmile <- function(filepath_IM, InsightMaker_version = 37, debug) {
   sfm$model$variables = lapply(sfm$model$variables, function(y){
     lapply(y, function(x){
 
-      if ("eqn_InsightMaker" %in% names(x)){
-        x$eqn = trimws(x$eqn_InsightMaker)
+      if ("eqn_insightmaker" %in% names(x)){
+        x$eqn = trimws(x$eqn_insightmaker)
         if (!nzchar(x$eqn)){
           x$eqn = "0.0"
         }
       }
 
-      if ("units_InsightMaker" %in% names(x)){
-        x$units = trimws(x$units_InsightMaker)
+      if ("units_insightmaker" %in% names(x)){
+        x$units = trimws(x$units_insightmaker)
         if (!nzchar(x$units)){
           x$units = "1"
         }
@@ -622,9 +622,9 @@ prep_eqn_IM = function(eqn){
 }
 
 
-#' Replace InsightMaker ids
+#' Replace Insight Maker ids
 #'
-#' Replace InsightMaker name with id, replace id with name
+#' Replace Insight Maker name with id, replace id with name
 #'
 #' @param string String to apply replacement to
 #' @param original Vector with strings to replace
@@ -827,7 +827,7 @@ clean_units_IM = function(sfm, regex_units) {
   add_model_units = detect_undefined_units(sfm,
                                      new_eqns = c(sfm$model$variables %>%
                                                     lapply(function(x){lapply(x, `[[`, "eqn")}) %>% unlist(),
-                                                  sfm$global$eqn_Julia,
+                                                  sfm$global$eqn_julia,
                                                   unlist(lapply(sfm$macro, `[[`, "eqn"))),
                                      new_units = sfm$model$variables %>%
                                        lapply(function(x){lapply(x, `[[`, "units")}) %>% unlist(),
@@ -863,7 +863,7 @@ check_nonnegativity = function(sfm, keep_nonnegative_flow, keep_nonnegative_stoc
 
     if (!keep_solver & sfm$sim_specs$method == "rk4"){
       print("Non-negative Stocks detected! Switching the ODE solver to Euler to ensure Insight Maker and sdbuildR produce the same output. Turn off by setting keep_solver = TRUE.")
-      sfm$sim_specs$method_InsightMaker = sfm$sim_specs$method
+      sfm$sim_specs$method_insightmaker = sfm$sim_specs$method
       sfm$sim_specs$method = "euler"
     }
   }
@@ -878,7 +878,7 @@ check_nonnegativity = function(sfm, keep_nonnegative_flow, keep_nonnegative_stoc
 
 
 
-#' Convert InsightMaker equations to R code
+#' Convert Insight Maker equations to R code
 #'
 #' @inheritParams build
 #' @inheritParams clean_unit

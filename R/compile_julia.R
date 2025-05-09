@@ -1,6 +1,6 @@
 
 
-#' Simulate stock-and-flow model in Julia
+#' Simulate stock-and-flow model in julia
 #'
 #' @inheritParams simulate
 #'
@@ -15,7 +15,7 @@
 #'   \item{...}{Other variables created in the simulation script.}
 #' }
 #'
-simulate_Julia = function(sfm,
+simulate_julia = function(sfm,
                           format_code=TRUE,
                           keep_nonnegative_flow = TRUE,
                           keep_nonnegative_stock = FALSE,
@@ -31,7 +31,7 @@ simulate_Julia = function(sfm,
   # argg[c("sfm")] = NULL
 
   # Compile script without plot
-  script = compile_Julia(sfm,
+  script = compile_julia(sfm,
                          format_code=format_code,
                          keep_nonnegative_flow = keep_nonnegative_flow,
                          keep_nonnegative_stock = keep_nonnegative_stock,
@@ -73,9 +73,9 @@ simulate_Julia = function(sfm,
     file.remove(filepath)
 
     df = JuliaCall::julia_eval(P$sim_df_name)
-    pars_Julia = JuliaCall::julia_eval(P$parameter_name)
-    xstart_Julia = JuliaCall::julia_eval(P$initial_value_name)
-    units_Julia = JuliaCall::julia_eval(P$units_dict)
+    pars_julia = JuliaCall::julia_eval(P$parameter_name)
+    xstart_julia = JuliaCall::julia_eval(P$initial_value_name)
+    units_julia = JuliaCall::julia_eval(P$units_dict)
 
     # if (include_plot){
     #   # Plot stocks
@@ -84,8 +84,8 @@ simulate_Julia = function(sfm,
     # }
 
     list(success = TRUE,
-         df = df, pars = pars_Julia, xstart = xstart_Julia,
-         units = units_Julia, script = script, filepath = filepath,
+         df = df, pars = pars_julia, xstart = xstart_julia,
+         units = units_julia, script = script, filepath = filepath,
          duration = end_t - start_t) %>% utils::modifyList(argg) %>%
       structure(., class = "sdbuildR_sim")
 
@@ -105,13 +105,13 @@ simulate_Julia = function(sfm,
 }
 
 
-#' Compile Julia script to simulate stock-and-flow model
+#' Compile julia script to simulate stock-and-flow model
 #'
 #' @inheritParams simulate
 #'
-#' @return Julia script
+#' @return julia script
 #'
-compile_Julia = function(sfm,
+compile_julia = function(sfm,
                          format_code=TRUE,
                          keep_nonnegative_flow = TRUE,
                          keep_nonnegative_stock = FALSE,
@@ -152,7 +152,7 @@ compile_Julia = function(sfm,
   # keep_unit = ifelse(!any(nzchar(names_df_no_flow$units) & names_df_no_flow$units != "1"), FALSE, keep_unit)
 
   all_eqns = c(sfm$model$variables %>% lapply(function(x){lapply(x, `[[`, "eqn")}) %>% unlist(),
-               sfm$global$eqn_Julia,
+               sfm$global$eqn_julia,
                unlist(lapply(sfm$macro, `[[`, "eqn")))
   units_used = unlist(stringr::str_extract_all(all_eqns, "\\bu\\([\"|'](.*?)[\"|']\\)"))
 
@@ -161,9 +161,9 @@ compile_Julia = function(sfm,
   # if (keep_unit){
   #   # Ensure all units are defined
   #   add_model_units = detect_undefined_units(sfm,
-  #                                      new_eqns = c(sfm$model$variables %>% lapply(function(x){lapply(x, `[[`, "eqn_Julia")}) %>% unlist(),
-  #                                                   sfm$global$eqn_Julia,
-  #                                                   unlist(lapply(sfm$macro, `[[`, "eqn_Julia"))),
+  #                                      new_eqns = c(sfm$model$variables %>% lapply(function(x){lapply(x, `[[`, "eqn_julia")}) %>% unlist(),
+  #                                                   sfm$global$eqn_julia,
+  #                                                   unlist(lapply(sfm$macro, `[[`, "eqn_julia"))),
   #                                      new_units = sfm$model$variables %>% lapply(function(x){lapply(x, `[[`, "units")}) %>% unlist())
   #   sfm$model_units = add_model_units %>% utils::modifyList(sfm$model_units)
   # }
@@ -184,8 +184,8 @@ compile_Julia = function(sfm,
 
 
   # Compile all parts of the R script
-  times = compile_times_Julia(sfm, keep_unit)
-  constraints = compile_constraints_Julia(sfm)
+  times = compile_times_julia(sfm, keep_unit)
+  constraints = compile_constraints_julia(sfm)
   # constants = split_aux(sfm)
   # ordering = order_equations(sfm, constants)
 
@@ -203,26 +203,26 @@ compile_Julia = function(sfm,
   only_stocks = ifelse(is.null(ordering$dynamic$order) & length(intermediary) == 0, TRUE, only_stocks)
 
 
-  # # Translate Julia equations
-  # sfm = convert_equations_Julia_wrapper(sfm, debug = debug)
+  # # Translate julia equations
+  # sfm = convert_equations_julia_wrapper(sfm, debug = debug)
 
   # Macros
-  macros = compile_macros_Julia(sfm, debug = debug)
+  macros = compile_macros_julia(sfm, debug = debug)
 
   # # Add prefixes (p.) and units to static equations
-  # sfm = substitute_var_Julia(sfm, constants, keep_unit)
+  # sfm = substitute_var_julia(sfm, constants, keep_unit)
 
   # # Function definitions (macros and helper functions)
-  # func_def = compile_func_Julia(sfm, keep_nonnegative_flow, keep_unit)
+  # func_def = compile_func_julia(sfm, keep_nonnegative_flow, keep_unit)
 
   # Static equations
-  static_eqn = compile_static_eqn_Julia(sfm, ordering, keep_unit)
+  static_eqn = compile_static_eqn_julia(sfm, ordering, keep_unit)
 
   # Stocks
-  sfm = prep_stock_change_Julia(sfm, keep_unit)
+  sfm = prep_stock_change_julia(sfm, keep_unit)
 
   # Compile unit definitions
-  units_def = compile_units_Julia(sfm, keep_unit)
+  units_def = compile_units_julia(sfm, keep_unit)
 
   # Seed string
   seed_str = ifelse(!is_defined(sfm$sim_specs$seed), "",
@@ -235,14 +235,14 @@ compile_Julia = function(sfm,
   )
 
   # Compile ODE script
-  ode = compile_ode_Julia(sfm, ordering,
+  ode = compile_ode_julia(sfm, ordering,
                           prep_script, static_eqn,
                           constraints,
                           keep_nonnegative_flow, keep_nonnegative_stock,
                           keep_unit,
                           only_stocks = only_stocks)
 
-  run_ode = compile_run_ode_Julia(sfm, only_stocks = only_stocks,
+  run_ode = compile_run_ode_julia(sfm, only_stocks = only_stocks,
                                   keep_unit = keep_unit)
 
   script = sprintf("%s\n%s%s%s%s",
@@ -300,7 +300,7 @@ prep_delayN_smoothN = function(sfm){
                                          y$label = names(delay_func)[i]
                                          y$type = "delayN"
 
-                                         y$eqn_Julia = x[["setup"]]
+                                         y$eqn_julia = x[["setup"]]
                                          y$inflow = y[["update"]]
                                          return(y)
                                        }) %>% stats::setNames(., names(delay_func))
@@ -317,7 +317,7 @@ prep_delayN_smoothN = function(sfm){
                                        y$label = names(delay_func)[i]
                                        y$type = "delayN"
 
-                                       y$eqn_Julia = x[["compute"]]
+                                       y$eqn_julia = x[["compute"]]
                                        return(y)
                                      }) %>% stats::setNames(., names(delay_func))
     )
@@ -331,14 +331,14 @@ prep_delayN_smoothN = function(sfm){
 
 
 
-#' Compile script for setting minimum and maximum constraints in Julia
+#' Compile script for setting minimum and maximum constraints in julia
 #'
 #'
 #' @return List
 #' @importFrom rlang .data
 #' @inheritParams build
 #'
-compile_constraints_Julia = function(sfm){
+compile_constraints_julia = function(sfm){
 
   # # **to do
   # # eval(Meta.parse()) has issues with environment in ODE, doesn't recognize variables...
@@ -346,9 +346,9 @@ compile_constraints_Julia = function(sfm){
   # # Compile string of minimum and maximum constraints
   # constraint_def = sfm$model$variables %>% purrr::map(function(x){
   #   purrr::imap(x, function(y, name){
-  #     if (any(c("min_Julia", "max_Julia") %in% names(y))){
-  #       min_str = ifelse(is_defined(y$min_Julia), paste0("min = ", y$min_Julia), "")
-  #       max_str = ifelse(is_defined(y$max_Julia), paste0("max = ", y$max_Julia), "")
+  #     if (any(c("min_julia", "max_julia") %in% names(y))){
+  #       min_str = ifelse(is_defined(y$min_julia), paste0("min = ", y$min_julia), "")
+  #       max_str = ifelse(is_defined(y$max_julia), paste0("max = ", y$max_julia), "")
   #
   #       # "Urge" => (min=0.0, max=100.0)
   #
@@ -379,11 +379,11 @@ compile_constraints_Julia = function(sfm){
   # Compile string of minimum and maximum constraints
   constraint_def = lapply(sfm$model$variables, function(x){
     lapply(x, function(y){
-      if (any(c("min_Julia", "max_Julia") %in% names(y))){
+      if (any(c("min_julia", "max_julia") %in% names(y))){
         unit_str = ifelse(is_defined(y$units) & y$units != "1", paste0("u\"", y$units, "\""), "")
-        min_str = ifelse(is_defined(y$min_Julia), paste0(y$name, " < ", y$min_Julia,
+        min_str = ifelse(is_defined(y$min_julia), paste0(y$name, " < ", y$min_julia,
                                                          unit_str), "")
-        max_str = ifelse(is_defined(y$max_Julia), paste0(y$name, " > ", y$max_Julia,
+        max_str = ifelse(is_defined(y$max_julia), paste0(y$name, " > ", y$max_julia,
                                                          unit_str), "")
         return(list(min_str, max_str))
       }
@@ -391,7 +391,7 @@ compile_constraints_Julia = function(sfm){
     })
   }) %>% unlist() %>% unname() %>% Filter(nzchar, .)
 
-  # script = ifelse(length(constraint_def) > 0, get_func_Julia()[["@constraints"]], "")
+  # script = ifelse(length(constraint_def) > 0, get_func_julia()[["@constraints"]], "")
   script = ifelse(length(constraint_def) > 0,
                   sprintf("\n\n# Check constraints of minimum and maximum value\nconstraint_pairs = @constraints(", paste0(constraint_def, collapse = ", "), ")\nconstraints_str = [pair[1] for pair in constraint_pairs]\nconstraints_violated = [pair[2] for pair in constraint_pairs]\nmsg = join([\"$c: $v\" for (c, v) in zip(constraints_str, constraints_violated)], \"\n\")\n\nif any(constraints_violated)\n\tthrow(msg)\nend"),
                   "")
@@ -401,13 +401,13 @@ compile_constraints_Julia = function(sfm){
 
 
 
-#' Compile script for defining a units module in Julia
+#' Compile script for defining a units module in julia
 #'
-#' @inheritParams compile_Julia
+#' @inheritParams compile_julia
 #'
 #' @return List with script
 #'
-compile_units_Julia = function(sfm, keep_unit){
+compile_units_julia = function(sfm, keep_unit){
 
   script = ""
 
@@ -458,26 +458,26 @@ compile_units_Julia = function(sfm, keep_unit){
 
 
 
-#' Compile Julia script for global variables
+#' Compile julia script for global variables
 #'
 #' @inheritParams compile_R
 #'
 #' @return List with macro script
-compile_macros_Julia = function(sfm, debug){
+compile_macros_julia = function(sfm, debug){
 
   script = ""
 
 
   # If there are globals
-  if (is_defined(sfm$global$eqn_Julia)){
+  if (is_defined(sfm$global$eqn_julia)){
     # names_df = get_names(sfm)
 
-    script = paste0(script, sfm$global$eqn_Julia)
+    script = paste0(script, sfm$global$eqn_julia)
 
   }
 
   # If there are macros
-  if (any(nzchar(purrr::map_vec(sfm$macro, "eqn_Julia")))){
+  if (any(nzchar(purrr::map_vec(sfm$macro, "eqn_julia")))){
     # names_df = get_names(sfm)
 
     script = paste0(script, "\n",
@@ -485,9 +485,9 @@ compile_macros_Julia = function(sfm, debug){
 
                       # # If a name is defined, assign macro to that name
                       # if (nzchar(x$name)){
-                      #   paste0(x$name, " = ", x$eqn_Julia) %>% return()
+                      #   paste0(x$name, " = ", x$eqn_julia) %>% return()
                       # } else {
-                      x$eqn_Julia %>% return()
+                      x$eqn_julia %>% return()
                       # }
 
                     }) %>% unlist() %>% paste0(collapse = "\n"))
@@ -506,14 +506,14 @@ compile_macros_Julia = function(sfm, debug){
 
 
 
-#' Compile Julia script for creating time vector
+#' Compile julia script for creating time vector
 #'
 #' @return List
 #' @importFrom rlang .data
 #'
-#' @inheritParams compile_Julia
+#' @inheritParams compile_julia
 #'
-compile_times_Julia = function(sfm, keep_unit){
+compile_times_julia = function(sfm, keep_unit){
 
   script = sprintf("\n\n# Simulation time unit (smallest time scale in your model)
 %s = u\"%s\"\n# Define time sequence\n%s = (%s, %s)%s\n# Initialize time (only necessary if constants use t)\n%s = %s[1];\n# Time step\n%s = %s%s\n",
@@ -533,15 +533,15 @@ compile_times_Julia = function(sfm, keep_unit){
 
 
 
-#' Compile Julia script for static variables, i.e. initial conditions, functions, and parameters
+#' Compile julia script for static variables, i.e. initial conditions, functions, and parameters
 #'
-#' @inheritParams compile_Julia
+#' @inheritParams compile_julia
 #' @inheritParams order_equations
 #' @param ordering List with order of static and dynamic variables, output of order_equations()
 #'
 #' @return List with necessary scripts
 #'
-compile_static_eqn_Julia = function(sfm, ordering, keep_unit){
+compile_static_eqn_julia = function(sfm, ordering, keep_unit){
 
   names_df = get_names(sfm)
 
@@ -603,9 +603,9 @@ compile_static_eqn_Julia = function(sfm, ordering, keep_unit){
                         function(x){
 
                           if (keep_unit & is_defined(x$units) & x$units != "1"){
-                            paste0(x$name, " = ", P$setunit, "(", x$eqn_Julia, ", u\"", x$units, "\")") %>% return()
+                            paste0(x$name, " = ", P$setunit, "(", x$eqn_julia, ", u\"", x$units, "\")") %>% return()
                           } else {
-                            paste0(x$name, " = ", x$eqn_Julia) %>% return()
+                            paste0(x$name, " = ", x$eqn_julia) %>% return()
                           }
                         })
 
@@ -615,13 +615,13 @@ compile_static_eqn_Julia = function(sfm, ordering, keep_unit){
                        # if (!is.null(x$delayN)){
                        #   sprintf("# Initialize delay accumulator for %s\n%s = c(%s, %s)",
                        #           y,
-                       #           P$initial_value_name, P$initial_value_name, x$eqn_Julia) %>% return()
+                       #           P$initial_value_name, P$initial_value_name, x$eqn_julia) %>% return()
                        # } else {
 
                        if (keep_unit & is_defined(x$units) & x$units != "1"){
-                         paste0(x$name, " = ", P$setunit, "(", x$eqn_Julia, ", u\"", x$units, "\")") %>% return()
+                         paste0(x$name, " = ", P$setunit, "(", x$eqn_julia, ", u\"", x$units, "\")") %>% return()
                        } else {
-                         paste0(x$name, " = ", x$eqn_Julia) %>% return()
+                         paste0(x$name, " = ", x$eqn_julia) %>% return()
                        }
 
                      })
@@ -684,13 +684,13 @@ compile_static_eqn_Julia = function(sfm, ordering, keep_unit){
 
 
 
-#' Prepare for summing change in stocks in stock-and-flow model in Julia script
+#' Prepare for summing change in stocks in stock-and-flow model in julia script
 #'
-#' @inheritParams compile_Julia
+#' @inheritParams compile_julia
 #'
 #' @return Updated stock-and-flow model
 #'
-prep_stock_change_Julia = function(sfm, keep_unit){
+prep_stock_change_julia = function(sfm, keep_unit){
 
   # Add temporary property to sum change in Stocks
   stock_names = names(sfm$model$variables$stock)
@@ -760,20 +760,20 @@ prep_stock_change_Julia = function(sfm, keep_unit){
 
 
 
-#' Compile Julia script for ODE function
+#' Compile julia script for ODE function
 #'
 #' @inheritParams build
 #' @inheritParams compile
 #' @inheritParams order_equations
 #' @inheritParams compile_static_eqn
-#' @param prep_script Intermediate output of compile_Julia()
-#' @param constraints Intermediate output of compile_constraints_Julia()
+#' @param prep_script Intermediate output of compile_julia()
+#' @param constraints Intermediate output of compile_constraints_julia()
 #' @param static_eqn Output of compile_static_eqn()
 #'
 #' @return List
 #' @importFrom rlang .data
 #'
-compile_ode_Julia = function(sfm, ordering, prep_script, static_eqn,
+compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
                              constraints,
                              keep_nonnegative_flow, keep_nonnegative_stock, keep_unit,
                              only_stocks){
@@ -783,9 +783,9 @@ compile_ode_Julia = function(sfm, ordering, prep_script, static_eqn,
                    function(x){
 
                      if (keep_unit & is_defined(x$units) & x$units != "1"){
-                       out = paste0(x$name, " = ", P$setunit, "(", x$eqn_Julia, ", u\"", x$units, "\")") %>% return()
+                       out = paste0(x$name, " = ", P$setunit, "(", x$eqn_julia, ", u\"", x$units, "\")") %>% return()
                      } else {
-                       out = paste0(x$name, " = ", x$eqn_Julia)
+                       out = paste0(x$name, " = ", x$eqn_julia)
                      }
                      # }
 
@@ -823,7 +823,7 @@ compile_ode_Julia = function(sfm, ordering, prep_script, static_eqn,
                                     x$name,
                                     ifelse(keep_unit & x$units != "1", paste0(P$setunit, "("), ""),
                                     ifelse(x$non_negative & keep_nonnegative_flow, "nonnegative(", ""),
-                                    x$eqn_Julia,
+                                    x$eqn_julia,
                                     ifelse(x$non_negative & keep_nonnegative_flow, ")", ""),
                                     ifelse(keep_unit & x$units != "1", paste0(", u\"", x$units, "\")"), "")
 
@@ -1077,17 +1077,17 @@ function %s(%s, %s, integrator)",
 
 
 
-#' Compile Julia script for running ODE
+#' Compile julia script for running ODE
 #'
 #' @param nonneg_stocks Output of compile_nonneg_stocks()
-#' @inheritParams compile_ode_Julia
-#' @inheritParams compile_Julia
+#' @inheritParams compile_ode_julia
+#' @inheritParams compile_julia
 #' @inheritParams order_equations
 #'
 #' @return List
 #' @inheritParams compile_R
 #'
-compile_run_ode_Julia = function(sfm,
+compile_run_ode_julia = function(sfm,
                                  nonneg_stocks,
                                  only_stocks, keep_unit){
 
@@ -1171,7 +1171,7 @@ new_times = collect(", P$times_name, "[1]:",
 
 
 
-#' Write a string to a R or Julia script file with a unique filename
+#' Write a string to a R or julia script file with a unique filename
 #'
 #' @param script String containing the code to write
 #' @param base_name Base name for the file (without extension, default: "script")
@@ -1182,12 +1182,12 @@ new_times = collect(", P$times_name, "[1]:",
 #'
 #' @export
 #' @examples
-#' julia_code <- "println(\"Hello from Julia!\")"
+#' julia_code <- "println(\"Hello from julia!\")"
 #' filepath <- write_script(julia_code, "my_script", ext = ".jl")
 #' print(filepath)
 write_script <- function(script,
                          base_name = "model",
-                         dir = file.path(tempdir(), "Julia_output"),
+                         dir = file.path(tempdir(), "julia_output"),
                          ext = ".jl",
                          overwrite = FALSE) {
 
@@ -1206,7 +1206,7 @@ write_script <- function(script,
     counter <- counter + 1
   }
 
-  # Decode unicode characters when writing to Julia
+  # Decode unicode characters when writing to julia
   if (ext == ".jl"){
     if (grepl("(\\\\u|\\\\\\\\u)[0-9a-fA-F]{4}", script)){
       script = decode_unicode(script)
@@ -1250,12 +1250,12 @@ decode_unicode <- function(text) {
 }
 
 
-#' Customary functions written in Julia
+#' Customary functions written in julia
 #'
-#' @return String with Julia code
+#' @return String with julia code
 #' @export
 #'
-get_func_Julia = function(){
+get_func_julia = function(){
   func_def = c(
     #   "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = 2)
     #
@@ -1519,7 +1519,7 @@ end",
     # ** constant interpolation is not supported with units! linear is
 
     # ** other custom_func
-    "IM_round" = "# Convert InsightMaker's Round() function to R\n# Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in Julia, round(.5) = 0.0\nfunction IM_round(x::Real, digits::Int=0)
+    "IM_round" = "# Convert Insight Maker's Round() function to R\n# Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in julia, round(.5) = 0.0\nfunction IM_round(x::Real, digits::Int=0)
     # Compute the fractional part after scaling by 10^digits
     scaled_x = x * 10.0^digits
     frac = scaled_x % 1
@@ -1554,7 +1554,7 @@ end
         max.(0.0, x)
     end
 end",
-    "rbool" = "# Generate random boolean value, equivalent of RandBoolean() in InsightMaker\nfunction rbool(p)
+    "rbool" = "# Generate random boolean value, equivalent of RandBoolean() in Insight Maker\nfunction rbool(p)
     return rand() < p
 end",
     #                "rdist" = "function rdist(a,b)
@@ -1906,12 +1906,11 @@ end"
 
 
 
-#' Internal function to create initialization file for Julia
+#' Internal function to create initialization file for julia
 #'
 #' @return NULL
 #'
 create_init = function(){
-
 
   # Note for extending comparison operators:
   # eltype(5u"m") <: Unitful.Quantity # true
@@ -1949,7 +1948,7 @@ using Unitful
 using DataInterpolations
 using Random
 
-# Julia initialization for sdbuildR package
+# julia initialization for sdbuildR package
 # Required when extending a module’s function
 #import Base: <, >, <=, >=, ==, != #, +, - #, *, /, ^
 
@@ -1998,7 +1997,7 @@ Base.trunc(x::Unitful.AbstractQuantity) = trunc(Unitful.ustrip.(x)) * Unitful.un
 Base.round(x::Unitful.AbstractQuantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
 
 ",
-                  paste0(get_func_Julia() %>% unname(), collapse = "\n\n"),
+                  paste0(get_func_julia() %>% unname(), collapse = "\n\n"),
 
                   # Add custom functions
                   unit_str,
@@ -2014,14 +2013,14 @@ Base.round(x::Unitful.AbstractQuantity, digits::Int) = round(Unitful.ustrip.(x),
 
 
 
-#' Set up Julia environment for sdbuildR
+#' Set up julia environment for sdbuildR
 #'
-#' Create Julia environment to simulate stock-and-flow models. `sdbuildR_setup()` looks for a Julia installation within the sdbuildR package directory, and will install Julia as well as some required packages if not yet found. Keep in mind that the first time running `sdbuildR_setup()` can take around 5-15 minutes, and all subsequent calls can take around 1 minute.
+#' Create julia environment to simulate stock-and-flow models. `sdbuildR_setup()` looks for a julia installation within the sdbuildR package directory, and will install julia as well as some required packages if not yet found. Keep in mind that the first time running `sdbuildR_setup()` can take around 5-15 minutes, and all subsequent calls can take around 1 minute.
 #'
-#' @param version Julia version. Default is "latest", which will install the most recent stable release.
-#' @param force If TRUE, force Julia installation even if existing version is found. Default is FALSE.
-#' @param remove If TRUE, remove Julia installation(s). You will be asked which versions to remove. Default is FALSE.
-#' @param ... Optional arguments passed to JuliaCall::julia_setup()
+#' @param version julia version. Default is "latest", which will install the most recent stable release.
+#' @param force If TRUE, force julia installation even if existing version is found. Default is FALSE.
+#' @param remove If TRUE, remove julia installation(s). You will be asked which versions to remove. Default is FALSE.
+#' @param ... Optional arguments passed to juliaCall::julia_setup()
 #'
 #' @return NULL
 #' @export
@@ -2034,7 +2033,7 @@ sdbuildR_setup <- function(
     # update_pkg = FALSE,
     remove = FALSE, ...){
 
-  # Check whether installation of Julia exists in sdbuildR directory
+  # Check whether installation of julia exists in sdbuildR directory
   env_path <- system.file(package = "sdbuildR")
   dirs = file.path(env_path, "julia")
 
@@ -2045,7 +2044,7 @@ sdbuildR_setup <- function(
     # Check latest version installed
     installed = list.files(dirs)
 
-    # If no directories were found, install Julia
+    # If no directories were found, install julia
     if (length(installed) == 0){
       install = TRUE
     } else {
@@ -2055,22 +2054,22 @@ sdbuildR_setup <- function(
       julia_dir = file.path(dirs, installed)
       install = FALSE
 
-      # Remove Julia if requested
+      # Remove julia if requested
       if (remove){
 
         # Ask to verify removal or which versions to remove
         if (length(installed) == 1){
-          var1 = readline(prompt = paste0("Found Julia version ", installed , " in sdbuildR directory. Do you want to remove it? (y/n) "))
+          var1 = readline(prompt = paste0("Found julia version ", installed , " in sdbuildR directory. Do you want to remove it? (y/n) "))
           if (trimws(tolower(var1)) %in% c("y", "yes")){
-            message("Removing Julia version ", installed, " from sdbuildR directory...")
+            message("Removing julia version ", installed, " from sdbuildR directory...")
             unlink(julia_dir, recursive = TRUE)
             stop()
           } else {
-            message("Keeping Julia version ", installed, " in sdbuildR directory.")
+            message("Keeping julia version ", installed, " in sdbuildR directory.")
             stop()
           }
         } else {
-          message("Found multiple Julia versions in sdbuildR directory. Which do you want to remove?")
+          message("Found multiple julia versions in sdbuildR directory. Which do you want to remove?")
           for (i in seq_along(installed)){
             message(i, ": ", installed[i])
           }
@@ -2082,15 +2081,15 @@ sdbuildR_setup <- function(
           var1 = var1[var1 > 0 & var1 <= length(installed)]
 
           if (remove_all){
-            message("Removing all Julia versions from sdbuildR directory...")
+            message("Removing all julia versions from sdbuildR directory...")
             unlink(dirs, recursive = TRUE)
           } else if (any(var1 %in% seq_along(installed))){
-            message("Removing Julia version(s) ", paste0(installed[var1], collapse = ", "), " from sdbuildR directory...")
+            message("Removing julia version(s) ", paste0(installed[var1], collapse = ", "), " from sdbuildR directory...")
             for (i in var1){
               unlink(file.path(dirs, installed[i]), recursive = TRUE)
             }
           } else {
-            message("Keeping Julia version(s) ", paste0(installed[var1], collapse = ", "), " in sdbuildR directory.")
+            message("Keeping julia version(s) ", paste0(installed[var1], collapse = ", "), " in sdbuildR directory.")
           }
 
         }
@@ -2101,13 +2100,13 @@ sdbuildR_setup <- function(
   }
 
   if (remove & install){
-    stop("No Julia installation found to remove in sdbuildR directory.")
+    stop("No julia installation found to remove in sdbuildR directory.")
   }
 
   install = ifelse(force, TRUE, install)
 
   if (install){
-    message("No Julia installation found in sdbuildR directory. Installing Julia...")
+    message("No julia installation found in sdbuildR directory. Installing julia...")
     julia_dir = install_julia_sdbuildR(prefix = dirs, version = version)
   }
 
@@ -2120,13 +2119,13 @@ sdbuildR_setup <- function(
   julia <- JuliaCall::julia_setup(JULIA_HOME = JULIA_HOME, installJulia=FALSE, ...)
 
   # Required Julia packages
-  pkgs = c("DifferentialEquations", "DiffEqCallbacks",
-           "DataFrames", "Unitful", "Statistics", "Random",
-           "Distributions", "DataInterpolations")
-  if (install){
-    message("Installing required Julia packages. This can take 5-15 minutes...")
-    out = lapply(pkgs, JuliaCall::julia_install_package)
-  }
+  # pkgs = c("DifferentialEquations", "DiffEqCallbacks",
+  #          "DataFrames", "Unitful", "Statistics", "Random",
+  #          "Distributions", "DataInterpolations")
+  # if (install){
+  #   message("Installing required Julia packages. This can take 5-15 minutes...")
+  #   out = lapply(pkgs, JuliaCall::julia_install_package)
+  # }
   # if (update_pkg){
   #   message("Updating Julia packages...")
   #   check = lapply(pkgs, JuliaCall::julia_update_package)
@@ -2151,14 +2150,19 @@ sdbuildR_setup <- function(
 #' @return NULL
 run_init = function(){
 
-  # already_init = JuliaCall::julia_eval(paste0("isdefined(@__MODULE__, :", P$init_sdbuildR, ")"))
-  #
-  # if (!already_init){
   message("Setting up Julia environment for sdbuildR...")
-  # Initialize set-up for sdbuildR in Julia
+
+  # Find set-up location for sdbuildR in Julia
   env_path <- system.file(package = "sdbuildR")
+
+  # Construct the Julia command to activate the environment and instantiate
+  julia_cmd <- sprintf("using Pkg; Pkg.activate(\"%s\"); Pkg.instantiate()", env_path)
+
+  # Execute the command in Julia
+  JuliaCall::julia_command(julia_cmd)
+
+  # system("julia --project=path/to/your/project -e 'using Pkg; Pkg.instantiate(); using YourModule'")
   JuliaCall::julia_source(file.path(env_path, "init.jl"))
-  # }
 
   return(NULL)
 }

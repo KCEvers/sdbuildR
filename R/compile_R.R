@@ -196,7 +196,7 @@ compile_R = function(sfm,
       paste0(name, "$eqn contains ", unname(x))
     }) %>% unlist() %>% unname()
 
-    stop(paste0("Unit strings u('') detected in model! Units are not supported for simulations in R.\nSet sfm %>% sim_specs(language = 'Julia') or modify the following unit strings:\n\n", paste0(eqn_units_format, collapse = "\n")))
+    stop(paste0("Unit strings u('') detected in model! Units are not supported for simulations in R.\nSet sfm %>% sim_specs(language = '') or modify the following unit strings:\n\n", paste0(eqn_units_format, collapse = "\n")))
   }
 
   # # Convert conveyors

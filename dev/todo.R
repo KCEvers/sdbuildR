@@ -66,7 +66,7 @@
 # extrapolation = "nearest"
 # doc = ""
 #
-#
+# to do: ** #**[compat] in project.toml
 
 # microbenchmark(simulate(template("SIR"), verbose = F),
 #                simulate(template("predator-prey"), verbose = F),

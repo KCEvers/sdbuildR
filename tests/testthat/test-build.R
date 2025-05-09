@@ -13,8 +13,9 @@ test_that("xmile() works", {
   # Check time units
   sfm = xmile()
   expect_equal(sim_specs(sfm, time_units = "d")$sim_specs$time_units, "d")
-  # expect_equal(xmile(time_units = "day")$sim_specs$time_units, "d")
-  # expect_equal(xmile(time_units = "week")$sim_specs$time_units, "w")
+  expect_equal(sim_specs(sfm, time_units = "day")$sim_specs$time_units, "d")
+  expect_equal(sim_specs(sfm, time_units = "weeks")$sim_specs$time_units, "wk")
+  expect_equal(sim_specs(sfm, time_units = " months ")$sim_specs$time_units, "month")
 
   # Check start, stop, dt - no scientific notation
   expect_equal(sim_specs(sfm, start = 1990, stop = 2000)$sim_specs$start, "1990.0")
@@ -210,13 +211,13 @@ test_that("units in eqn, min, max are cleaned in build()", {
   # Check units in min and max are cleaned
   sfm = sfm %>% build("e", "aux", min = "u('90meter')")
   expect_equal(sfm$model$variables$aux$e$min, "u('90m')")
-  expect_equal(sfm$model$variables$aux$e$min_Julia, "u\"90m\"")
+  expect_equal(sfm$model$variables$aux$e$min_julia, "u\"90m\"")
 
   sfm = sfm %>% build("f", "aux", min = "u('9*80 centimeters')", max = "100 + a + u('90 Ohm')")
   expect_equal(sfm$model$variables$aux$f$min, "u('9*80cm')")
-  expect_equal(sfm$model$variables$aux$f$min_Julia, "u\"9*80cm\"")
+  expect_equal(sfm$model$variables$aux$f$min_julia, "u\"9*80cm\"")
   expect_equal(sfm$model$variables$aux$f$max, "100 + a + u('90Ohm')")
-  expect_equal(sfm$model$variables$aux$f$max_Julia, "100.0 .+ a .+ u\"90Ohm\"")
+  expect_equal(sfm$model$variables$aux$f$max_julia, "100.0 .+ a .+ u\"90Ohm\"")
 
 
 })
@@ -282,24 +283,24 @@ test_that("Julia equations are added in build()", {
 
   # Ensure Julia equations are added immediately
   sfm = xmile() %>% build("c", "aux", eqn = "a")
-  expect_equal("eqn_Julia" %in% names(sfm$model$variables$aux$c), TRUE)
-  expect_equal(sfm$model$variables$aux$c$eqn_Julia, "a")
+  expect_equal("eqn_julia" %in% names(sfm$model$variables$aux$c), TRUE)
+  expect_equal(sfm$model$variables$aux$c$eqn_julia, "a")
 
   # Ensure Julia equation is updated with changed equation
   sfm = sfm %>% build("c", eqn = "90")
-  expect_equal(sfm$model$variables$aux$c$eqn_Julia, "90.0")
+  expect_equal(sfm$model$variables$aux$c$eqn_julia, "90.0")
 
   # Ensure this works with multiple variables
   sfm = xmile() %>% build(c("a", "b", "c"), c("stock", "flow", "aux"), eqn = c("1", "2", "3"))
-  expect_equal(sfm$model$variables$stock$a$eqn_Julia, "1.0")
-  expect_equal(sfm$model$variables$flow$b$eqn_Julia, "2.0")
-  expect_equal(sfm$model$variables$aux$c$eqn_Julia, "3.0")
+  expect_equal(sfm$model$variables$stock$a$eqn_julia, "1.0")
+  expect_equal(sfm$model$variables$flow$b$eqn_julia, "2.0")
+  expect_equal(sfm$model$variables$aux$c$eqn_julia, "3.0")
 
   # Ensure Julia equation is updated with changed equation
   sfm = sfm %>% build(c("a", "b", "c"), eqn = c("40", "50", "60"))
-  expect_equal(sfm$model$variables$stock$a$eqn_Julia, "40.0")
-  expect_equal(sfm$model$variables$flow$b$eqn_Julia, "50.0")
-  expect_equal(sfm$model$variables$aux$c$eqn_Julia, "60.0")
+  expect_equal(sfm$model$variables$stock$a$eqn_julia, "40.0")
+  expect_equal(sfm$model$variables$flow$b$eqn_julia, "50.0")
+  expect_equal(sfm$model$variables$aux$c$eqn_julia, "60.0")
 
 })
 
@@ -404,13 +405,13 @@ test_that("build() works", {
   expect_warning(xmile() %>% build("c", "aux", eqn = NULL), "Equation cannot be NULL!")
   suppressWarnings({sfm = xmile() %>% build("c", "aux", eqn = NULL)})
   expect_equal(sfm$model$variables$aux$c$eqn, "0.0")
-  expect_equal(sfm$model$variables$aux$c$eqn_Julia, "0.0")
+  expect_equal(sfm$model$variables$aux$c$eqn_julia, "0.0")
 
   # Ensure empty equation changes to "0"
   expect_warning(xmile() %>% build("c", "aux", eqn = ""), "Equation cannot be empty!")
   suppressWarnings({sfm = xmile() %>% build("c", "aux", eqn = "")})
   expect_equal(sfm$model$variables$aux$c$eqn, "0.0")
-  expect_equal(sfm$model$variables$aux$c$eqn_Julia, "0.0")
+  expect_equal(sfm$model$variables$aux$c$eqn_julia, "0.0")
 
   # Ensure equation with missing brackets throws useful error
   expect_error(xmile() %>% build("c", "aux", eqn = "a + (1, "), "Parsing equation of c failed")
@@ -423,7 +424,7 @@ test_that("build() works", {
   # Check min and max
   sfm = xmile() %>% build("e", "aux", min = "90")
   expect_equal(sfm$model$variables$aux$e$min, "90")
-  expect_equal(sfm$model$variables$aux$e$min_Julia, "90.0")
+  expect_equal(sfm$model$variables$aux$e$min_julia, "90.0")
 
 
 })
@@ -750,7 +751,7 @@ test_that("as.data.frame(sfm) works", {
   df = as.data.frame(sfm)
   expect_equal(class(df), "data.frame")
   expect_equal(all(c("type", "name", "eqn", "label", "units") %in% names(df)), TRUE)
-  expect_equal(any(c("intermediary", "func", "min_Julia", "max_Julia") %in% names(df)), FALSE)
+  expect_equal(any(c("intermediary", "func", "min_julia", "max_julia") %in% names(df)), FALSE)
 
   # Check that it works with templates
   sfm = xmile("predator-prey")
@@ -822,6 +823,10 @@ test_that("as.data.frame(sfm) works", {
   expect_equal(names(df), c("eqn", "units", "label")) # "doc", "from" are not recorded for these variables
   expect_equal(nrow(df), 3)
 
+  # Check with Julia properties
+  expect_no_error(as.data.frame(xmile("SIR"), properties = c("eqn_julia")))
+  expect_equal(colnames(as.data.frame(xmile("SIR"), properties = c("eqn_julia"))), "eqn_julia")
+  expect_equal(sort(colnames(as.data.frame(xmile("SIR"), properties = c("eqn_julia", "eqn")))), c("eqn", "eqn_julia"))
 
 })
 
@@ -847,9 +852,9 @@ test_that("macro() works", {
   # Multiple macros
   sfm = xmile() %>% macro(c("abc", "def"), eqn = c("1", "2"), doc = c("A", "B"))
   expect_equal(sfm$macro$abc$eqn, "1")
-  expect_equal(sfm$macro$abc$eqn_Julia, "abc = 1.0")
+  expect_equal(sfm$macro$abc$eqn_julia, "abc = 1.0")
   expect_equal(sfm$macro$def$eqn, "2")
-  expect_equal(sfm$macro$def$eqn_Julia, "def = 2.0")
+  expect_equal(sfm$macro$def$eqn_julia, "def = 2.0")
   expect_equal(sfm$macro$abc$doc, "A")
   expect_equal(sfm$macro$def$doc, "B")
 
@@ -865,9 +870,9 @@ test_that("macro() works", {
   sfm = xmile() %>% build("X", "aux", eqn = "K(t)") %>%
     macro("K", eqn = "function(x) 1 + x")
   expect_equal(sfm$model$variables$aux$X$eqn, "K(t)")
-  expect_equal(sfm$model$variables$aux$X$eqn_Julia, "K(t)")
+  expect_equal(sfm$model$variables$aux$X$eqn_julia, "K(t)")
   expect_equal(sfm$macro$K$eqn, "function(x) 1 + x")
-  expect_equal(sfm$macro$K$eqn_Julia, "function K(x)\n 1.0 .+ x\nend")
+  expect_equal(sfm$macro$K$eqn_julia, "function K(x)\n 1.0 .+ x\nend")
 
   # change_name
   sfm = xmile() %>% macro("abc", eqn = "def") %>% macro("abc", change_name = "xyz")
@@ -879,9 +884,9 @@ test_that("macro() works", {
   sfm = xmile() %>% build("X", "aux", eqn = "G(t)") %>%
     macro("G", eqn = "function(x) 1 + x")
   expect_equal(sfm$model$variables$aux$X$eqn, "G(t)")
-  expect_equal(sfm$model$variables$aux$X$eqn_Julia, "G(t)")
+  expect_equal(sfm$model$variables$aux$X$eqn_julia, "G(t)")
   expect_equal(sfm$macro$G$eqn, "function(x) 1 + x")
-  expect_equal(sfm$macro$G$eqn_Julia, "function G(x)\n 1.0 .+ x\nend")
+  expect_equal(sfm$macro$G$eqn_julia, "function G(x)\n 1.0 .+ x\nend")
   expect_equal(sfm$macro$F1, NULL)
 
 
@@ -889,9 +894,9 @@ test_that("macro() works", {
   sfm = xmile() %>% build("X", "aux", eqn = "F1(t)") %>%
     macro("F1", eqn = "function(x) 1 + x") %>% macro("F1", change_name = "G")
   expect_equal(sfm$model$variables$aux$X$eqn, "G(t)")
-  expect_equal(sfm$model$variables$aux$X$eqn_Julia, "G(t)")
+  expect_equal(sfm$model$variables$aux$X$eqn_julia, "G(t)")
   expect_equal(sfm$macro$G$eqn, "function(x) 1 + x")
-  expect_equal(sfm$macro$G$eqn_Julia, "function G(x)\n 1.0 .+ x\nend")
+  expect_equal(sfm$macro$G$eqn_julia, "function G(x)\n 1.0 .+ x\nend")
   expect_equal(sfm$macro$F1, NULL)
 
   # Try to add delay()

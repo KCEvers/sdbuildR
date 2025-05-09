@@ -536,10 +536,10 @@ validate_xmile = function(sfm){
       type_defaults <- defaults[names(defaults) %in% keep_prop[[type]]]
 
       lapply(vars, function(y) {
-        # Add label, eqn, eqn_Julia if missing
+        # Add label, eqn, eqn_julia if missing
         if (is.null(y$label)) y$label <- y$name
         if (is.null(y$eqn)) y$eqn <- "0.0"
-        if (is.null(y$eqn_Julia)) y$eqn_Julia <- "0.0"
+        if (is.null(y$eqn_julia)) y$eqn_julia <- "0.0"
 
         # Merge with type-specific defaults
         utils::modifyList(type_defaults, y)
@@ -612,7 +612,7 @@ validate_xmile = function(sfm){
   sfm$macro = lapply(sfm$macro, function(x){
 
     if (is.null(x$eqn)) x$eqn <- "0.0"
-    if (is.null(x$eqn_Julia)) x$eqn_Julia <- "0.0"
+    if (is.null(x$eqn_julia)) x$eqn_julia <- "0.0"
 
     # Merge with defaults
     utils::modifyList(defaults, x)
@@ -677,8 +677,8 @@ validate_xmile = function(sfm){
   #   }
   #   # # Is x$units the units of the Stock divided by some time unit? If not, add units of the Stock divided by simulation time unit
   #   #
-  #   # #** add custom units to Julia for valid comparison
-  #   # same_unit = JuliaCall::julia_eval(paste0("using Unitful; ", x$units, "==",target_unit))
+  #   # #** add custom units to julia for valid comparison
+  #   # same_unit = juliaCall::julia_eval(paste0("using Unitful; ", x$units, "==",target_unit))
   #   #
   #   # if (!same_unit){
   #   #   #** compare to all other time units
@@ -719,8 +719,8 @@ validate_xmile = function(sfm){
 
 
 
-  # **massively slows down code, make sure eqn_Julia exists in build()
-  # # Check Julia translation
+  # **massively slows down code, make sure eqn_julia exists in build()
+  # # Check julia translation
   # sfm$model$variables = sfm$model$variables %>%
   #   purrr::map_depth(2, \(x){
   #
@@ -729,9 +729,9 @@ validate_xmile = function(sfm){
   #       x$eqn = as.character(x$eqn)
   #     }
   #
-  #     # Ensure every equation has a Julia translation
-  #     if (is_defined(x$eqn) & !is_defined(x$eqn_Julia)){
-  #       x$eqn_Julia = convert_equations_Julia(sfm, x$eqn, names_df,
+  #     # Ensure every equation has a julia translation
+  #     if (is_defined(x$eqn) & !is_defined(x$eqn_julia)){
+  #       x$eqn_julia = convert_equations_julia(sfm, x$eqn, names_df,
   #                                             regex_units = regex_units, debug = F)
   #     }
   #
@@ -739,13 +739,13 @@ validate_xmile = function(sfm){
   #   })
 #
 #   sfm$macro = sfm$macro %>% purrr::map(function(x){
-#     # Ensure every equation has a Julia translation
-#     if (is_defined(x$eqn) & !is_defined(x$eqn_Julia)){
-#       x$eqn_Julia = convert_equations_Julia(sfm, x$eqn, names_df,
+#     # Ensure every equation has a julia translation
+#     if (is_defined(x$eqn) & !is_defined(x$eqn_julia)){
+#       x$eqn_julia = convert_equations_julia(sfm, x$eqn, names_df,
 #                                             regex_units = regex_units,
 #                                             debug = F)
-#     } else if (x$eqn == "" & !is_defined(x$eqn_Julia)){
-#       x$eqn_Julia = ""
+#     } else if (x$eqn == "" & !is_defined(x$eqn_julia)){
+#       x$eqn_julia = ""
 #     }
 #     return(x)
 #   })
@@ -753,8 +753,8 @@ validate_xmile = function(sfm){
   # **move to compile(), massively slows down build()
   # # Ensure all units are defined
   # add_model_units = detect_undefined_units(sfm,
-  #                                    new_eqns = c(sfm$model$variables %>% purrr::map_depth(2, "eqn_Julia") %>% unlist(),
-  #                                                 sfm$macro %>% purrr::map_vec("eqn_Julia")))
+  #                                    new_eqns = c(sfm$model$variables %>% purrr::map_depth(2, "eqn_julia") %>% unlist(),
+  #                                                 sfm$macro %>% purrr::map_vec("eqn_julia")))
   # sfm$model_units = sfm$model_units %>% utils::modifyList(add_model_units)
 
 
@@ -843,7 +843,7 @@ model_units = function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_nam
     }
   } else {
 
-    # Change units to units valid for Julia's Unitful package
+    # Change units to units valid for julia's Unitful package
     regex_units = get_regex_units()
 
     if (!is.null(change_name)){
@@ -939,9 +939,9 @@ model_units = function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_nam
                                            old_eqn = x$eqn
                                            x$eqn = clean_unit_in_u(x$eqn, dict)
 
-                                           # If equation changed, redo Julia
+                                           # If equation changed, redo julia
                                            if (old_eqn != x$eqn){
-                                              x$eqn_Julia = convert_equations_Julia(sfm, x$type,
+                                              x$eqn_julia = convert_equations_julia(sfm, x$type,
                                                                                x$name, x$eqn,
                                                                                var_names,
                                                                                regex_units = dict,
@@ -1088,12 +1088,12 @@ macro = function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = F
                 stringr::str_sub(x$eqn, idx_df[i, "start"], idx_df[i, "end"]) = change_name
               }
 
-              # Update Julia translation
-              idx_df = get_range_names(x$eqn_Julia, name, names_with_brackets = FALSE)
+              # Update julia translation
+              idx_df = get_range_names(x$eqn_julia, name, names_with_brackets = FALSE)
               if (nrow(idx_df) > 0){
                 # Reverse indices to replace correctly
                 for (i in rev(1:nrow(idx_df))){
-                  stringr::str_sub(x$eqn_Julia, idx_df[i, "start"], idx_df[i, "end"]) = change_name
+                  stringr::str_sub(x$eqn_julia, idx_df[i, "start"], idx_df[i, "end"]) = change_name
                 }
               }
             }
@@ -1155,20 +1155,20 @@ macro = function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = F
     eqn = clean_unit_in_u(eqn, regex_units)
     eqn = ensure_length(eqn, name)
 
-    # Convert equation to Julia
-    eqn_Julia = sapply(1:length(name), function(i){
+    # Convert equation to julia
+    eqn_julia = sapply(1:length(name), function(i){
 
       # Assign name already to convert functions correctly
       x = paste0(name[i], " = ", eqn[i])
 
-      convert_equations_Julia(sfm, type = "macro", name = name[i], eqn = x, var_names = var_names,
+      convert_equations_julia(sfm, type = "macro", name = name[i], eqn = x, var_names = var_names,
                                                                 regex_units = regex_units,
-                                                                debug = FALSE)$eqn_Julia
+                                                                debug = FALSE)$eqn_julia
       # No need to save $func and $intermediaries because delay family cannot be used for macros
       }) %>% unname()
 
     argg$eqn = eqn
-    argg$eqn_Julia = eqn_Julia
+    argg$eqn_julia = eqn_julia
 
   }
 
@@ -1367,7 +1367,7 @@ sim_specs = function(sfm,
     if (any(grepl("[^a-zA-Z ]", time_units))){
       stop("time_units can only contain letters!")
     }
-    time_units = clean_unit(time_units, get_regex_time_units()) # Units are not used in R, so translate to Julia directly
+    time_units = clean_unit(time_units, get_regex_time_units()) # Units are not used in R, so translate to julia directly
 
   }
 
@@ -1386,19 +1386,19 @@ sim_specs = function(sfm,
   # # Check simulation method
   # if (sfm$sim_specs$language == "R"){
   #   if (!requireNamespace("deSolve", quietly = TRUE)){
-  #     warning("deSolve is not installed! Please install deSolve to simulate in R, or simulate in Julia by setting\nsdm %>% sim_specs(language = 'Julia')")
+  #     warning("deSolve is not installed! Please install deSolve to simulate in R, or simulate in julia by setting\nsdm %>% sim_specs(language = 'julia')")
   #   } else {
   #     if (!sfm$sim_specs$method %in% deSolve::rkMethod()){
   #       warning("Invalid simulation method for deSolve! Use one of ", paste0(paste0("'", deSolve::rkMethod(), "'"), collapse = ", "), ".")
   #       sfm$sim_specs$method = formals(sim_specs)$method
   #     }
   #   }
-  # } else if (sfm$sim_specs$language == "Julia"){
+  # } else if (sfm$sim_specs$language == "julia"){
   #
   #   # Try
   #
   #   if (!sfm$sim_specs$method %in% c("euler")){
-  #     warning("Invalid simulation method for Julia! Use one of 'VODE', 'CVODE', 'Radau', 'LSODA', or 'LSODAR'.")
+  #     warning("Invalid simulation method for julia! Use one of 'VODE', 'CVODE', 'Radau', 'LSODA', or 'LSODAR'.")
   #   }
   # }
 
@@ -1496,7 +1496,7 @@ sim_specs = function(sfm,
   # Check coding language
   if (!missing(language)){
     if (!tolower(language) %in% c("r", "julia")){
-      stop(sprintf("The language %s is not one of the languages available in sdbuildR. The available languages are: Julia (recommended), R.", language))
+      stop(sprintf("The language %s is not one of the languages available in sdbuildR. The available languages are 'Julia' (recommended) or 'R'.", language))
     } else {
       language = stringr::str_to_title(language)
     }
@@ -1993,13 +1993,13 @@ build = function(sfm, name, type,
               stringr::str_sub(x$eqn, idx_df[i, "start"], idx_df[i, "end"]) = change_name
             }
 
-            # Update Julia translation
-            idx_df = get_range_names(x$eqn_Julia, name,
+            # Update julia translation
+            idx_df = get_range_names(x$eqn_julia, name,
                                      names_with_brackets = FALSE)
             if (nrow(idx_df) > 0){
               # Reverse indices to replace correctly
               for (i in rev(1:nrow(idx_df))){
-                stringr::str_sub(x$eqn_Julia, idx_df[i, "start"], idx_df[i, "end"]) = change_name
+                stringr::str_sub(x$eqn_julia, idx_df[i, "start"], idx_df[i, "end"]) = change_name
               }
             }
           }
@@ -2093,8 +2093,8 @@ build = function(sfm, name, type,
     eqn = clean_unit_in_u(eqn, regex_units)
     eqn = ensure_length(eqn, name)
 
-    # Convert to Julia - note that with delay() and past(), an intermediary property is added; with delayN() and smoothN(), a func property (nested list) is added
-    eqn_Julia = lapply(1:length(name), function(i){convert_equations_Julia(sfm, type[i], name[i], eqn[i], var_names,
+    # Convert to julia - note that with delay() and past(), an intermediary property is added; with delayN() and smoothN(), a func property (nested list) is added
+    eqn_julia = lapply(1:length(name), function(i){convert_equations_julia(sfm, type[i], name[i], eqn[i], var_names,
                                                                            regex_units = regex_units,
                                                                            debug = FALSE)}) %>% unname()
 
@@ -2117,7 +2117,7 @@ build = function(sfm, name, type,
       units[!nzchar(units)] = "1"
     }
 
-    # Units are not supported well in R, so translate to Julia directly
+    # Units are not supported well in R, so translate to julia directly
     units = sapply(units, function(x){clean_unit(x, regex_units)}) %>% unname()
     units = ensure_length(units, name)
   }
@@ -2128,23 +2128,23 @@ build = function(sfm, name, type,
     min = clean_unit_in_u(min, regex_units)
     # min = sapply(min, function(x){clean_unit_in_u(x, regex_units)}) %>% unname()
 
-    min_Julia = sapply(min, function(x){convert_equations_Julia(sfm, "min", "min", x, var_names,
+    min_julia = sapply(min, function(x){convert_equations_julia(sfm, "min", "min", x, var_names,
                                                                 regex_units = regex_units,
-                                                                debug = FALSE)$eqn_Julia}) %>% unname()
+                                                                debug = FALSE)$eqn_julia}) %>% unname()
     min = ensure_length(min, name)
-    min_Julia = ensure_length(min_Julia, name)
-    passed_arg = c(passed_arg, "min_Julia")
+    min_julia = ensure_length(min_julia, name)
+    passed_arg = c(passed_arg, "min_julia")
   }
 
   if (!is.null(max)){
     max = clean_unit_in_u(max, regex_units)
 
-    max_Julia = sapply(max, function(x){convert_equations_Julia(sfm, "max", "max", x, var_names,
+    max_julia = sapply(max, function(x){convert_equations_julia(sfm, "max", "max", x, var_names,
                                                                 regex_units = regex_units,
-                                                                debug = FALSE)$eqn_Julia}) %>% unname()
+                                                                debug = FALSE)$eqn_julia}) %>% unname()
     max = ensure_length(max, name)
-    max_Julia = ensure_length(max_Julia, name)
-    passed_arg = c(passed_arg, "max_Julia")
+    max_julia = ensure_length(max_julia, name)
+    passed_arg = c(passed_arg, "max_julia")
   }
 
   if ("conveyor" %in% passed_arg){
@@ -2201,10 +2201,10 @@ build = function(sfm, name, type,
       keep_prop_y = keep_prop[[type[y]]]
       keep_x = x[[1]][names(x[[1]]) %in% keep_prop_y]
 
-      # Add converted Julia equation
+      # Add converted julia equation
       if ("eqn" %in% passed_arg){
 
-        keep_x = keep_x %>% utils::modifyList(eqn_Julia[[y]])
+        keep_x = keep_x %>% utils::modifyList(eqn_julia[[y]])
       }
 
       list(keep_x) %>% stats::setNames(name[y])
@@ -2234,16 +2234,16 @@ get_building_block_prop = function(){
   list(
     "stock" = c("type", "name", "eqn", "units", "label", "doc",
                 "non_negative", "min", "max", "conveyor", "len",
-                "eqn_Julia", "min_Julia", "max_Julia"),
+                "eqn_julia", "min_julia", "max_julia"),
     "flow" = c("type", "name", "eqn", "to", "from", "units", "label", "doc",
                "non_negative", "min", "max",
-               "eqn_Julia", "min_Julia", "max_Julia"),
+               "eqn_julia", "min_julia", "max_julia"),
     "constant" = c("type", "name", "eqn", "units", "label", "doc",
       "non_negative", "min", "max",
-      "eqn_Julia", "min_Julia", "max_Julia"),
+      "eqn_julia", "min_julia", "max_julia"),
     "aux" = c("type", "name", "eqn", "units", "label", "doc",
               "non_negative", "min", "max",
-              "eqn_Julia", "min_Julia", "max_Julia"),
+              "eqn_julia", "min_julia", "max_julia"),
     "gf" = c("type", "name", "units", "label",  "xpts", "ypts", "source", "interpolation", "extrapolation", "doc")
   ) %>% return()
 }
@@ -2348,7 +2348,7 @@ create_R_names = function(create_names, names_df, protected = c()){
     # "NULL", "Inf", "NaN", "NA", "NA_integer_", "NA_real_", "NA_complex_", "NA_character_", # already protected
     # "time", "Time", "TIME",
     # "constraints",
-    # Add Julia keywords
+    # Add julia keywords
     "baremodule", "begin", "break", "catch", "const", "continue", "do",
     # "else",
     "elseif", "end", "export", "false", "finally",
@@ -2362,8 +2362,8 @@ create_R_names = function(create_names, names_df, protected = c()){
 
     # ** Add R custom functions
 
-    # Add Julia custom functions
-    names(get_func_Julia()),
+    # Add julia custom functions
+    names(get_func_julia()),
     # These are variables in the ode and cannot be model element names
     unname(unlist(P[!names(P) %in% c("change_prefix", "conveyor_suffix", "delayN_suffix", "delay_suffix", "delay_order_suffix", "delay_length_suffix", "past_suffix", "past_length_suffix", "fix_suffix", "fix_length_suffix")])), protected,
     as.character(stats::na.omit(names_df$name))
@@ -2379,7 +2379,7 @@ create_R_names = function(create_names, names_df, protected = c()){
 
   # Make syntactically valid and unique names out of character vectors; Insightmaker allows names to be double, so make unique
   new_names = make.names(c(protected_names, trimws(create_names)), unique = T)[-seq_along(protected_names)] %>% # Remove protected names
-    # For Julia translation, remove names with a period
+    # For julia translation, remove names with a period
     stringr::str_replace_all("\\.", "_")
 
   return(new_names)
@@ -2460,8 +2460,8 @@ get_build_code = function(sfm, format_code = TRUE){
   if (length(sfm$macro) > 0){
     macro_str = lapply(sfm$macro, function(x){
 
-        # Remove properties containing "_Julia"
-        x[grepl("_Julia", names(x))] = NULL
+        # Remove properties containing "_julia"
+        x[grepl("_julia", names(x))] = NULL
 
         x <- lapply(x, function(z) if (is.character(z)) paste0("'", z, "'") else z)
         sprintf("macro(%s)", paste0(names(x), " = ", unname(x), collapse = ", "))
@@ -2494,8 +2494,8 @@ get_build_code = function(sfm, format_code = TRUE){
           idx = unlist(default_elements) != unlist(z[names(default_elements)])
           z = z[names(which(idx))]
 
-          # Remove properties containing "_Julia"
-          z[grepl("_Julia", names(z))] = NULL
+          # Remove properties containing "_julia"
+          z[grepl("_julia", names(z))] = NULL
 
           # z = z %>% purrr::map_if(is.character, \(a) paste0("'", a, "'"))
           z = lapply(z, function(a) if (is.character(a)) paste0("'", a, "'") else a)
@@ -2674,9 +2674,9 @@ debugger = function(sfm, quietly = FALSE){
   # Check whether all units are defined
   add_model_units = detect_undefined_units(sfm,
                                      new_eqns = c(sfm$model$variables %>%
-                                                    lapply(function(x){lapply(x, `[[`, "eqn_Julia")}) %>% unlist(),
-                                                  sfm$global$eqn_Julia,
-                                                  unlist(lapply(sfm$macro, `[[`, "eqn_Julia"))),
+                                                    lapply(function(x){lapply(x, `[[`, "eqn_julia")}) %>% unlist(),
+                                                  sfm$global$eqn_julia,
+                                                  unlist(lapply(sfm$macro, `[[`, "eqn_julia"))),
                                      new_units = sfm$model$variables %>%
                                        lapply(function(x){lapply(x, `[[`, "units")}) %>% unlist(),
                                      regex_units= regex_units, R_or_Julia = "Julia")

@@ -1,8 +1,8 @@
-# Replacement functions for InsightMaker to R
+# Replacement functions for Insight Maker to R
 
-#' Transform InsightMaker eqn to R code
+#' Transform Insight Maker eqn to R code
 #'
-#' @param eqn String with InsightMaker eqn, but translated R names
+#' @param eqn String with Insight Maker eqn, but translated R names
 #' @param var_names Dataframe with type, name, label and units per variable
 #' @param name R name of variable to which the eqn belongs
 #' @param type Name of model element to which the eqn belongs
@@ -109,7 +109,7 @@ convert_equations_IM = function(
 
 
 
-#' Replace comment characters from InsightMaker to R
+#' Replace comment characters from Insight Maker to R
 #'
 #' @inheritParams convert_equations_IM
 #'
@@ -219,7 +219,7 @@ remove_comments = function(eqn){
 }
 
 
-#' Translate InsightMaker destructuring assignment to R
+#' Translate Insight Maker destructuring assignment to R
 #'
 #' @inheritParams convert_equations_IM
 #'
@@ -291,7 +291,7 @@ conv_destructuring_assignment = function(eqn) {
 
 
 
-#' Translate InsightMaker colon operator to R
+#' Translate Insight Maker colon operator to R
 #'
 #' @inheritParams convert_equations_IM
 #' @return Updated eqn
@@ -337,7 +337,7 @@ replace_colon = function(eqn, var_names) {
 
 
 
-#' Translate curly bracket syntax from InsightMaker to R
+#' Translate curly bracket syntax from Insight Maker to R
 #'
 #' @inheritParams convert_equations_IM
 #' @return Updated eqn
@@ -488,7 +488,7 @@ curly_to_vector_brackets = function(eqn, var_names) {
 
 
 
-#' Translate InsightMaker operators to R
+#' Translate Insight Maker operators to R
 #'
 #' @inheritParams convert_equations_IM
 #' @return Updated eqn
@@ -496,7 +496,7 @@ curly_to_vector_brackets = function(eqn, var_names) {
 #'
 replace_op_IM <- function(eqn, var_names) {
 
-  # InsightMaker uses "and", "AND", "or", "OR", "not", "NOT"
+  # Insight Maker uses "and", "AND", "or", "OR", "not", "NOT"
   logical_op = c(
     # Insight Maker is case-insensitive
     "and" = "&",
@@ -600,7 +600,7 @@ get_words = function(eqn){
 }
 
 
-#' Convert statement syntax from InsightMaker to R
+#' Convert statement syntax from Insight Maker to R
 #'
 #' @param line String with line of code
 #' @inheritParams convert_equations_IM
@@ -751,7 +751,7 @@ convert_statement = function(line, var_names, debug){
 }
 
 
-#' Convert all statement syntax from InsightMaker to R
+#' Convert all statement syntax from Insight Maker to R
 #' Wrapper around convert_statement()
 #'
 #' @inheritParams convert_equations_IM
@@ -760,7 +760,7 @@ convert_statement = function(line, var_names, debug){
 #'
 convert_all_statements = function(eqn, var_names, debug){
 
-  # InsightMaker doesn't require users to specify an Else-statement in If ... Else If ... End If -> if no condition evaluates to TRUE, the output is zero. Add "Else\n0\n" in these lines.
+  # Insight Maker doesn't require users to specify an Else-statement in If ... Else If ... End If -> if no condition evaluates to TRUE, the output is zero. Add "Else\n0\n" in these lines.
   # Find all if end if
   formula_split = stringr::str_split(eqn, "\n")[[1]]
   idx_end_if = which(stringr::str_detect(formula_split, stringr::regex("\\bend if\\b", ignore_case = T)))
@@ -1303,7 +1303,7 @@ get_syntax_IM = function(){
     ".Remove()", "", "syntax4", F, T, "",
     "Width(", "", "syntax4", F, T, "",
     "Height(", "", "syntax4", F, T, ""),
-    ncol = 6, byrow = TRUE, dimnames = list(NULL, c("InsightMaker", "R", "syntax", "add_c()", "needs_brackets", "add_first_arg"))
+    ncol = 6, byrow = TRUE, dimnames = list(NULL, c("insightmaker", "R", "syntax", "add_c()", "needs_brackets", "add_first_arg"))
 
   )
 
@@ -1314,26 +1314,26 @@ get_syntax_IM = function(){
   df <- conv_df[conv_df$syntax != "syntax4", ]
 
   # Initialize new columns
-  df$InsightMaker_first_iter <- df$InsightMaker
-  df$InsightMaker_regex_first_iter <- ifelse(
+  df$insightmaker_first_iter <- df$insightmaker
+  df$insightmaker_regex_first_iter <- ifelse(
     df$syntax %in% c("syntax0", "syntax1", "syntax3"),
-    paste0("\\b", df$InsightMaker, "\\("),
-    paste0("\\.", df$InsightMaker, "\\(")
+    paste0("\\b", df$insightmaker, "\\("),
+    paste0("\\.", df$insightmaker, "\\(")
   )
-  df$InsightMaker <- paste0(df$InsightMaker, "_replace")
-  df$InsightMaker_regex <- ifelse(
+  df$insightmaker <- paste0(df$insightmaker, "_replace")
+  df$insightmaker_regex <- ifelse(
     df$syntax %in% c("syntax0", "syntax1", "syntax3"),
-    paste0("\\b", df$InsightMaker, "\\("),
-    paste0("\\.", df$InsightMaker, "\\(")
+    paste0("\\b", df$insightmaker, "\\("),
+    paste0("\\.", df$insightmaker, "\\(")
   )
 
   # Create additional rows for syntax0b and syntax1b
   additional_rows <- conv_df[conv_df$syntax %in% c("syntax0", "syntax1") & !as.logical(conv_df$needs_brackets), ]
   if (nrow(additional_rows) > 0) {
-    additional_rows$InsightMaker_first_iter <- additional_rows$InsightMaker
-    additional_rows$InsightMaker_regex_first_iter <- paste0("\\b", additional_rows$InsightMaker, "\\b")
-    additional_rows$InsightMaker <- paste0(additional_rows$InsightMaker, "_replace")
-    additional_rows$InsightMaker_regex <- paste0("\\b", additional_rows$InsightMaker, "\\b")
+    additional_rows$insightmaker_first_iter <- additional_rows$insightmaker
+    additional_rows$insightmaker_regex_first_iter <- paste0("\\b", additional_rows$insightmaker, "\\b")
+    additional_rows$insightmaker <- paste0(additional_rows$insightmaker, "_replace")
+    additional_rows$insightmaker_regex <- paste0("\\b", additional_rows$insightmaker, "\\b")
     additional_rows$syntax <- paste0(additional_rows$syntax, "b")
 
     # Combine rows
@@ -1350,7 +1350,7 @@ get_syntax_IM = function(){
 
 
 
-#' Convert InsightMaker built-in functions to R
+#' Convert Insight Maker built-in functions to R
 #'
 #' @return List with transformed eqn and list with additional R code needed to make the eqn function
 #' @inheritParams convert_equations_IM
@@ -1371,7 +1371,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 
     done = FALSE
     i = 1
-    IM_regex = syntax_df$InsightMaker_regex_first_iter
+    IM_regex = syntax_df$insightmaker_regex_first_iter
     ignore_case_arg = TRUE
 
   while (!done) {
@@ -1400,28 +1400,28 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 
     idx_df = idx_df %>% as.data.frame() %>%
       # Double matches in case of functions that don't need brackets, e.g. Days() -> select one with longest end, as we want to match Days() over Days
-      dplyr::group_by(.data$InsightMaker, .data$start) %>%
+      dplyr::group_by(.data$insightmaker, .data$start) %>%
       dplyr::slice_max(order_by = .data$end, n = 1) %>%
       dplyr::ungroup()
 
     if (nrow(idx_df) > 0) idx_df = idx_df[!(idx_df$start %in% idxs_exclude | idx_df$end %in% idxs_exclude), ]
 
-    # For the first iteration, add _replace to all detected functions, so we don't end in an infinite loop (some InsightMaker and R functions have the same name)
+    # For the first iteration, add _replace to all detected functions, so we don't end in an infinite loop (some insightmaker and R functions have the same name)
     if (i == 1 & nrow(idx_df) > 0){
 
       idx_df <- idx_df[order(idx_df$start), ]
-      idx_df$InsightMaker_regex <- stringr::str_replace_all(idx_df$InsightMaker_regex,
+      idx_df$insightmaker_regex <- stringr::str_replace_all(idx_df$insightmaker_regex,
                                                  stringr::fixed(c("\\b" = "", "\\(" = "(", "\\)" = ")")))
 
       for (j in rev(1:nrow(idx_df))){
-          stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) = idx_df[j, ]$InsightMaker_regex #%>%
+          stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) = idx_df[j, ]$insightmaker_regex #%>%
       }
     }
 
     if (i == 1){
       # print(eqn)
       ignore_case_arg = FALSE
-      IM_regex = syntax_df$InsightMaker_regex
+      IM_regex = syntax_df$insightmaker_regex
       i = i + 1
       # Stop first iteration
       next
@@ -1466,7 +1466,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
       idx_func = idx_funcs_ordered[1, ]
 
       # Remove _replace in replacement function
-      idx_func$InsightMaker = stringr::str_replace(idx_func$InsightMaker, "_replace$", "")
+      idx_func$insightmaker = stringr::str_replace(idx_func$insightmaker, "_replace$", "")
       idx_func
 
       # Extract argument between brackets (excluding brackets)
@@ -1535,7 +1535,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
       } else if (idx_func$syntax == "syntax3") {
 
         # If it's the first function of this kind, no id is needed
-        match_idx = length(translated_func[translated_func == idx_func$InsightMaker]) + 1
+        match_idx = length(translated_func[translated_func == idx_func$insightmaker]) + 1
         match_idx = ifelse(match_idx == 1, "", match_idx)
 
         # Get environment and create list of arguments needed by the function
@@ -1545,7 +1545,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
           formals() %>% as.list %>%
           # Add own arguments
           utils::modifyList(list(
-            func = idx_func$InsightMaker %>% tolower,
+            func = idx_func$insightmaker %>% tolower,
             arg = arg
           )) %>%
           # Add other arguments from environment
@@ -1583,13 +1583,13 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
       # Replace eqn
       stringr::str_sub(eqn, start_idx, end_idx) = replacement
 
-      translated_func = c(translated_func, idx_func$InsightMaker)
+      translated_func = c(translated_func, idx_func$insightmaker)
     }
   }
   add_Rcode = add_Rcode_list
 
   # Syntax 4: Agent-based functions, which are not translated but flagged
-  syntax4 = conv_df[conv_df$syntax == "syntax4", "InsightMaker"]
+  syntax4 = conv_df[conv_df$syntax == "syntax4", "insightmaker"]
   idx_ABM = stringr::str_detect(eqn, stringr::fixed(syntax4))
 
   if (any(idx_ABM)) {
@@ -1692,7 +1692,7 @@ extract_prefunc_args = function(eqn, var_names, start_func, names_with_brackets)
 
 
 
-#' Convert InsightMaker Filter() function to R
+#' Convert Insight Maker Filter() function to R
 #'
 #' @inheritParams conv_delayN
 #' @return Transformed eqn
@@ -1716,7 +1716,7 @@ conv_IMFILTER <- function(func, arg) {
 }
 
 
-#' Convert InsightMaker Map() function to R
+#' Convert Insight Maker Map() function to R
 #'
 #' @inheritParams conv_delayN
 #' @return Transformed eqn
@@ -1759,7 +1759,7 @@ conv_repeat <- function(func, arg) {
   named_second_arg = !(is.null(names_second_arg) |
                          "try-error" %in% class(names_second_arg))
 
-  # InsightMaker's Repeats performs two different actions:
+  # Insight Maker's Repeats performs two different actions:
   # 1. Apply the function in the first argument using the index of the second argument as x
 
   if (!x_in_function & !key_in_function) {
@@ -1786,7 +1786,7 @@ conv_repeat <- function(func, arg) {
 }
 
 
-#' Convert InsightMaker's Lookup() to R
+#' Convert Insight Maker's Lookup() to R
 #'
 #' Lookup() is a linear interpolation function, equivalent to R's approx().
 #'
@@ -1812,9 +1812,9 @@ conv_lookup <- function(func, arg, name) {
 }
 
 
-#' Convert InsightMaker's addition of strings to R
+#' Convert Insight Maker's addition of strings to R
 #'
-#' InsightMaker allows for strings to be concatenated by +, whereas R doesn't and uses paste0() instead.
+#' Insight Maker allows for strings to be concatenated by +, whereas R doesn't and uses paste0() instead.
 #'
 #' @inheritParams convert_equations_IM
 #' @return Transformed eqn
@@ -1906,7 +1906,7 @@ check_only_primitive = function(eqn) {
 }
 
 
-#' Convert InsightMaker's Delay() to R
+#' Convert Insight Maker's Delay() to R
 #'
 #' @inheritParams conv_past_values
 #'
@@ -1927,7 +1927,7 @@ conv_delay = function(func, arg, name){
 }
 
 
-#' Convert InsightMaker's PastValues and friends to R
+#' Convert Insight Maker's PastValues and friends to R
 #'
 #'
 #' @return List with transformed eqn and additional R code needed to make the eqn function
@@ -1981,10 +1981,10 @@ conv_past_values = function(func, arg, name) {
 }
 
 
-#' Convert InsightMaker's DelayN() and SmoothN() family
+#' Convert Insight Maker's DelayN() and SmoothN() family
 #'
-#' @param func String with name of InsightMaker function
-#' @param arg Arguments passed to InsightMaker function
+#' @param func String with name of Insight Maker function
+#' @param arg Arguments passed to Insight Maker function
 #'
 #' @return List with transformed eqn and additional R code needed to make the eqn function
 #' @importFrom rlang .data
@@ -2018,7 +2018,7 @@ conv_delayN = function(func, arg) {
 }
 
 
-#' Convert InsightMaker's Fix() to R
+#' Convert Insight Maker's Fix() to R
 #'
 #' @return List with transformed eqn and additional R code needed to make the eqn function
 #' @inheritParams convert_equations_IM
@@ -2076,10 +2076,10 @@ conv_fix = function(func, arg, name, type) {
 # Ramp, pulse, step functions
 # These are functions that translate to forcings in deSolve::ode (not events, as these functions may also be used to change variables other than state variables/stocks). These functions need to be defined with an interpolation function at the beginning of the script, and are used in the ODE as func(t).
 
-# Convert step, pulse, and ramp InsightMaker functions to corresponding R functions. Rewrite equation eqn and define interpolation function to be put at beginning of the script
+# Convert step, pulse, and ramp Insight Maker functions to corresponding R functions. Rewrite equation eqn and define interpolation function to be put at beginning of the script
 
 
-#' Convert InsightMaker's Step() function to R
+#' Convert Insight Maker's Step() function to R
 #'
 #' @param h_step Height of step, defaults to 1
 #' @param match_idx Index of the number of times the same function has been called in the same eqn
@@ -2088,7 +2088,7 @@ conv_fix = function(func, arg, name, type) {
 #' @inheritParams conv_delayN
 #' @inheritParams convert_equations_IM
 #'
-conv_step = function(func, arg, match_idx, name,  # Default settings of InsightMaker
+conv_step = function(func, arg, match_idx, name,  # Default settings of Insight Maker
                      h_step = "1") {
 
   # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
@@ -2122,7 +2122,7 @@ conv_step = function(func, arg, match_idx, name,  # Default settings of InsightM
 }
 
 
-#' Convert InsightMaker's Pulse() function to R
+#' Convert Insight Maker's Pulse() function to R
 #'
 #' @param h_pulse Height of pulse, defaults to 1
 #' @param w_pulse Width of pulse in duration (i.e. time), defaults to 0 to indicate an instantaneous pulse
@@ -2136,7 +2136,7 @@ conv_pulse = function(func,
                       arg,
                       match_idx,
                       name,
-                      # Default settings of InsightMaker
+                      # Default settings of Insight Maker
                       h_pulse = "1",
                       w_pulse = "0",
                       repeat_interval = "NULL") {
@@ -2179,7 +2179,7 @@ conv_pulse = function(func,
 }
 
 
-#' Convert InsightMaker's Ramp() function to R
+#' Convert Insight Maker's Ramp() function to R
 #'
 #' @param h_ramp End height of ramp, defaults to 1
 #'
@@ -2187,7 +2187,7 @@ conv_pulse = function(func,
 #' @inheritParams convert_equations_IM
 #' @inheritParams conv_step
 #'
-conv_ramp = function(func, arg, match_idx, name, # Default settings of InsightMaker
+conv_ramp = function(func, arg, match_idx, name, # Default settings of Insight Maker
                      h_ramp = "1") {
 
 
@@ -2228,7 +2228,7 @@ conv_ramp = function(func, arg, match_idx, name, # Default settings of InsightMa
 
 
 
-#' Convert InsightMaker's Seasonal() function to R
+#' Convert Insight Maker's Seasonal() function to R
 #'
 #' @param period Period of wave in years, defaults to 1
 #' @param shift Time in years at which the wave peaks, defaults to 0

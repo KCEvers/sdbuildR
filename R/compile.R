@@ -9,7 +9,7 @@
 #' @param keep_unit If TRUE, keeps units of variables. Defaults to TRUE.
 #' @param verbose If TRUE, update on progress. Defaults to FALSE.
 #' @param debug If TRUE, print output for debugging. Defaults to FALSE.
-#' @param only_stocks If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.
+#' @param only_stocks If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "julia" in sim_specs() and no delay functions are used. Defaults to FALSE.
 #' @param ... Optional arguments
 #'
 #' @return List with variables created in the simulation script
@@ -51,7 +51,7 @@ simulate = function(sfm,
   }
 
   if (tolower(sfm$sim_specs$language) == "julia"){
-    return(simulate_Julia(sfm,
+    return(simulate_julia(sfm,
                           format_code=format_code,
                           keep_nonnegative_flow = keep_nonnegative_flow,
                           keep_nonnegative_stock = keep_nonnegative_stock,
@@ -59,7 +59,7 @@ simulate = function(sfm,
   } else if (tolower(sfm$sim_specs$language) == "r"){
 
     if (!requireNamespace("deSolve", quietly = TRUE)){
-      stop("deSolve is not installed! Please install deSolve to simulate in R, or simulate in Julia by setting\nsfm %>% sim_specs(language = 'Julia')")
+      stop("deSolve is not installed! Please install deSolve to simulate in R, or simulate in Julia by setting\nsfm %>% sim_specs(language = 'julia')")
     }
 
     return(simulate_R(sfm,
@@ -68,7 +68,7 @@ simulate = function(sfm,
                       keep_nonnegative_stock = keep_nonnegative_stock,
                       verbose = verbose, debug = debug))
   } else {
-    stop("Language not supported. Please run either sfm %>% sim_specs(language = 'Julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
+    stop("Language not supported. Please run either sfm %>% sim_specs(language = 'julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
   }
 
 }
@@ -91,7 +91,7 @@ compile = function(sfm,
 
 
   if (tolower(sfm$sim_specs$language) == "julia"){
-    return(compile_Julia(sfm,
+    return(compile_julia(sfm,
                                     format_code=format_code,
                                     keep_nonnegative_flow = keep_nonnegative_flow,
                                     keep_nonnegative_stock = keep_nonnegative_stock,
@@ -103,7 +103,7 @@ compile = function(sfm,
                      keep_nonnegative_stock = keep_nonnegative_stock,
                      verbose = verbose, debug = debug))
   } else {
-    stop("Language not supported. Please run either sfm %>% sim_specs(language = 'Julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
+    stop("Language not supported. Please run either sfm %>% sim_specs(language = 'julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
   }
 
 }
