@@ -107,7 +107,13 @@ sim = simulate(sfm)
 plot(sim)
 ```
 
-The stocks are static! Stocks can only change through flows, and we have not yet added any flows to the model. We create four flows: the births and deaths of both the predators and prey. The rate of the flow is indicated in `eqn`. In addition, flows have to be connected to at least one stock: a stock the flow is coming from (`from`) and/or a stock the flow is flowing to (`to`). Inflows add to the stock, and outflows subtract from the stock.
+The stocks are static! Stocks can only change through flows, and we have not yet added any flows to the model. We could also have noticed this by running `debugger()`:
+
+```{r}
+debugger(sfm)
+```
+
+We create four flows: the births and deaths of both the predators and prey. The rate of the flow is indicated in `eqn`. In addition, flows have to be connected to at least one stock: a stock the flow is coming from (`from`) and/or a stock the flow is flowing to (`to`). Inflows add to the stock, and outflows subtract from the stock.
 
 ```{r, fig.width=8, fig.height=4}
 sfm = sfm %>%

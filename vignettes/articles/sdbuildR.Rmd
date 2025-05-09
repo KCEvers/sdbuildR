@@ -1,5 +1,5 @@
 ---
-title: "sdbuildR"
+title: "Get started with sdbuildR"
 ---
 
 ```{r, include = FALSE}
@@ -9,7 +9,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Quick start
+### Quick start
 
 In each R session, the Julia environment for sdbuildR needs to be set up:
 

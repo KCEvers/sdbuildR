@@ -6,9 +6,9 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-sdbuildR makes it easy to create and simulate stock-and-flow models in
-R. With Julia as a backend, it combines fast performance with
-flexibility in a user-friendly R environment.
+Easily build and simulate stock-and-flow models with sdbuildR in R. With
+Julia as a backend, sdbuildR combines fast performance with flexibility
+in a user-friendly R environment.
 
 ## Installation
 

@@ -5,18 +5,11 @@ title: "Using (custom) units"
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-    fig.width = 6,          # Set default figure width to 6 inches
-  fig.height = 4,         # Set default figure height to 4 inches
-  fig.align = "center",   # Center all figures
-  out.width = "80%",      # Display figures at 80% of container width
-  fig.retina = 2,         # Optimize for retina displays
-  dpi = 96               # Standard DPI for web
+  comment = "#>"
 )
 ```
 
-
-```{r setup, eval=TRUE, echo=FALSE}
+```{r libraries, include=FALSE}
 library(sdbuildR)
 sdbuildR_setup()
 ```
@@ -29,10 +22,15 @@ Units, such as seconds, kilograms, or BMI, refer to the measurement units assign
 
 Units help to verify the model, as all equations have to be dimensionally consistent. Dimensional consistency requires that the units on both sides of the equation match. For instance, if we define productivity as the number of tasks completed per hour, and it is determined by the amount of caffeine we have consumed, we ensure the equation is dimensionally consistent like so:
 
+
 $$
-\text{Productivity} = \text{Caffeine consumed} \cdot \text{Productivity from caffeine}\\
+\text{Productivity} = \text{Caffeine consumed} \cdot \text{Productivity from caffeine}
+$$
+
+$$
 \frac{\text{tasks}}{hr} = \frac{mg}{hr} \cdot \frac{\text{tasks}}{mg}
 $$
+
 
 Dimensional consistency is also required between stocks and flows. A stock can only be connected to flows with a matching unit measured over a period of time. For example, a stock with the unit kilocalories can be connected to flows with the unit kilocalories per hour. This is dimensionally consistent, as flows are measured over a certain period of time:
 
@@ -112,7 +110,7 @@ The simulation specifications can be viewed using `summary()`:
 summary(sfm)
 ```
 
-Note that units can be specified with full words, but that they are converted to standard units of the *Unitful* package using regular expressions. For example, `day` is converted to `d`, `week` to `wk`, and `year`' to `yr`. However, `minute` and `month` stay unchanged. Perhaps unexpectedly, a year in the *Unitful* package is defined not as 365 days, but 365.25 days, as it accounts for leap years. To use time units that are not affected by leap years, such as the common year, which is 365 days, use `common_year`, `common_quarter`, `common_month`.
+Note that units can be specified with full words, but that they are converted to standard units of the *Unitful* package using regular expressions. For example, `day` is converted to `d`, `week` to `wk`, and `year` to `yr`. However, `minute` and `month` stay unchanged. Perhaps unexpectedly, a year in the *Unitful* package is defined not as 365 days, but 365.25 days, as it accounts for leap years. To use time units that are not affected by leap years, such as the common year, which is 365 days, use `common_year`, `common_quarter`, `common_month`.
 
 For our example of the coffee cup, we'll set the simulation time unit to minutes.
 
