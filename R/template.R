@@ -5,6 +5,7 @@
 #'
 #' @param name Name of model; one of "logistic_model", "SIR", "predator-prey", "Crielaard2022"
 #'
+#' @noRd
 #' @return Stock-and-flow model of class sdbuildR_xmile.
 #'
 template = function(name){

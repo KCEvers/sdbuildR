@@ -14,6 +14,7 @@
 #'   \item{df}{Dataframe, timeseries of computed variables in the ODE}
 #'   \item{...}{Other variables created in the simulation script.}
 #' }
+#' @noRd
 #'
 simulate_julia = function(sfm,
                           format_code=TRUE,
@@ -110,6 +111,7 @@ simulate_julia = function(sfm,
 #' @inheritParams simulate
 #'
 #' @return julia script
+#' @noRd
 #'
 compile_julia = function(sfm,
                          format_code=TRUE,
@@ -264,6 +266,7 @@ compile_julia = function(sfm,
 #' @inheritParams build
 #'
 #' @returns List with delayN and smoothN functions
+#' @noRd
 get_delayN_smoothN = function(sfm){
   sfm$model$variables %>%
     purrr::map_depth(2, "func") %>% unname() %>%
@@ -280,6 +283,7 @@ get_delayN_smoothN = function(sfm){
 #' @inheritParams build
 #'
 #' @returns Updated stock-and-flow model
+#' @noRd
 prep_delayN_smoothN = function(sfm){
 
   # If delayN() and smoothN() were used, add these to the model
@@ -338,6 +342,7 @@ prep_delayN_smoothN = function(sfm){
 #' @importFrom rlang .data
 #' @inheritParams build
 #'
+#' @noRd
 compile_constraints_julia = function(sfm){
 
   # # **to do
@@ -407,6 +412,7 @@ compile_constraints_julia = function(sfm){
 #'
 #' @return List with script
 #'
+#' @noRd
 compile_units_julia = function(sfm, keep_unit){
 
   script = ""
@@ -463,6 +469,7 @@ compile_units_julia = function(sfm, keep_unit){
 #' @inheritParams compile_R
 #'
 #' @return List with macro script
+#' @noRd
 compile_macros_julia = function(sfm, debug){
 
   script = ""
@@ -513,6 +520,7 @@ compile_macros_julia = function(sfm, debug){
 #'
 #' @inheritParams compile_julia
 #'
+#' @noRd
 compile_times_julia = function(sfm, keep_unit){
 
   script = sprintf("\n\n# Simulation time unit (smallest time scale in your model)
@@ -541,6 +549,7 @@ compile_times_julia = function(sfm, keep_unit){
 #'
 #' @return List with necessary scripts
 #'
+#' @noRd
 compile_static_eqn_julia = function(sfm, ordering, keep_unit){
 
   names_df = get_names(sfm)
@@ -689,6 +698,7 @@ compile_static_eqn_julia = function(sfm, ordering, keep_unit){
 #' @inheritParams compile_julia
 #'
 #' @return Updated stock-and-flow model
+#' @noRd
 #'
 prep_stock_change_julia = function(sfm, keep_unit){
 
@@ -772,6 +782,7 @@ prep_stock_change_julia = function(sfm, keep_unit){
 #'
 #' @return List
 #' @importFrom rlang .data
+#' @noRd
 #'
 compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
                              constraints,
@@ -1086,6 +1097,7 @@ function %s(%s, %s, integrator)",
 #'
 #' @return List
 #' @inheritParams compile_R
+#' @noRd
 #'
 compile_run_ode_julia = function(sfm,
                                  nonneg_stocks,
@@ -1095,8 +1107,14 @@ compile_run_ode_julia = function(sfm,
 
   script = paste0("\n\n# Run ODE\n",
                   P$prob_name, " = ODEProblem(", P$ode_func_name, "!, ", P$initial_value_name, ", ", P$times_name, ", ", P$parameter_name, ")\n", P$sim_df_name, " = solve(", P$prob_name, ", ",
-                  dplyr::case_when(sfm$sim_specs$method == "euler" ~ "Euler()",
-                                   sfm$sim_specs$method == "rk4" ~ "RK4()"),
+                  ifelse(
+                    sfm$sim_specs$method == "euler", "Euler()",
+                    ifelse(
+                      sfm$sim_specs$method == "rk4", "RK4()", NA_character_
+                    )
+                  ),
+                  # dplyr::case_when(sfm$sim_specs$method == "euler" ~ "Euler()",
+                  #                  sfm$sim_specs$method == "rk4" ~ "RK4()"),
                   ifelse(sfm$sim_specs$method %in% c("euler", "rk4"),
                          paste0(", dt = ", P$timestep_name, ", adaptive=", ifelse(sfm$sim_specs$adaptive, "true", "false")), ""),
                   ifelse(!only_stocks, paste0(", ", P$callback_name, " = ", P$callback_name
@@ -1180,7 +1198,7 @@ new_times = collect(", P$times_name, "[1]:",
 #' @param overwrite Boolean; whether to overwrite the file if it does exist
 #' @return The path to the created file
 #'
-#' @export
+#' @noRd
 #' @examples
 #' julia_code <- "println(\"Hello from julia!\")"
 #' filepath <- write_script(julia_code, "my_script", ext = ".jl")
@@ -1226,6 +1244,7 @@ write_script <- function(script,
 #' @param text String containing unicode escape sequences (e.g., "\\uXXXX")
 #'
 #' @returns String with unicode characters decoded
+#' @noRd
 #'
 decode_unicode <- function(text) {
 
@@ -1253,7 +1272,7 @@ decode_unicode <- function(text) {
 #' Customary functions written in julia
 #'
 #' @return String with julia code
-#' @export
+#' @noRd
 #'
 get_func_julia = function(){
   func_def = c(
@@ -1909,6 +1928,7 @@ end"
 #' Internal function to create initialization file for julia
 #'
 #' @return NULL
+#' @noRd
 #'
 create_init = function(){
 
@@ -2012,15 +2032,15 @@ Base.round(x::Unitful.AbstractQuantity, digits::Int) = round(Unitful.ustrip.(x),
 }
 
 
-
-#' Set up julia environment for sdbuildR
+#' Set up Julia environment for sdbuildR
 #'
-#' Create julia environment to simulate stock-and-flow models. `sdbuildR_setup()` looks for a julia installation within the sdbuildR package directory, and will install julia as well as some required packages if not yet found. Keep in mind that the first time running `sdbuildR_setup()` can take around 5-15 minutes, and all subsequent calls can take around 1 minute.
+#' Create Julia environment to simulate stock-and-flow models. `sdbuildR_setup()` looks for a Julia installation, and will install Julia as well as some required packages if not found. Keep in mind that the first time running `sdbuildR_setup()` can take around 5-15 minutes, and all subsequent calls can take around 1 minute.
 #'
-#' @param version julia version. Default is "latest", which will install the most recent stable release.
-#' @param force If TRUE, force julia installation even if existing version is found. Default is FALSE.
-#' @param remove If TRUE, remove julia installation(s). You will be asked which versions to remove. Default is FALSE.
-#' @param ... Optional arguments passed to juliaCall::julia_setup()
+#' @param version Julia version. Default is "latest", which will install the most recent stable release.
+#' @param JULIA_HOME Path to Julia installation. Defaults to NULL to locate Julia automatically.
+#' @param dir Directory to install Julia. Defaults to NULL to find default location.
+#' @param force If TRUE, force Julia installation even if existing version is found. Defaults to FALSE.
+#' @param ... Optional arguments passed to JuliaCall::julia_setup()
 #'
 #' @return NULL
 #' @export
@@ -2029,108 +2049,81 @@ Base.round(x::Unitful.AbstractQuantity, digits::Int) = round(Unitful.ustrip.(x),
 #' sdbuildR_setup()
 sdbuildR_setup <- function(
     version = "latest",
-    force = FALSE,
-    # update_pkg = FALSE,
-    remove = FALSE, ...){
+    JULIA_HOME = NULL,
+    dir = NULL,
+    force = FALSE, ...){
 
-  # Check whether installation of julia exists in sdbuildR directory
-  env_path <- system.file(package = "sdbuildR")
-  dirs = file.path(env_path, "julia")
 
-  if (!file.exists(dirs)){
-    dir.create(dirs, recursive = TRUE)
-    install = TRUE
+  # If Julia location was specified, check presence of Julia
+  if (!is.null(JULIA_HOME)){
+    if (!file.exists(JULIA_HOME)){
+      stop("Location ", JULIA_HOME, " does not exist.")
+    }
+
+    # Find Julia installation in the specified directory - account for users not exactly specifying \bin location
+    JULIA_HOME0 = JULIA_HOME
+    JULIA_HOME = dirname(list.files(
+      path = dirname(JULIA_HOME),
+      pattern = "julia.exe$",
+      full.names = TRUE,
+      recursive = TRUE
+    ))
+
+    if (length(JULIA_HOME) == 0){
+      stop("No Julia installation found in ", JULIA_HOME0, ". Try sdbuildR_setup() again without specifying JULIA_HOME.")
+    } else if (length(JULIA_HOME) > 1){
+      stop("Multiple Julia installations found in ", JULIA_HOME0, ". Please specify a more specific location.")
+    }
+
   } else {
-    # Check latest version installed
-    installed = list.files(dirs)
+    # Try to find Julia installation if JULIA_HOME is not specified
+    JULIA_HOME <- julia_locate(JULIA_HOME)
 
-    # If no directories were found, install julia
-    if (length(installed) == 0){
+    if (is.null(JULIA_HOME)){
+      message("No Julia installation found.")
       install = TRUE
-    } else {
-
-      # Choose latest version
-      installed = as.character(max(package_version(installed)))
-      julia_dir = file.path(dirs, installed)
-      install = FALSE
-
-      # Remove julia if requested
-      if (remove){
-
-        # Ask to verify removal or which versions to remove
-        if (length(installed) == 1){
-          var1 = readline(prompt = paste0("Found julia version ", installed , " in sdbuildR directory. Do you want to remove it? (y/n) "))
-          if (trimws(tolower(var1)) %in% c("y", "yes")){
-            message("Removing julia version ", installed, " from sdbuildR directory...")
-            unlink(julia_dir, recursive = TRUE)
-            stop()
-          } else {
-            message("Keeping julia version ", installed, " in sdbuildR directory.")
-            stop()
-          }
-        } else {
-          message("Found multiple julia versions in sdbuildR directory. Which do you want to remove?")
-          for (i in seq_along(installed)){
-            message(i, ": ", installed[i])
-          }
-          message(i + 1, ": All")
-          var1 = readline(prompt = "Enter one or more numbers: ")
-          var1 = as.numeric(unlist(strsplit(var1, ",| ")))
-          var1 = var1[!is.na(var1)]
-          remove_all = any(var1 == i + 1)
-          var1 = var1[var1 > 0 & var1 <= length(installed)]
-
-          if (remove_all){
-            message("Removing all julia versions from sdbuildR directory...")
-            unlink(dirs, recursive = TRUE)
-          } else if (any(var1 %in% seq_along(installed))){
-            message("Removing julia version(s) ", paste0(installed[var1], collapse = ", "), " from sdbuildR directory...")
-            for (i in var1){
-              unlink(file.path(dirs, installed[i]), recursive = TRUE)
-            }
-          } else {
-            message("Keeping julia version(s) ", paste0(installed[var1], collapse = ", "), " in sdbuildR directory.")
-          }
-
-        }
-
-
-      }
     }
   }
 
-  if (remove & install){
-    stop("No julia installation found to remove in sdbuildR directory.")
+  # Check if Julia version is sufficient
+  if (!is.null(JULIA_HOME)){
+    # Find version
+    version = tryCatch({
+      julia_version(JULIA_HOME)},
+      error = function(e) {
+        stop("Julia version of ", JULIA_HOME, " cannot be determined.")
+      }
+    )
+
+    # Check if version is sufficient
+    required_version = "1.11"
+    if (package_version(version) < package_version(required_version)){
+      warning("Julia version ", version, " is older than needed for sdbuildR.")
+      install = TRUE
+    } else {
+      install = FALSE
+    }
   }
 
   install = ifelse(force, TRUE, install)
 
   if (install){
-    message("No julia installation found in sdbuildR directory. Installing julia...")
-    julia_dir = install_julia_sdbuildR(prefix = dirs, version = version)
+    ans = readline("Do you want to install the latest version of Julia? (y/n) ")
+    if (trimws(tolower(ans)) %in% c("y", "yes")){
+      JULIA_HOME = install_julia_sdbuildR(version = version, dir = dir)
+
+    } else {
+      stop("sdbuildR set-up could not be completed.")
+    }
   }
 
-  JULIA_HOME = dirname(list.files(
-    path = julia_dir,
-    pattern = "julia.exe$",
-    full.names = TRUE,
-    recursive = TRUE
-  ))
+  # JULIA_HOME = dirname(list.files(
+  #   path = julia_dir,
+  #   pattern = "julia.exe$",
+  #   full.names = TRUE,
+  #   recursive = TRUE
+  # ))
   julia <- JuliaCall::julia_setup(JULIA_HOME = JULIA_HOME, installJulia=FALSE, ...)
-
-  # Required Julia packages
-  # pkgs = c("DifferentialEquations", "DiffEqCallbacks",
-  #          "DataFrames", "Unitful", "Statistics", "Random",
-  #          "Distributions", "DataInterpolations")
-  # if (install){
-  #   message("Installing required Julia packages. This can take 5-15 minutes...")
-  #   out = lapply(pkgs, JuliaCall::julia_install_package)
-  # }
-  # if (update_pkg){
-  #   message("Updating Julia packages...")
-  #   check = lapply(pkgs, JuliaCall::julia_update_package)
-  # }
-  # lapply(pkgs, JuliaCall::julia_library)
 
   # Run initialization
   run_init()
@@ -2144,10 +2137,10 @@ sdbuildR_setup <- function(
 
 
 
-
-#' Check whether init.jl already ran
+#' Set-up Julia environment for sdbuildR with init.jl
 #'
 #' @return NULL
+#' @noRd
 run_init = function(){
 
   message("Setting up Julia environment for sdbuildR...")
@@ -2160,8 +2153,6 @@ run_init = function(){
 
   # Execute the command in Julia
   JuliaCall::julia_command(julia_cmd)
-
-  # system("julia --project=path/to/your/project -e 'using Pkg; Pkg.instantiate(); using YourModule'")
   JuliaCall::julia_source(file.path(env_path, "init.jl"))
 
   return(NULL)

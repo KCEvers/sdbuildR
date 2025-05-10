@@ -2,9 +2,9 @@
 ^\.Rproj\.user$
 ^README\.Rmd$
 ^LICENSE\.md$
-^validate
-^paper
-^dev
+^validate/
+^paper/
+^notes/
 ^inst/julia
 ^doc$
 ^Meta$

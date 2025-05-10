@@ -59,6 +59,7 @@ xmile <- function(name = NULL){
 #' @param x Value
 #'
 #' @return Boolean; whether the value is defined
+#' @noRd
 is_defined = function(x){
 
   # Safely check whether x is defined
@@ -203,6 +204,7 @@ plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_s
 #' @inheritParams build
 #'
 #' @returns Dataframe with for each flow which stock and flow to and/or from
+#' @noRd
 get_flow_df = function(sfm){
 
   check_xmile(sfm)
@@ -342,12 +344,12 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE, palette = "Dark 2", title
          main = title)
 
     for (var in stock_names[-1]) {
-      lines(x$df$time, x$df[[var]], lwd = 2)
+      graphics::lines(x$df$time, x$df[[var]], lwd = 2)
     }
 
     if (length(nonstock_names) > 0) {
       for (var in nonstock_names) {
-        lines(x$df$time, x$df[[var]], lwd = 2, lty = 2)
+        graphics::lines(x$df$time, x$df[[var]], lwd = 2, lty = 2)
       }
     }
   }
@@ -454,6 +456,7 @@ summary.sdbuildR_xmile <- function(object, ...) {
 #' @param target Target object to match length of
 #'
 #' @return arg with same length as target
+#' @noRd
 #'
 ensure_length <- function(arg, target) {
   if (length(arg) != 1 && length(arg) != length(target)) {
@@ -473,6 +476,7 @@ ensure_length <- function(arg, target) {
 #' @inheritParams build
 #'
 #' @returns NULL
+#' @noRd
 check_xmile = function(sfm){
   # Check whether it is an xmile object
   if (!inherits(sfm, "sdbuildR_xmile")){
@@ -488,6 +492,7 @@ check_xmile = function(sfm){
 #' @inheritParams build
 #'
 #' @return Validated stock-and-flow model of class sdbuildR_xmile
+#' @noRd
 #'
 validate_xmile = function(sfm){
 
@@ -766,8 +771,8 @@ validate_xmile = function(sfm){
 #' Switch names and values of list, handling different lengths in entries
 #'
 #' @param x List
-
 #' @return List
+#' @noRd
 switch_list = function(x){
 
   # Switch names and values
@@ -1538,6 +1543,7 @@ sim_specs = function(sfm,
 #' @inheritParams build
 #'
 #' @return Updated stock-and-flow Model
+#' @noRd
 #'
 erase_var = function(sfm, name){
 
@@ -1572,6 +1578,7 @@ erase_var = function(sfm, name){
 #' @param new_names Vector with new names
 #'
 #' @returns NULL
+#' @noRd
 report_name_change = function(old_names, new_names){
 
   # Warning if specified name changed
@@ -2229,6 +2236,7 @@ build = function(sfm, name, type,
 #' Get possible variable properties per building block type
 #'
 #' @return List with default properties per building block type
+#' @noRd
 #'
 get_building_block_prop = function(){
   list(
@@ -2254,6 +2262,7 @@ get_building_block_prop = function(){
 #'
 #' @inheritParams build
 #'
+#' @noRd
 #' @returns Vector with names of model variables
 get_model_var = function(sfm){
   c(unname(unlist(lapply(sfm$model$variables, names))), names(sfm$macro))
@@ -2265,6 +2274,7 @@ get_model_var = function(sfm){
 #' @inheritParams build
 #'
 #' @return Dataframe
+#' @noRd
 #'
 get_names <- function(sfm) {
   # Return empty dataframe if no variables
@@ -2333,6 +2343,7 @@ get_names <- function(sfm) {
 #'
 #' @return Translated names
 #' @importFrom rlang .data
+#' @noRd
 #'
 create_R_names = function(create_names, names_df, protected = c()){
 
@@ -2395,6 +2406,7 @@ create_R_names = function(create_names, names_df, protected = c()){
 #' @param change_null_to String, what to change NULL to
 #'
 #' @return Vector
+#' @noRd
 #'
 get_map = function(x, element_name, change_null_to = ""){
 
@@ -2416,9 +2428,9 @@ get_map = function(x, element_name, change_null_to = ""){
 #' Create R code to rebuild an existing stock-and-flow model. This may help to understand how a model is built, or to modify an existing one.
 #'
 #' @inheritParams build
-#' @inheritParams compile_R
+#' @inheritParams simulate
 #'
-#' @return String with code to build stock-and-flow model in R.
+#' @return String with code to build stock-and-flow model from scratch.
 #' @export
 #'
 #' @examples
@@ -2715,6 +2727,7 @@ debugger = function(sfm, quietly = FALSE){
 #'
 #' @inheritParams build
 #'
+#' @noRd
 #' @returns Logical value
 static_depend_on_dyn = function(sfm){
 

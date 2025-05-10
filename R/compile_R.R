@@ -14,6 +14,7 @@
 #'   \item{df}{Dataframe, timeseries of computed variables in the ODE}
 #'   \item{...}{Other variables created in the simulation script.}
 #' }
+#' @noRd
 #'
 simulate_R = function(sfm,
                       format_code=TRUE,
@@ -94,6 +95,7 @@ simulate_R = function(sfm,
 #' @inheritParams simulate
 #'
 #' @return R script
+#' @noRd
 #'
 compile_R = function(sfm,
                      format_code=TRUE,
@@ -285,6 +287,7 @@ library(sdbuildR)
 #' @inheritParams compile_ode
 #'
 #' @return List with necessary scripts
+#' @noRd
 #'
 compile_destructuring_assign = function(sfm, static_eqn){
 
@@ -368,6 +371,7 @@ compile_destructuring_assign = function(sfm, static_eqn){
 #' @inheritParams order_equations
 #'
 #' @return Updated stock-and-flow model
+#' @noRd
 #'
 substitute_var = function(sfm){
 
@@ -437,6 +441,7 @@ substitute_var = function(sfm){
 #' @inheritParams build
 #'
 #' @return Updated stock-and-flow model
+#' @noRd
 #'
 convert_conveyor = function(sfm){
 
@@ -524,6 +529,7 @@ convert_conveyor = function(sfm){
 #' @inheritParams build
 #'
 #' @return List with macro script
+#' @noRd
 compile_macros = function(sfm){
 
   script = ""
@@ -568,6 +574,7 @@ compile_macros = function(sfm){
 #' @return List
 #' @importFrom rlang .data
 #' @inheritParams compile_R
+#' @noRd
 #'
 compile_times = function(sfm){
 
@@ -642,6 +649,7 @@ compile_times = function(sfm){
 #' @return List
 #' @importFrom rlang .data
 #' @inheritParams build
+#' @noRd
 #'
 compile_constraints = function(sfm){
 
@@ -675,6 +683,7 @@ compile_constraints = function(sfm){
 #' @inheritParams order_equations
 #' @param ordering List with order of static and dynamic variables, output of order_equations()
 #'
+#' @noRd
 #'
 #' @return List with necessary scripts
 #'
@@ -772,6 +781,7 @@ compile_static_eqn = function(sfm, ordering){
 #' @inheritParams build
 #' @inheritParams compile_R
 #'
+#' @noRd
 #' @return Updated stock-and-flow model
 #'
 prep_stock_change = function(sfm){
@@ -836,6 +846,7 @@ prep_stock_change = function(sfm){
 #' @inheritParams build
 #' @inheritParams compile_R
 #'
+#' @noRd
 #' @return List with necessary scripts for ensuring non-negative Stocks
 #'
 compile_nonneg_stocks = function(sfm, keep_nonnegative_stock){
@@ -910,6 +921,7 @@ attributes(%s)$valroot
 #'
 #' @return List
 #' @importFrom rlang .data
+#' @noRd
 #'
 compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep_nonnegative_flow, keep_nonnegative_stock){
 
@@ -967,56 +979,56 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep
   dynamic_eqn = c(aux_eqn, flow_eqn)[ordering$dynamic$order] %>% unlist()
   dynamic_eqn
 
-  # To correct a units error, e.g. 1 + set_units(2, 'second' ), we need to evaluate each line of code
-  dynamic_eqn = tryCatch({
-
-    # Create a new environment to collect variables
-    envir <- new.env()
-
-    # To see whether any unitless needs to be added, we need to run prep_script, the globalpast script, and the static equations script
-    eval(parse(text = prep_script), envir = envir)
-
-    # if (nzchar(globalpast$script)){
-    #   eval(parse(text = globalpast$script), envir = envir)
-    # }
-
-    eval(parse(text = static_eqn$script), envir = envir)
-
-    # # xstart is turned into a vector at the end of static_eqn$script, but to use list2env(), it needs to be a list
-    # eval(parse(text = sprintf("%s = as.list(%s)", P$initial_value_name, P$initial_value_name)), envir = envir)
-
-    # Unwrap the xstart elements into the current environment
-    list2env(as.list(envir[[P$initial_value_name]]), envir = envir)
-
-    # Change xstart back into a vector and create a state variable S as well as time t
-    # eval(parse(text = sprintf("%s = unlist(%s); %s = %s", P$initial_value_name, P$initial_value_name, P$state_name, P$initial_value_name)), envir = envir)
-    eval(parse(text = sprintf("%s = %s", P$state_name, P$initial_value_name)), envir = envir)
-    eval(parse(text = sprintf("%s = %s[1]", P$time_name, P$times_name)), envir = envir)
-
-    # Unwrap the parameters elements into the current environment
-    list2env(envir[[P$parameter_name]], envir = envir)
-
-    # With this environment containing constant parameters and initial conditions, evaluate each line of code in dynamic eqn
-
-    envir2 <- envir # Create a new environment to collect variables
-
-    for (i in seq_along(dynamic_eqn)){
-      # print(i)
-      code_string = dynamic_eqn[i]
-      # print(code_string)
-
-      out = incompatible_unit_operation(code_string, envir2)
-
-      envir2 = out$envir
-      dynamic_eqn[i] = out$code_string
-      # print(out$code_string)
-    }
-    dynamic_eqn
-
-  }, error = function(e) {
-    print(e)
-    return(dynamic_eqn)
-  })
+  # # To correct a units error, e.g. 1 + set_units(2, 'second' ), we need to evaluate each line of code
+  # dynamic_eqn = tryCatch({
+  #
+  #   # Create a new environment to collect variables
+  #   envir <- new.env()
+  #
+  #   # To see whether any unitless needs to be added, we need to run prep_script, the globalpast script, and the static equations script
+  #   eval(parse(text = prep_script), envir = envir)
+  #
+  #   # if (nzchar(globalpast$script)){
+  #   #   eval(parse(text = globalpast$script), envir = envir)
+  #   # }
+  #
+  #   eval(parse(text = static_eqn$script), envir = envir)
+  #
+  #   # # xstart is turned into a vector at the end of static_eqn$script, but to use list2env(), it needs to be a list
+  #   # eval(parse(text = sprintf("%s = as.list(%s)", P$initial_value_name, P$initial_value_name)), envir = envir)
+  #
+  #   # Unwrap the xstart elements into the current environment
+  #   list2env(as.list(envir[[P$initial_value_name]]), envir = envir)
+  #
+  #   # Change xstart back into a vector and create a state variable S as well as time t
+  #   # eval(parse(text = sprintf("%s = unlist(%s); %s = %s", P$initial_value_name, P$initial_value_name, P$state_name, P$initial_value_name)), envir = envir)
+  #   eval(parse(text = sprintf("%s = %s", P$state_name, P$initial_value_name)), envir = envir)
+  #   eval(parse(text = sprintf("%s = %s[1]", P$time_name, P$times_name)), envir = envir)
+  #
+  #   # Unwrap the parameters elements into the current environment
+  #   list2env(envir[[P$parameter_name]], envir = envir)
+  #
+  #   # With this environment containing constant parameters and initial conditions, evaluate each line of code in dynamic eqn
+  #
+  #   envir2 <- envir # Create a new environment to collect variables
+  #
+  #   for (i in seq_along(dynamic_eqn)){
+  #     # print(i)
+  #     code_string = dynamic_eqn[i]
+  #     # print(code_string)
+  #
+  #     out = incompatible_unit_operation(code_string, envir2)
+  #
+  #     envir2 = out$envir
+  #     dynamic_eqn[i] = out$code_string
+  #     # print(out$code_string)
+  #   }
+  #   dynamic_eqn
+  #
+  # }, error = function(e) {
+  #   print(e)
+  #   return(dynamic_eqn)
+  # })
 
 
 
@@ -1153,6 +1165,7 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep
 #'
 #' @return List
 #' @inheritParams compile_R
+#' @noRd
 #'
 compile_run_ode = function(sfm, nonneg_stocks){
 
@@ -1197,6 +1210,7 @@ return(list(script=script))
 #'
 #' @return List
 #' @inheritParams compile_R
+#' @noRd
 #'
 compile_plot_ode = function(sfm){
 
@@ -1217,151 +1231,6 @@ plot_sim(sfm, %s)",
                    P$sim_df_name)
 
   return(list(script=script))
-}
-
-
-
-# Example input string with nested operators
-# code_string <- "nonnegative(set_units(set_units(population, 'Whales') * BIRTH.RATE * (1 - set_units(population, 'Whales') / CARRYING.CAPACITY), 'Whales/year'))"
-
-# Recursive function to find and extract all operators and their operands
-find_operator_sides <- function(expr, math_operators, target_operators, envir) {
-  results <- list()
-
-  # Check if the expression is a function or operator call
-  if (is.call(expr)) {
-    operator <- as.character(expr[[1]])  # Extract the operator/function name
-
-    # Convert expression to character to check length, because some entries may be empty
-    expr <- expr[sapply(expr, function(x) !(is.name(x) && as.character(x) == ""))]
-    # check_length = Filter(nzchar, purrr::map(as.list(expr), as.character))
-
-    # If the operator is one of the target mathematical operators
-    if (operator %in% math_operators & length(expr) > 2) {
-
-      # print(expr)
-      lhs <- expr[[2]]  # Left-hand side of the operator
-      rhs <- expr[[3]]  # Right-hand side of the operator
-
-      # Check whether lhs and rhs have units
-      lhs_eval = tryCatch(eval(lhs, envir = envir), error = function(e) {
-        return(e)  # Return NULL on error
-      })
-      rhs_eval = tryCatch(eval(rhs, envir = envir), error = function(e) {
-        return(e)  # Return NULL on error
-      })
-
-      # Replace incompatible units
-      incompatible_operation = (operator %in% target_operators &
-                                  ("units" %in% class(lhs_eval) +
-                                     "units" %in% class(rhs_eval)) == 1)
-      if (incompatible_operation){
-        lhs_new = deparse1(lhs)
-        rhs_new = deparse1(rhs)
-
-        # Make either lhs and rhs a unitless unit object
-        if (!"units" %in% class(lhs_eval)){
-          # Get units from rhs
-          # print(rhs_eval)
-          rhs_units = units(rhs_eval)
-          lhs_new = paste0("set_units(", deparse1(lhs), sprintf(", '%s')", rhs_units))
-        } else if (!"units" %in% class(rhs_eval)){
-          # Get units from lhs
-          # print(lhs_eval)
-          lhs_units = units(lhs_eval)
-          rhs_new = paste0("set_units(", deparse1(rhs), sprintf(", '%s')", lhs_units))
-        }
-        replacement = paste0(lhs_new, " ", operator, " ", rhs_new)
-      } else {
-        replacement = NULL
-      }
-
-      # Store the operator, LHS, and RHS
-      results <- append(results, list(list(
-        expr = expr,
-        operator = operator,
-        lhs = deparse1(lhs),
-        rhs = deparse1(rhs),
-        lhs_eval = lhs_eval,
-        rhs_eval = rhs_eval,
-        lhs_class = class(lhs_eval),
-        rhs_class = class(rhs_eval),
-        replacement = replacement
-      )))
-    }
-
-    # Recursively check all sub-expressions (i.e., arguments of the function/operator)
-    for (sub_expr in as.list(expr)[-1]) {
-
-      if (any(nzchar(as.character(sub_expr)))){
-        # print(sub_expr)
-        sub_results <- find_operator_sides(sub_expr, math_operators, target_operators, envir)
-        if (!is.null(sub_results)) {
-          results <- append(results, sub_results)
-        }
-      }
-    }
-
-
-  }
-  return(results)
-}
-
-
-
-incompatible_unit_operation = function(code_string, envir){
-
-  done = F
-
-  while (!done){
-
-    # Parse the expression into an R expression object
-    expr <- parse(text = code_string)[[1]]
-
-    # List of target mathematical operators
-    math_operators <- c("+", "-", "*", "/", "==", "!=", "<", ">", "<=", ">=")
-    target_operators <- c("+", "-", "==", "!=", "<", ">", "<=", ">=")
-
-    # Apply the function to find all operator sides in the expression
-    result <- find_operator_sides(expr, math_operators, target_operators, envir)
-
-    if (length(result) == 0){
-      done = T
-    } else {
-
-      # Get indices of items needing replacement
-      idxs = which(nzchar(get_map(result, "replacement")))
-
-      if (length(idxs) == 0){
-        done = T
-      } else {
-        res = result[[idxs[[1]]]]
-        dict = stats::setNames(res$replacement %>%
-                                 stringr::str_replace_all(stringr::fixed(c("\"" = "'"))),
-                               deparse1(res$expr) %>%
-                                 stringr::str_replace_all(stringr::fixed(c("\"" = "'"))))
-
-        expr_deparse = paste0(deparse1(expr), collapse = "") %>%
-          stringr::str_replace_all(stringr::fixed(c("\"" = "'")))
-
-        code_string = stringr::str_replace_all(expr_deparse, stringr::fixed(dict))
-      }
-
-    }
-  }
-
-  # Finally, evaluate code string in environment
-  out = tryCatch(eval(parse(text = code_string), envir = envir),
-                 error = function(e) {
-                   # print("Evaluating this code string did not work:")
-                   # print(code_string)
-                   # print(e)
-                   return(e)  # Return NULL on error
-                 })
-
-  # return(code_string)
-  return(list(code_string = code_string, envir = envir))
-
 }
 
 

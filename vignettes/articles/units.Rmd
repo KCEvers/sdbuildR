@@ -9,7 +9,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r libraries, include=FALSE}
+```{r libraries, echo=FALSE}
 library(sdbuildR)
 sdbuildR_setup()
 ```

@@ -82,6 +82,7 @@ url_to_IM = function(URL, filepath_IM, directory){
 #' The resulting string is then truncated to [255 bytes in length](https://en.wikipedia.org/wiki/Comparison_of_file_systems#Limits)
 #' @param filename A character vector to be sanitized.
 #' @param replacement A character vector used to replace invalid characters.
+#' @noRd
 #' @seealso <https://www.npmjs.com/package/sanitize-filename>, upon which this
 #'   function is based.
 path_sanitize <- function(filename, replacement = "") {
@@ -114,6 +115,7 @@ path_sanitize <- function(filename, replacement = "") {
 #' @param insightmaker_version Integer with Insight Maker version the package sdbuildR was built with
 #'
 #' @return Nested list in XMILE style
+#' @noRd
 #'
 IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
 
@@ -605,6 +607,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
 #' @param eqn Insight Maker equation to prepare
 #'
 #' @returns List with eqn and doc
+#' @noRd
 prep_eqn_IM = function(eqn){
   # HTML and escape character replacements
   eqn = eqn %>% textutils::HTMLdecode() %>%
@@ -632,6 +635,7 @@ prep_eqn_IM = function(eqn){
 #' @param with_brackets Boolean; whether to include square brackets around the match and replacement
 #'
 #' @return Updated string
+#' @noRd
 #'
 replace_names_IM = function(string, original, replacement, with_brackets = TRUE){
   if (is.null(string)){
@@ -658,6 +662,7 @@ replace_names_IM = function(string, original, replacement, with_brackets = TRUE)
 #' @inheritParams clean_unit
 #'
 #' @return Updated sfm
+#' @noRd
 #'
 clean_units_IM = function(sfm, regex_units) {
 
@@ -683,13 +688,12 @@ clean_units_IM = function(sfm, regex_units) {
         stringr::str_split_fixed(x, "<>", n = 3)
       }) %>% do.call(rbind, .) %>%
       magrittr::set_colnames(c("name", "eqn", "alias")) %>%
-      as.data.frame() %>%
-      dplyr::rowwise() %>%
-      # Create new equation if alias is defined; alias can now be discarded
-      dplyr::mutate(eqn = ifelse(nzchar(.data$alias),
-                                 paste0(.data$eqn, " ", .data$alias),
-                                 .data$eqn)) %>%
-      dplyr::ungroup()
+      as.data.frame()
+
+    # Create new equation if alias is defined; alias can now be discarded
+    custom_units_df$eqn = ifelse(nzchar(custom_units_df$alias),
+                                 paste0(custom_units_df$eqn, " ", custom_units_df$alias),
+                                 custom_units_df$eqn)
 
     # Clean units and keep mapping between old and new unit
     name_translation = lapply(custom_units_df$name, function(y){clean_unit(y, regex_units, ignore_case = TRUE, include_translation = TRUE, unit_name = TRUE)})
@@ -850,6 +854,7 @@ clean_units_IM = function(sfm, regex_units) {
 #' @inheritParams insightmaker_to_sfm
 #'
 #' @return Updated sfm
+#' @noRd
 #'
 check_nonnegativity = function(sfm, keep_nonnegative_flow, keep_nonnegative_stock, keep_solver){
 
@@ -885,6 +890,7 @@ check_nonnegativity = function(sfm, keep_nonnegative_flow, keep_nonnegative_stoc
 #' @param debug Boolean; whether to print output; defaults to FALSE
 #'
 #' @return Updated sfm
+#' @noRd
 #'
 convert_equations_IM_wrapper = function(sfm, debug, regex_units){
 
@@ -1014,6 +1020,7 @@ convert_global_IM = function(sfm, eqn, var_names, regex_units, debug = FALSE){
 #' @inheritParams build
 #'
 #' @return Updated sfm
+#' @noRd
 #'
 remove_brackets_from_names = function(sfm){
 
@@ -1049,6 +1056,7 @@ remove_brackets_from_names = function(sfm){
 #' @inheritParams build
 #'
 #' @return Vector of variable names that are constants
+#' @noRd
 #'
 split_aux_wrapper = function(sfm){
 

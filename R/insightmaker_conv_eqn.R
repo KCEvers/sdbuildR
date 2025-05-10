@@ -10,6 +10,7 @@
 #' @inheritParams clean_unit
 #'
 #' @return Dataframe with transformed eqn and additional R code needed to make the eqn function
+#' @noRd
 #' @importFrom rlang .data
 #'
 convert_equations_IM = function(
@@ -114,6 +115,7 @@ convert_equations_IM = function(
 #' @inheritParams convert_equations_IM
 #'
 #' @return Updated eqn
+#' @noRd
 #'
 replace_comments = function(eqn) {
   comment_char = c("//", "/*", "*/")
@@ -154,6 +156,7 @@ replace_comments = function(eqn) {
 #'
 #' @inheritParams convert_equations_IM
 #' @return Dataframe with start and end indices of all comments in eqn
+#' @noRd
 #'
 get_range_comments <- function(eqn) {
 
@@ -189,6 +192,7 @@ get_range_comments <- function(eqn) {
 #' @inheritParams convert_equations_IM
 #'
 #' @returns List with cleaned eqn and extracted comments
+#' @noRd
 #'
 remove_comments = function(eqn){
 
@@ -224,6 +228,7 @@ remove_comments = function(eqn){
 #' @inheritParams convert_equations_IM
 #'
 #' @return Updated eqn
+#' @noRd
 #'
 conv_destructuring_assignment = function(eqn) {
   done = FALSE
@@ -295,6 +300,7 @@ conv_destructuring_assignment = function(eqn) {
 #'
 #' @inheritParams convert_equations_IM
 #' @return Updated eqn
+#' @noRd
 #'
 replace_colon = function(eqn, var_names) {
 
@@ -341,6 +347,7 @@ replace_colon = function(eqn, var_names) {
 #'
 #' @inheritParams convert_equations_IM
 #' @return Updated eqn
+#' @noRd
 #'
 curly_to_vector_brackets = function(eqn, var_names) {
   # print(eqn)
@@ -420,18 +427,19 @@ curly_to_vector_brackets = function(eqn, var_names) {
 
         # Find type of enclosure of the lowest order bracket it is nested within
         if (nzchar(chosen_pair$nested_within)) {
-          nested_within = paired_idxs_prop[paired_idxs_prop$id == as.numeric(
-              strsplit(chosen_pair$nested_within, ",")[[1]] %>% dplyr::last()
-            ), "type"]
+          num = strsplit(chosen_pair$nested_within, ",")[[1]]
+          num = as.numeric(num[length(num)])
+          nested_within = paired_idxs_prop[paired_idxs_prop$id == num, "type"]
         } else {
           nested_within = ""
         }
 
         # Find type of enclosure of the highest order bracket it is nested around
         if (nzchar(chosen_pair$nested_around)) {
-          nested_around = paired_idxs_prop[paired_idxs_prop$id == as.numeric(strsplit(
-              chosen_pair$nested_around, ","
-            )[[1]][[1]]), "type"]
+          num = as.numeric(strsplit(
+            chosen_pair$nested_around, ","
+          )[[1]][[1]])
+          nested_around = paired_idxs_prop[paired_idxs_prop$id == num, "type"]
         } else {
           nested_around = ""
         }
@@ -493,6 +501,7 @@ curly_to_vector_brackets = function(eqn, var_names) {
 #' @inheritParams convert_equations_IM
 #' @return Updated eqn
 #' @importFrom rlang .data
+#' @noRd
 #'
 replace_op_IM <- function(eqn, var_names) {
 
@@ -588,6 +597,7 @@ replace_op_IM <- function(eqn, var_names) {
 #' @inheritParams convert_equations_IM
 #'
 #' @return Dataframe with start and end indices of all words as well as extracted words
+#' @noRd
 #'
 get_words = function(eqn){
 
@@ -606,6 +616,7 @@ get_words = function(eqn){
 #' @inheritParams convert_equations_IM
 #'
 #' @return Updated line
+#' @noRd
 #'
 convert_statement = function(line, var_names, debug){
 
@@ -757,6 +768,7 @@ convert_statement = function(line, var_names, debug){
 #' @inheritParams convert_equations_IM
 #'
 #' @return Updated eqn
+#' @noRd
 #'
 convert_all_statements = function(eqn, var_names, debug){
 
@@ -803,6 +815,7 @@ convert_all_statements = function(eqn, var_names, debug){
 #' @param names_with_brackets Logical, whether variable names include brackets.
 #'
 #' @return Data frame with indices of enclosures and nesting properties.
+#' @noRd
 #' @importFrom stringr str_locate_all str_sub
 get_range_pairs <- function(eqn, var_names, opening = "c(", closing = ")", names_with_brackets = FALSE) {
 
@@ -891,6 +904,7 @@ get_range_pairs <- function(eqn, var_names, opening = "c(", closing = ")", names
 #'
 #' @inheritParams convert_equations_IM
 #' @return Dataframe with indices of quotation marks in eqn
+#' @noRd
 #'
 get_range_quot <- function(eqn) {
   # Get indices of quotation marks (no such thing as nested quotation marks, luckily, so we only need to find indices of all quotation marks and consecutive ones belong together)
@@ -940,6 +954,7 @@ get_range_quot <- function(eqn) {
 #'
 #' @return Dataframe with indices per type of bracket
 #' @importFrom rlang .data
+#' @noRd
 #'
 get_range_all_pairs = function(eqn, var_names,
                                add_custom = NULL,
@@ -1042,6 +1057,7 @@ get_range_all_pairs = function(eqn, var_names,
 #' @inheritParams get_range_names
 #'
 #' @return Sequence of indices
+#' @noRd
 #'
 get_seq_exclude = function(eqn,
                            var_names = NULL,
@@ -1088,6 +1104,7 @@ get_seq_exclude = function(eqn,
 #' @inheritParams convert_equations_IM
 #'
 #' @return Dataframe with start and end indices of each name
+#' @noRd
 #'
 get_range_names = function(eqn, var_names, names_with_brackets = FALSE) {
 
@@ -1127,6 +1144,7 @@ get_range_names = function(eqn, var_names, names_with_brackets = FALSE) {
 #' Get regular expressions for built-in Insight Maker functions
 #'
 #' @return Dataframe
+#' @noRd
 get_syntax_IM = function(){
   # Custom function to replace each (nested) function; necessary because regex in stringr unfortunately doesn't seem to handle nested functions
   conv_df = matrix(c(
@@ -1355,6 +1373,7 @@ get_syntax_IM = function(){
 #' @return List with transformed eqn and list with additional R code needed to make the eqn function
 #' @inheritParams convert_equations_IM
 #' @importFrom rlang .data
+#' @noRd
 #'
 convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 
@@ -1398,11 +1417,17 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
       next
     }
 
-    idx_df = idx_df %>% as.data.frame() %>%
-      # Double matches in case of functions that don't need brackets, e.g. Days() -> select one with longest end, as we want to match Days() over Days
-      dplyr::group_by(.data$insightmaker, .data$start) %>%
-      dplyr::slice_max(order_by = .data$end, n = 1) %>%
-      dplyr::ungroup()
+    # idx_df = idx_df %>% as.data.frame() %>%
+    #   # Double matches in case of functions that don't need brackets, e.g. Days() -> select one with longest end, as we want to match Days() over Days
+    #   dplyr::group_by(.data$insightmaker, .data$start) %>%
+    #   dplyr::slice_max(order_by = .data$end, n = 1) %>%
+    #   dplyr::ungroup()
+
+  # Double matches in case of functions that don't need brackets, e.g. Days() -> select one with longest end, as we want to match Days() over Days
+    idx_df <- as.data.frame(idx_df)
+    idx_df <- idx_df[order(idx_df$insightmaker, idx_df$start, -idx_df$end), ]
+    idx_df <- idx_df[!duplicated(idx_df[, c("insightmaker", "start")]), ]
+    rownames(idx_df) <- NULL
 
     if (nrow(idx_df) > 0) idx_df = idx_df[!(idx_df$start %in% idxs_exclude | idx_df$end %in% idxs_exclude), ]
 
@@ -1457,10 +1482,14 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
       }
 
       # Start with most nested function
-      idx_funcs_ordered = idx_funcs %>% dplyr::rowwise() %>%
-        dplyr::mutate(is_nested_around = any(.data$start < idx_funcs$start &
-                                               .data$end > idx_funcs$end)) %>% dplyr::ungroup() %>%
-        dplyr::arrange(.data$is_nested_around) %>% as.data.frame()
+      # idx_funcs_ordered = idx_funcs %>% dplyr::rowwise() %>%
+      #   dplyr::mutate(is_nested_around = any(.data$start < idx_funcs$start &
+      #                                          .data$end > idx_funcs$end)) %>% dplyr::ungroup() %>%
+      #   dplyr::arrange(.data$is_nested_around) %>% as.data.frame()
+      idx_funcs_ordered = idx_funcs
+      idx_funcs_ordered$is_nested_around = any(idx_funcs_ordered$start < idx_funcs$start & idx_funcs_ordered$end > idx_funcs$end)
+      idx_funcs_ordered = idx_funcs_ordered[order(idx_funcs_ordered$is_nested_around), ]
+
 
       # Select first match
       idx_func = idx_funcs_ordered[1, ]
@@ -1611,6 +1640,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 #' @param bracket_arg String with arguments, excluding surrounding brackets
 #'
 #' @return Vector with arguments
+#' @noRd
 #'
 parse_args = function(bracket_arg){
   # Split arguments by comma; in order to not split arguments which contain a comma (e.g. c(1,2,3)), find all brackets and quotation marks, and don't include commas within these
@@ -1651,6 +1681,7 @@ parse_args = function(bracket_arg){
 #' @param start_func Index of start of function
 #'
 #' @return String with arguments before function
+#' @noRd
 #'
 extract_prefunc_args = function(eqn, var_names, start_func, names_with_brackets){
 
@@ -1696,6 +1727,7 @@ extract_prefunc_args = function(eqn, var_names, start_func, names_with_brackets)
 #'
 #' @inheritParams conv_delayN
 #' @return Transformed eqn
+#' @noRd
 #'
 conv_IMFILTER <- function(func, arg) {
   x_in_function = stringr::str_detect(arg[2], "\\bx\\b")
@@ -1720,6 +1752,7 @@ conv_IMFILTER <- function(func, arg) {
 #'
 #' @inheritParams conv_delayN
 #' @return Transformed eqn
+#' @noRd
 #'
 conv_IMMAP <- function(func, arg) {
   x_in_function = stringr::str_detect(arg[2], "\\bx\\b")
@@ -1750,6 +1783,7 @@ conv_IMMAP <- function(func, arg) {
 #' Convert Insight Maker's Repeat() function to R
 #'
 #' @inheritParams conv_delayN
+#' @noRd
 #' @return Transformed eqn
 #'
 conv_repeat <- function(func, arg) {
@@ -1794,6 +1828,7 @@ conv_repeat <- function(func, arg) {
 #' @inheritParams convert_equations_IM
 #'
 #' @return Transformed eqn
+#' @noRd
 #'
 conv_lookup <- function(func, arg, name) {
 
@@ -1818,6 +1853,7 @@ conv_lookup <- function(func, arg, name) {
 #'
 #' @inheritParams convert_equations_IM
 #' @return Transformed eqn
+#' @noRd
 #'
 convert_addition_of_strings = function(eqn, var_names) {
 
@@ -1892,6 +1928,7 @@ convert_addition_of_strings = function(eqn, var_names) {
 #'
 #' @inheritParams convert_equations_IM
 #' @return Boolean
+#' @noRd
 #'
 check_only_primitive = function(eqn) {
   # A eqn only contains a primitive when there is one pair of square brackets and they are located at the beginning and end
@@ -1909,6 +1946,7 @@ check_only_primitive = function(eqn) {
 #' Convert Insight Maker's Delay() to R
 #'
 #' @inheritParams conv_past_values
+#' @noRd
 #'
 #' @return List with transformed eqn and additional R code needed to make the eqn function
 conv_delay = function(func, arg, name){
@@ -1930,6 +1968,7 @@ conv_delay = function(func, arg, name){
 #' Convert Insight Maker's PastValues and friends to R
 #'
 #'
+#' @noRd
 #' @return List with transformed eqn and additional R code needed to make the eqn function
 #' @inheritParams convert_equations_IM
 #' @inheritParams conv_delayN
@@ -1986,6 +2025,7 @@ conv_past_values = function(func, arg, name) {
 #' @param func String with name of Insight Maker function
 #' @param arg Arguments passed to Insight Maker function
 #'
+#' @noRd
 #' @return List with transformed eqn and additional R code needed to make the eqn function
 #' @importFrom rlang .data
 #'
@@ -2022,6 +2062,7 @@ conv_delayN = function(func, arg) {
 #'
 #' @return List with transformed eqn and additional R code needed to make the eqn function
 #' @inheritParams convert_equations_IM
+#' @noRd
 #' @inheritParams conv_delayN
 #'
 conv_fix = function(func, arg, name, type) {
@@ -2085,6 +2126,7 @@ conv_fix = function(func, arg, name, type) {
 #' @param match_idx Index of the number of times the same function has been called in the same eqn
 #'
 #' @return List with transformed eqn and list with additional R code needed to make the eqn function
+#' @noRd
 #' @inheritParams conv_delayN
 #' @inheritParams convert_equations_IM
 #'
@@ -2129,6 +2171,7 @@ conv_step = function(func, arg, match_idx, name,  # Default settings of Insight 
 #' @param repeat_interval Interval at which to repeat pulse, defaults to "NULL" to indicate no repetition
 #'
 #' @return List with transformed eqn and list with additional R code needed to make the eqn function
+#' @noRd
 #' @inheritParams convert_equations_IM
 #' @inheritParams conv_step
 #'
@@ -2184,6 +2227,7 @@ conv_pulse = function(func,
 #' @param h_ramp End height of ramp, defaults to 1
 #'
 #' @return List with transformed eqn and list with additional R code needed to make the eqn function
+#' @noRd
 #' @inheritParams convert_equations_IM
 #' @inheritParams conv_step
 #'
@@ -2235,6 +2279,7 @@ conv_ramp = function(func, arg, match_idx, name, # Default settings of Insight M
 #'
 #' @return List with transformed eqn and list with additional R code needed to make the eqn function
 #' @inheritParams convert_equations_IM
+#' @noRd
 #' @inheritParams conv_step
 #'
 conv_seasonal = function(func, arg, match_idx, name, period = "u(\"1common_yr\")", shift ="u(\"0common_yr\")") {

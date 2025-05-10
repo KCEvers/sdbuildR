@@ -1,8 +1,8 @@
-### Custom functions to match InsightMaker functions
+### Custom functions to match Insight Maker functions
 
-#' Convert InsightMaker's Round() function to R
+#' Convert Insight Maker's Round() function to R
 #'
-#' This function ensures that rounding in R matches rounding in InsightMaker. R base's round() rounds .5 to 0, whereas round_IM() rounds .5 to 1.
+#' This function ensures that rounding in R matches rounding in Insight Maker. R base's round() rounds .5 to 0, whereas round_IM() rounds .5 to 1.
 #'
 #' Source: https://stackoverflow.com/questions/12688717/round-up-from-5/12688836#12688836
 #'
@@ -80,7 +80,7 @@ expit = function(x){
 
 
 #' Generate random boolean value
-#' Equivalent of RandBoolean() in InsightMaker
+#' Equivalent of RandBoolean() in Insight Maker
 #'
 #' @param p Probability of TRUE, numerical value between 0 and 1
 #'
@@ -91,12 +91,11 @@ expit = function(x){
 #' rbool(.5)
 rbool = function(p){
   return(stats::runif(1) < p)
-  # return(sample(c(T,F), size = 1, prob = c(p, 1-p)))
 }
 
 
 #' Generate random number from custom distribution
-#' Equivalent of RandDist() in InsightMaker
+#' Equivalent of RandDist() in Insight Maker
 #'
 #' @param a Vector to draw sample from
 #' @param b Vector of probabilities
@@ -112,7 +111,7 @@ rdist = function(a, b){
 
 
 #' Find index of needle (value) in haystack (vector)
-#' Equivalent of .IndexOf() in InsightMaker
+#' Equivalent of .IndexOf() in Insight Maker
 #'
 #' @param haystack Vector or string to search through
 #' @param needle Value to search for
@@ -147,7 +146,7 @@ indexof = function(haystack, needle){
 
 
 #' Length of vector or string
-#' Equivalent of .Length() in InsightMaker, which returns the number of elements when performed on a vector, but returns the number of characters when performed on a string
+#' Equivalent of .Length() in Insight Maker, which returns the number of elements when performed on a vector, but returns the number of characters when performed on a string
 #'
 #' @param x A vector or a string
 #'
@@ -168,7 +167,7 @@ IM_length = function(x){
 
 
 #' Check whether needle (value) is in haystack (vector or string)
-#' Equivalent of .Contains() in InsightMaker
+#' Equivalent of .Contains() in Insight Maker
 #'
 #' @param haystack Vector or string to search through
 #' @param needle Value to search for
@@ -189,7 +188,7 @@ IM_contains = function(haystack, needle){
 
 
 #' Extract characters from string by index
-#' Equivalent of .Range() in InsightMaker
+#' Equivalent of .Range() in Insight Maker
 #'
 #' @param string String to extract from
 #' @param idxs Integer or vector of integers indexing which characters to extract
@@ -206,7 +205,7 @@ substr_i = function(string, idxs){
 
 
 #' Filter vector based on logical function
-#' Equivalent of .Filter() in InsightMaker when using arguments x and key in the filter function
+#' Equivalent of .Filter() in Insight Maker when using arguments x and key in the filter function
 #'
 #' @param y Named vector
 #' @param condition_func Function which takes arguments x and key and outputs a boolean value
@@ -234,7 +233,7 @@ IM_filter = function(y, condition_func){
 
 
 #' Create ramp function
-#' Equivalent of Ramp() in InsightMaker
+#' Equivalent of Ramp() in Insight Maker
 #'
 #' @param start_t_ramp Start time of ramp
 #' @param end_t_ramp End time of ramp
@@ -267,8 +266,8 @@ ramp <- function(start_t_ramp, end_t_ramp, start_h_ramp = 0, end_h_ramp = 1){
                       y = c(start_h_ramp, end_h_ramp))
 
   # If the ramp is after the start of signal, add a zero at the start
-  if (min(start_t_ramp) > dplyr::first(times)){
-    signal = rbind(data.frame(times = dplyr::first(times), y = 0), signal)
+  if (min(start_t_ramp) > times[1]){
+    signal = rbind(data.frame(times = times[1], y = 0), signal)
   }
 
   # # If the ramp ends before the end of the signal, add height of ramp at the end
@@ -287,7 +286,7 @@ ramp <- function(start_t_ramp, end_t_ramp, start_h_ramp = 0, end_h_ramp = 1){
 
 
 #' Create pulse function
-#' Equivalent of Pulse() in InsightMaker
+#' Equivalent of Pulse() in Insight Maker
 #'
 #' @param start_t_pulse Start time of pulse
 #' @param h_pulse Height of pulse, defaults to 1
@@ -323,9 +322,9 @@ pulse <- function(start_t_pulse, h_pulse = 1, w_pulse = 1, repeat_interval = NUL
 #   }
 
   # Define time and indices of pulses
-  start_ts = seq(start_t_pulse, dplyr::last(times),
+  start_ts = seq(start_t_pulse, times[length(times)],
                  # If the number of repeat is NULL, ensure no repeats
-                 by = ifelse(is.null(repeat_interval), dplyr::last(times) + 1,
+                 by = ifelse(is.null(repeat_interval), times[length(times)] + 1,
                              repeat_interval))
   end_ts = start_ts + w_pulse
 
@@ -334,18 +333,19 @@ pulse <- function(start_t_pulse, h_pulse = 1, w_pulse = 1, repeat_interval = NUL
         data.frame(times = end_ts, y = 0))
 
   # If pulse is after the start of signal, add a zero at the start
-  if (min(start_ts) > dplyr::first(times)){
-    signal = rbind(signal, data.frame(times = dplyr::first(times), y = 0))
+  if (min(start_ts) > times[1]){
+    signal = rbind(signal, data.frame(times = times[1], y = 0))
   }
 
   # If pulse does not cover end of signal, add a zero at the end
   # (I don't fully understand why this is necessary, but otherwise it gives incorrect results with repeat_interval <= 0 in Julia, so for consistency's sake)
-  if (max(end_ts) < dplyr::last(times)){
-    signal = rbind(signal, data.frame(times = dplyr::last(times), y = 0))
+  if (max(end_ts) < times[length(times)]){
+    signal = rbind(signal, data.frame(times = times[length(times)], y = 0))
   }
 
-  signal = signal %>%
-    dplyr::arrange(times)
+  # signal = signal %>%
+  #   dplyr::arrange(times)
+  signal = signal[order(signal$times), ]
 
   # Create linear approximation function, use constant interpolation to get a block shape even at finer sampling times
   input = stats::approxfun(signal, rule = 2, method = 'constant')
@@ -356,7 +356,7 @@ pulse <- function(start_t_pulse, h_pulse = 1, w_pulse = 1, repeat_interval = NUL
 
 
 #' Create step function
-#' Equivalent of Step() in InsightMaker
+#' Equivalent of Step() in Insight Maker
 #'
 #' @param start_t_step Start time of step
 #' @param h_step Height of step, defaults to 1
@@ -381,8 +381,8 @@ step <- function(start_t_step, h_step = 1){
   # Create dataframe with signal
   signal = data.frame(times = c(start_t_step, times[length(times)]), y = c(h_step, h_step))
 
-  if (start_t_step > dplyr::first(times)){
-    signal = rbind(data.frame(times = dplyr::first(times), y = 0), signal)
+  if (start_t_step > times[1]){
+    signal = rbind(data.frame(times = times[1], y = 0), signal)
   }
 
   # Create linear approximation function
@@ -392,7 +392,7 @@ step <- function(start_t_step, h_step = 1){
 
 
 #' Annual sine wave with an amplitude of 1
-#' Equivalent of Seasonal() in InsightMaker
+#' Equivalent of Seasonal() in Insight Maker
 #'
 #' @param t Current time
 #' @param period Duration of wave in years

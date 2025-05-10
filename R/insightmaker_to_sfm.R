@@ -13,7 +13,7 @@
 #'
 #' @return Stock-and-flow model of class xmile.
 #' @export
-#' @seealso [build()], [template()]
+#' @seealso [build()]
 #'
 #' @examples
 #' sfm = insightmaker_to_sfm(URL =

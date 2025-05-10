@@ -138,6 +138,7 @@ test_that("converting functions to Julia with named arguments", {
 
   # Error when not all default arguments are at the end
   expect_error(xmile() %>% macro("Function", "function(x, y = 1, z) x + y"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments.")
+
   expect_error(xmile() %>% macro("Function", "function(x, y = 1, z){\nx + y\n}"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments.")
 
   expect_error(xmile() %>% macro("Function", "function(x, y = 1, z, a = 1) x + y"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments")

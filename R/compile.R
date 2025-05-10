@@ -1,3 +1,6 @@
+# **to do return of compile and xmile
+
+
 
 #' Simulate stock-and-flow model
 #'
@@ -9,17 +12,17 @@
 #' @param keep_unit If TRUE, keeps units of variables. Defaults to TRUE.
 #' @param verbose If TRUE, update on progress. Defaults to FALSE.
 #' @param debug If TRUE, print output for debugging. Defaults to FALSE.
-#' @param only_stocks If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "julia" in sim_specs() and no delay functions are used. Defaults to FALSE.
+#' @param only_stocks If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.
 #' @param ... Optional arguments
 #'
 #' @return List with variables created in the simulation script
 #' \describe{
+#'   \item{df}{Dataframe, timeseries of computed variables in the ODE}
 #'   \item{dt}{Numeric, the timestep}
 #'   \item{times}{Numeric, sequence of time values}
 #'   \item{ode_func}{Function, the ODE function}
 #'   \item{pars}{List, constant parameters (i.e. static Auxiliaries)}
 #'   \item{xstart}{Numeric, initial value of Stocks}
-#'   \item{df}{Dataframe, timeseries of computed variables in the ODE}
 #'   \item{...}{Other variables created in the simulation script.}
 #' }
 #' @export
@@ -59,7 +62,7 @@ simulate = function(sfm,
   } else if (tolower(sfm$sim_specs$language) == "r"){
 
     if (!requireNamespace("deSolve", quietly = TRUE)){
-      stop("deSolve is not installed! Please install deSolve to simulate in R, or simulate in Julia by setting\nsfm %>% sim_specs(language = 'julia')")
+      stop("deSolve is not installed! Please install deSolve to simulate in R, or simulate in Julia by setting\nsfm %>% sim_specs(language = 'Julia')")
     }
 
     return(simulate_R(sfm,
@@ -68,7 +71,7 @@ simulate = function(sfm,
                       keep_nonnegative_stock = keep_nonnegative_stock,
                       verbose = verbose, debug = debug))
   } else {
-    stop("Language not supported. Please run either sfm %>% sim_specs(language = 'julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
+    stop("Language not supported. Please run either sfm %>% sim_specs(language = 'Julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
   }
 
 }
@@ -82,6 +85,7 @@ simulate = function(sfm,
 #' @inheritParams simulate
 #'
 #' @return Julia or R script
+#' @noRd
 #'
 compile = function(sfm,
                    format_code=TRUE,
@@ -116,6 +120,7 @@ compile = function(sfm,
 #' @inheritParams build
 #'
 #' @return List with issue and message
+#' @noRd
 #'
 detect_undefined_var = function(sfm){
 
@@ -175,6 +180,7 @@ detect_undefined_var = function(sfm){
 #' @param dependencies_dict Named list with dependencies for each equation; names are equation names and entries are dependencies
 #'
 #' @return Equation names ordered according to their dependencies
+#' @noRd
 #'
 topological_sort = function(dependencies_dict){
 
@@ -208,7 +214,10 @@ topological_sort = function(dependencies_dict){
     return(edge)
   }) %>% do.call(rbind, .) %>% magrittr::set_rownames(NULL) %>%
     # Turn into vector by row
-    as.data.frame() %>% dplyr::distinct() %>% as.matrix() %>% t() %>% c()
+    as.data.frame() # %>% dplyr::distinct() %>% as.matrix() %>% t() %>% c()
+  edges = edges[!duplicated(edges), ] # Remove duplicates
+  edges = as.matrix(edges) %>% t() %>% c()
+
   edges
 
   # Create a directed graph from the edges
@@ -235,6 +244,7 @@ topological_sort = function(dependencies_dict){
 #' @param g Graph object
 #'
 #' @returns List with issue and message
+#' @noRd
 #'
 circularity = function(g){
   # Check for cycles by finding strongly connected components
@@ -268,6 +278,7 @@ circularity = function(g){
 #' @param only_model_var If TRUE, only look for dependencies on other model variables.
 #'
 #' @return Vector of dependencies (variable names in equation)
+#' @noRd
 #'
 find_dependencies = function(sfm, eqns = NULL, only_var = TRUE, only_model_var = TRUE){
 
@@ -308,6 +319,7 @@ find_dependencies = function(sfm, eqns = NULL, only_var = TRUE, only_model_var =
 #' @param print_msg If TRUE, print message if the ordering fails; defaults to TRUE.
 #'
 #' @return List with order of static and dynamic variables
+#' @noRd
 #'
 order_equations <- function(sfm, print_msg = TRUE){
 

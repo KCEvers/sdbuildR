@@ -128,7 +128,7 @@ sfm = sfm %>%
 plot(sfm)
 ```
  
-The flows make use of four other variables: `delta`, `gamma`, `alpha`, and `beta`. These are constants (i.e. static variables), and also need to be defined in the model. Below, we add these in a vectorized manner for efficiency. In addition, we document the meaning of these variables in the optional `doc` property.
+The flows make use of four other variables: `delta`, `gamma`, `alpha`, and `beta`. Below, we add these constants in a vectorized manner for efficiency. In addition, we document the meaning of these variables in the optional `doc` property.
  
 ```{r}
 sfm = sfm %>%
@@ -453,7 +453,9 @@ sfm = sfm %>%
 
 <!-- ** ### Input functions -->
 
-
+<!-- https://stackoverflow.com/questions/61484483/r-ode-function-desolve-package-change-the-value-of-a-parameter-as-a-function -->
+<!-- problem of if(t == ) statements: -->
+<!-- "Most solvers of deSolve use an automatic internal time step, that adjusts itself, depending on the roughness or smoothness of the system. The use of if statements or if()functions in the model function is not a good idea for two reasons: (i) the time steps may not be hit exactly and (2) the model function (i.e. the derivative) should ideally be continuous and differentiable and avoid step-wise behavior, even if the solvers are quite robust in such cases." -->
 
 
 <!-- XXX Have fun building your own models! -->

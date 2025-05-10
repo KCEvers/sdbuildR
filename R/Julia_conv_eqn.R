@@ -7,6 +7,7 @@
 #' @inheritParams clean_unit
 #'
 #' @return Updated sfm
+#' @noRd
 #'
 convert_equations_julia_wrapper = function(sfm, regex_units, debug = TRUE){
 
@@ -71,6 +72,7 @@ convert_equations_julia_wrapper = function(sfm, regex_units, debug = TRUE){
 #'
 #' @return Dataframe with transformed eqn
 #' @importFrom rlang .data
+#' @noRd
 #'
 convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units, debug = TRUE){
 
@@ -204,7 +206,7 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units,
 #' @inheritParams convert_equations_IM
 #'
 #' @returns Dataframe with start and end indices of digits
-#' @export
+#' @noRd
 #'
 get_range_digits = function(eqn, var_names){
 
@@ -256,7 +258,7 @@ get_range_digits = function(eqn, var_names){
 #' @inheritParams convert_equations_IM
 #'
 #' @returns Updated string
-#' @export
+#' @noRd
 #'
 replace_digits_with_floats = function(eqn, var_names){
 
@@ -309,6 +311,7 @@ replace_digits_with_floats = function(eqn, var_names){
 #' @inheritParams convert_equations_IM
 #' @return Updated eqn
 #' @importFrom rlang .data
+#' @noRd
 #'
 replace_op_julia <- function(eqn, var_names) {
 
@@ -406,6 +409,7 @@ replace_op_julia <- function(eqn, var_names) {
 #' @inheritParams convert_equations_julia
 #'
 #' @returns Modified dataframe
+#' @noRd
 #'
 find_round = function(df, round_brackets, eqn, var_names){
 
@@ -417,7 +421,10 @@ find_round = function(df, round_brackets, eqn, var_names){
   } else {
     start_round = end_round = NA
   }
-  if (df$statement %in% c("function", "FUNCTION")){
+
+  start_word = end_word = func_name = NA
+
+   if (df$statement %in% c("function", "FUNCTION")){
 
     # Get words before statement
     words = get_words(stringr::str_sub(eqn, 1, df$start - 1))
@@ -428,8 +435,6 @@ find_round = function(df, round_brackets, eqn, var_names){
       end_word = word$end
       func_name = word$word
     }
-  } else {
-    start_word = end_word = func_name = NA
   }
   return(cbind(df, data.frame(start_round = start_round, end_round = end_round,
                               start_word = start_word, end_word = end_word,
@@ -446,6 +451,7 @@ find_round = function(df, round_brackets, eqn, var_names){
 #' @param paired_idxs Dataframe with indices
 #'
 #' @returns Modified dataframe
+#' @noRd
 #'
 find_curly = function(df, paired_idxs){
   statements = c("if", "else if", "for", "while", "function")
@@ -466,6 +472,7 @@ find_curly = function(df, paired_idxs){
 #' @inheritParams convert_equations_IM
 #'
 #' @return Updated eqn
+#' @noRd
 #'
 convert_all_statements_julia = function(eqn, var_names, debug){
 
@@ -524,26 +531,47 @@ convert_all_statements_julia = function(eqn, var_names, debug){
       round_brackets = get_range_all_pairs(eqn, var_names, type = "round")
 
       # print(df_statements)
+#
+#       # Add round brackets and curly brackets to df_statements
+#       df_statements = df_statements %>%
+#         dplyr::arrange(.data$start) %>%
+#         # else if and if will have matching ending characters, choose one with longest statement
+#         dplyr::group_by(.data$end) %>%
+#         dplyr::slice_min(.data$start, n = 1) %>%
+#         dplyr::ungroup() %>%
+#         dplyr::mutate(id = 1:nrow(.)) %>% dplyr::group_by(.data$id) %>%
+#         # Find matching round brackets
+#         dplyr::group_modify(~ find_round(.x, round_brackets, eqn, var_names)) %>%
+#         # Find matching curly brackets, pass df_statements to check if there is another statement after the curly bracket
+#         dplyr::group_modify(~ find_curly(.x, paired_idxs)) %>%
+#         dplyr::ungroup() %>%
+#         dplyr::mutate(lead_start = dplyr::lead(.data$start, default = 0) - 1,
+#                       # Check if there is another statement after the curly bracket
+#                       next_statement = dplyr::if_else(.data$end_curly == .data$lead_start,
+#                                                       dplyr::lead(.data$statement), NA))
+#
+#       df_statements
 
-      # Add round brackets and curly brackets to df_statements
-      df_statements = df_statements %>%
-        dplyr::arrange(.data$start) %>%
-        # else if and if will have matching ending characters, choose one with longest statement
-        dplyr::group_by(.data$end) %>%
-        dplyr::slice_min(.data$start, n = 1) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(id = 1:nrow(.)) %>% dplyr::group_by(.data$id) %>%
-        # Find matching round brackets
-        dplyr::group_modify(~ find_round(.x, round_brackets, eqn, var_names)) %>%
-        # Find matching curly brackets, pass df_statements to check if there is another statement after the curly bracket
-        dplyr::group_modify(~ find_curly(.x, paired_idxs)) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(lead_start = dplyr::lead(.data$start, default = 0) - 1,
-                      # Check if there is another statement after the curly bracket
-                      next_statement = dplyr::if_else(.data$end_curly == .data$lead_start,
-                                                      dplyr::lead(.data$statement), NA))
+      #
+            # Add round brackets and curly brackets to df_statements
+            df_statements = df_statements[order(df_statements$start), ]
+            df_statements = df_statements %>%
+              # else if and if will have matching ending characters, choose one with longest statement
+              dplyr::group_by(.data$end) %>%
+              dplyr::slice_min(.data$start, n = 1) %>%
+              dplyr::ungroup() %>%
+              dplyr::mutate(id = 1:nrow(.)) %>% dplyr::group_by(.data$id) %>%
+              # Find matching round brackets
+              dplyr::group_modify(~ find_round(.x, round_brackets, eqn, var_names)) %>%
+              # Find matching curly brackets, pass df_statements to check if there is another statement after the curly bracket
+              dplyr::group_modify(~ find_curly(.x, paired_idxs)) %>%
+              dplyr::ungroup()
+            df_statements$lead_start = dplyr::lead(df_statements$start, default = 0) - 1
+                            # Check if there is another statement after the curly bracket
+            df_statements$next_statement = dplyr::if_else(df_statements$end_curly == df_statements$lead_start,
+                                                            dplyr::lead(df_statements$statement), NA)
 
-      df_statements
+            df_statements
 
       if (nrow(df_statements) == 0) {
         done = TRUE
@@ -726,6 +754,7 @@ convert_all_statements_julia = function(eqn, var_names, debug){
 #' @param arg List with parsed arguments
 #'
 #' @returns List with named default arguments
+#' @noRd
 #'
 create_default_arg = function(arg){
   # Find names and values of arguments
@@ -746,6 +775,7 @@ create_default_arg = function(arg){
 #'
 #' @inheritParams build
 #' @inheritParams convert_equations_IM
+#' @noRd
 #'
 #' @returns Updated stock-and-flow model
 order_arg_in_func_wrapper = function(sfm, var_names){
@@ -777,6 +807,7 @@ order_arg_in_func_wrapper = function(sfm, var_names){
 #' @inheritParams build
 #' @inheritParams convert_equations_IM
 #'
+#' @noRd
 #' @returns Updated stock-and-flow model
 #'
 add_keyword_arg_wrapper = function(sfm, var_names){
@@ -843,6 +874,7 @@ add_keyword_arg_wrapper = function(sfm, var_names){
 #' @param default_arg List with default arguments
 #'
 #' @returns Updated eqn
+#' @noRd
 #'
 add_keyword_arg = function(eqn, var_names, func_name, default_arg){
 
@@ -883,6 +915,7 @@ add_keyword_arg = function(eqn, var_names, func_name, default_arg){
 
 #' Get regular expressions for Julia functions
 #'
+#' @noRd
 #' @return Dataframe
 get_syntax_julia = function(){
 
@@ -1330,6 +1363,7 @@ get_syntax_julia = function(){
 #'
 #' @return List with transformed eqn and list with additional R code needed to make the eqn function
 #' @inheritParams convert_equations_IM
+#' @noRd
 #' @importFrom rlang .data
 #'
 convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
@@ -1356,8 +1390,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
     R_regex = syntax_df$R_regex_first_iter
 
     while (!done) {
-
-      # which_regex = ifelse(i == 1, "R_regex_first_iter", "R_regex")
 
       # Remove those matches that are in quotation marks or names
       idxs_exclude = get_seq_exclude(eqn, var_names)
@@ -1423,13 +1455,34 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
             idx_df,
             by.x = "start",
             by.y = "end"
-          ) %>% dplyr::rename(start_bracket = "start", start = "start.y") %>%
-            # Add back syntax1b which does not need brackets
-            dplyr::bind_rows(idx_df[idx_df$syntax == "syntax1b", ] %>%
-                               # Add start_bracket column to prevent errors
-                               dplyr::mutate(start_bracket = .data$start)) %>%
-            dplyr::arrange(.data$end)
+          )
+          idx_funcs[["start_bracket"]] = idx_funcs[["start"]]
+          idx_funcs[["start"]] = idx_funcs[["start.y"]]
+
+
+          df2 = idx_df[idx_df$syntax == "syntax1b", ]
+          # Add start_bracket column to prevent errors
+          df2$start_bracket = df2$start
+          # Add back syntax1b which does not need brackets
+          idx_funcs = dplyr::bind_rows(idx_funcs, df2)
+          idx_funcs = idx_funcs[order(idx_funcs$end), ]
           idx_funcs
+
+
+          # # Match the opening bracket of each function to round brackets in paired_idxs
+          # idx_funcs = merge(
+          #   paired_idxs[paired_idxs$type == "round", ],
+          #   idx_df,
+          #   by.x = "start",
+          #   by.y = "end"
+          # ) %>% dplyr::rename(start_bracket = "start", start = "start.y") %>%
+          #   # Add back syntax1b which does not need brackets
+          #   dplyr::bind_rows(idx_df[idx_df$syntax %in% c("syntax0b", "syntax1b"), ] %>%
+          #                      # Add start_bracket column to prevent errors
+          #                      dplyr::mutate(start_bracket = .data$start)) %>%
+          #   dplyr::arrange(.data$end)
+          # idx_funcs
+
         } else {
           # If there are no brackets in the eqn:
           idx_funcs = idx_df
@@ -1438,10 +1491,10 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
         }
 
         # Start with most nested function
-        idx_funcs_ordered = idx_funcs %>% dplyr::rowwise() %>%
-          dplyr::mutate(is_nested_around = any(.data$start < idx_funcs$start &
-                                                 .data$end > idx_funcs$end)) %>% dplyr::ungroup() %>%
-          dplyr::arrange(.data$is_nested_around) %>% as.data.frame()
+        idx_funcs_ordered = idx_funcs
+        idx_funcs_ordered$is_nested_around = any(idx_funcs_ordered$start < idx_funcs$start &
+                                                   idx_funcs_ordered$end > idx_funcs$end)
+        idx_funcs_ordered = idx_funcs_ordered[order(idx_funcs_ordered$is_nested_around), ]
         idx_func = idx_funcs_ordered[1, ] # Select first match
 
         if (debug){
@@ -1635,6 +1688,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
 #' @param func_name String with name of R function
 #' @param default_arg Either NULL or named list of default arguments
 #'
+#' @noRd
 #' @returns List with named and sorted arguments
 #'
 sort_args = function(arg, func_name, default_arg = NULL){
@@ -1757,6 +1811,7 @@ sort_args = function(arg, func_name, default_arg = NULL){
 #' @param distribution String with Julia distribution call
 #'
 #' @returns String with Julia code
+#' @noRd
 #'
 conv_distribution = function(arg, julia_func, distribution){
 
@@ -1831,6 +1886,7 @@ conv_distribution = function(arg, julia_func, distribution){
 #'
 #' @inheritParams convert_equations_IM
 #' @return Updated eqn
+#' @noRd
 #'
 vector_to_square_brackets = function(eqn, var_names) {
   # print(eqn)
@@ -1864,6 +1920,7 @@ vector_to_square_brackets = function(eqn, var_names) {
 #'
 #' @param x String
 #'
+#' @noRd
 #' @returns List
 split_units = function(x){
 
@@ -1906,6 +1963,7 @@ split_units = function(x){
 #' @param x String with unit
 #'
 #' @return Cleaned string with unit
+#' @noRd
 #'
 replace_written_powers = function(x){
 
@@ -1943,6 +2001,7 @@ replace_written_powers = function(x){
 #' @param digits_max Number of digits after which to use scientific notation; ignored if task = "remove"; defaults to 15
 #'
 #' @returns Updated eqn
+#' @noRd
 #'
 scientific_notation = function(eqn, task = c("remove", "add")[1], digits_max = 15){
 
@@ -2007,7 +2066,7 @@ scientific_notation = function(eqn, task = c("remove", "add")[1], digits_max = 1
 #' @inheritParams clean_unit
 #'
 #' @returns Cleaned equation
-#' @export
+#' @noRd
 #'
 #' @examples
 #' clean_unit_in_u("u('10 Meters') + u('Kilograms per sec') + u('10 pounds squared')",
@@ -2024,6 +2083,7 @@ clean_unit_in_u = function(x, regex_units){
 #' @param ignore_case Boolean; if TRUE, ignore case when matching units
 #' @param include_translation Boolean; if TRUE, add translation per unit to returned value
 #' @param unit_name Boolean; if TRUE, x is a custom unit name and should be more rigorously cleaned
+#' @noRd
 #'
 #' @returns Updated string
 clean_unit <- function(x, regex_units, ignore_case = FALSE, include_translation = FALSE, unit_name = FALSE) {
@@ -2111,6 +2171,7 @@ clean_unit <- function(x, regex_units, ignore_case = FALSE, include_translation 
 #' @param new_units String or vector with units of variables
 #' @param R_or_Julia String with either "R" or "Julia" to indicate which regular expression to use.
 #'
+#' @noRd
 #' @returns List with models units to add to sfm
 #'
 detect_undefined_units = function(sfm, new_eqns, new_units, regex_units, R_or_Julia = "Julia"){
@@ -2574,6 +2635,7 @@ get_regex_units = function(sfm = NULL){
 #' Get list of standard custom units in Julia
 #'
 #' @returns List with custom units in Julia
+#' @noRd
 custom_units = function(){
 
   # The "month" unit in Insight Maker is 365/12, which is not the same as in the units package, where it is 365.25/12. Add new unit "common_month".
