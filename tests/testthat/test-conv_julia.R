@@ -502,7 +502,7 @@ test_that("functions in Julia work", {
   expect_no_error(simulate(sfm))
 
   sfm = xmile() %>% build("a", "stock", eqn = "cos(u('10meters'))")
-  expect_warning(simulate(sfm), "An error occurred while writing or running the Julia script")
+  expect_warning(simulate(sfm), "An error occurred while running the Julia script")
 
   sfm = xmile() %>% build("a", "stock", eqn = "cos(u('10radians'))")
   expect_no_error(simulate(sfm))

@@ -54,14 +54,7 @@ simulate_julia = function(sfm,
     # Evaluate script
     # JuliaCall::julia_setup()
 
-    # ** to do: check whether sdbuildR_setup() was run
-    # if (!.julia$initialized){
-    if (is.null(options()[["initialization_sdbuildR"]])){
-      sdbuildR_setup()
-    }
-
-    # # Run initialization
-    # run_init()
+    sdbuildR_setup()
 
     start_t = Sys.time()
     JuliaCall::julia_source(filepath)
@@ -76,7 +69,7 @@ simulate_julia = function(sfm,
     df = JuliaCall::julia_eval(P$sim_df_name)
     pars_julia = JuliaCall::julia_eval(P$parameter_name)
     xstart_julia = JuliaCall::julia_eval(P$initial_value_name)
-    units_julia = JuliaCall::julia_eval(P$units_dict)
+    # units_julia = JuliaCall::julia_eval(P$units_dict)
 
     # if (include_plot){
     #   # Plot stocks
@@ -85,14 +78,16 @@ simulate_julia = function(sfm,
     # }
 
     list(success = TRUE,
-         df = df, pars = pars_julia, xstart = xstart_julia,
-         units = units_julia, script = script, filepath = filepath,
+         df = df, pars = pars_julia,
+         xstart = xstart_julia,
+         # units = units_julia,
+         script = script, filepath = filepath,
          duration = end_t - start_t) %>% utils::modifyList(argg) %>%
       structure(., class = "sdbuildR_sim")
 
   },
   error = function(e) {
-    warning("\nAn error occurred while writing or running the Julia script.")
+    warning("\nAn error occurred while running the Julia script.")
     # print(e$message)
     list(success = FALSE, error_message = e$message,
          script = script,
@@ -158,7 +153,7 @@ compile_julia = function(sfm,
                unlist(lapply(sfm$macro, `[[`, "eqn")))
   units_used = unlist(stringr::str_extract_all(all_eqns, "\\bu\\([\"|'](.*?)[\"|']\\)"))
 
-  keep_unit = ifelse(!any(names_df_no_flow$units != "1") & length(units_used) == 0, FALSE, keep_unit)
+  keep_unit = ifelse(!any(names_df_no_flow$units != "1" & nzchar(names_df_no_flow$units)) & length(units_used) == 0, FALSE, keep_unit)
 
   # if (keep_unit){
   #   # Ensure all units are defined
@@ -198,11 +193,12 @@ compile_julia = function(sfm,
   ordering = order_equations(sfm)
 
   # If there are no dynamic variables or delayed variables, set only_stocks to TRUE
-  intermediary = lapply(sfm$model$variables, function(x){
-    lapply(x, `[[`, "intermediary")
-  }) %>% unlist() %>% unname()
+  # intermediary = lapply(sfm$model$variables, function(x){
+  #   lapply(x, `[[`, "intermediary")
+  # }) %>% unlist() %>% unname()
+  delay_past = get_delay_past(sfm)
 
-  only_stocks = ifelse(is.null(ordering$dynamic$order) & length(intermediary) == 0, TRUE, only_stocks)
+  only_stocks = ifelse(is.null(ordering$dynamic$order) & length(delay_past) == 0, TRUE, only_stocks)
 
 
   # # Translate julia equations
@@ -245,6 +241,8 @@ compile_julia = function(sfm,
                           only_stocks = only_stocks)
 
   run_ode = compile_run_ode_julia(sfm, only_stocks = only_stocks,
+                                  stock_names = static_eqn$stock_names,
+                                  intermediary_var = ode$intermediary_var,
                                   keep_unit = keep_unit)
 
   script = sprintf("%s\n%s%s%s%s",
@@ -261,23 +259,6 @@ compile_julia = function(sfm,
 
 
 
-#' Get delayN and smoothN from stock-and-flow model
-#'
-#' @inheritParams build
-#'
-#' @returns List with delayN and smoothN functions
-#' @noRd
-get_delayN_smoothN = function(sfm){
-  sfm$model$variables %>%
-    purrr::map_depth(2, "func") %>% unname() %>%
-    purrr::list_flatten() %>%
-    unname() %>%
-    purrr::list_flatten() %>%
-    purrr::compact()
-}
-
-
-
 #' Prepare model for delayN and smoothN
 #'
 #' @inheritParams build
@@ -287,43 +268,44 @@ get_delayN_smoothN = function(sfm){
 prep_delayN_smoothN = function(sfm){
 
   # If delayN() and smoothN() were used, add these to the model
-  delay_func = get_delayN_smoothN(sfm)
+  delayN_smoothN = get_delayN_smoothN(sfm)
 
-  if (length(delay_func) > 0){
+  if (length(delayN_smoothN) > 0){
 
     names_df = get_names(sfm)
+    delayN_smoothN = unlist(unname(delayN_smoothN), recursive = FALSE)
 
     sfm$model$variables$stock = append(sfm$model$variables$stock,
-                                       lapply(seq_along(delay_func), function(i){
-                                         x = delay_func[[i]]
+                                       lapply(seq_along(delayN_smoothN), function(i){
+                                         x = delayN_smoothN[[i]]
                                          y = list()
 
                                          # Unit is the same as the delayed variable
                                          y$units = names_df[names_df$name == x[["var"]], ]$units
-                                         y$name = names(delay_func)[i]
-                                         y$label = names(delay_func)[i]
+                                         y$name = names(delayN_smoothN)[i]
+                                         y$label = names(delayN_smoothN)[i]
                                          y$type = "delayN"
 
                                          y$eqn_julia = x[["setup"]]
                                          y$inflow = y[["update"]]
                                          return(y)
-                                       }) %>% stats::setNames(., names(delay_func))
+                                       }) %>% stats::setNames(., names(delayN_smoothN))
     )
 
     sfm$model$variables$aux = append(sfm$model$variables$aux,
-                                     lapply(seq_along(delay_func), function(i){
-                                       x = delay_func[[i]]
+                                     lapply(seq_along(delayN_smoothN), function(i){
+                                       x = delayN_smoothN[[i]]
                                        y = list()
 
                                        # Unit is the same as the delayed variable
                                        y$units = names_df[names_df$name == x[["var"]], ]$units
-                                       y$name = names(delay_func)[i]
-                                       y$label = names(delay_func)[i]
+                                       y$name = names(delayN_smoothN)[i]
+                                       y$label = names(delayN_smoothN)[i]
                                        y$type = "delayN"
 
                                        y$eqn_julia = x[["compute"]]
                                        return(y)
-                                     }) %>% stats::setNames(., names(delay_func))
+                                     }) %>% stats::setNames(., names(delayN_smoothN))
     )
   }
 
@@ -621,11 +603,6 @@ compile_static_eqn_julia = function(sfm, ordering, keep_unit){
   # Initial states of Stocks
   stock_eqn = lapply(sfm$model$variables$stock,
                      function(x){
-                       # if (!is.null(x$delayN)){
-                       #   sprintf("# Initialize delay accumulator for %s\n%s = c(%s, %s)",
-                       #           y,
-                       #           P$initial_value_name, P$initial_value_name, x$eqn_julia) %>% return()
-                       # } else {
 
                        if (keep_unit & is_defined(x$units) & x$units != "1"){
                          paste0(x$name, " = ", P$setunit, "(", x$eqn_julia, ", u\"", x$units, "\")") %>% return()
@@ -649,23 +626,25 @@ compile_static_eqn_julia = function(sfm, ordering, keep_unit){
   }
 
   # Check for delayN() and smoothN() functions
-  delay_func = get_delayN_smoothN(sfm)
+  delayN_smoothN = get_delayN_smoothN(sfm)
 
-  if (length(delay_func) > 0){
-    # delay_names = gsub(paste0(P$delayN_suffix, "[0-9]+$"), "", names(delay_func))
-    delay_names = names(delay_func)
+  if (length(delayN_smoothN) > 0){
+    delay_names = names(unlist(unname(delayN_smoothN), recursive = FALSE))
 
     xstart_def_stocks = paste0(
       paste0(setdiff(names(stock_eqn), delay_names), collapse = ", "), ", ",
       paste0(paste0("values(", delay_names, ")"), collapse = ", "))
     xstart_names = paste0(
-      paste0(paste0("\"", setdiff(names(stock_eqn), delay_names), "\""), collapse = ", "), ", ",
+      # paste0(paste0("\"", setdiff(names(stock_eqn), delay_names), "\""), collapse = ", "), ", ",
+      paste0(paste0(":", setdiff(names(stock_eqn), delay_names)), collapse = ", "), ", ",
       paste0(paste0("keys(", delay_names, ")..."), collapse = ", ")
     )
 
   } else {
     xstart_def_stocks = paste0(names(stock_eqn), collapse = ", ")
-    xstart_names = paste0(paste0("\"", names(stock_eqn), "\""), collapse = ", ")
+    # xstart_names = paste0(paste0("\"", names(stock_eqn), "\""), collapse = ", ")
+    # Symbols are faster than characters
+    xstart_names = paste0(paste0(":", names(stock_eqn)), collapse = ", ")
   }
 
   # Put initial states together in (unnamed) vector
@@ -683,7 +662,9 @@ compile_static_eqn_julia = function(sfm, ordering, keep_unit){
                         xstart_names,
                         "]\n")
 
-  return(list(par_names = names(constant_eqn),
+  return(list(
+    stock_names = names(stock_eqn),
+    par_names = names(constant_eqn),
               script = paste0(
                 "\n\n# Define parameters, initial conditions, and functions in correct order\n",
                 static_eqn_str,
@@ -707,17 +688,10 @@ prep_stock_change_julia = function(sfm, keep_unit){
   sfm$model$variables$stock = lapply(sfm$model$variables$stock,
                                      function(x){
 
-                                       # if (!is.null(x$delayN) & is_defined(x$inflow)){
-                                       #   # return(NULL)
-                                       #
-                                       #   x$sum_name = paste0(x$inflow, "$update")
-                                       #   x$sum_eqn = ""
-                                       # } else {
-
                                        inflow = outflow = ""
 
                                        if (x$type == "delayN"){
-                                         regex_find_idx = paste0("findall(n -> occursin(r\"", x$name, P$delay_acc_suffix, "[0-9]+$\", n), ", P$initial_value_names, ")")
+                                         regex_find_idx = paste0("findall(n -> occursin(r\"", x$name, P$delayN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")")
                                          x$sum_name = paste0("d", P$state_name, "dt[", regex_find_idx, "]")
                                          x$unpack_state = paste0(P$state_name, "[", regex_find_idx, "]")
                                        } else {
@@ -955,14 +929,16 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
   # Add fixed delayed and past variables to intermediary_var
   # extra_intermediary_var = unname(sfm$model$variables) %>% purrr::list_flatten() %>%
   #   purrr::map("intermediary") %>% purrr::compact()
-  extra_intermediary_var = lapply(sfm$model$variables, function(x){
-    lapply(x, `[[`, "intermediary")
-  }) %>% unlist() %>% unname()
+  # extra_intermediary_var = lapply(sfm$model$variables, function(x){
+  #   lapply(x, `[[`, "intermediary")
+  # }) %>% unlist() %>% unname()
+  delay_past = get_delay_past(sfm)
+  extra_intermediary_var = list_extract(delay_past, "var")
 
   if (length(extra_intermediary_var) > 0){
 
     # Get unique intermediary variables to add
-    new_intermediary_var = setdiff(unique(extra_intermediary_var), intermediary_var)
+    new_intermediary_var = setdiff(unique(unlist(extra_intermediary_var)), intermediary_var)
 
     if (length(new_intermediary_var) > 0){
       intermediary_var = c(intermediary_var, new_intermediary_var)
@@ -972,18 +948,18 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
   }
 
   # If delayN() and smoothN() were used, state has to be unpacked differently
-  delay_func = get_delayN_smoothN(sfm)
+  delayN_smoothN = get_delayN_smoothN(sfm)
 
-  if (length(delay_func) > 0){
+  if (length(delayN_smoothN) > 0){
 
-    # delay_names = gsub(paste0(P$delayN_suffix, "[0-9]+$"), "", names(delay_func))
-    delay_names = names(delay_func)
+    # delay_names = names(delayN_smoothN)
+    delay_names = names(unlist(unname(delayN_smoothN), recursive = FALSE))
 
     intermediary_var = setdiff(intermediary_var, delay_names)
     intermediary_var_values = setdiff(intermediary_var_values, delay_names)
 
     # Unpack non delayN stocks
-    unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P$state_name, "[findall(n -> !occursin(r\"", P$delayN_suffix, "[0-9]+", P$delay_acc_suffix, "[0-9]+$\", n), ", P$initial_value_names, ")]")
+    unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P$state_name, "[findall(n -> !occursin(r\"", P$delayN_suffix, "[0-9]+", P$delayN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")]")
 
     # Unpack each delayN or smoothN stock separately
     unpack_delayN = lapply(sfm$model$variables$stock,
@@ -1069,10 +1045,15 @@ function %s(%s, %s, integrator)",
       "return(", paste0(intermediary_var_values, collapse = ", "), ")\n",
 
       "\n\nend\n\n# Callback setup\n",
-      P$intermediary_names, " = [", paste0("\"", intermediary_var, "\"", collapse = ", "), "]\n",
+      # P$intermediary_names, " = [", paste0("\"", intermediary_var, "\"", collapse = ", "), "]\n",
+      # Symbols are faster than characters
+      P$intermediary_names, " = [", paste0(paste0(":", intermediary_var), collapse = ", "), "]\n",
       P$intermediaries, " = SavedValues(",
       # Make time a Unitful.Quantity if keeping units, otherwise a float
-      ifelse(keep_unit, "Unitful.Quantity", "Float64"), ", Any)\n", P$callback_name, " = SavingCallback(", P$callback_func_name, ", ", P$intermediaries,
+      # ifelse(keep_unit, "Unitful.Quantity", "Float64"),
+      "eltype(", P$time_name, "), Any)\n",
+
+      P$callback_name, " = SavingCallback(", P$callback_func_name, ", ", P$intermediaries,
       # ", saveat = ", sfm$sim_specs$saveat,
       # ifelse(keep_unit, paste0(" * ", P$time_units_name), ""),
       ")\n")
@@ -1088,9 +1069,11 @@ function %s(%s, %s, integrator)",
 
 
 
-#' Compile julia script for running ODE
+#' Compile Julia script for running ODE
 #'
 #' @param nonneg_stocks Output of compile_nonneg_stocks()
+#' @param stock_names Names of stocks
+#' @param intermediary_var Names of intermediary variables
 #' @inheritParams compile_ode_julia
 #' @inheritParams compile_julia
 #' @inheritParams order_equations
@@ -1101,12 +1084,13 @@ function %s(%s, %s, integrator)",
 #'
 compile_run_ode_julia = function(sfm,
                                  nonneg_stocks,
+                                 stock_names,
+                                 intermediary_var,
                                  only_stocks, keep_unit){
 
-  state_var = names(sfm$model$variables$stock)
 
   script = paste0("\n\n# Run ODE\n",
-                  P$prob_name, " = ODEProblem(", P$ode_func_name, "!, ", P$initial_value_name, ", ", P$times_name, ", ", P$parameter_name, ")\n", P$sim_df_name, " = solve(", P$prob_name, ", ",
+                  P$prob_name, " = ODEProblem(", P$ode_func_name, "!, ", P$initial_value_name, ", ", P$times_name, ", ", P$parameter_name, ")\n", P$solution_name, " = solve(", P$prob_name, ", ",
                   ifelse(
                     sfm$sim_specs$method == "euler", "Euler()",
                     ifelse(
@@ -1122,29 +1106,30 @@ compile_run_ode_julia = function(sfm,
                                               # ifelse(keep_unit, paste0(" * ", P$time_units_name), "")
 
                   ), ""), ")\n",
-                  P$sim_df_name, " = DataFrame([
-	:time => ", P$sim_df_name, ".t,\n\t[Symbol(name) => ", P$sim_df_name, "[i, :] for (i, name) in enumerate(", P$initial_value_names, ")]...\n])\n"
+                  P$sim_df_name, " = ", ifelse(keep_unit, "Unitful.ustrip.(", ""), "DataFrame(", P$solution_name, ", [:time; ", P$initial_value_names, "]", ifelse(keep_unit, ")", ""), ")\n")
 
 
-  )
 
   if (!only_stocks){
     script = paste0(script,
-                    "\n\n# Create DataFrame for intermediary variables
-if isempty(", P$intermediaries, ".saveval)
-	", P$intermediary_df, " = DataFrame(time = ", P$intermediaries, ".t)\nelse\n\t# Handle single or multiple variables\n\t",
+                    "\n\n# Create DataFrame for intermediary variables\n", P$intermediary_df, " = ", ifelse(keep_unit, "Unitful.ustrip.(", ""), "DataFrame(",
 
-                    "if length(", P$intermediary_names, ") == 1\n\t\t# Single variable case\n\t\t", P$intermediary_df,
-                    " = DataFrame(hcat([val[1] for val in ", P$intermediaries, ".saveval]), Symbol.(", P$intermediary_names, "))\n\telse\n\t\t",
-                    P$intermediary_df, " = DataFrame(", P$intermediaries, ".saveval, Symbol.(", P$intermediary_names, "))\n\tend\n\t",
-                    P$intermediary_df, "[!, :time] = ", P$intermediaries, ".t",
+                    ifelse(length(intermediary_var) > 1, paste0(P$intermediaries, ".saveval, ", P$intermediary_names),
+                           # Error is thrown for dataframe creation of there is only one variable
+                           paste0(intermediary_var, " = ", P$intermediaries, ".saveval")),
+
+                    ")", ifelse(keep_unit, ")", ""), "\n",
+
+                    # Don't select overlapping variables
+                    ifelse(any(stock_names %in% intermediary_var), paste0("select!(", P$intermediary_df, ", setdiff(", P$intermediary_names, ", ", P$initial_value_names, "))\n" ), ""),
+
 
                     # "n_vars = length(", P$intermediary_names, ")\n\tvals = n_vars == 1 ? hcat([val[1] for val in ", P$intermediaries, ".saveval]) : hcat(", P$intermediaries, ".saveval...)\n\t", P$intermediary_df, " = DataFrame(vals, Symbol.(", P$intermediary_names, "))\n\t", P$intermediary_df, "[!, :time] = ", P$intermediaries, ".t",
-                    "\nend\n\n\n# Select intermediary columns not in df (except time)
-cols_to_keep = [Symbol(name) for name in ", P$intermediary_names, " if !(name in ", P$initial_value_names, ")]\npush!(cols_to_keep, :time)\n",
-                    P$intermediary_df, " = select(", P$intermediary_df, ", cols_to_keep)
+#                     "\n\n\n# Select intermediary columns not in df (except time)
+# cols_to_keep = [Symbol(name) for name in ", P$intermediary_names, " if !(name in ", P$initial_value_names, ")]\npush!(cols_to_keep, :time)\n",
+#                     P$intermediary_df, " = select(", P$intermediary_df, ", cols_to_keep)",
 
-# Combine DataFrames\n", P$sim_df_name, " = innerjoin(", P$sim_df_name, ", ", P$intermediary_df, ", on = :time)\n")
+"\n# Combine DataFrames\n", P$sim_df_name, " = hcat(", P$sim_df_name, ", ", P$intermediary_df, ")\n")
   }
 
   # script = paste0(script, sprintf("\n\n# Overwrite initial values to named dictionary and strip units\n%s = Dict(%s .=> Unitful.ustrip.(%s))\n", P$initial_value_name, P$initial_value_names, P$initial_value_name),
@@ -1153,10 +1138,13 @@ cols_to_keep = [Symbol(name) for name in ", P$intermediary_names, " if !(name in
 
   # If different times need to be saved, linearly interpolate
   if (sfm$sim_specs$dt != sfm$sim_specs$saveat){
-    script = paste0(script, "\n# Linearly interpolate to reduce stored values to saveat
-new_times = collect(", P$times_name, "[1]:",
-                    ifelse(keep_unit, paste0("u\"", sfm$sim_specs$saveat, sfm$sim_specs$time_units, "\""),
-                           sfm$sim_specs$saveat), ":", P$times_name, "[2]) # Create new time vector\n",
+    script = paste0(script, "\n# Linearly interpolate to reduce stored values to saveat\n",
+                    ifelse(keep_unit, paste0(P$times_name, " = Unitful.ustrip.(", P$times_name, ")\n"),""),
+                    "new_times = collect(", P$times_name, "[1]:",
+                    # ifelse(keep_unit, paste0("u\"", sfm$sim_specs$saveat, sfm$sim_specs$time_units, "\""),
+                    #        sfm$sim_specs$saveat),
+                    sfm$sim_specs$saveat,
+                    ":", P$times_name, "[2]) # Create new time vector\n",
 
                     P$sim_df_name, " = DataFrame(Dict(\n",
                     ":time => new_times,
@@ -1168,17 +1156,18 @@ new_times = collect(", P$times_name, "[1]:",
 
   if (keep_unit){
     script = paste0(script,
-                    "\n\n# Extract and store units\n",
-                    P$units_dict, " = Dict(name => string(unit(val)) for (name, val) in pairs(first(", P$sim_df_name,
-                    ")) if isa(val, Unitful.Quantity))\n",
-                    "\n\n# Strip units from DataFrame\n", P$sim_df_name, " = Unitful.ustrip.(", P$sim_df_name, ")\n",
+                    # "\n\n# Extract and store units\n",
+                    # P$units_dict, " = Dict(name => string(unit(val)) for (name, val) in pairs(first(", P$sim_df_name,
+                    # ")) if isa(val, Unitful.Quantity))\n",
+                    # "\n\n# Strip units from DataFrame\n", P$sim_df_name, " = Unitful.ustrip.(", P$sim_df_name, ")\n",
                     "\n\n# Strip units from initial conditions and parameters\n",
                     P$initial_value_name, " = Dict(xstart_names .=> Unitful.ustrip.(xstart))\n",
                     P$parameter_name, " = (; (name => isa(val, Unitful.Quantity) ? Unitful.ustrip(val) : val for (name, val) in pairs(pars))...)")
 
-  } else {
-    script = paste0(script, "\n# Assign empty dictionary to units\n", P$units_dict, " = Dict()\n")
   }
+  # else {
+  #   script = paste0(script, "\n# Assign empty dictionary to units\n", P$units_dict, " = Dict()\n")
+  # }
 
 
   return(list(script=script))
@@ -1269,767 +1258,7 @@ decode_unicode <- function(text) {
 }
 
 
-#' Customary functions written in julia
-#'
-#' @return String with julia code
-#' @noRd
-#'
-get_func_julia = function(){
-  func_def = c(
-    #   "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = 2)
-    #
-    #     # Ensure y is sorted along x
-    #     idx = sortperm(x)
-    #     x = x[idx]
-    #     y = y[idx]
-    #
-    #     # Extrapolation extrapolation: What happens outside of defined values?
-    #     # Rule 1: return NaN; Rule 2: return closest value
-    #     rule_method = ifelse(extrapolation == 1, NaN, ifelse(extrapolation == 2, Flat(), \"?\"))
-    #
-    #     if method == \"constant\"
-    #         func = extrapolate(interpolate((x,), y, Gridded(Constant{Previous}())), rule_method)
-    #     elseif method == \"linear\"
-    #         func = linear_interpolation(x, y, extrapolation_bc=rule_method)
-    #     end
-    #
-    #     return(func)
-    # end",
-    # extrapolation = 1: return NA when outside of bounds
-    # extrapolation = 2: return nearest value when outside of bounds
-    "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = \"nearest\")
 
-  # Ensure y is sorted along x
-  idx = sortperm(x)
-  x = x[idx]
-  y = y[idx]
-
-  # Extrapolation rule: What happens outside of defined values?
-  # Rule \"NA\": return NaN; Rule \"nearest\": return closest value
-  rule_method = ifelse(extrapolation == \"NA\", DataInterpolations.ExtrapolationType.None, ifelse(extrapolation == \"nearest\", DataInterpolations.ExtrapolationType.Constant, extrapolation))
-
-  if method == \"constant\"
-      func = DataInterpolations.ConstantInterpolation(y, x; extrapolation = rule_method) # notice order of x and y
-  elseif method == \"linear\"
-      func = DataInterpolations.LinearInterpolation(y, x; extrapolation = rule_method)
-  end
-
-  return(func)
-end",
-    # **to do: ExtrapolationType.None throws error instead of returning NaN
-
-    #                "ramp" = "# Make ramp signal\nfunction ramp(times; start_t_ramp, end_t_ramp, start_h_ramp = 0.0, end_h_ramp = 1.0)
-    #
-    #     x = [start_t_ramp, end_t_ramp]
-    #     y = [start_h_ramp, end_h_ramp]
-    #
-    #     # If the ramp is after the start time, add a zero at the start
-    #     if start_t_ramp > first(times)
-    #         x = [first(times); x]
-    #         y = [0; y]
-    #     end
-    #
-    #     func = itp(x, y, method = \"linear\", extrapolation = 2)
-    #
-    #     return(func)
-    # end",
-    "ramp" = "function ramp(; start_t_ramp, end_t_ramp, start_h_ramp = 0.0, end_h_ramp = 1.0)
-    # If times has units, but the ramp times don't, convert them to the same units
-    if eltype(times) <: Unitful.Quantity
-        if !(eltype(start_t_ramp) <: Unitful.Quantity)
-            start_t_ramp = setunit(start_t_ramp, time_units)
-        end
-        if !(eltype(end_t_ramp) <: Unitful.Quantity)
-            end_t_ramp = setunit(end_t_ramp, time_units)
-        end
-    else
-        # If times does not have units, but start_t_ramp does, convert the ramp times to the same units as time_units
-        if eltype(start_t_ramp) <: Unitful.Quantity
-            start_t_ramp = Unitful.ustrip(setunit(start_t_ramp, time_units))
-        end
-        if eltype(end_t_ramp) <: Unitful.Quantity
-            end_t_ramp = Unitful.ustrip(setunit(end_t_ramp, time_units))
-        end
-    end
-
-
-    # Ensure start_h_ramp and end_h_ramp are both of the same type
-    if eltype(start_h_ramp) <: Unitful.Quantity && !(eltype(end_h_ramp) <: Unitful.Quantity)
-        end_h_ramp = setunit(end_h_ramp, Unitful.unit(start_h_ramp))
-        add_y = setunit(0.0, Unitful.unit(start_h_ramp))
-    elseif !(eltype(start_h_ramp) <: Unitful.Quantity) && eltype(end_h_ramp) <: Unitful.Quantity
-        start_h_ramp = setunit(start_h_ramp, Unitful.unit(end_h_ramp))
-        add_y = setunit(0.0, Unitful.unit(end_h_ramp))
-    else
-        add_y = 0.0
-    end
-
-    x = [start_t_ramp, end_t_ramp]
-    y = [start_h_ramp, end_h_ramp]
-
-    # If the ramp is after the start time, add a zero at the start
-    if start_t_ramp > first(times)
-        x = [first(times); x]
-        y = [add_y; y]
-    end
-
-    func = itp(x, y, method = \"linear\", extrapolation = \"nearest\")
-
-    return(func)
-end ",
-    #                "step" = "# Make step signal\nfunction step(times; start_t_step, h_step = 1.0)
-    #
-    #     x = [start_t_step, times[2]]
-    #     y = [h_step, h_step]
-    #
-    #     # If the step is after the start time, add a zero at the start
-    #     if start_t_step > first(times)
-    #         x = [first(times); x]
-    #         y = [0; y]
-    #     end
-    #
-    #     func = itp(x, y, method = \"constant\", extrapolation = \"nearest\")
-    #
-    #     return(func)
-    # end",
-    "step" = "# Make step signal
-function step(; start_t_step, h_step = 1.0)
-
-    # If times has units, but the ramp times don't, convert them to the same units
-    if eltype(times) <: Unitful.Quantity
-        if !(eltype(start_t_step) <: Unitful.Quantity)
-            start_t_step = setunit(start_t_step, time_units)
-        end
-    else
-        # If times does not have units, but start_t_step does, convert the ramp times to the same units as time_units
-        if eltype(start_t_step) <: Unitful.Quantity
-            start_t_step = Unitful.ustrip(setunit(start_t_step, time_units))
-        end
-    end
-
-    if eltype(h_step) <: Unitful.Quantity
-      add_y = setunit(0.0, Unitful.unit(h_step))
-    else
-      add_y = 0.0
-    end
-
-    x = [start_t_step, times[2]]
-    y = [h_step, h_step]
-
-    # If the step is after the start time, add a zero at the start
-    if start_t_step > first(times)
-        x = [first(times); x]
-        y = [add_y; y]
-    end
-
-    func = itp(x, y, method = \"constant\", extrapolation = \"nearest\")
-
-    return(func)
-end",
-    "@constraints" = "# Constraints macro
-macro constraints(exprs...)
-    pairs = map(exprs) do ex
-        quote
-            ($(string(ex)), $(esc(ex)))
-        end
-    end
-    quote
-        [$(pairs...)]
-    end
-end",
-    #                "pulse" = "# Make pulse signal\nfunction pulse(times; start_t_pulse, h_pulse = 1.0, w_pulse = 1.0 * time_units, repeat_interval = nothing)
-    #
-    #     # Define start and end times of pulses
-    #     last_time = last(times)
-    #     # If no repeats, set end of pulse to after end time
-    #     step_size = isnothing(repeat_interval) ? last_time * 2 : repeat_interval
-    #     start_ts = collect(start_t_pulse:step_size:last_time)
-    #     end_ts = start_ts .+ w_pulse
-    #
-    #     # Build signal as vectors of times and y-values
-    #     signal_times = [start_ts; end_ts]
-    #     signal_y = [fill(h_pulse, length(start_ts)); fill(0, length(end_ts))]
-    #
-    #     # If the first pulse is after the start time, add a zero at the start
-    #     if minimum(start_ts) > first(times)
-    #         signal_times = [first(times); signal_times]
-    #         signal_y = [0; signal_y]
-    #     end
-    #
-    #     # If the last pulse doesn't cover the end, add a zero at the end
-    #     # (I don't fully understand why this is necessary, but otherwise it gives incorrect results with repeat_interval <= 0)
-    #     if maximum(end_ts) < last_time
-    #         signal_times = [signal_times; last_time]
-    #         signal_y = [signal_y; 0]
-    #     end
-    #
-    #     # Sort by time
-    #     perm = sortperm(signal_times)
-    #     x = signal_times[perm]
-    #     y = signal_y[perm]
-    #     func = itp(x, y, method = \"constant\", extrapolation = \"nearest\")
-    #
-    #     return(func)
-    # end",
-    "pulse" = "# Make pulse signal
-function pulse(; start_t_pulse, h_pulse = 1.0, w_pulse = 1.0 * time_units, repeat_interval = nothing)
-    # If times has units, but the pulse times don't, convert them to the same units
-    if eltype(times) <: Unitful.Quantity
-        if !(eltype(start_t_pulse) <: Unitful.Quantity)
-            start_t_pulse = setunit(start_t_pulse, time_units)
-        end
-        if !(eltype(w_pulse) <: Unitful.Quantity)
-            w_pulse = setunit(w_pulse, time_units)
-        end
-        if (!isnothing(repeat_interval) && !(eltype(repeat_interval) <: Unitful.Quantity))
-            repeat_interval = setunit(repeat_interval, time_units)
-        end
-    else
-        # If times does not have units, but start_t_pulse does, convert the pulse times to the same units as time_units
-        if eltype(start_t_pulse) <: Unitful.Quantity
-            start_t_pulse = Unitful.ustrip(setunit(start_t_pulse, time_units))
-        end
-        if eltype(w_pulse) <: Unitful.Quantity
-            w_pulse = Unitful.ustrip(setunit(w_pulse, time_units))
-        end
-        if (!isnothing(repeat_interval) && eltype(repeat_interval) <: Unitful.Quantity)
-            repeat_interval = Unitful.ustrip(setunit(repeat_interval, time_units))
-        end
-    end
-
-    # Define start and end times of pulses
-    last_time = last(times)
-    # If no repeats, set end of pulse to after end time
-    step_size = isnothing(repeat_interval) ? last_time * 2 : repeat_interval
-    start_ts = collect(start_t_pulse:step_size:last_time)
-    end_ts = start_ts .+ w_pulse
-
-    # Build signal as vectors of times and y-values
-    signal_times = [start_ts; end_ts]
-    signal_y = [fill(h_pulse, length(start_ts)); fill(0, length(end_ts))]
-
-    if eltype(h_pulse) <: Unitful.Quantity
-      add_y = setunit(0.0, Unitful.unit(h_pulse))
-    else
-      add_y = 0.0
-    end
-
-    # If the first pulse is after the start time, add a zero at the start
-    if minimum(start_ts) > first(times)
-        signal_times = [first(times); signal_times]
-        signal_y = [add_y; signal_y]
-    end
-
-    # If the last pulse doesn't cover the end, add a zero at the end
-    # (I don't fully understand why this is necessary, but otherwise it gives incorrect results with repeat_interval <= 0)
-    if maximum(end_ts) < last_time
-        signal_times = [signal_times; last_time]
-        signal_y = [signal_y; add_y]
-    end
-
-    # Sort by time
-    perm = sortperm(signal_times)
-    x = signal_times[perm]
-    y = signal_y[perm]
-    func = itp(x, y, method = \"constant\", extrapolation = \"nearest\")
-
-    return(func)
-end",
-    # ** constant interpolation is not supported with units! linear is
-
-    # ** other custom_func
-    "IM_round" = "# Convert Insight Maker's Round() function to R\n# Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in julia, round(.5) = 0.0\nfunction IM_round(x::Real, digits::Int=0)
-    # Compute the fractional part after scaling by 10^digits
-    scaled_x = x * 10.0^digits
-    frac = scaled_x % 1
-    # Check if fractional part is exactly 0.5 or -0.5
-    if abs(frac) == 0.5
-        return ceil(scaled_x) / 10.0^digits
-    else
-        return round(scaled_x, digits=0) / 10.0^digits
-    end
-end",
-    "logit" = "# Logit function\nfunction logit(p)
-    return log(p / (1 - p))
-end",
-    "expit" = "# Expit function\nfunction expit(x)
-    return 1 / (1+exp(-x))
-end",
-    "sigmoid" = "function sigmoid(x; slope=1, midpoint=0)
-    @assert isfinite(slope) && isfinite(midpoint) \"slope and midpoint must be numeric\"
-    1 / (1 + exp(-slope * (x - midpoint)))
-end
-
-# Also define without keyword arguments
-function sigmoid(x, slope, midpoint)
-    @assert isfinite(slope) && isfinite(midpoint) \"slope and midpoint must be numeric\"
-    1 / (1 + exp(-slope * (x - midpoint)))
-end
-",
-    "nonnegative" = "# Prevent non-negativity\nfunction nonnegative(x)
-    if eltype(x) <: Unitful.Quantity
-        max.(0.0, Unitful.ustrip(x)) .* Unitful.unit.(x)
-    else
-        max.(0.0, x)
-    end
-end",
-    "rbool" = "# Generate random boolean value, equivalent of RandBoolean() in Insight Maker\nfunction rbool(p)
-    return rand() < p
-end",
-    #                "rdist" = "function rdist(a,b)
-    #     StatsBase.wsample(a, b, 1)
-    # end",
-    "rdist" = "function rdist(a::Vector{T}, b::Vector{<:Real}) where T
-    # Check lengths match
-    if length(a) != length(b)
-        throw(ArgumentError(\"Length of a and b must match\"))
-    end
-    # Normalize probabilities
-    b_sum = sum(b)
-    if b_sum <= 0
-        throw(ArgumentError(\"Sum of probabilities must be positive\"))
-    end
-    b_normalized = b / b_sum
-    # Sample using Categorical
-    return a[rand(Distributions.Categorical(b_normalized))]
-end",
-    "indexof" = "function indexof(haystack, needle)
-    if isa(haystack, AbstractString) && isa(needle, AbstractString)
-        pos = findfirst(needle, haystack)
-        return isnothing(pos) ? 0 : first(pos)
-    else
-        pos = findfirst(==(needle), haystack)
-        return isnothing(pos) ? 0 : pos
-    end
-end",
-    # "IM_length"= "function IM_length(x)
-    #     if isa(x, AbstractString)
-    #         return length(x)
-    #     else
-    #         return length(x)
-    #     end
-    # end",
-    "IM_contains" = "function IM_contains(haystack, needle)
-    if isa(haystack, AbstractString) && isa(needle, AbstractString)
-        return occursin(needle, haystack)
-    else
-        return needle in haystack
-    end
-end",
-    "substr_i" = "function substr_i(string::AbstractString, idxs::Union{Int, Vector{Int}})
-    chars = collect(string)
-    return join(chars[idxs])
-end",
-    "IM_filter" = "function IM_filter(y::Vector{T}, condition_func::Function) where T
-    names_y = string.(1:length(y))
-    result = Dict{String,T}()
-    for (key, val) in zip(names_y, y)
-        if condition_func(val, key)
-            result[key] = val
-        end
-    end
-    return collect(values(result)), collect(keys(result))
-end",
-
-    #                "weeks" = "function weeks(t, time_units)
-    #     Unitful.uconvert(u\"wk\", t * Unitful.uparse(time_units))  # Parse the string dynamically
-    # end",
-    #                "setunit" = "# Set or convert unit\nfunction setunit(x, unit_def)
-    #
-    #     # In case unit_def is not identified as a unit, extract unit
-    #     if eltype(unit_def) <: Unitful.Quantity
-    #         unit_def = Unitful.unit(unit_def)  # Extract the unit from a Quantity
-    #     end
-    #
-    #     # If x already has a unit, convert
-    #     if eltype(x) <: Unitful.Quantity
-    #         try
-    #             return Unitful.uconvert.(unit_def, x)
-    #         catch e
-    #             if isa(e, Unitful.DimensionError)
-    #                 error(\"Cannot convert $(unit(x)) to $unit_def: incompatible dimensions\")
-    #             else
-    #                 rethrow(e)
-    #             end
-    #         end
-    #     else
-    #         return x .* unit_def
-    #     end
-    # end
-    # ",
-    "setunit" = sprintf("# Set or convert unit\nfunction setunit(x, unit_def)
-    # Parse unit_def into a Unitful.Unit
-    target_unit = if unit_def isa Unitful.Quantity
-        Unitful.unit(unit_def)  # Extract unit from Quantity (e.g., 1u\"wk\" -> u\"wk\")
-    elseif unit_def isa Unitful.Units
-        unit_def  # Already a unit (e.g., u\"wk\")
-    elseif unit_def isa AbstractString
-        try
-            Unitful.uparse(unit_def, unit_context = %s)  # Parse string to unit (e.g., \"wk\" -> u\"wk\")
-        catch e
-            error(\"Invalid unit string: $unit_def\")
-        end
-    else
-        error(\"unit_def must be a Quantity, Unit, or String, got $(typeof(unit_def))\")
-    end
-
-    # Handle x based on whether it has a unit
-    #if x isa Unitful.Quantity
-    if eltype(x) <: Unitful.Quantity
-        # x has a unit, convert it
-        try
-            return Unitful.uconvert.(target_unit, x)
-        catch e
-            if isa(e, Unitful.DimensionError)
-                error(\"Cannot convert $(Unitful.unit.(x)) to $target_unit: incompatible dimensions\")
-            else
-                rethrow(e)
-            end
-        end
-    else
-        # x has no unit, set it via multiplication
-        return x .* target_unit
-    end
-end", P$unit_context),
-    # "seasonal" = "# Create seasonal wave\nfunction seasonal(;wave_unit=u\"yr\", wave_peak=0u\"yr\")
-    #     (t, u=wave_unit, p=wave_peak) -> cos.(Unitful.ustrip.(Unitful.uconvert.(u, t - p)))
-    # end"
-    "seasonal" = "# Create seasonal wave\nfunction seasonal(t; period = u\"1yr\", shift = u\"0yr\")
-    phase = 2 * pi * (t - shift) / period  # π radians
-    return(cos(phase))
-end",
-    "\\u2295" = "# Define the operator \\u2295 for the modulus
-function \\u2295(x, y)
-    return mod(x, y)
-end",
-    # "retrieve_past"= "function retrieve_past(var_value, delay_time, default_value, t, var_name, single_or_interval, intermediaries, intermediary_names)
-    #
-    # 	# Ensure t and delay_time are of the same type
-    # 	if !(eltype(delay_time) <: Unitful.Quantity) & (eltype(t) <: Unitful.Quantity)
-    # 		delay_time = setunit(delay_time, t)
-    # 	end
-    #
-    #     # Extract single value from the past
-    # 	if single_or_interval == \"single\"
-    # 		extract_t = t - delay_time
-    #
-    # 		# If trying to retrieve a value in the \"past\" (i.e. before times[1]), use default value if specified, otherwise use value at first time point
-    # 		if extract_t < 0
-    # 			if isnothing(default_value)
-    #                 if isempty(intermediaries.saveval)
-    #                     return var_value
-    #                 else
-    #                     return intermediaries.saveval[1][findfirst(isequal(var_name), intermediary_names)]
-    #                 end
-    # 			else
-    # 				return default_value
-    # 			end
-    # 		elseif extract_t == 0 || extract_t == t
-    #       return var_value
-    # 		end
-    #
-    # 	# Or: extract interval of past values
-    # 	elseif single_or_interval == \"interval\"
-    #
-    #         # Check if intermediaries.saveval is empty
-    #         if isempty(intermediaries.saveval)
-    #             return var_value
-    #         end
-    #
-    #         # Create vector of times
-    #         if !(t in intermediaries.t)
-    #             extract_t = [intermediaries.t; t]
-    #         else
-    #             extract_t = intermediaries.t
-    #         end
-    #
-    # 		# If no past interval is specified, access entire history
-    # 		if !isnothing(delay_time)
-    # 			first_time = t - delay_time
-    #
-    # 			if first_time < 0
-    # 				first_time = intermediaries.t[1]  # Set to start time if negative
-    # 			end
-    #
-    # 			# Extract from first_time up until t
-    # 			_, first_time_idx = findmin(abs.(extract_t .- first_time))
-    # 			extract_t = extract_t[first_time_idx:end]
-    #
-    #             if length(extract_t) == 1
-    #                 return var_value
-    #             end
-    # 		end
-    # 	end
-    #
-    #     # Check if intermediaries.saveval is empty
-    #     if isempty(intermediaries.saveval)
-    #         # If empty, return default value if specified, otherwise return NaN
-    #         if isnothing(default_value)
-    #             return var_value
-    #         else
-    #             return default_value
-    #         end
-    #     end
-    #
-    # 	## Create a DataFrame from the saved values
-    # 	i#ntermediary_df = DataFrame(intermediaries.saveval, Symbol.(intermediary_names))
-    #
-    #     # Add t if not in intermediaries.t yet
-    #     if !(t in intermediaries.t)
-    #         ts = [intermediaries.t; t]
-    #     else
-    #         ts = intermediaries.t
-    #     end
-    #
-    #     #ys = [intermediary_df[!, var_name]; var_value]
-    #    # ys = ys[1:length(ts)]  # Ensure ys is the same length as ts
-    #
-    #     var_index = findfirst(==(var_name), intermediary_names)
-    #     ys = [[val[var_index] for val in intermediaries.saveval]; var_value][1:length(ts)]
-    #
-    # 	# Define interpolation function
-    #     itp(ts, ys, method = \"linear\", extrapolation = \"nearest\")(extract_t)
-    #
-    # end
-    # ",
-    "retrieve_past"= "# Function to retrieve past values
-
-function retrieve_past(var_value, delay_time, default_value, t, var_name, single_or_interval, intermediaries, intermediary_names)
-    # Handle empty intermediaries
-    if isempty(intermediaries.saveval)
-        return isnothing(default_value) ? var_value : default_value
-    end
-
-    # Ensure t and delay_time have compatible units
-    if !(eltype(delay_time) <: Unitful.Quantity) && (eltype(t) <: Unitful.Quantity)
-        # delay_time = delay_time * unit(t)
-        delay_time = setunit(delay_time, t)
-    end
-
-    # Extract variable index
-    var_index = findfirst(==(var_name), intermediary_names)
-    # if isnothing(var_index)
-    #     error(\"Variable '$var_name' not found in intermediary_names: $intermediary_names\")
-    # end
-
-    # Extract times and values
-    ts = intermediaries.t
-    ys = [val[var_index] for val in intermediaries.saveval]
-
-    # Handle current time t
-    if !(t in ts)
-        ts = [ts; t]
-    end
-
-    ys = [ys; var_value][1:length(ts)]  # Ensure ys is the same length as ts
-
-    # Single value extraction
-    if single_or_interval == \"single\"
-        extract_t = t - delay_time
-        if extract_t < ts[1]
-            return isnothing(default_value) ? ys[1] : default_value
-        elseif extract_t == t
-            return var_value
-        end
-
-        # Interpolate
-        # interp = LinearInterpolation(ys, ts, extrapolation_bc = Flat())
-        # Define interpolation function
-        return itp(ts, ys, method = \"linear\")(extract_t)
-
-    end
-
-    # Interval extraction
-    if single_or_interval == \"interval\"
-        if isnothing(delay_time)
-            return ys  # Return entire history
-        end
-
-        first_time = t - delay_time
-        if first_time < ts[1]
-            first_time = ts[1]
-        end
-
-        # Find indices for interval
-        idx = findfirst(t -> t >= first_time, ts)
-        if isnothing(idx) || idx == length(ts)
-            return [var_value]
-        end
-
-        return ys[idx:end]
-    end
-
-end
-",
-    "saveat_func" = "# Function to save dataframe at specific times
-function saveat_func(t, y, new_times)
-    # Interpolate y at new_times
-    itp(t, y, method = \"linear\", extrapolation = \"nearest\")(new_times)
-end",
-    # "setunit_flow" = "# Define function to set unit of flow; Alleviate users from dividing the flow in the equation by the time unit if they have specified the desired units in the units property of the flow
-    # function setunit_flow(x, unit_def)
-    #     # If trying to set the unit throws an error
-    #     try
-    #         return setunit(x, unit_def)
-    #     catch e
-    #         if isa(e, ErrorException) | isa(e, Unitful.DimensionError)
-    #             try
-    #                 # In cases where e.g. x = 1u\"m\", unit_def = u\"m/d\"
-    #                 # I want to find the necessary divisor.
-    #                 div_required = x / unit_def
-    #                 # if Unitful.unit(x / div_required) == unit_def   # this is always true
-    #                 # If the unit of the divisor is a time unit, return the flow divided by the divisor
-    #                 if typeof(Unitful.unit(div_required)) <: Unitful.TimeUnits
-    #                     return x / div_required
-    #                 else
-    #                     error(\"Cannot set unit of flow: $x to $unit_def\")
-    #                 end
-    #
-    #             catch
-    #                 error(\"Cannot set unit of flow: $x to $unit_def\")
-    #             end
-    #         else
-    #             error(\"Cannot set unit of flow: $x to $unit_def\")
-    #         end
-    #     end
-    # end"
-
-    "compute_delayN" = "function compute_delayN(inflow, accumulator, length_delay, order_delay)
-    order_delay = round(Int, order_delay)
-    d_accumulator = zeros(eltype(accumulator), order_delay)
-    exit_rate_stage = accumulator / (length_delay / order_delay)
-    d_accumulator[1] = inflow - exit_rate_stage[1]
-    if order_delay > 1
-        @inbounds for ord in 2:order_delay
-            d_accumulator[ord] = exit_rate_stage[ord-1] - exit_rate_stage[ord]
-        end
-    end
-    outflow = exit_rate_stage[order_delay]
-    return (outflow=outflow, update=d_accumulator)
-end",
-    "setup_delayN" = "function setup_delayN(initial_value, length_delay, order_delay, name::String)
-    # Compute the initial value for each accumulator
-    # from https://www.simulistics.com/help/equations/functions/delay.html
-    order_delay = round(Int, order_delay) # Turn order into integer
-    value = initial_value * length_delay / order_delay
-
-    # Create a dictionary with names like \"name_acc1\", \"name_acc2\", ...
-    return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
-end"
-
-  )
-
-  return(func_def)
-}
-
-
-
-
-#' Internal function to create initialization file for julia
-#'
-#' @return NULL
-#' @noRd
-#'
-create_init = function(){
-
-  # Note for extending comparison operators:
-  # eltype(5u"m") <: Unitful.Quantity # true
-  # eltype(5u"m") <: Number # true
-  # eltype(5u"m") <: Real # false
-  # eltype(5.0) <: Real # true
-  # eltype(5) <: Unitful.Quantity # false
-  # so we cannot use x::Number, but have to use x::Real
-
-  # Add standard custom units
-  unit_str = lapply(custom_units(),
-                    function(x){
-
-                      if (is_defined(x$eqn)){
-                        unit_def = x$eqn
-                      } else {
-                        unit_def = "1"
-                      }
-
-                      paste0("@unit ", x$name, " \"", x$name, "\" ", x$name, " u\"", unit_def, "\" ", ifelse(x$prefix, "true", "false"))
-
-                    }) %>% paste0(collapse = sprintf("\n\tUnitful.register(%s)\n\t", P$sdbuildR_units))
-
-  unit_str = paste0("\n\n# Define custom units; register after each unit as some units may be defined by other units\nmodule ", P$sdbuildR_units, "\n\tusing Unitful\n\t",
-                    unit_str,
-                    "\n\tUnitful.register(", P$sdbuildR_units, ")\nend\n\n", P$unit_context, " = [Unitful.Unitful, ", P$sdbuildR_units, "];\n\n")
-
-  script = paste0("# Load packages
-using DifferentialEquations#: ODEProblem, solve, Euler, RK4, Tsit5
-using DiffEqCallbacks#: SavingCallback, SavedValues
-using DataFrames#: DataFrame, select, innerjoin, rename!
-using Distributions
-using Statistics
-using Unitful
-using DataInterpolations
-using Random
-
-# julia initialization for sdbuildR package
-# Required when extending a module’s function
-#import Base: <, >, <=, >=, ==, != #, +, - #, *, /, ^
-
-# Extend base methods (multiple dispatch) to allow for comparison between a unit and a non-unit; if one of the arguments is a Unitful.Quantity, convert the other to the same unit.
-Base.:<(x::Unitful.AbstractQuantity, y::Real) = <(x, y * Unitful.unit(x))
-Base.:<(x::Real, y::Unitful.AbstractQuantity) = <(x * Unitful.unit(y), y)
-
-Base.:>(x::Unitful.AbstractQuantity, y::Real) = >(x, y * Unitful.unit(x))
-Base.:>(x::Real, y::Unitful.AbstractQuantity) = >(x * Unitful.unit(y), y)
-
-Base.:(<=)(x::Unitful.AbstractQuantity, y::Real) = <=(x, y * Unitful.unit(x))
-Base.:(<=)(x::Real, y::Unitful.AbstractQuantity) = <=(x * Unitful.unit(y), y)
-
-Base.:(>=)(x::Unitful.AbstractQuantity, y::Real) = >=(x, y * Unitful.unit(x))
-Base.:(>=)(x::Real, y::Unitful.AbstractQuantity) = >=(x * Unitful.unit(y), y)
-
-Base.:(==)(x::Unitful.AbstractQuantity, y::Real) = ==(x, y * Unitful.unit(x))
-Base.:(==)(x::Real, y::Unitful.AbstractQuantity) = ==(x * Unitful.unit(y), y)
-
-Base.:(!=)(x::Unitful.AbstractQuantity, y::Real) = !=(x, y * Unitful.unit(x))
-Base.:(!=)(x::Real, y::Unitful.AbstractQuantity) = !=(x * Unitful.unit(y), y)
-
-Base.:%(x::Unitful.AbstractQuantity, y::Real) = %(x, y * Unitful.unit(x))
-Base.:%(x::Real, y::Unitful.AbstractQuantity) = %(x * Unitful.unit(y), y)
-
-Base.mod(x::Unitful.AbstractQuantity, y::Real) = mod(x, y * Unitful.unit(x))
-Base.mod(x::Real, y::Unitful.AbstractQuantity) = mod(x * Unitful.unit(y), y)
-
-Base.rem(x::Unitful.AbstractQuantity, y::Real) = rem(x, y * Unitful.unit(x))
-Base.rem(x::Real, y::Unitful.AbstractQuantity) = rem(x * Unitful.unit(y), y)
-
-Base.min(x::Unitful.AbstractQuantity, y::Real) = min(x, y * Unitful.unit(x))
-Base.min(x::Real, y::Unitful.AbstractQuantity) = min(x * Unitful.unit(y), y)
-
-Base.max(x::Unitful.AbstractQuantity, y::Real) = max(x, y * Unitful.unit(x))
-Base.max(x::Real, y::Unitful.AbstractQuantity) = max(x * Unitful.unit(y), y)
-
-# Extend min/max: when applied to a single vector, use minimum, like in R
-Base.min(v::AbstractVector) = minimum(v)
-Base.max(v::AbstractVector) = maximum(v)
-
-Base.round(x::Unitful.AbstractQuantity) = round(Unitful.ustrip.(x)) * Unitful.unit(x)
-Base.floor(x::Unitful.AbstractQuantity) = floor(Unitful.ustrip.(x)) * Unitful.unit(x)
-Base.ceil(x::Unitful.AbstractQuantity) = ceil(Unitful.ustrip.(x)) * Unitful.unit(x)
-Base.trunc(x::Unitful.AbstractQuantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)
-Base.round(x::Unitful.AbstractQuantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
-
-",
-                  paste0(get_func_julia() %>% unname(), collapse = "\n\n"),
-
-                  # Add custom functions
-                  unit_str,
-                  # Add initialization of sdbuildR
-                  paste0("\n\n", P$init_sdbuildR, " = true"),
-                  collapse = "\n\n")
-
-  # Write script
-  env_path <- system.file(package = "sdbuildR")
-  filepath = write_script(script, base_name = "init", dir = env_path, ext = ".jl", overwrite = TRUE)
-  invisible()
-}
 
 
 #' Set up Julia environment for sdbuildR
@@ -2053,6 +1282,13 @@ sdbuildR_setup <- function(
     dir = NULL,
     force = FALSE, ...){
 
+  # Check whether sdbuildR_setup() was run
+  if (!is.null(options()[["initialization_sdbuildR"]])){
+    return(invisible())
+  }
+
+  # Required Julia version for sdbuildR
+  required_version = "1.11"
 
   # If Julia location was specified, check presence of Julia
   if (!is.null(JULIA_HOME)){
@@ -2088,7 +1324,7 @@ sdbuildR_setup <- function(
   # Check if Julia version is sufficient
   if (!is.null(JULIA_HOME)){
     # Find version
-    version = tryCatch({
+    installed_version = tryCatch({
       julia_version(JULIA_HOME)},
       error = function(e) {
         stop("Julia version of ", JULIA_HOME, " cannot be determined.")
@@ -2096,9 +1332,8 @@ sdbuildR_setup <- function(
     )
 
     # Check if version is sufficient
-    required_version = "1.11"
-    if (package_version(version) < package_version(required_version)){
-      warning("Julia version ", version, " is older than needed for sdbuildR.")
+    if (package_version(installed_version) < package_version(required_version)){
+      warning("Detected Julia version ", installed_version, ", which is older than needed for sdbuildR (version >= ", required_version, ").")
       install = TRUE
     } else {
       install = FALSE
@@ -2108,7 +1343,18 @@ sdbuildR_setup <- function(
   install = ifelse(force, TRUE, install)
 
   if (install){
-    ans = readline("Do you want to install the latest version of Julia? (y/n) ")
+
+
+
+    if (version == "latest"){
+      version = julia_latest_version()
+    } else {
+      if (package_version(version) < package_version(required_version)){
+        stop("Julia version ", version, " is older than needed for sdbuildR (version >= ", required_version, ").")
+      }
+    }
+
+    ans = readline(paste0("Do you want to install Julia version ", version, "? (y/n) "))
     if (trimws(tolower(ans)) %in% c("y", "yes")){
       JULIA_HOME = install_julia_sdbuildR(version = version, dir = dir)
 

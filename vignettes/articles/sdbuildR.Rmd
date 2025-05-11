@@ -36,13 +36,16 @@ Secondly, an [Insight Maker](https://insightmaker.com/) model can be imported to
 ```{r message=FALSE, warning=FALSE}
 URL = "https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-2022"
 sfm = insightmaker_to_sfm(URL = URL)
-as.data.frame(sfm)
 ```
 
 
 ```{r Crielaard2022_plot, fig.height=4, fig.width=8, message=FALSE, warning=FALSE}
 sim = simulate(sfm)
-plot(sim)
+```
+
+
+```{r}
+# plot(sim)
 ```
 
 And lastly, a stock-and-flow model can be created from scratch. We make use of the convenient pipe operator `%\>%`, which simply passes the result of an expression to the next expression as a first argument. We first initialize an empty stock and flow model with `xmile()`, and then use `build()` to create a logistic model of population growth. The simulation specifications, such as the start time, stop time, and simulation time step (`dt`), are set with `sim_specs()`. Custom units such as people can be added with `model_units()`.

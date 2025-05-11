@@ -27,10 +27,17 @@ test_that("xmile() works", {
 
 test_that("sim_specs() works", {
 
+  # Ensure that default simulation specifications are with digits
+  sfm = xmile()
+  expect_equal(sfm$sim_specs$start, "0.0")
+  expect_equal(sfm$sim_specs$stop, "100.0")
+  expect_equal(sfm$sim_specs$dt, "0.01")
+  expect_equal(sfm$sim_specs$saveat, "0.01")
+
   # Check that empty sim_specs() doesn't change anything
   sfm = xmile()
   sfm = sfm %>% sim_specs()
-  expect_equal(sfm$sim_specs$start, 0)
+  expect_equal(sfm$sim_specs$start, "0.0")
 
   # Check that start and stop are set correctly
   sfm = xmile()
@@ -55,8 +62,18 @@ test_that("sim_specs() works", {
   expect_equal(sim_specs(sfm, seed = NULL)$sim_specs$seed, NULL)
 
   # Check that dt must be smaller than stop - start
-  expect_error(xmile() %>% sim_specs(start = 0, stop = 1, dt = 2), "dt must be smaller than the difference between start and stop!")
+  expect_error(xmile() %>% sim_specs(start = 0, stop = .05, dt = .1), "dt must be smaller than the difference between start and stop!")
   expect_error(xmile() %>% sim_specs(start = 0, stop = 1, saveat = 2), "saveat must be smaller than the difference between start and stop!")
+
+  # saveat and dt
+  expect_no_error(xmile() %>% sim_specs(dt = .1))
+  sfm = xmile() %>% sim_specs(dt = 0.1)
+  expect_equal(sfm$sim_specs$dt, "0.1")
+  expect_equal(sfm$sim_specs$saveat, "0.1")
+
+  # warning for large dt
+  expect_warning(xmile() %>% sim_specs(dt = 2), "dt is larger than 0\\.1! This will likely lead to inaccuracies in the simulation.")
+  expect_warning(xmile() %>% sim_specs(dt = .5), "dt is larger than 0\\.1! This will likely lead to inaccuracies in the simulation.")
 
   # Check that all time units are correctly converted
   expect_error(xmile() %>% sim_specs(time_units = "10s"), "time_units can only contain letters")
@@ -148,12 +165,14 @@ test_that("change_name and change_type in build()", {
   sfm = xmile() %>% build("abc", "aux", eqn = "delayN(a, 10, 2)") %>% build("abc", change_name = "xyz")
   expect_equal(sfm$model$variables$aux$abc, NULL)
   expect_equal(sfm$model$variables$aux$xyz$eqn, "delayN(a, 10, 2)")
-  expect_equal(names(sfm$model$variables$aux$xyz$func), "xyz_delayN1")
+  expect_equal(names(sfm$model$variables$aux$xyz$func), "delayN")
+  expect_equal(names(sfm$model$variables$aux$xyz$func[[1]]), "xyz_delayN1")
 
   sfm = xmile() %>% build("abc", "aux", eqn = "delayN(a, 10, 2)") %>% build("abc", change_type = "flow")
   expect_equal(sfm$model$variables$aux$abc, NULL)
   expect_equal(sfm$model$variables$flow$abc$eqn, "delayN(a, 10, 2)")
-  expect_equal(names(sfm$model$variables$flow$abc$func), "abc_delayN1")
+  expect_equal(names(sfm$model$variables$flow$abc$func), "delayN")
+  expect_equal(names(sfm$model$variables$flow$abc$func[[1]]), "abc_delayN1")
 
 
   # Throw warning if change_type = "constant"
@@ -706,6 +725,9 @@ test_that("detect_undefined_var() works", {
     build("b", "aux") %>% build("c", "aux")
   out = detect_undefined_var(sfm)
   expect_equal(out$issue, FALSE)
+
+  #** macros should also be found
+
 })
 
 
@@ -921,8 +943,9 @@ test_that("delay family is updated with new eqn in build()", {
 
   sfm = xmile() %>% build("abc", "aux", eqn = "delayN(a, 10, 2)") %>% build("abc", eqn = "past(a, 10)")
   expect_equal(sfm$model$variables$aux$abc$eqn, "past(a, 10)")
-  expect_equal(length(sfm$model$variables$aux$abc$func), 0)
-  expect_equal(sfm$model$variables$aux$abc$intermediary, "a")
+  expect_equal(length(sfm$model$variables$aux$abc$func), 1)
+  expect_equal(names(sfm$model$variables$aux$abc$func), "past")
+  expect_equal(names(sfm$model$variables$aux$abc$func$past), paste0("abc",P$past_suffix, "1"))
 
 })
 

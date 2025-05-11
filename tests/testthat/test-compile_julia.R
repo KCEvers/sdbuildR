@@ -1,37 +1,56 @@
 
 test_that("templates work", {
 
-  sdbuildR_setup()
-
   sfm = xmile("SIR")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
   sfm = xmile("predator-prey")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
   sfm = xmile("logistic_model")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
   # Check whether the population converges to the carrying capacity
   sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
   expect_equal(dplyr::last(sim$df$X), sim$pars$K, tolerance = .01)
 
   # Check whether coffee cup reaches room temperature
   sfm = xmile("coffee_cup")
   expect_no_error(simulate(sfm))
   sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
   expect_equal(dplyr::last(sim$df$coffee_temperature), sim$pars$room_temperature, tolerance = .01)
 
   sfm = xmile("Crielaard2022")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
   # Duffing previously had an error with cos()
   sfm = xmile("Duffing")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
   sfm = xmile("Chua")
   expect_no_error(simulate(sfm))
-
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
   # Non existing template
   expect_error(xmile("A"), "A is not an available template. The available templates are")
@@ -89,12 +108,20 @@ test_that("simulate with different components works", {
     build("C", "flow", eqn = "1", to = "A")
   expect_no_error(simulate(sfm))
 
-  # With one intermediary
+  # With one intermediary -> error in constructing Dataframe before
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build("A", "stock", eqn = "100") %>%
     build("B", "flow", eqn = "1", to = "A") %>%
     build("C", "aux", eqn = "B + 1")
   expect_no_message(simulate(sfm))
+
+  # One intermediary variable that is also a stock, so it is removed -> does merging of df and intermediary_df still work?
+  sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
+    build("A", "stock", eqn = "100") %>%
+    build("B", "flow", eqn = "delay(A, 5)", to = "A")
+  expect_no_message(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sort(names(sim$df)), c("A", "B", "time"))
 
   # Stocks without flows
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
@@ -120,6 +147,7 @@ test_that("simulate with different components works", {
   sfm = xmile("SIR")
   sim = simulate(sfm, only_stocks = TRUE)
   expect_equal(ncol(as.data.frame(sim)), 1 + length(names(sfm$model$variables$stock)))
+
 
 
   # some have units
@@ -148,11 +176,6 @@ test_that("seed works", {
 })
 
 
-# test_that("sdbuildR_setup() works", {
-#
-#   sdbuildR_setup()
-#
-# })
 
 test_that("delay() works", {
 
@@ -164,11 +187,27 @@ test_that("delay() works", {
   expect_error({xmile() %>% build("a", "aux", eqn = "delay(a)")}, "Obligatory argument length is missing for function delay")
 
 
+  # Check that multiple delays are saved
+  sfm = xmile() %>%
+    build("Outflow", "flow", eqn = "delay(Inflow, AverageDelay, 100) + delay(Inflow, 100) + delay(Inflow, 50, 4)")
+  expect_equal(length(sfm$model$variables$flow$Outflow$func$delay), 3)
+  expect_equal(sort(names(sfm$model$variables$flow$Outflow$func$delay)),
+               paste0("Outflow", P$delay_suffix, 1:3))
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[1]]$var, "Inflow")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[2]]$var, "Inflow")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[3]]$var, "Inflow")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[1]]$length, "AverageDelay")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[2]]$length, "100.0")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[3]]$length, "50.0")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[1]]$initial, "100.0")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[2]]$initial, "nothing")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[3]]$initial, "4.0")
+
   # Chapter 4 Duggan: Fixed Delay
   # https://github.com/JimDuggan/SDMR/blob/master/models/04%20Chapter/Extra%20Examples/FixedDelay.R
 
   sfm = xmile() %>%
-    sim_specs(start = 0, stop = 20, dt = 0.125) %>%
+    sim_specs(start = 0, stop = 20, dt = 0.1) %>%
     build("MaterialinTransit", "stock", eqn = "400") %>%
     build("Inflow", "flow", eqn = "ifelse(t < 8, 100, 200)", to = "MaterialinTransit") %>%
     build("Outflow", "flow", eqn = "delay(Inflow, AverageDelay, 100)", from = "MaterialinTransit") %>%
@@ -179,9 +218,9 @@ test_that("delay() works", {
   expect_equal(sim$df$Inflow[which(sim$df$time < 8)[1]], 100)
   expect_equal(sim$df$Inflow[which(sim$df$time > 8)[1]], 200)
   expect_equal(sim$df$Outflow[which(sim$df$time < 8 + 4)[1]], 100)
-  expect_equal(sim$df$Outflow[which(sim$df$time == 8 + 4)[1]], 200)
+  expect_equal(sim$df$Outflow[which(sim$df$time >= 8 + 4)[1]], 200)
 
-  # **Check whether first argument is in variables
+  # **Check whether first argument to delay() is in variables
 
 
   #
@@ -200,7 +239,7 @@ test_that("past() works", {
 
 
   sfm = xmile() %>%
-    sim_specs(start = 0, stop = 20, dt = 0.125) %>%
+    sim_specs(start = 0, stop = 20, dt = 0.1) %>%
     build("MaterialinTransit", "stock", eqn = "400") %>%
     build("Inflow", "flow", eqn = "ifelse(t < 8, 100, 200)", to = "MaterialinTransit") %>%
     build("Outflow", "flow", eqn = "max(past(Inflow, AverageDelay))", from = "MaterialinTransit") %>%
@@ -211,7 +250,7 @@ test_that("past() works", {
   expect_equal(sim$df$Inflow[which(sim$df$time < 8)[1]], 100)
   expect_equal(sim$df$Inflow[which(sim$df$time > 8)[1]], 200)
   expect_equal(sim$df$Outflow[which(sim$df$time < 8 + 4)[1]], 100)
-  expect_equal(sim$df$Outflow[which(sim$df$time == 8 + 4)[1]], 200)
+  expect_equal(sim$df$Outflow[which(sim$df$time >= 8 + 4)[1]], 200)
 
 
 })
@@ -232,7 +271,7 @@ test_that("delayN() works", {
 
   # Test delayN() in simple model
   sfm = xmile() %>%
-    sim_specs(start = 0, stop = 20, dt = 0.125) %>%
+    sim_specs(start = 0, stop = 20, dt = 0.1) %>% # dt=.125->dt=.1
     build("MaterialinTransit", "stock", eqn = "400") %>%
     build("Inflow", "flow", eqn = "ifelse(t < 8, 100, 200)", to = "MaterialinTransit") %>%
     build("Outflow", "flow", eqn = "delayN(Inflow, AverageDelay, 5, 0)", from = "MaterialinTransit") %>%
@@ -259,6 +298,39 @@ test_that("smoothN() works", {
   expect_error({xmile() %>% build("a", "aux", eqn = "smoothN(a)")}, "Obligatory arguments length, order are missing for function smoothN")
   expect_error({xmile() %>% build("a", "aux", eqn = "smoothN(a, 1)")}, "Obligatory argument order is missing for function smoothN")
 
+
+})
+
+
+test_that("mixing delay family functions works", {
+
+  sfm = xmile() %>%
+    build("Outflow", "flow", eqn = "delay(Inflow, 10*3, 1/4) + past(Inflow, 100) + delayN(Inflow, 50, 4) + smoothN(Inflow,150,3)")
+  expect_equal(length(sfm$model$variables$flow$Outflow$func$delay), 1)
+  expect_equal(length(sfm$model$variables$flow$Outflow$func$past), 1)
+  expect_equal(length(sfm$model$variables$flow$Outflow$func$delayN), 1)
+  expect_equal(length(sfm$model$variables$flow$Outflow$func$smoothN), 1)
+  expect_equal(names(sfm$model$variables$flow$Outflow$func$delay),
+               paste0("Outflow", P$delay_suffix, 1))
+  expect_equal(names(sfm$model$variables$flow$Outflow$func$past),
+               paste0("Outflow", P$past_suffix, 1))
+  expect_equal(names(sfm$model$variables$flow$Outflow$func$delayN),
+               paste0("Outflow", P$delayN_suffix, 1))
+  expect_equal(names(sfm$model$variables$flow$Outflow$func$smoothN),
+               paste0("Outflow", P$smoothN_suffix, 1))
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[1]]$var, "Inflow")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[1]]$length, "10.0 .* 3.0")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delay[[1]]$initial, "1.0 ./ 4.0")
+  expect_equal(sfm$model$variables$flow$Outflow$func$past[[1]]$var, "Inflow")
+  expect_equal(sfm$model$variables$flow$Outflow$func$past[[1]]$length, "100.0")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delayN[[1]]$var, "Inflow")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delayN[[1]]$length, "50.0")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delayN[[1]]$order, "4.0")
+  expect_equal(sfm$model$variables$flow$Outflow$func$delayN[[1]]$initial, "Inflow")
+  expect_equal(sfm$model$variables$flow$Outflow$func$smoothN[[1]]$var, "Inflow")
+  expect_equal(sfm$model$variables$flow$Outflow$func$smoothN[[1]]$length, "150.0")
+  expect_equal(sfm$model$variables$flow$Outflow$func$smoothN[[1]]$order, "3.0")
+  expect_equal(sfm$model$variables$flow$Outflow$func$smoothN[[1]]$initial, "Inflow")
 
 })
 

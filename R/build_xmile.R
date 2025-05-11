@@ -419,13 +419,21 @@ summary.sdbuildR_xmile <- function(object, ...) {
 
 
   # Check for use of past() or delay()
-  intermediary = unname(object$model$variables) %>% purrr::list_flatten() %>%
-    purrr::map("intermediary") %>% purrr::compact()
+  # intermediary = unname(object$model$variables) %>% purrr::list_flatten() %>%
+  #   purrr::map("intermediary") %>% purrr::compact()
+  # past_list = list_extract(object$model$variables, "past")
+  # delay_list = list_extract(object$model$variables, "delay")
+  # intermediary = c(past_list, delay_list)
+  delay_past = get_delay_past(object)
 
-  if (length(intermediary) > 0){
+  if (length(delay_past) > 0){
+
+    names_delay = unique(names(delay_past))
+
     cat("\nDelay family functions:\n")
-    cat(sprintf("* %d variable%s uses past() or delay(): %s\n", length(intermediary),
-                ifelse(length(intermediary) == 1, "", "s"), paste0(names(intermediary), collapse = ", ")))
+    cat(sprintf("* %d variable%s uses past() or delay(): %s\n",
+                length(names_delay),
+                ifelse(length(names_delay) == 1, "", "s"), paste0(names_delay, collapse = ", ")))
   }
 
   # Check for use of delayN() and smoothN()
@@ -433,9 +441,10 @@ summary.sdbuildR_xmile <- function(object, ...) {
 
   if (length(delay_func) > 0){
 
-    if (length(intermediary) == 0) cat("\n\nDelay family functions:\n")
-    cat(sprintf("* %d variable%s uses delayN() or smoothN(): %s\n", length(delay_func),
-                ifelse(length(delay_func) == 1, "", "s"), paste0(names(delay_func), collapse = ", ")))
+    delay_func_names = unique(names(delay_func))
+    cat("\n\nDelay family functions:\n")
+    cat(sprintf("* %d variable%s uses delayN() or smoothN(): %s\n", length(delay_func_names),
+                ifelse(length(delay_func_names) == 1, "", "s"), paste0(delay_func_names, collapse = ", ")))
   }
 
   # Simulation specifications
@@ -446,7 +455,72 @@ summary.sdbuildR_xmile <- function(object, ...) {
 
 
 
+#' Get delayN and smoothN from stock-and-flow model
+#'
+#' @inheritParams build
+#'
+#' @returns List with delayN and smoothN functions
+#' @noRd
+get_delayN_smoothN = function(sfm){
 
+  z = unlist(unname(sfm$model$variables), recursive = FALSE, use.names = TRUE)
+  z = lapply(z, function(x){
+      c(x[["func"]][["delayN"]], x[["func"]][["smoothN"]])
+    })
+  z = z[lengths(z) > 0]
+  return(z)
+}
+
+
+#' Get delay and past from stock-and-flow model
+#'
+#' @inheritParams build
+#'
+#' @returns List with delay and past functions
+#' @noRd
+get_delay_past = function(sfm){
+
+  z = unlist(unname(sfm$model$variables), recursive = FALSE, use.names = TRUE)
+  z = lapply(z, function(x){
+    c(x[["func"]][["delay"]], x[["func"]][["past"]])
+  })
+  z = z[lengths(z) > 0]
+  return(z)
+}
+
+
+
+#' Extract entries from a nested list
+#'
+#' @param nested_list List to extract from
+#' @param entry Name of entry to extract
+#' @param keep_entry_name If TRUE, keep upper level name.
+#'
+#' @returns
+#' @noRd
+list_extract <- function(nested_list, entry, keep_entry_name = FALSE) {
+  result <- list()
+
+  # Helper function to traverse the list
+  traverse <- function(x) {
+    if (is.list(x)) {
+      for (name in names(x)) {
+        if (name == entry) {
+          if (keep_entry_name){
+            result <<- c(result, stats::setNames(list(x[[name]]), name))
+          } else {
+            result <<- c(result, x[[name]])
+          }
+        } else {
+          traverse(x[[name]])
+        }
+      }
+    }
+  }
+
+  traverse(nested_list)
+  return(result)
+}
 
 
 
@@ -1169,7 +1243,7 @@ macro = function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = F
       convert_equations_julia(sfm, type = "macro", name = name[i], eqn = x, var_names = var_names,
                                                                 regex_units = regex_units,
                                                                 debug = FALSE)$eqn_julia
-      # No need to save $func and $intermediaries because delay family cannot be used for macros
+      # No need to save $func because delay family cannot be used for macros
       }) %>% unname()
 
     argg$eqn = eqn
@@ -1310,9 +1384,9 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 #'sfm = sfm %>% sim_specs(language = "R")
 sim_specs = function(sfm,
                      method = "euler",
-                     start = 0.0,
-                     stop = 100.0,
-                     dt = 0.01,
+                     start = "0.0",
+                     stop = "100.0",
+                     dt = "0.01",
                      saveat = dt,
                      adaptive = FALSE,
                      seed = NULL,
@@ -1351,6 +1425,13 @@ sim_specs = function(sfm,
     if (is.na(dt)){
       stop("dt must be a number!")
     }
+
+    if (dt != 1){
+      if (dt > .1){
+        warning(paste0("dt is larger than 0.1! This will likely lead to inaccuracies in the simulation. To reduce the size of the simulaton dataframe, use saveat = ", dt, ", and keep dt to a smaller value. To simulate in discrete time, set dt = 1."))
+      }
+    }
+
   }
 
   if (!missing(saveat)){
@@ -1369,8 +1450,8 @@ sim_specs = function(sfm,
     }
 
     # Time units can only contain letters or spaces
-    if (any(grepl("[^a-zA-Z ]", time_units))){
-      stop("time_units can only contain letters!")
+    if (any(grepl("[^a-zA-Z _]", time_units))){
+      stop("time_units can only contain letters, spaces, or underscores!")
     }
     time_units = clean_unit(time_units, get_regex_time_units()) # Units are not used in R, so translate to julia directly
 
@@ -1466,7 +1547,11 @@ sim_specs = function(sfm,
         if (dt > as.numeric(sfm$sim_specs$saveat)){
           # warning("dt must be smaller or equal to saveat! Setting saveat equal to dt...")
           saveat = dt
+          passed_arg = c(passed_arg, "saveat")
         }
+      } else {
+        saveat = dt
+        passed_arg = c(passed_arg, "saveat")
       }
     }
   } else if (!missing(saveat)){
@@ -2105,9 +2190,8 @@ build = function(sfm, name, type,
                                                                            regex_units = regex_units,
                                                                            debug = FALSE)}) %>% unname()
 
-    # Remove old intermediary and func properties
+    # Remove old func list
     for (i in length(name)){
-      sfm$model$variables[[type[i]]][[name[i]]][["intermediary"]] = NULL
       sfm$model$variables[[type[i]]][[name[i]]][["func"]] = NULL
     }
 
@@ -2442,7 +2526,7 @@ get_build_code = function(sfm, format_code = TRUE){
   defaults = formals(build)
   defaults = defaults[!names(defaults) %in% c("sfm", "name", "type", "label", "...")]
 
-  # Simulation specifications
+  # Simulation specifications - careful here. If a default is 100.0, this will be turned into 100. Need to have character defaults to preserve digits.
   defaults_sim_specs = formals(sim_specs)
   defaults_sim_specs = defaults_sim_specs[!names(defaults_sim_specs) %in% c("name", "caption", "created", "...")]
   sim_specs_list = sfm$sim_specs
@@ -2497,7 +2581,6 @@ get_build_code = function(sfm, format_code = TRUE){
           z = y
           z$name = NULL
           z$type = NULL
-          z$intermediary = NULL
           z$func = NULL
 
           # Remove defaults
@@ -2837,11 +2920,10 @@ as.data.frame.sdbuildR_xmile = function(x,
       sfm$model$variables = sfm$model$variables[type[type %in% c("stock", "flow", "constant", "aux", "gf")]]
     }
 
-    # Remove intermediary and func
+    # Remove func
     sfm$model$variables = lapply(sfm$model$variables, function(y){
       lapply(y, function(x){
       x["translated_func"] = NULL
-      x["intermediary"] = NULL
       x["func"] = NULL
       return(x)
     })

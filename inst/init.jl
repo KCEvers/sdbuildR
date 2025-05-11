@@ -8,53 +8,54 @@ using Unitful
 using DataInterpolations
 using Random
 
-# Julia initialization for sdbuildR package
+# julia initialization for sdbuildR package
 # Required when extending a module’s function
 #import Base: <, >, <=, >=, ==, != #, +, - #, *, /, ^
 
 # Extend base methods (multiple dispatch) to allow for comparison between a unit and a non-unit; if one of the arguments is a Unitful.Quantity, convert the other to the same unit.
-Base.:<(x::Unitful.AbstractQuantity, y::Real) = <(x, y * Unitful.unit(x))
-Base.:<(x::Real, y::Unitful.AbstractQuantity) = <(x * Unitful.unit(y), y)
+Base.:<(x::Unitful.Quantity, y::Float64) = <(x, y * Unitful.unit(x))
+Base.:<(x::Float64, y::Unitful.Quantity) = <(x * Unitful.unit(y), y)
 
-Base.:>(x::Unitful.AbstractQuantity, y::Real) = >(x, y * Unitful.unit(x))
-Base.:>(x::Real, y::Unitful.AbstractQuantity) = >(x * Unitful.unit(y), y)
+Base.:>(x::Unitful.Quantity, y::Float64) = >(x, y * Unitful.unit(x))
+Base.:>(x::Float64, y::Unitful.Quantity) = >(x * Unitful.unit(y), y)
 
-Base.:(<=)(x::Unitful.AbstractQuantity, y::Real) = <=(x, y * Unitful.unit(x))
-Base.:(<=)(x::Real, y::Unitful.AbstractQuantity) = <=(x * Unitful.unit(y), y)
+Base.:(<=)(x::Unitful.Quantity, y::Float64) = <=(x, y * Unitful.unit(x))
+Base.:(<=)(x::Float64, y::Unitful.Quantity) = <=(x * Unitful.unit(y), y)
 
-Base.:(>=)(x::Unitful.AbstractQuantity, y::Real) = >=(x, y * Unitful.unit(x))
-Base.:(>=)(x::Real, y::Unitful.AbstractQuantity) = >=(x * Unitful.unit(y), y)
+Base.:(>=)(x::Unitful.Quantity, y::Float64) = >=(x, y * Unitful.unit(x))
+Base.:(>=)(x::Float64, y::Unitful.Quantity) = >=(x * Unitful.unit(y), y)
 
-Base.:(==)(x::Unitful.AbstractQuantity, y::Real) = ==(x, y * Unitful.unit(x))
-Base.:(==)(x::Real, y::Unitful.AbstractQuantity) = ==(x * Unitful.unit(y), y)
+Base.:(==)(x::Unitful.Quantity, y::Float64) = ==(x, y * Unitful.unit(x))
+Base.:(==)(x::Float64, y::Unitful.Quantity) = ==(x * Unitful.unit(y), y)
 
-Base.:(!=)(x::Unitful.AbstractQuantity, y::Real) = !=(x, y * Unitful.unit(x))
-Base.:(!=)(x::Real, y::Unitful.AbstractQuantity) = !=(x * Unitful.unit(y), y)
+Base.:(!=)(x::Unitful.Quantity, y::Float64) = !=(x, y * Unitful.unit(x))
+Base.:(!=)(x::Float64, y::Unitful.Quantity) = !=(x * Unitful.unit(y), y)
 
-Base.:%(x::Unitful.AbstractQuantity, y::Real) = %(x, y * Unitful.unit(x))
-Base.:%(x::Real, y::Unitful.AbstractQuantity) = %(x * Unitful.unit(y), y)
+Base.:%(x::Unitful.Quantity, y::Float64) = %(x, y * Unitful.unit(x))
+Base.:%(x::Float64, y::Unitful.Quantity) = %(x * Unitful.unit(y), y)
 
-Base.mod(x::Unitful.AbstractQuantity, y::Real) = mod(x, y * Unitful.unit(x))
-Base.mod(x::Real, y::Unitful.AbstractQuantity) = mod(x * Unitful.unit(y), y)
+Base.mod(x::Unitful.Quantity, y::Float64) = mod(x, y * Unitful.unit(x))
+Base.mod(x::Float64, y::Unitful.Quantity) = mod(x * Unitful.unit(y), y)
 
-Base.rem(x::Unitful.AbstractQuantity, y::Real) = rem(x, y * Unitful.unit(x))
-Base.rem(x::Real, y::Unitful.AbstractQuantity) = rem(x * Unitful.unit(y), y)
+Base.rem(x::Unitful.Quantity, y::Float64) = rem(x, y * Unitful.unit(x))
+Base.rem(x::Float64, y::Unitful.Quantity) = rem(x * Unitful.unit(y), y)
 
-Base.min(x::Unitful.AbstractQuantity, y::Real) = min(x, y * Unitful.unit(x))
-Base.min(x::Real, y::Unitful.AbstractQuantity) = min(x * Unitful.unit(y), y)
+Base.min(x::Unitful.Quantity, y::Float64) = min(x, y * Unitful.unit(x))
+Base.min(x::Float64, y::Unitful.Quantity) = min(x * Unitful.unit(y), y)
 
-Base.max(x::Unitful.AbstractQuantity, y::Real) = max(x, y * Unitful.unit(x))
-Base.max(x::Real, y::Unitful.AbstractQuantity) = max(x * Unitful.unit(y), y)
+Base.max(x::Unitful.Quantity, y::Float64) = max(x, y * Unitful.unit(x))
+Base.max(x::Float64, y::Unitful.Quantity) = max(x * Unitful.unit(y), y)
 
 # Extend min/max: when applied to a single vector, use minimum, like in R
 Base.min(v::AbstractVector) = minimum(v)
 Base.max(v::AbstractVector) = maximum(v)
 
-Base.round(x::Unitful.AbstractQuantity) = round(Unitful.ustrip.(x)) * Unitful.unit(x)
-Base.floor(x::Unitful.AbstractQuantity) = floor(Unitful.ustrip.(x)) * Unitful.unit(x)
-Base.ceil(x::Unitful.AbstractQuantity) = ceil(Unitful.ustrip.(x)) * Unitful.unit(x)
-Base.trunc(x::Unitful.AbstractQuantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)
-Base.round(x::Unitful.AbstractQuantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
+Base.round(x::Unitful.Quantity) = round(Unitful.ustrip.(x)) * Unitful.unit(x)
+Base.floor(x::Unitful.Quantity) = floor(Unitful.ustrip.(x)) * Unitful.unit(x)
+Base.ceil(x::Unitful.Quantity) = ceil(Unitful.ustrip.(x)) * Unitful.unit(x)
+Base.trunc(x::Unitful.Quantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)
+Base.round(x::Unitful.Quantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
+Base.round(x::Unitful.Quantity, digits::Float64) = round(Unitful.ustrip.(x), digits=round(digits)) * Unitful.unit(x)
 
 # Extrapolation function
 function itp(x, y; method = "linear", extrapolation = "nearest")
@@ -234,8 +235,8 @@ function pulse(; start_t_pulse, h_pulse = 1.0, w_pulse = 1.0 * time_units, repea
     return(func)
 end
 
-# Convert InsightMaker's Round() function to R
-# Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in Julia, round(.5) = 0.0
+# Convert Insight Maker's Round() function to R
+# Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in julia, round(.5) = 0.0
 function IM_round(x::Real, digits::Int=0)
     # Compute the fractional part after scaling by 10^digits
     scaled_x = x * 10.0^digits
@@ -270,16 +271,20 @@ function sigmoid(x, slope, midpoint)
 end
 
 
-# Prevent non-negativity
-function nonnegative(x)
-    if eltype(x) <: Unitful.Quantity
-        max.(0.0, Unitful.ustrip(x)) .* Unitful.unit.(x)
-    else
-        max.(0.0, x)
-    end
-end
+# Prevent non-negativity (below zero)
+# Scalar case: non-unitful types
+nonnegative(x::Real) = max(0.0, x)
 
-# Generate random boolean value, equivalent of RandBoolean() in InsightMaker
+# Scalar case: Unitful.Quantity
+nonnegative(x::Unitful.Quantity) = max(0.0, ustrip(x)) * unit(x)
+
+# Array case: non-unitful elements
+nonnegative(x::AbstractArray{<:Real}) = max.(0.0, x)
+
+# Array case: Unitful.Quantity elements
+nonnegative(x::AbstractArray{<:Unitful.Quantity}) = max.(0.0, ustrip.(x)) .* unit.(x)
+
+# Generate random boolean value, equivalent of RandBoolean() in Insight Maker
 function rbool(p)
     return rand() < p
 end
@@ -333,39 +338,53 @@ function IM_filter(y::Vector{T}, condition_func::Function) where T
     return collect(values(result)), collect(keys(result))
 end
 
-# Set or convert unit
-function setunit(x, unit_def)
-    # Parse unit_def into a Unitful.Unit
-    target_unit = if unit_def isa Unitful.Quantity
-        Unitful.unit(unit_def)  # Extract unit from Quantity (e.g., 1u"wk" -> u"wk")
-    elseif unit_def isa Unitful.Units
-        unit_def  # Already a unit (e.g., u"wk")
-    elseif unit_def isa AbstractString
-        try
-            Unitful.uparse(unit_def, unit_context = unit_context)  # Parse string to unit (e.g., "wk" -> u"wk")
-        catch e
-            error("Invalid unit string: $unit_def")
-        end
+# Set or convert unit wrappers per type
+function setunit(x::Unitful.Quantity, unit_def::Unitful.Quantity)
+    if Unitful.unit(x) == Unitful.unit(unit_def)
+        return x  # No conversion needed
     else
-        error("unit_def must be a Quantity, Unit, or String, got $(typeof(unit_def))")
+        Unitful.uconvert.(Unitful.unit(unit_def), x)
     end
+end
 
-    # Handle x based on whether it has a unit
-    #if x isa Unitful.Quantity
-    if eltype(x) <: Unitful.Quantity
-        # x has a unit, convert it
-        try
-            return Unitful.uconvert.(target_unit, x)
-        catch e
-            if isa(e, Unitful.DimensionError)
-                error("Cannot convert $(Unitful.unit.(x)) to $target_unit: incompatible dimensions")
-            else
-                rethrow(e)
-            end
-        end
+function setunit(x::Unitful.Quantity, unit_def::Unitful.Units)
+    if Unitful.unit(x) == unit_def
+        return x  # No conversion needed
     else
-        # x has no unit, set it via multiplication
-        return x .* target_unit
+        Unitful.uconvert.(unit_def, x)
+    end
+end
+
+
+function setunit(x::Unitful.Quantity, unit_def::String)
+    try
+        unit_def = Unitful.uparse(unit_def, unit_context = unit_context)  # Parse string to unit (e.g., "wk" -> u"wk")
+
+        if Unitful.unit(x) == unit_def
+            return x  # No conversion needed
+        else
+            Unitful.uconvert.(unit_def, x)
+        end
+    catch e
+        error("Invalid unit string: $unit_def")
+    end
+end
+
+# If x is not a Unitful.Quantity but Float64:
+function setunit(x::Float64, unit_def::Unitful.Quantity)
+    x * Unitful.unit(unit_def)
+end
+
+function setunit(x::Float64, unit_def::Unitful.Units)
+    x * unit_def
+end
+
+function setunit(x::Float64, unit_def::String)
+    try
+        unit_def = Unitful.uparse(unit_def, unit_context = unit_context)  # Parse string to unit (e.g., "wk" -> u"wk")
+        x * unit_def
+    catch e
+        error("Invalid unit string: $unit_def")
     end
 end
 
@@ -456,7 +475,7 @@ function saveat_func(t, y, new_times)
     itp(t, y, method = "linear", extrapolation = "nearest")(new_times)
 end
 
-function compute_delayN(inflow, accumulator, length_delay, order_delay)
+function compute_delayN(inflow, accumulator::AbstractVector{Float64}, length_delay, order_delay::Float64)
     order_delay = round(Int, order_delay)
     d_accumulator = zeros(eltype(accumulator), order_delay)
     exit_rate_stage = accumulator / (length_delay / order_delay)
@@ -470,14 +489,15 @@ function compute_delayN(inflow, accumulator, length_delay, order_delay)
     return (outflow=outflow, update=d_accumulator)
 end
 
-function setup_delayN(initial_value, length_delay, order_delay, name::String)
+function setup_delayN(initial_value, length_delay, order_delay::Float64, name::Symbol)
     # Compute the initial value for each accumulator
     # from https://www.simulistics.com/help/equations/functions/delay.html
     order_delay = round(Int, order_delay) # Turn order into integer
     value = initial_value * length_delay / order_delay
 
     # Create a dictionary with names like "name_acc1", "name_acc2", ...
-    return Dict(string(name, "_acc", i) => value for i in 1:order_delay)
+    #return Dict(string(name, "_acc", i) => value for i in 1:order_delay)
+    return Dict(Symbol(name, "_acc", i) => value for i in 1:order_delay)
 end
 
 # Define custom units; register after each unit as some units may be defined by other units

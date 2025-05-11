@@ -3,12 +3,21 @@ test_that("templates work", {
 
   sfm = xmile("SIR") %>% sim_specs(language = "R")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
   sfm = xmile("predator-prey") %>% sim_specs(language = "R")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
   sfm = xmile("logistic_model") %>% sim_specs(language = "R")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
   # Check whether the population converges to the carrying capacity
   sim = simulate(sfm)
@@ -20,14 +29,22 @@ test_that("templates work", {
 
   sfm = xmile("Crielaard2022") %>% sim_specs(language = "R")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
   # Duffing previously had an error with cos()
   sfm = xmile("Duffing") %>% sim_specs(language = "R")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
   sfm = xmile("Chua") %>% sim_specs(language = "R")
   expect_no_error(simulate(sfm))
-
+  sim = simulate(sfm)
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 })
 
 

@@ -263,8 +263,7 @@ plot(sim, add_constants = TRUE)
 ```
 
 We've created oscillations in the system! Maya is now trapped in a cycle of overworking, which causes her sleep to deteriorate to the point of collapse. As she takes more time off work, her sleep recovers, but this only starts the cycle anew. What's worse, the oscillations are growing in amplitude, with each cycle becoming more extreme. A future refinement could prevent the daily work hours from exceeding 24 hours per day - every model is just a starting point.
-<!-- created a minimal model of burnout. -->
-
+XXX
 
 
 

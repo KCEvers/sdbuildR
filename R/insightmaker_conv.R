@@ -404,13 +404,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
       # Only keep selected properties
       x = x[names(x) %in% stock_prop]
       return(x)
-    }) # %>%
-    # # Add inflows and outflows
-    # purrr::map(function(x){
-    #   x$inflow = new_names[match(flow_ids[x$id == flow_targets], ids)]
-    #   x$outflow = new_names[match(flow_ids[x$id == flow_sources], ids)]
-    #   x
-    # })
+    })
 
   # Flows
   flow_prop = c("doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "from", "to", "non_negative",
@@ -472,10 +466,10 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
   sfm = xmile() %>%
     sim_specs(method = settings$method,
               time_units = time_units,
-              start = as.numeric(settings$TimeStart),
+              start = settings$TimeStart,
               stop = as.numeric(settings$TimeStart) + as.numeric(settings$TimeLength),
-              dt = as.numeric(settings$TimeStep),
-              saveat = as.numeric(settings$TimeStep))
+              dt = settings$TimeStep,
+              saveat = settings$TimeStep)
 
   # Header
   # header_list = list(insightmaker_version = settings$Version) %>% utils::modifyList(header_info)

@@ -83,8 +83,10 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units,
     print(eqn)
   }
 
-  default_out = list(eqn_julia = "0.0", translated_func = c(),
-                     intermediary = c(), func = list())
+  default_out = list(eqn_julia = "0.0",
+                     # translated_func = c(),
+                     # intermediary = c(),
+                     func = list())
 
   # Check whether eqn is empty or NULL
   if (is.null(eqn) || !nzchar(eqn)){
@@ -162,7 +164,7 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units,
     conv_list = convert_builtin_functions_julia(type, name, eqn, var_names, debug = debug)
     eqn = conv_list$eqn
     add_Rcode = conv_list$add_Rcode
-    translated_func = conv_list$translated_func
+    # translated_func = conv_list$translated_func
 
 
     # **to do:
@@ -189,7 +191,9 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units,
 
     # if (debug){print(eqn)}
 
-    out = list(eqn_julia = eqn, translated_func = translated_func) %>%
+    out = list(eqn_julia = eqn
+               # translated_func = translated_func
+               ) %>%
       append(add_Rcode)
 
     return(out)
@@ -1368,12 +1372,9 @@ get_syntax_julia = function(){
 #'
 convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
 
-  translated_func = c()
-  # add_Rcode_list = list()
+  # translated_func = c()
 
-  # add_Rcode_list = list(list(list(intermediary = c(), func = list())) %>% stats::setNames(name)) %>%
-    # stats::setNames(type)
-  add_Rcode = list(intermediary = c(), func = list())
+  add_Rcode = list(func = list())
 
   if (grepl("[[:alpha:]]", eqn)){
 
@@ -1548,14 +1549,24 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
           # if (length(arg) > 3 | length(arg) < 2){
           #   stop(paste0("Adjust equation of ", name, ": delay() requires at least two and at most three arguments: the variable to delay and the time delay (and optionally the default value); see ?delay."))
           # }
+          func_name = paste0(name, P$delay_suffix, length(add_Rcode[["func"]][[idx_func$syntax]]) + 1)
+          arg3 = ifelse(length(arg) > 2, arg[3], "nothing")
 
           replacement = paste0(idx_func$julia, "(",
                                arg[1], ", ",
                                arg[2], ", ",
-                               ifelse(length(arg) > 2, arg[3], "nothing"), ", ",
-                               P$time_name, ", \"", arg[1], "\", \"single\", ",
+                               arg3, ", ",
+                               P$time_name,
+                               # ", \"", arg[1], "\", \"single\", ",
+                               # Symbols are faster
+                               ", :", arg[1], ", \"single\", ",
+
                                P$intermediaries, ", ", P$intermediary_names, ")")
-          add_Rcode[["intermediary"]] = c(add_Rcode[["intermediary"]], arg[1])
+          # add_Rcode[["intermediary"]] = c(add_Rcode[["intermediary"]], arg[1])
+          add_Rcode[["func"]][[idx_func$syntax]][[func_name]] = list(var = arg[1],
+                                                                     length = arg[2],
+                                                                     initial = arg3
+          )
 
         } else if (idx_func$syntax == "past"){
 
@@ -1569,12 +1580,20 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
           # }
 
 
+          arg2 = ifelse(length(arg) > 1, arg[2], "nothing")
+          func_name = paste0(name, P$past_suffix, length(add_Rcode[["func"]][[idx_func$syntax]]) + 1)
           replacement = paste0(idx_func$julia, "(",
                                arg[1], ", ",
-                               arg[2], ", nothing, ",
-                               P$time_name, ", \"", arg[1], "\", \"interval\", ",
+                               arg2, ", nothing, ",
+                               P$time_name,
+                               # ", \"", arg[1], "\", \"interval\", ",
+                               # Symbols are faster
+                               ", :", arg[1], ", \"interval\", ",
                                P$intermediaries, ", ", P$intermediary_names, ")")
-          add_Rcode[["intermediary"]] = c(add_Rcode[["intermediary"]], arg[1])
+          # add_Rcode[["intermediary"]] = c(add_Rcode[["intermediary"]], arg[1])
+          add_Rcode[["func"]][[idx_func$syntax]][[func_name]] = list(var = arg[1],
+                                                                     length = arg2)
+
 
         } else if (idx_func$syntax == "delayN"){
 
@@ -1589,28 +1608,43 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
 
           arg4 = ifelse(length(arg) > 3, arg[4], arg[1])
           # Number delayN() as there may be multiple
-          name_delay = paste0(name, P$delayN_suffix, length(add_Rcode[["func"]]) + 1)
-          replacement = paste0(name_delay, ".outflow")
-          setup = paste0("setup_delayN(", arg4, ", ", arg[2], ", ", arg[3], ", \"", name_delay, "\")")
+          # func_name = paste0(name, P$delayN_suffix, length(add_Rcode[["func"]]) + 1)
+          func_name = paste0(name, P$delayN_suffix, length(add_Rcode[["func"]][[idx_func$syntax]]) + 1)
+
+          replacement = paste0(func_name, ".outflow")
+          setup = paste0("setup_delayN(", arg4, ", ", arg[2], ", ", arg[3],
+                         # ", \"", func_name, "\")")
+                         # Symbols are faster
+                         ", :", func_name, ")")
           compute = paste0(idx_func$julia, "(",
                                     arg[1], ", ",
-                           name_delay, ", ",
+                           func_name, ", ",
                                     arg[2], ", ",
                                     arg[3], ")")
 
-          update = paste0(name_delay, ".update")
+          update = paste0(func_name, ".update")
 
-          add_Rcode[["func"]] = append(add_Rcode[["func"]],
-                             list(list(setup = setup,
-                                       compute = compute,
-                                       update = update,
-                                       type = idx_func$julia,
-                                       var = arg[1],
-                                       length = arg[2],
-                                       order = arg[3],
-                                       initial = arg4
+          # add_Rcode[["func"]] = append(add_Rcode[["func"]],
+          #                    list(list(setup = setup,
+          #                              compute = compute,
+          #                              update = update,
+          #                              type = idx_func$julia,
+          #                              var = arg[1],
+          #                              length = arg[2],
+          #                              order = arg[3],
+          #                              initial = arg4
+          #
+          #                              )) %>% stats::setNames(func_name))
 
-                                       )) %>% stats::setNames(name_delay))
+          add_Rcode[["func"]][[idx_func$syntax]][[func_name]] = list(setup = setup,
+                                                                     compute = compute,
+                                                                     update = update,
+                                                                     type = idx_func$julia,
+                                                                     var = arg[1],
+                                                                     length = arg[2],
+                                                                     order = arg[3],
+                                                                     initial = arg4)
+
 
 
         } else if (idx_func$syntax == "smoothN"){
@@ -1626,28 +1660,42 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
 
           arg4 = ifelse(length(arg) > 3, arg[4], arg[1])
           # Number smoothN() as there may be multiple
-          name_delay = paste0(name, P$delayN_suffix, length(add_Rcode[["func"]]) + 1)
-          replacement = paste0(name_delay, ".outflow")
-          setup = paste0("setup_smoothN(", arg4, ", ", arg[2], ", ", arg[3], ", \"", name_delay, "\")")
+          # func_name = paste0(name, P$delayN_suffix, length(add_Rcode[["func"]]) + 1)
+          func_name = paste0(name, P$smoothN_suffix, length(add_Rcode[["func"]][[idx_func$syntax]]) + 1)
+
+          replacement = paste0(func_name, ".outflow")
+          setup = paste0("setup_smoothN(", arg4, ", ", arg[2], ", ", arg[3],
+                         # ", \"", func_name, "\")")
+                         # Symbols are faster
+                         ", :", func_name, ")")
           compute = paste0(idx_func$julia, "(",
                            arg[1], ", ",
-                           name_delay, ", ",
+                           func_name, ", ",
                            arg[2], ", ",
                            arg[3], ")")
 
-          update = paste0(name_delay, ".update")
+          update = paste0(func_name, ".update")
 
-          add_Rcode[["func"]] = append(add_Rcode[["func"]],
-                                            list(list(setup = setup,
-                                                      compute = compute,
-                                                      update = update,
-                                                      type = idx_func$julia,
-                                                      var = arg[1],
-                                                      length = arg[2],
-                                                      order = arg[3],
-                                                      initial = arg4
-                                                      )) %>% stats::setNames(name_delay))
+          # add_Rcode[["func"]] = append(add_Rcode[["func"]],
+          #                                   list(list(setup = setup,
+          #                                             compute = compute,
+          #                                             update = update,
+          #                                             type = idx_func$julia,
+          #                                             var = arg[1],
+          #                                             length = arg[2],
+          #                                             order = arg[3],
+          #                                             initial = arg4
+          #                                             )) %>% stats::setNames(func_name))
 
+          add_Rcode[["func"]][[idx_func$syntax]][[func_name]] = list(setup = setup,
+                                                                     compute = compute,
+                                                                     update = update,
+                                                                     type = idx_func$julia,
+                                                                     var = arg[1],
+                                                                     length = arg[2],
+                                                                     order = arg[3],
+                                                                     initial = arg4
+          )
 
         } else if (idx_func$syntax == "syntaxD"){
 
@@ -1667,14 +1715,16 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
         # Replace eqn
         stringr::str_sub(eqn, start_idx, end_idx) = replacement
 
-        translated_func = c(translated_func, idx_func$R)
+        # translated_func = c(translated_func, idx_func$R)
       }
     }
     # add_Rcode = list(list(add_Rcode) %>% stats::setNames(name)) %>%
       # stats::setNames(type)
 
 }
-  return(list(eqn = eqn, add_Rcode = add_Rcode, translated_func = translated_func))
+  return(list(eqn = eqn, add_Rcode = add_Rcode
+              # , translated_func = translated_func
+              ))
 
 }
 

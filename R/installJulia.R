@@ -138,11 +138,6 @@ install_julia_sdbuildR <- function(version, dir){
     stop("Please specify a valid directory for the Julia installation in dir.")
   }
 
-  if (version == "latest"){
-    version = julia_latest_version()
-  } else if (package_version(version) < "1.11"){
-    stop("sdbuildR requires Julia version 1.11 or higher.")
-  }
   url <- julia_url(version)
 
   file <- tempfile()

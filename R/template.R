@@ -40,7 +40,7 @@ template = function(name){
   if (name == "logistic_model"){
 
     sfm = xmile() %>% header(name = "Logistic model") %>%
-      sim_specs(start = 0, stop = 200, dt = 0.01) %>%
+      sim_specs(stop = 200) %>%
       build("X", "stock", eqn = ".01", label = "Population size") %>%
       # build("flow", "flow", eqn = "r * X * (1 - X / K)", to = "X", label = "Net change") %>%
       build("inflow", "flow", eqn = "r * X", to = "X", label = "Births") %>%
@@ -54,7 +54,7 @@ template = function(name){
     # https://github.com/JimDuggan/SDMR/blob/master/models/07%20Chapter/R/02%20Screening.R
 
     sfm = xmile() %>% header(name = "Susceptible-Infected-Recovered (SIR)") %>%
-      sim_specs(start = 0, stop = 20, dt = 0.125) %>%
+      sim_specs(start = 0, stop = 20) %>%
       build("Susceptible", "stock", eqn = "99999") %>%
       build("Infected", "stock", eqn = "1") %>%
       build("Recovered", "stock", eqn = "0.0") %>%
@@ -127,7 +127,7 @@ template = function(name){
   } else if (name == "coffee_cup"){
 
     sfm = xmile() %>% header(name = "Coffee cup", caption = "Coffee cup cooling or heating from Meadows' Thinking in Systems (Chapter 1)") %>%
-      sim_specs(start = 0, stop = 100, dt = 1, time_units = "minute") %>%
+      sim_specs(stop = 100, dt = 1, time_units = "minute") %>%
       build("coffee_temperature", "stock", eqn = "100", units = "Celsius", label = "Coffee temperature") %>%
       build("cooling", "flow", eqn = "discrepancy * .1 / u('min')", units = "Celsius/min", to = "coffee_temperature", label = "Cooling or heating") %>%
       build("discrepancy", "aux", eqn = "room_temperature - coffee_temperature", units = "Celsius", label = "Discrepancy") %>%
@@ -150,7 +150,7 @@ template = function(name){
 
     sfm = xmile() %>% header(name = "Lorenz Attractor",
                 caption = "Lorenz Attractor system for chaotic dynamics") %>%
-      sim_specs(start = 0, stop = 50, dt = 0.01, time_units = "hours") %>%
+      sim_specs(stop = 50, time_units = "hours") %>%
       # Stocks
       build("x", "stock", eqn = "1") %>%
       build("y", "stock", eqn = "1") %>%
@@ -168,7 +168,7 @@ template = function(name){
 
   sfm = xmile() %>% header(name = "Rossler Attractor",
               caption = "Chaotic Rossler system in 3D") %>%
-    sim_specs(start = 0, stop = 100, dt = 0.01, time_units = "hours") %>%
+    sim_specs(stop = 100, time_units = "hours") %>%
     # Stocks
     build("x", "stock", eqn = "1") %>%
     build("y", "stock", eqn = "1") %>%
@@ -186,7 +186,7 @@ template = function(name){
 
     sfm = xmile() %>% header(name = "Van der Pol Oscillator",
                 caption = "Nonlinear oscillator with limit cycle behavior") %>%
-      sim_specs(start = 0, stop = 50, dt = 0.01, time_units = "hours") %>%
+      sim_specs(stop = 50, time_units = "hours") %>%
       # Stocks
       build("x", "stock", eqn = "0.1", label = "Position") %>%
       build("y", "stock", eqn = "0", label = "Velocity") %>%
@@ -201,7 +201,7 @@ template = function(name){
     # **cos() throws error with units
     sfm = xmile() %>% header(name = "Duffing Oscillator",
                 caption = "Nonlinear oscillator with forcing") %>%
-      sim_specs(start = 0, stop = 100, dt = 0.01, time_units = "hours") %>%
+      sim_specs(stop = 100, time_units = "hours") %>%
       # Stocks
       build("x", "stock", eqn = "0.1", label = "Position") %>%
       build("y", "stock", eqn = "0", label = "Velocity") %>%
@@ -220,7 +220,7 @@ template = function(name){
   } else if (name == "Chua"){
 
     sfm = xmile() %>% header(name = "Chua's Circuit", caption = "Chaotic electronic circuit model") %>%
-      sim_specs(start = 0, stop = 50, dt = 0.01, time_units = "hours") %>%
+      sim_specs(stop = 50, time_units = "hours") %>%
       # Stocks
       build("x", "stock", eqn = "0.1", label = "Voltage 1") %>%
       build("y", "stock", eqn = "0", label = "Voltage 2") %>%
