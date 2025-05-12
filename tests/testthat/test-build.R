@@ -662,12 +662,16 @@ test_that("create_R_names() works", {
   names_df = get_names(sfm)
 
   # Check for syntactically correct names
-  expect_equal(create_R_names(c("TRUE", "T"), names_df), c("TRUE_", "T_1"))
+  expect_equal(create_R_names(c("TRUE", "T"), names_df), c("TRUE__1", "T_1"))
   expect_equal(create_R_names(c("a", "b", "T"), names_df), c("a", "b", "T_1"))
   expect_equal(create_R_names(c("a-1", "b!2", "c.1"), names_df), c("a_1", "b_2", "c_1"))
   expect_equal(create_R_names(c("a-1", "a!1"), names_df), c("a_1", "a_1_1"))
-  expect_equal(create_R_names(c("-1", "_1"), names_df), c("X_1", "X_1"))
   expect_equal(create_R_names(c(" Hell0 ", "Hell0"), names_df), c("Hell0", "Hell0_1"))
+
+  # Difficult, but ensure unique names
+  expect_equal(create_R_names(c("F"), data.frame(name = "F_1")), c("F_1_1"))
+  expect_equal(create_R_names(c("-1", "_1"), names_df), c("X_1", "X_1_1"))
+
 
 })
 

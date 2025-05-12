@@ -13,13 +13,14 @@
 #'
 #' @return Stock-and-flow model of class xmile.
 #' @export
-#' @seealso [build()]
+#' @seealso [build()], [xmile()]
 #'
 #' @examples
 #' sfm = insightmaker_to_sfm(URL =
 #'  'https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-2022')
-#' out = simulate(sfm)
 #' plot(sfm)
+#' sim = simulate(sfm)
+#' plot(sim)
 insightmaker_to_sfm = function(URL,
                              filepath_IM,
                              directory = tempdir(),
@@ -87,13 +88,19 @@ insightmaker_to_sfm = function(URL,
   # Check non-negativity for flows and stocks
   sfm = check_nonnegativity(sfm, keep_nonnegative_flow, keep_nonnegative_stock, keep_solver)
 
-  # Convert InsightMaker equation to R, including macros
+  # Convert Insight Maker equation to R, including macros
   if (debug){
     print("Converting equations from Insight Maker to R...")
   }
+
+  # Convert macros - important to do before equations, as some macros may have
+  # syntactically invalid names
+  sfm = convert_macros_IM_wrapper(sfm, regex_units = regex_units, debug = debug)
+
+  # Convert equations in model variables
   sfm = convert_equations_IM_wrapper(sfm, regex_units = regex_units, debug = debug)
 
-  # Finalize equations by removing brackets from names ## **no longer:, setting right units and right prefixes (e.g. xstart$)
+  # Finalize equations by removing brackets from names
   sfm = remove_brackets_from_names(sfm)
 
   # Convert equations and macros to Julia

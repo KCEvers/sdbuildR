@@ -125,8 +125,20 @@ compile = function(sfm,
 detect_undefined_var = function(sfm){
 
   # Get names
-  # names_df = get_names(sfm)
   var_names = get_model_var(sfm)
+
+  # Macros and graphical functions can be functions
+  possible_func_in_model = c(names(sfm$macro), names(sfm$model$variables$gf))
+
+  # ** Many more possible functions, e.g. * / + etc.
+  possible_func = c(possible_func_in_model,
+                    get_syntax_julia()$syntax_df$R_first_iter,
+                    unlist(P),
+                    # Remove base R names
+                    "pi", "letters", "LETTERS",
+                    "month.abb", "month.name")
+
+  # ** to do: check whether gf or macro functions are used without brackets
 
   # Find references to variables which are not in names_df$name
   missing_ref = unlist(sfm$model$variables, recursive = FALSE, use.names = FALSE) %>%
@@ -134,12 +146,14 @@ detect_undefined_var = function(sfm){
     # Find dependencies, and find which ones are not in names_df$name
       y = x[names(x) %in% c("eqn", "to", "from")]
       y = y[sapply(y, is_defined)]
+
     A = sapply(y, function(z){
-      setdiff(unlist(find_dependencies(sfm, z, only_var = TRUE, only_model_var = FALSE)),
-              c(unlist(P), var_names,
-                # Remove base R names
-                "pi", "letters", "LETTERS",
-                "month.abb", "month.name"))
+
+      dependencies = find_dependencies(sfm, z, only_var = TRUE, only_model_var = FALSE)
+
+      # Find all undefined variables and functions
+      setdiff(unlist(dependencies),
+              c(possible_func, var_names))
     })
     A = A[lengths(A) > 0]
     if (length(A) == 0){
@@ -270,6 +284,51 @@ circularity = function(g){
 
 
 
+#' Find newly defined variables in equation
+#'
+#' @param eqn Equation
+#'
+#' @returns Vector of newly defined variables
+#' @noRd
+find_newly_defined_var = function(eqn){
+
+  # For each =, find preceding \n and next =
+  newlines = unique(c(1, stringr::str_locate_all(eqn, "\\n")[[1]][, "start"], nchar(eqn)))
+  assignment = stringr::str_locate_all(eqn, "=")[[1]]
+
+  # Exclude <- & \n in comments and strings
+  seq_quot = get_seq_exclude(eqn, var_names = NULL, type = "quot")
+
+  assignment = assignment[!(assignment[, "start"] %in% seq_quot), , drop = FALSE]
+  newlines = newlines[!(newlines %in% seq_quot)]
+
+  new_var = c()
+  if (nrow(assignment) > 0 & length(newlines) > 0){
+
+    # Find preceding newline before assignment
+    start_idxs = sapply(assignment[, "start"], function(idx){
+
+      idxs_newline = which(newlines <= idx)
+      newlines[idxs_newline[length(idxs_newline)]] # select last newline before assignment
+
+    })
+
+    # Isolate defined variables
+    new_var = lapply(1:nrow(assignment), function(i){
+
+      # Extract equation indices
+      trimws(stringr::str_sub(eqn, start_idxs[i], assignment[i, "start"] - 1))
+    })
+    new_var = unlist(new_var)
+
+  }
+
+  return(new_var)
+}
+
+
+
+
 #' Find dependencies in equation
 #'
 #' @param eqns String with equation to find dependencies in; defaults to NULL to find dependencies of all variables.
@@ -284,6 +343,10 @@ find_dependencies = function(sfm, eqns = NULL, only_var = TRUE, only_model_var =
 
   var_names = get_model_var(sfm)
 
+  # Macros and graphical functions can be functions
+  possible_func_in_model = c(names(sfm$macro), names(sfm$model$variables$gf),
+                             var_names) # Some aux are also functions, such as pulse/step/ramp
+
   if (is.null(eqns)){
     eqns = unlist(unname(lapply(sfm$model$variables, function(x){lapply(x, `[[`, "eqn")})), recursive = FALSE)
   }
@@ -295,10 +358,19 @@ find_dependencies = function(sfm, eqns = NULL, only_var = TRUE, only_model_var =
 
     # If parsing was successful, extract variable names from equations
     if (!is.null(expr)) {
-      d = all.names(expr, functions = !only_var, unique = TRUE)
+
+      # Omit variables that are defined in the expression itself
+      new_var = find_newly_defined_var(eqn)
+
+      # Get all dependencies
+      all_d = setdiff(all.names(expr, functions = TRUE, unique = TRUE), new_var)
+      d = setdiff(all.names(expr, functions = FALSE, unique = TRUE), new_var)
+      d_func = setdiff(all_d, d)
 
       if (only_model_var){
-        d = d[d %in% var_names]
+        d = c(d[d %in% var_names], d_func[d_func %in% possible_func_in_model])
+      } else if (!only_var){
+        d = all_d
       }
 
     } else {
@@ -324,8 +396,8 @@ find_dependencies = function(sfm, eqns = NULL, only_var = TRUE, only_model_var =
 order_equations <- function(sfm, print_msg = TRUE){
 
   # Separate auxiliary variables into static parameters and dynamically updated auxiliaries
-  dependencies = sfm$model$variables %>%
-    purrr::map_depth(2, function(x){
+  dependencies = lapply(sfm$model$variables, function(y){
+    lapply(y, function(x){
 
       if (is_defined(x$eqn)){
         d = unlist(find_dependencies(sfm, x$eqn, only_var = TRUE, only_model_var = TRUE))
@@ -334,7 +406,12 @@ order_equations <- function(sfm, print_msg = TRUE){
       }
       return(d)
     })
+  })
 
+
+  # Try to sort static and dynamic equations together in case a static variable depends on a dynamic variable
+  dependencies_dict = unlist(unname(dependencies), recursive = FALSE)
+  static_and_dynamic = topological_sort(dependencies_dict)
 
   # Topological sort of static equations
   static_dependencies_dict = c(dependencies$gf,
@@ -347,6 +424,7 @@ order_equations <- function(sfm, print_msg = TRUE){
     message(paste0("Ordering static equations failed. ", static$msg, collapse = ""))
   }
 
+
   # Topological ordering
   dependencies_dict = c(dependencies$aux,
                         dependencies$flow) %>%
@@ -356,7 +434,8 @@ order_equations <- function(sfm, print_msg = TRUE){
     message(paste0("Ordering dynamic equations failed. ", dynamic$msg, collapse = ""))
   }
 
-  return(list(static = static, dynamic = dynamic))
+  return(list(static = static, dynamic = dynamic,
+              static_and_dynamic = static_and_dynamic))
 
 }
 

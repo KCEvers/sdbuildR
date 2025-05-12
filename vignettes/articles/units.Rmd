@@ -168,7 +168,7 @@ sfm = sfm %>% build("change", "flow",
                     label = "Cooling or heating") 
 ```
 
-The coffee temperature adapts to the room temperature. However, the equation `room_temperature - coffee_temperature` evaluates to Celsius, and the equation of the flow needs to match the specified units `Celsius/minute`. We are missing a rate - the speed at which the coffee temperature adjusts to the room temperature. To do so, we can divide the difference by time, such as 10 minutes. To use units in equations, enclose them in `u('')`:
+The coffee temperature adapts to the room temperature. However, the equation `room_temperature - coffee_temperature` evaluates to Celsius, and the equation of the flow needs to match the specified units `Celsius/minute`. We are missing a rate - the speed at which the coffee temperature adjusts to the room temperature. To do so, we can divide the difference by time, such as 10 minutes. To use units in equations, enclose them in `u()`:
 
 ```{r}
 sfm = sfm %>% build("change", 
@@ -186,13 +186,13 @@ When specifying fractions, take care to use the correct syntax. For example, `1/
 
 <!-- When translating R code to Julia, these are translated to u"", which is Unitful's syntax to indicate units.  -->
 
-In rare cases, you may want to convert units within an equation. For example, if we add an auxiliary variable `rate` which is in minutes, but we'd like to use it in hours, we can do so with `setunit()`:
+In rare cases, you may want to change the units of a variable within an equation. For example, if we have an auxiliary variable `rate` which is defined in minutes, but we'd like to use it in hours, we can do so with `convert_u()`:
 
 ```{r}
 sfm = sfm %>% 
   build("rate", "constant", eqn = "10", units = "minutes") %>%  
   build("change", 
-        eqn = "(room_temperature - coffee_temperature) / setunit(rate, u('hour'))")
+        eqn = "(room_temperature - coffee_temperature) / convert_u(rate, u('hour'))")
 ```
 
 In other rare cases, it may be necessary to drop units in a part of the equation. For example, the cosine function only accepts unitless arguments or arguments with units in radians or degrees. To compute the cosine of another type of argument, enclose the variable in `drop_u()`, e.g. `cos(drop_u(a))`.

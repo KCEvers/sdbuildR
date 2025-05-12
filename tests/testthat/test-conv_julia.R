@@ -295,7 +295,10 @@ test_that("clean units for Julia", {
   expected = "10CO^2"
   expect_equal(result, expected)
 
-
+  x = "0.0000000567 Watts/(Meters^2 * Degrees Kelvin^4)"
+  result = clean_unit(x, regex_units)
+  expected = "0.0000000567W/(m^2*K^4)"
+  expect_equal(result, expected)
 
   # **test unicode symbols like ohm and degree
 

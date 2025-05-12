@@ -32,7 +32,7 @@ xmile <- function(name = NULL){
   obj = list(
     header = header_defaults,
     sim_specs = spec_defaults,
-    global = list(),
+    # global = list(),
     # behavior = list(stock = list(non_negative = "FALSE"),
     #                 flow = list(non_negative = "FALSE")),
              model = list(
@@ -360,18 +360,21 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE, palette = "Dark 2", title
 
 #' Create dataframe of simulation results
 #'
-#' Convert simulation results to a dataframe. The first column is the time variable, followed by all model variables.
+#' Convert simulation results to a dataframe. The first column is time, followed by all stocks, and then all other auxiliary and flow variables.
 #'
 #' @inheritParams plot.sdbuildR_sim
 #'
 #' @returns Dataframe with simulation results
 #' @export
+#' @seealso [simulate()], [xmile()]
 #' @method as.data.frame sdbuildR_sim
 #'
 #' @examples
 #' sfm = xmile("SIR")
 #' sim = simulate(sfm)
-#' as.data.frame(sim)
+#' head(as.data.frame(sim))
+#'
+#'
 as.data.frame.sdbuildR_sim = function(x, ...){
   # Check whether it is an xmile object
   if (!inherits(x, "sdbuildR_sim")){
@@ -496,7 +499,7 @@ get_delay_past = function(sfm){
 #' @param entry Name of entry to extract
 #' @param keep_entry_name If TRUE, keep upper level name.
 #'
-#' @returns
+#' @returns List with extracted entries
 #' @noRd
 list_extract <- function(nested_list, entry, keep_entry_name = FALSE) {
   result <- list()
@@ -2361,6 +2364,7 @@ get_model_var = function(sfm){
 #' @noRd
 #'
 get_names <- function(sfm) {
+
   # Return empty dataframe if no variables
   nr_var <- sum(lengths(sfm$model$variables))
   if (nr_var == 0) {
@@ -2419,6 +2423,29 @@ get_names <- function(sfm) {
 }
 
 
+
+#' Get exported function names from a package
+#'
+#' @param package package name
+#'
+#' @returns Vector with names of exported functions
+#' @noRd
+get_exported_functions <- function(package) {
+  # Load the package namespace (does not attach to search path)
+  ns <- getNamespace(package)
+
+  # Get all exported objects
+  exports <- getNamespaceExports(package)
+
+  # Filter for functions
+  functions <- exports[sapply(exports, function(x) {
+    is.function(get(x, envir = ns))
+  })]
+
+  # Return sorted for consistency
+  sort(functions)
+}
+
 #' Create syntactically valid, unique R names
 #'
 #' @param create_names Vector of strings with names to transform to valid names
@@ -2431,36 +2458,34 @@ get_names <- function(sfm) {
 #'
 create_R_names = function(create_names, names_df, protected = c()){
 
-  # **to do: names cannot end with _delay[0-9]+$ or _delay[0-9]+_acc[0-9]+$
-
-
   # Transform Insightmaker names to syntactically valid R variable names (this has to be done after creating data_list as we want unique R variable names)
   # time_units = c("second", "minute", "hour", "day", "week", "month", "quarter", "year") # ** edit: remove time units here, not exhaustive
   protected_names = c(
+
     # Reserved words in R
-    # "if", "else", "repeat", "while", "function", "for", "in", "next", "break", "TRUE", "FALSE", # already protected
+    "if",
+    "else", "repeat", "function", "return", "while", "for", "in", "next", "break", "TRUE", "FALSE", # already protected
     "T", "F",
+    "sleep", "yield", "yieldto",
     # "NULL", "Inf", "NaN", "NA", "NA_integer_", "NA_real_", "NA_complex_", "NA_character_", # already protected
     # "time", "Time", "TIME",
     # "constraints",
     # Add julia keywords
     "baremodule", "begin", "break", "catch", "const", "continue", "do",
-    # "else",
-    "elseif", "end", "export", "false", "finally",
-    # "for", "function",
-    "global",
-    # "if",
-    "import", "let", "local", "macro", "module", "quote", "return", "struct", "true", "try", "using",
-    # "while",
-    "missing",
+    "else", "elseif", "end", "export", "false", "finally",
+    "global", "error", "throw",
+    "import", "let", "local", "macro", "module", "quote", "return", "struct", "true", "try", "catch", "using",
+
+    "Missing", "missing", "Nothing", "nothing",
     # "?", "]",
 
-    # ** Add R custom functions
+    # Add R custom functions
+    get_exported_functions("sdbuildR"),
 
     # Add julia custom functions
     names(get_func_julia()),
     # These are variables in the ode and cannot be model element names
-    unname(unlist(P[!names(P) %in% c("change_prefix", "conveyor_suffix", "delayN_suffix", "delay_suffix", "delay_order_suffix", "delay_length_suffix", "past_suffix", "past_length_suffix", "fix_suffix", "fix_length_suffix")])), protected,
+    unname(unlist(P[!names(P) %in% c("sim_df_name", "change_prefix", "conveyor_suffix", "delayN_suffix", "delay_suffix", "delay_order_suffix", "delay_length_suffix", "past_suffix", "past_length_suffix", "fix_suffix", "fix_length_suffix")])), protected,
     as.character(stats::na.omit(names_df$name))
   ) %>% unique()
 
@@ -2472,10 +2497,26 @@ create_R_names = function(create_names, names_df, protected = c()){
     }
   }
 
-  # Make syntactically valid and unique names out of character vectors; Insightmaker allows names to be double, so make unique
-  new_names = make.names(c(protected_names, trimws(create_names)), unique = T)[-seq_along(protected_names)] %>% # Remove protected names
-    # For julia translation, remove names with a period
-    stringr::str_replace_all("\\.", "_")
+  # Make syntactically valid and unique names out of character vectors; Insight Maker allows names to be double, so make unique
+  new_names = make.names(c(protected_names, trimws(create_names)), unique = TRUE)
+  # For Julia translation, remove names with a period
+  new_names = stringr::str_replace_all(new_names, "\\.", "_")
+  # This may cause overlap in names, so repeat
+  new_names = make.names(new_names, unique = TRUE)
+  new_names = stringr::str_replace_all(new_names, "\\.", "_")
+  new_names = make.names(new_names, unique = TRUE)[-seq_along(protected_names)]  # Remove protected names
+
+
+
+  # If any names end in a suffix used by sdbuildR, add _
+  pattern = paste0(P$conveyor_suffix, "$|", P$delay_suffix, "[0-9]+$|", P$past_suffix, "[0-9]+$|",
+                   P$fix_suffix, "$|",
+                   P$fix_length_suffix, "$|",
+                   P$conveyor_suffix, "$|", P$delayN_suffix, "[0-9]+", P$delayN_acc_suffix, "[0-9]+$|", P$smoothN_suffix, "[0-9]+", P$delayN_acc_suffix, "[0-9]+$")
+
+  idx = grepl(new_names, pattern = pattern)
+  new_names[idx] = paste0(new_names[idx], "_")
+  # e.g. names cannot end with _delay[0-9]+$ or _delay[0-9]+_acc[0-9]+$
 
   return(new_names)
 }
@@ -2629,7 +2670,6 @@ get_build_code = function(sfm, format_code = TRUE){
 #' - Flows connected to a stock that does not exist
 #' - Connected stocks and flows without both having units or no units
 #' - Undefined variable references in equations
-#' - Static variables depending on dynamic variables
 #' - Circularities in equations
 #' - Missing unit definitions
 #'
@@ -2637,6 +2677,7 @@ get_build_code = function(sfm, format_code = TRUE){
 #' - Absence of flows
 #' - Stocks without inflows or outflows
 #' - Equations with a value of 0
+#' - Static variables depending on dynamic variables
 #'
 #' @inheritParams build
 #' @param quietly If TRUE, don't print problems. Defaults to FALSE.
@@ -2747,7 +2788,7 @@ debugger = function(sfm, quietly = FALSE){
   ### Detect whether static variables depend on dynamic ones
   out = static_depend_on_dyn(sfm)
   if (out$issue){
-    problems = c(problems, paste0("* ",  out$msg))
+    potential_problems = c(potential_problems, paste0("* ",  out$msg))
   }
 
   ### Detect circularities in equations
@@ -2770,7 +2811,7 @@ debugger = function(sfm, quietly = FALSE){
   add_model_units = detect_undefined_units(sfm,
                                      new_eqns = c(sfm$model$variables %>%
                                                     lapply(function(x){lapply(x, `[[`, "eqn_julia")}) %>% unlist(),
-                                                  sfm$global$eqn_julia,
+                                                  # sfm$global$eqn_julia,
                                                   unlist(lapply(sfm$macro, `[[`, "eqn_julia"))),
                                      new_units = sfm$model$variables %>%
                                        lapply(function(x){lapply(x, `[[`, "units")}) %>% unlist(),
@@ -2861,11 +2902,11 @@ static_depend_on_dyn = function(sfm){
 
 #' Convert stock-and-flow model to dataframe
 #'
-#' Create a dataframe with properties of all model variables, model units, and macros.
+#' Create a dataframe with properties of all model variables, model units, and macros. Specify the variable types, variable names, and/or properties to get a subset of the dataframe.
 #'
 #' @inheritParams plot.sdbuildR_xmile
-#' @param type Variable types to retain in the dataframe. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'model_units', or 'macro'. Defaults to NULL to include all types.
-#' @param name Variable names to retain in the dataframe. Defaults to NULL to include all names.
+#' @param type Variable types to retain in the dataframe. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'model_units', or 'macro'. Defaults to NULL to include all variable types.
+#' @param name Variable names to retain in the dataframe. Defaults to NULL to include all variables.
 #' @param properties Variable properties to retain in the dataframe. Defaults to NULL to include all properties.
 #' @param row.names NULL or a character vector giving the row names for the data frame. Missing values are not allowed.
 #' @param optional Ignored parameter.
@@ -2925,6 +2966,12 @@ as.data.frame.sdbuildR_xmile = function(x,
       lapply(y, function(x){
       x["translated_func"] = NULL
       x["func"] = NULL
+
+      if (x$type == "gf"){
+        x$xpts = paste0(x$xpts, collapse = ", ")
+        x$ypts = paste0(x$ypts, collapse = ", ")
+      }
+
       return(x)
     })
     })
@@ -2947,6 +2994,14 @@ as.data.frame.sdbuildR_xmile = function(x,
 
   # Add macros
   if ((is.null(type) | "macro" %in% type) & length(sfm$macro) > 0){
+
+    # Remove func
+    sfm$macro = lapply(sfm$macro, function(x){
+        # x["translated_func"] = NULL
+        x["func"] = NULL
+        return(x)
+    })
+
     macro_df = as.data.frame(do.call(dplyr::bind_rows, sfm$macro))
     macro_df$type = "macro"
     df = dplyr::bind_rows(df, macro_df)

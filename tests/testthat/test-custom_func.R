@@ -17,6 +17,6 @@ test_that("nonnegative works", {
   expect_equal(nonnegative(-10), 0)
 })
 
-test_that("setunit works", {
-  expect_equal(setunit(1, u('s')), 1)
+test_that("convert_u works", {
+  expect_equal(convert_u(1, u('s')), 1)
 })

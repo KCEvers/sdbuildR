@@ -2,6 +2,8 @@
 
 #' Retrieve a single value from the past
 #'
+#' This function is coming soon, but is now unusable.
+#'
 #' @inheritParams past
 #' @param length Length of the delay.
 #' @param default_value Value to return when the delay length has not passed yet. If NULL, the value at the first time point is returned. Defaults to NULL.
@@ -72,6 +74,8 @@ delay = function(variable, length, default_value = NULL){
 
 #' Retrieve an interval of values from the past
 #'
+#' This function is coming soon, but is now unusable.
+
 #' @param variable Variable of which to access past values.
 #' @param length Interval from the current time point to look back to. If NULL, all available past values are returned. Defaults to NULL.
 #'
@@ -87,7 +91,7 @@ past = function(variable, length = NULL){
 
 #' Delay of order N
 #'
-#'
+#' This function is coming soon, but is now unusable.
 #'
 #' @param variable Variable to delay.
 #' @param length Length of the delay.
@@ -105,7 +109,7 @@ delayN = function(variable, length, order, default_value = NULL){
 
 #' Smoothing of order N
 #'
-#'
+#' This function is coming soon, but is now unusable.
 #'
 #' @param variable Variable to smooth
 #' @param length Length of smoothing.

@@ -54,6 +54,8 @@ test_that("templates work", {
 
   # Non existing template
   expect_error(xmile("A"), "A is not an available template. The available templates are")
+  expect_error(xmile(""), "is not an available template. The available templates are")
+  expect_error(xmile(" "), "  is not an available template. The available templates are")
 
 })
 

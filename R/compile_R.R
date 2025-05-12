@@ -534,14 +534,14 @@ compile_macros = function(sfm){
 
   script = ""
 
-  # If there are globals
-  if (is_defined(sfm$global$eqn)){
-    # names_df = get_names(sfm)
-
-    script = paste0(script,
-                    sfm$global$eqn)
-
-  }
+  # # If there are globals
+  # if (is_defined(sfm$global$eqn)){
+  #   # names_df = get_names(sfm)
+  #
+  #   script = paste0(script,
+  #                   sfm$global$eqn)
+  #
+  # }
 
   # If there are macros
   if (any(nzchar(purrr::map_vec(sfm$macro, "eqn")))){
@@ -1066,8 +1066,8 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep
   # state_change_str = sprintf("d%sdt = %sc(%s)%s",
   #                            P$state_name, ifelse(keep_unit, "drop_if_units(", ""),
   #                              paste0(unname(stock_changes_names), collapse = ", "), ifelse(keep_unit, ")", "") )
-  state_change_str = sprintf("d%sdt = c(%s)",
-                             P$state_name,
+  state_change_str = sprintf("%s = c(%s)",
+                             P$change_state_name,
                              paste0(unname(stock_changes_names), collapse = ", ") )
   # Graphical functions (gf)
   if (length(sfm$model$variables$gf) > 0){
@@ -1143,7 +1143,7 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep
     # Combine change in Stocks
     %s
     %s
-    return(list(d%sdt%s))
+    return(list(%s%s))
   })
 }", P$ode_func_name,P$time_name, P$state_name, P$parameter_name,
                    S_str,
@@ -1152,7 +1152,7 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep
                    stock_change_str,
                    state_change_str,
                    constraints$update_ode,
-                   P$state_name, gf_str)
+                   P$change_state_name, gf_str)
 
   return(list(script = script))
 }

@@ -91,7 +91,7 @@ convert_equations_IM = function(
 
     # If it is a multi-line statement, surround by brackets in case they aren't macros
     eqn = trimws(eqn)
-    if (stringr::str_detect(eqn, stringr::fixed("\n")) & name != "global") {
+    if (stringr::str_detect(eqn, stringr::fixed("\n")) & !(name %in% c("global"))) {
       eqn = paste0("{\n", eqn, "\n}")
     }
 
@@ -1279,14 +1279,14 @@ get_syntax_IM = function(){
     "Lookup", "conv_lookup", "syntax3", F, T, "",
     "Repeat", "conv_repeat", "syntax3", F, T, "",
 
-    "Seconds", sprintf("drop_u(setunit(%s, \"s\"))", P$time_name), "syntax0", F, F, "",
-    "Minutes", sprintf("drop_u(setunit(%s, \"minute\"))", P$time_name), "syntax0", F, F, "",
-    "Hours", sprintf("drop_u(setunit(%s, \"hr\"))", P$time_name), "syntax0", F, F, "",
-    "Days", sprintf("drop_u(setunit(%s, \"d\"))", P$time_name), "syntax0", F, F, "",
-    "Weeks", sprintf("drop_u(setunit(%s, \"wk\"))", P$time_name), "syntax0", F, F, "",
-    "Months", sprintf("drop_u(setunit(%s, \"common_month\"))", P$time_name), "syntax0", F, F,"",
-    "Quarters", sprintf("drop_u(setunit(%s, \"common_quarter\"))", P$time_name), "syntax0", F, F, "",
-    "Years", sprintf("drop_u(setunit(%s, \"common_yr\"))", P$time_name), "syntax0", F, F, "",
+    "Seconds", sprintf("drop_u(convert_u(%s, \"s\"))", P$time_name), "syntax0", F, F, "",
+    "Minutes", sprintf("drop_u(convert_u(%s, \"minute\"))", P$time_name), "syntax0", F, F, "",
+    "Hours", sprintf("drop_u(convert_u(%s, \"hr\"))", P$time_name), "syntax0", F, F, "",
+    "Days", sprintf("drop_u(convert_u(%s, \"d\"))", P$time_name), "syntax0", F, F, "",
+    "Weeks", sprintf("drop_u(convert_u(%s, \"wk\"))", P$time_name), "syntax0", F, F, "",
+    "Months", sprintf("drop_u(convert_u(%s, \"common_month\"))", P$time_name), "syntax0", F, F,"",
+    "Quarters", sprintf("drop_u(convert_u(%s, \"common_quarter\"))", P$time_name), "syntax0", F, F, "",
+    "Years", sprintf("drop_u(convert_u(%s, \"common_yr\"))", P$time_name), "syntax0", F, F, "",
 
 
     "Time", P$time_name, "syntax0", F, F, "",
@@ -2203,10 +2203,10 @@ conv_pulse = function(func,
   func_def_str = sprintf(
     "pulse(start_t_pulse = %s(%s, %s), h_pulse = %s, w_pulse = %s(%s, %s), repeat_interval = %s)",
     # P$times_name,
-    P$setunit_func,
+    P$convert_u_func,
     start_t_pulse, P$time_units_name,
     h_pulse,
-    P$setunit_func,
+    P$convert_u_func,
     w_pulse, P$time_units_name,
     repeat_interval
     # P$time_units_name, P$time_units_name
@@ -2253,9 +2253,9 @@ conv_ramp = function(func, arg, match_idx, name, # Default settings of Insight M
   func_def_str = sprintf(
     "ramp(start_t_ramp = %s(%s, %s), end_t_ramp = %s(%s, %s), start_h_ramp = 0, end_h_ramp = %s)",
     # P$times_name,
-    P$setunit_func,
+    P$convert_u_func,
     start_t_ramp, P$time_units_name,
-    P$setunit_func,
+    P$convert_u_func,
     end_t_ramp, P$time_units_name,
     h_ramp
     # P$time_units_name, P$time_units_name

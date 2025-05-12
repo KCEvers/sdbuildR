@@ -1,4 +1,5 @@
 #' Generate constraints to use in ODE
+#'
 #' Turn constraints on the minimum and maximum value a variable can take into a logical statement to evaluate in the ODE. Constraint variables can be stocks, flows, or any other variable defined in the ODE.
 #'
 #' @param constraints_def Named list of minimum and maximum constraints per variable

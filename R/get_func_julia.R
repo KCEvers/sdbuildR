@@ -67,29 +67,29 @@ end",
     # If times has units, but the ramp times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
         if !(eltype(start_t_ramp) <: Unitful.Quantity)
-            start_t_ramp = setunit(start_t_ramp, time_units)
+            start_t_ramp = convert_u(start_t_ramp, time_units)
         end
         if !(eltype(end_t_ramp) <: Unitful.Quantity)
-            end_t_ramp = setunit(end_t_ramp, time_units)
+            end_t_ramp = convert_u(end_t_ramp, time_units)
         end
     else
         # If times does not have units, but start_t_ramp does, convert the ramp times to the same units as time_units
         if eltype(start_t_ramp) <: Unitful.Quantity
-            start_t_ramp = Unitful.ustrip(setunit(start_t_ramp, time_units))
+            start_t_ramp = Unitful.ustrip(convert_u(start_t_ramp, time_units))
         end
         if eltype(end_t_ramp) <: Unitful.Quantity
-            end_t_ramp = Unitful.ustrip(setunit(end_t_ramp, time_units))
+            end_t_ramp = Unitful.ustrip(convert_u(end_t_ramp, time_units))
         end
     end
 
 
     # Ensure start_h_ramp and end_h_ramp are both of the same type
     if eltype(start_h_ramp) <: Unitful.Quantity && !(eltype(end_h_ramp) <: Unitful.Quantity)
-        end_h_ramp = setunit(end_h_ramp, Unitful.unit(start_h_ramp))
-        add_y = setunit(0.0, Unitful.unit(start_h_ramp))
+        end_h_ramp = convert_u(end_h_ramp, Unitful.unit(start_h_ramp))
+        add_y = convert_u(0.0, Unitful.unit(start_h_ramp))
     elseif !(eltype(start_h_ramp) <: Unitful.Quantity) && eltype(end_h_ramp) <: Unitful.Quantity
-        start_h_ramp = setunit(start_h_ramp, Unitful.unit(end_h_ramp))
-        add_y = setunit(0.0, Unitful.unit(end_h_ramp))
+        start_h_ramp = convert_u(start_h_ramp, Unitful.unit(end_h_ramp))
+        add_y = convert_u(0.0, Unitful.unit(end_h_ramp))
     else
         add_y = 0.0
     end
@@ -128,17 +128,17 @@ function step(; start_t_step, h_step = 1.0)
     # If times has units, but the ramp times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
         if !(eltype(start_t_step) <: Unitful.Quantity)
-            start_t_step = setunit(start_t_step, time_units)
+            start_t_step = convert_u(start_t_step, time_units)
         end
     else
         # If times does not have units, but start_t_step does, convert the ramp times to the same units as time_units
         if eltype(start_t_step) <: Unitful.Quantity
-            start_t_step = Unitful.ustrip(setunit(start_t_step, time_units))
+            start_t_step = Unitful.ustrip(convert_u(start_t_step, time_units))
         end
     end
 
     if eltype(h_step) <: Unitful.Quantity
-      add_y = setunit(0.0, Unitful.unit(h_step))
+      add_y = convert_u(0.0, Unitful.unit(h_step))
     else
       add_y = 0.0
     end
@@ -206,24 +206,24 @@ function pulse(; start_t_pulse, h_pulse = 1.0, w_pulse = 1.0 * time_units, repea
     # If times has units, but the pulse times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
         if !(eltype(start_t_pulse) <: Unitful.Quantity)
-            start_t_pulse = setunit(start_t_pulse, time_units)
+            start_t_pulse = convert_u(start_t_pulse, time_units)
         end
         if !(eltype(w_pulse) <: Unitful.Quantity)
-            w_pulse = setunit(w_pulse, time_units)
+            w_pulse = convert_u(w_pulse, time_units)
         end
         if (!isnothing(repeat_interval) && !(eltype(repeat_interval) <: Unitful.Quantity))
-            repeat_interval = setunit(repeat_interval, time_units)
+            repeat_interval = convert_u(repeat_interval, time_units)
         end
     else
         # If times does not have units, but start_t_pulse does, convert the pulse times to the same units as time_units
         if eltype(start_t_pulse) <: Unitful.Quantity
-            start_t_pulse = Unitful.ustrip(setunit(start_t_pulse, time_units))
+            start_t_pulse = Unitful.ustrip(convert_u(start_t_pulse, time_units))
         end
         if eltype(w_pulse) <: Unitful.Quantity
-            w_pulse = Unitful.ustrip(setunit(w_pulse, time_units))
+            w_pulse = Unitful.ustrip(convert_u(w_pulse, time_units))
         end
         if (!isnothing(repeat_interval) && eltype(repeat_interval) <: Unitful.Quantity)
-            repeat_interval = Unitful.ustrip(setunit(repeat_interval, time_units))
+            repeat_interval = Unitful.ustrip(convert_u(repeat_interval, time_units))
         end
     end
 
@@ -239,7 +239,7 @@ function pulse(; start_t_pulse, h_pulse = 1.0, w_pulse = 1.0 * time_units, repea
     signal_y = [fill(h_pulse, length(start_ts)); fill(0, length(end_ts))]
 
     if eltype(h_pulse) <: Unitful.Quantity
-      add_y = setunit(0.0, Unitful.unit(h_pulse))
+      add_y = convert_u(0.0, Unitful.unit(h_pulse))
     else
       add_y = 0.0
     end
@@ -308,13 +308,13 @@ end
 nonnegative(x::Real) = max(0.0, x)
 
 # Scalar case: Unitful.Quantity
-nonnegative(x::Unitful.Quantity) = max(0.0, ustrip(x)) * unit(x)
+nonnegative(x::Unitful.Quantity) = max(0.0, Unitful.ustrip(x)) * Unitful.unit(x)
 
 # Array case: non-unitful elements
 nonnegative(x::AbstractArray{<:Real}) = max.(0.0, x)
 
 # Array case: Unitful.Quantity elements
-nonnegative(x::AbstractArray{<:Unitful.Quantity}) = max.(0.0, ustrip.(x)) .* unit.(x)",
+nonnegative(x::AbstractArray{<:Unitful.Quantity}) = max.(0.0, Unitful.ustrip.(x)) .* Unitful.unit.(x)",
 
     "rbool" = "# Generate random boolean value, equivalent of RandBoolean() in Insight Maker\nfunction rbool(p)
     return rand() < p
@@ -377,7 +377,7 @@ end",
     #                "weeks" = "function weeks(t, time_units)
     #     Unitful.uconvert(u\"wk\", t * Unitful.uparse(time_units))  # Parse the string dynamically
     # end",
-    #                "setunit" = "# Set or convert unit\nfunction setunit(x, unit_def)
+    #                "convert_u" = "# Set or convert unit\nfunction convert_u(x, unit_def)
     #
     #     # In case unit_def is not identified as a unit, extract unit
     #     if eltype(unit_def) <: Unitful.Quantity
@@ -400,7 +400,7 @@ end",
     #     end
     # end
     # ",
-#     "setunit" = sprintf("# Set or convert unit\nfunction setunit(x, unit_def)
+#     "convert_u" = sprintf("# Set or convert unit\nfunction convert_u(x, unit_def)
 #     # Parse unit_def into a Unitful.Unit
 #     target_unit = if unit_def isa Unitful.Quantity
 #         Unitful.unit(unit_def)  # Extract unit from Quantity (e.g., 1u\"wk\" -> u\"wk\")
@@ -435,8 +435,8 @@ end",
 #     end
 # end", P$unit_context),
 
-"setunit"= sprintf("# Set or convert unit wrappers per type
-function setunit(x::Unitful.Quantity, unit_def::Unitful.Quantity)
+"convert_u"= sprintf("# Set or convert unit wrappers per type
+function convert_u(x::Unitful.Quantity, unit_def::Unitful.Quantity)
     if Unitful.unit(x) == Unitful.unit(unit_def)
         return x  # No conversion needed
     else
@@ -444,7 +444,7 @@ function setunit(x::Unitful.Quantity, unit_def::Unitful.Quantity)
     end
 end
 
-function setunit(x::Unitful.Quantity, unit_def::Unitful.Units)
+function convert_u(x::Unitful.Quantity, unit_def::Unitful.Units)
     if Unitful.unit(x) == unit_def
         return x  # No conversion needed
     else
@@ -453,7 +453,7 @@ function setunit(x::Unitful.Quantity, unit_def::Unitful.Units)
 end
 
 
-function setunit(x::Unitful.Quantity, unit_def::String)
+function convert_u(x::Unitful.Quantity, unit_def::String)
     try
         unit_def = Unitful.uparse(unit_def, unit_context = %s)  # Parse string to unit (e.g., \"wk\" -> u\"wk\")
 
@@ -468,15 +468,15 @@ function setunit(x::Unitful.Quantity, unit_def::String)
 end
 
 # If x is not a Unitful.Quantity but Float64:
-function setunit(x::Float64, unit_def::Unitful.Quantity)
+function convert_u(x::Float64, unit_def::Unitful.Quantity)
     x * Unitful.unit(unit_def)
 end
 
-function setunit(x::Float64, unit_def::Unitful.Units)
+function convert_u(x::Float64, unit_def::Unitful.Units)
     x * unit_def
 end
 
-function setunit(x::Float64, unit_def::String)
+function convert_u(x::Float64, unit_def::String)
     try
         unit_def = Unitful.uparse(unit_def, unit_context = unit_context)  # Parse string to unit (e.g., \"wk\" -> u\"wk\")
         x * unit_def
@@ -501,7 +501,7 @@ end",
     #
     # 	# Ensure t and delay_time are of the same type
     # 	if !(eltype(delay_time) <: Unitful.Quantity) & (eltype(t) <: Unitful.Quantity)
-    # 		delay_time = setunit(delay_time, t)
+    # 		delay_time = convert_u(delay_time, t)
     # 	end
     #
     #     # Extract single value from the past
@@ -598,7 +598,7 @@ function retrieve_past(var_value, delay_time, default_value, t, var_name, single
     # Ensure t and delay_time have compatible units
     if !(eltype(delay_time) <: Unitful.Quantity) && (eltype(t) <: Unitful.Quantity)
         # delay_time = delay_time * unit(t)
-        delay_time = setunit(delay_time, t)
+        delay_time = convert_u(delay_time, t)
     end
 
     # Extract variable index
@@ -665,7 +665,7 @@ end",
     # function setunit_flow(x, unit_def)
     #     # If trying to set the unit throws an error
     #     try
-    #         return setunit(x, unit_def)
+    #         return convert_u(x, unit_def)
     #     catch e
     #         if isa(e, ErrorException) | isa(e, Unitful.DimensionError)
     #             try

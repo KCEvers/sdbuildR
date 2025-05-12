@@ -62,7 +62,9 @@ logit = function(p){
 }
 
 
-#' Expit function; inverse of the logit function
+#' Expit function
+#'
+#' Inverse of the logit function
 #'
 #' @param x Numerical value
 #'
@@ -79,7 +81,8 @@ expit = function(x){
 
 
 
-#' Generate random boolean value
+#' Generate random logical value
+#'
 #' Equivalent of RandBoolean() in Insight Maker
 #'
 #' @param p Probability of TRUE, numerical value between 0 and 1
@@ -95,6 +98,7 @@ rbool = function(p){
 
 
 #' Generate random number from custom distribution
+#'
 #' Equivalent of RandDist() in Insight Maker
 #'
 #' @param a Vector to draw sample from
@@ -111,6 +115,7 @@ rdist = function(a, b){
 
 
 #' Find index of needle (value) in haystack (vector)
+#'
 #' Equivalent of .IndexOf() in Insight Maker
 #'
 #' @param haystack Vector or string to search through
@@ -146,6 +151,7 @@ indexof = function(haystack, needle){
 
 
 #' Length of vector or string
+#'
 #' Equivalent of .Length() in Insight Maker, which returns the number of elements when performed on a vector, but returns the number of characters when performed on a string
 #'
 #' @param x A vector or a string
@@ -167,6 +173,7 @@ IM_length = function(x){
 
 
 #' Check whether needle (value) is in haystack (vector or string)
+#'
 #' Equivalent of .Contains() in Insight Maker
 #'
 #' @param haystack Vector or string to search through
@@ -188,6 +195,7 @@ IM_contains = function(haystack, needle){
 
 
 #' Extract characters from string by index
+#'
 #' Equivalent of .Range() in Insight Maker
 #'
 #' @param string String to extract from
@@ -205,6 +213,7 @@ substr_i = function(string, idxs){
 
 
 #' Filter vector based on logical function
+#'
 #' Equivalent of .Filter() in Insight Maker when using arguments x and key in the filter function
 #'
 #' @param y Named vector
@@ -227,12 +236,8 @@ IM_filter = function(y, condition_func){
 
 
 
-
-# **to do: have to create separate function for pulse/ramp/steo so that unit isnt set
-# and when people access e.g. lottery winnings, lottery winnings should be = lottery winnings pulse (t)
-
-
 #' Create ramp function
+#'
 #' Equivalent of Ramp() in Insight Maker
 #'
 #' @param start_t_ramp Start time of ramp
@@ -286,6 +291,9 @@ ramp <- function(start_t_ramp, end_t_ramp, start_h_ramp = 0, end_h_ramp = 1){
 
 
 #' Create pulse function
+#'
+#' This function is coming soon, but is now unusable.
+#'
 #' Equivalent of Pulse() in Insight Maker
 #'
 #' @param start_t_pulse Start time of pulse
@@ -356,6 +364,9 @@ pulse <- function(start_t_pulse, h_pulse = 1, w_pulse = 1, repeat_interval = NUL
 
 
 #' Create step function
+#'
+#' This function is coming soon, but is now unusable.
+#'
 #' Equivalent of Step() in Insight Maker
 #'
 #' @param start_t_step Start time of step
@@ -392,6 +403,9 @@ step <- function(start_t_step, h_step = 1){
 
 
 #' Annual sine wave with an amplitude of 1
+#'
+#' This function is coming soon, but is now unusable.
+#'
 #' Equivalent of Seasonal() in Insight Maker
 #'
 #' @param t Current time
@@ -439,173 +453,6 @@ nonnegative = function(x){
     return(max(c(0, x)))
   }
 }
-
-
-
-
-
-# Wolf.birth.rate = pluck_from_ode(ode_func, "Wolf.birth.rate", xstart, pars, times[1])
-
-
-#' Initialize variable from ODE
-#'
-#' Some initial conditions and parameters need a variable from the ODE to be defined. Find the minimal set of equations in ode_func to define var_name.
-#'
-#' @param var_name String; desired variable name
-#' @param envir Environment
-#'
-#' @return Value
-#' @export
-#'
-#' @examples
-pluck_from_ode_old = function(var_name, envir){
-
-  ode_func = get(P$ode_func_name, envir = envir)
-  xstart = get(P$initial_value_name, envir = envir)
-  pars = get(P$parameter_name, envir = envir)
-
-
-  # Convert the body of the function to character lines
-  func_code <- deparse(body(ode_func), width.cutoff = 500)
-
-  # Initialize a list to store dependencies for each line
-  dependencies_list <- list()
-
-  # Loop through each line in the function body
-  for (i in seq_along(func_code)) {
-    # Parse the line as an expression
-    expr <- tryCatch(parse(text = func_code[i]), error = function(e) NULL)
-
-    # If parsing was successful, extract the variable names used in the line
-    if (!is.null(expr)) {
-      vars <- all.vars(expr)
-      dependencies_list[[i]] <- vars
-    } else {
-      dependencies_list[[i]] <- NA  # If parsing fails, mark it as NA
-    }
-  }
-  dependencies_list
-
-  # Find which variables are defined in each equation
-  defined_var = dependencies_list %>% purrr::map(1)
-  defined_var[sapply(defined_var, is.null)] = ""
-  defined_var = unlist(defined_var)
-
-  # Only include defined variables in dependencies
-  dependencies_list = lapply(dependencies_list, function(x){
-    if (all(is.na(x))){
-      return(x)
-    } else {
-      intersect(x, defined_var)
-    }
-    })
-
-  # Equation number which we're ultimately interested in
-  eq_var_name = which(defined_var == var_name)
-
-  # We need at least eq_var_name, but we also need all equations that eq_var_name is dependent on, and the ones that those equations are dependent on, and so on...
-
-  deep_dependencies = dependencies_list[[eq_var_name]]
-  if (length(deep_dependencies) == 0){
-    necessary_idx_eq = eq_var_name
-  } else {
-    done = F
-    while (!done){
-      old = deep_dependencies
-
-      # Get dependencies of dependencies
-      deep_dependencies = c(deep_dependencies,
-                              unname(unlist(dependencies_list[match(deep_dependencies, defined_var)]))) %>%
-        Filter(nzchar, .) %>% unique() %>%
-        # Remove dependency in S to prevent stock_units from being needed (used before with() statement in ode_func)
-        setdiff(., P$state_name)
-
-      # While-loop ends if there is no change
-      if (setequal(old, deep_dependencies)){ done = T}
-    }
-    necessary_idx_eq = sort(match(deep_dependencies, defined_var))
-  }
-
-  # defined_var %in% dependencies_list[[eq_var_name]] & seq_along(defined_var) <= eq_var_name
-
-  # Keep the equations above eq_var_name which define the dependencies of eq_var_name
-  necessary_eq = func_code[necessary_idx_eq] %>% trimws() %>% paste0(collapse = "\n")
-
-  # print(necessary_eq)
-
-  # Some equations need S (e.g. DelayN())
-  # S = unlist(xstart)
-
-  # Unwrap the list elements into the current environment
-  list2env(get(P$parameter_name), envir = envir)
-  list2env(get(P$initial_value_name), envir = envir)
-  assign(P$state_name, unlist(xstart), envir = envir) # # Some equations need S (e.g. DelayN())
-  assign(P$time_name, get(P$times_name, envir = envir)[1], envir = envir)
-
-  chosen_var = {
-    eval(parse(text = necessary_eq), envir = envir)
-    return(eval(parse(text = var_name), envir = envir)) # Only keep variable of interest
-  }
-  # chosen_var = with( c(S, pars), {
-  #   eval(parse(text = necessary_eq), envir = envir)
-  #   return(eval(parse(text = var_name)))
-  # })
-
-  return(chosen_var)
-}
-
-
-
-#' Create unit
-#'
-#' Units are only supported in Julia, not in R.
-#'
-#' @param unit_def Unit definition; e.g. u('s')
-#'
-#' @returns Unit
-#' @export
-#'
-#' @examples u('s')
-u = function(unit_def){
-  return(unit_def)
-}
-
-
-
-#' Drop unit
-#'
-#' Units are only supported in Julia, not in R.
-#'
-#' @param x Variable with unit
-#'
-#' @returns Unit
-#' @export
-#'
-#' @examples
-drop_u = function(x){
-  return(x)
-}
-
-
-
-#' Set unit of x
-#'
-#' Units are only supported in Julia, not in R.
-#'
-#' @param x Variable
-#' @inheritParams u
-#'
-#' @returns x
-#' @export
-#'
-#' @examples
-#' setunit(8, u('wk')) # 8 weeks
-#'
-#'
-setunit = function(x, unit_def){
-  return(x)
-}
-
 
 
 
@@ -717,6 +564,3 @@ sigmoid <- function(x, slope = 1, midpoint = 0) {
   return(1 / (1 + exp(-slope*(x-midpoint))))
 }
 
-
-# **to do: sigmoid etc.
-# logrange https://docs.julialang.org/en/v1/base/math/#Base.logrange
