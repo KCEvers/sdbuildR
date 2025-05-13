@@ -157,7 +157,7 @@ plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_s
       paste0("'", flow_df[, "from"], "'"),
       " -> ",
       paste0("'", flow_df[, "to"], "'"),
-      " [arrowhead='normal', label='", dict[flow_df[, "name"]], "', tooltip = 'eqn = ", dict_eqn[flow_df[, "name"]], "', fontsize=18,fontname='times bold', color='black:LightSalmon:black',arrowsize = 1.2,penwidth=1.1]")
+      " [arrowhead='normal', label='", dict[flow_df[, "name"]], "', tooltip = 'eqn = ", dict_eqn[flow_df[, "name"]], "', fontsize=18,fontname='times bold', color='black:LightSalmon:black',arrowsize = 1.2,penwidth=1.1,minlen=3]")
 
 
   }
@@ -228,6 +228,7 @@ get_flow_df = function(sfm){
 #' @param x Output of simulate().
 #' @param add_constants If TRUE, include constants in plot. Defaults to FALSE.
 #' @param palette Colour palette. Must be one of hcl.pals().
+#' @param colors Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
 #' @param title Plot title. Character. Defaults to the name in the header of the model.
 #' @param family Font family. Defaults to "Times New Roman".
 #' @param size Font size. Defaults to 16.
@@ -242,7 +243,10 @@ get_flow_df = function(sfm){
 #' sfm = xmile("SIR")
 #' sim = simulate(sfm)
 #' plot(sim)
-plot.sdbuildR_sim = function(x, add_constants = FALSE, palette = "Dark 2", title=x$sfm$header$name,
+plot.sdbuildR_sim = function(x, add_constants = FALSE,
+                             palette = "Dark 2",
+                             colors = NULL,
+                             title=x$sfm$header$name,
                              family = "Times New Roman",
                              size = 16,
                              ...){
@@ -287,16 +291,35 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE, palette = "Dark 2", title
 
     # Put dataframe in long format
     x_col = "time"
+
+    x$df = x$df[, intersect(colnames(x$df), c(x_col, stock_names, nonstock_names))]
     df_long <- stats::reshape(
       data = x$df,
       direction = "long",
       idvar = "time",
-      varying = names(x$df)[names(x$df) != "time"],
+      varying = colnames(x$df)[colnames(x$df) != "time"],
       v.names = "value",
       timevar = "variable",
-      times = names(x$df)[names(x$df) != "time"]
-    )
-    colors = grDevices::hcl.colors(n = length(unique(df_long$variable)), palette = palette)
+      times = colnames(x$df)[colnames(x$df) != "time"]
+    ) %>% magrittr::set_rownames(NULL)
+
+    n = length(unique(df_long$variable))
+
+    if (is.null(colors)){
+      colors = grDevices::hcl.colors(n = n, palette = palette)
+    } else {
+      # Ensure there are enough colors
+      if (length(colors) < n){
+        stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", n, ").\nUsing template instead..."))
+        colors = grDevices::hcl.colors(n = n, palette = palette)
+      } else {
+        # Cut number of colors to number of variables
+        colors = colors[1:n]
+      }
+    }
+
+    # The colors are unintuitively plotted from back to front
+    colors = rev(colors)
 
     # Initialize plotly object
     pl <- plotly::plot_ly()
@@ -341,8 +364,8 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE, palette = "Dark 2", title
       xaxis = list(title = paste0("Time (", matched_time_unit, ")")),
       yaxis = list(title = ""),
       font=list(
-        family = family, size = 16),
-      margin = list(t = 100, b = 50, l = 50, r = 50)  # Increase top margin to 100 pixels
+        family = family, size = size),
+      margin = list(t = 50, b = 50, l = 50, r = 50)  # Increase top margin to 100 pixels
     )
 
   } else {
@@ -464,7 +487,7 @@ summary.sdbuildR_xmile <- function(object, ...) {
   matched_time_unit = find_matching_regex(object$sim_specs$time_units, get_regex_time_units())
 
   # Simulation specifications
-  cat(paste0("\nSimulation time: ", object$sim_specs$start, " to ", object$sim_specs$stop, " ", matched_time_unit, " (dt = ", object$sim_specs$dt, ifelse(object$sim_specs$saveat == object$sim_specs$dt, "", paste0(", saveat = ", object$sim_specs$saveat)), ")\nSimulation settings: solver ", object$sim_specs$method, ifelse(is_defined(object$sim_specs$seed), paste0(" and seed ", object$sim_specs$seed), ""), " in ", object$sim_specs$language, ".\n"))
+  cat(paste0("\nSimulation time: ", object$sim_specs$start, " to ", object$sim_specs$stop, " ", matched_time_unit, " (dt = ", object$sim_specs$dt, ifelse(object$sim_specs$saveat == object$sim_specs$dt, "", paste0(", saveat = ", object$sim_specs$saveat)), ")\nSimulation settings: solver ", object$sim_specs$method, ifelse(is_defined(object$sim_specs$seed), paste0(" and seed ", object$sim_specs$seed), ""), " in ", object$sim_specs$language))
 
 }
 
@@ -2482,7 +2505,7 @@ get_exported_functions <- function(package) {
 #' Create syntactically valid, unique R names
 #'
 #' @param create_names Vector of strings with names to transform to valid names
-#' @param names_df Dataframe with type, name, label, units
+#' @param names_df Dataframe with at least the column name
 #' @param protected Optional vector of protected names
 #'
 #' @return Translated names
@@ -2491,8 +2514,7 @@ get_exported_functions <- function(package) {
 #'
 create_R_names = function(create_names, names_df, protected = c()){
 
-  # Transform Insightmaker names to syntactically valid R variable names (this has to be done after creating data_list as we want unique R variable names)
-  # time_units = c("second", "minute", "hour", "day", "week", "month", "quarter", "year") # ** edit: remove time units here, not exhaustive
+  # Define protected names: these cannot be used as variable names
   protected_names = c(
 
     # Reserved words in R
@@ -2500,9 +2522,9 @@ create_R_names = function(create_names, names_df, protected = c()){
     "else", "repeat", "function", "return", "while", "for", "in", "next", "break", "TRUE", "FALSE", # already protected
     "T", "F",
     # "NULL", "Inf", "NaN", "NA", "NA_integer_", "NA_real_", "NA_complex_", "NA_character_", # already protected
-    # "time", "Time", "TIME",
+    "time", # used as first variable in simulation dataframe #"Time", "TIME",
     # "constraints",
-    # Add julia keywords
+    # Add Julia keywords
     "baremodule", "begin", "break", "catch", "const", "continue", "do",
     "else", "elseif", "end", "export", "false", "finally",
     "global", "error", "throw",

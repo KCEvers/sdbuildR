@@ -30,7 +30,7 @@
 #' # Use custom units in equations
 #' sfm = xmile() %>%
 #' model_units("BMI", eqn = "kilograms/meters^2", doc = "Body Mass Index") %>%
-#' build("a", "flow", eqn = "u('1BMI') / u('1year')", units = "BMI/year")
+#' build("weight_gain", "flow", eqn = "u('2 BMI / year')", units = "BMI/year")
 #'
 #' # Unit strings are often needed in flows to ensure dimensional consistency:
 #' sfm = xmile() %>% sim_specs(stop = 1, time_units = "days") %>%

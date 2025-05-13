@@ -531,6 +531,16 @@ test_that("model_units() works", {
   expected = c("challenge", "stressors")
   expect_equal(result, expected)
 
+  # Check written powers and per
+  sfm = xmile() %>% model_units("BMI", eqn = "kilograms per meters squared",
+              doc = "Body Mass Index")
+  result = sfm$model_units$BMI$eqn
+  expected = "kg/m^2"
+  expect_equal(result, expected)
+  df = as.data.frame(sfm)
+  expect_equal(df[df$name == "BMI", "eqn"], "kg/m^2")
+  expect_equal(df[df$name == "BMI", "doc"], "Body Mass Index")
+
 })
 
 
@@ -722,7 +732,7 @@ test_that("detect_undefined_var() works", {
   # Check that undefined variables are detected
   sfm = xmile() %>% build("a", "aux", eqn = "b + c")
   out = detect_undefined_var(sfm)
-  expect_equal(grepl("The variable properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes", out$msg), TRUE)
+  expect_equal(grepl("The properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes", out$msg), TRUE)
 
   # Check that no error is thrown for defined variables
   sfm = xmile() %>% build("a", "aux", eqn = "b + c") %>%

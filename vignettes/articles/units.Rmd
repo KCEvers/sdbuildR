@@ -295,5 +295,5 @@ debugger(sfm)
 
 sdbuildR only supports units in Julia, not in R. Though technically, the *units* package in R could provide unit support for system dynamics models in R, it is practically unfeasable. The *deSolve* package strips units from state variables and derivatives, such that units need to be reassigned in each iteration. This massively slows down computation, rendering unit support in R unworkable. Conversely, the *Unitful* package in Julia offers unit support without additional runtime cost, as well as compatability with the *DifferentialEquations* package.
 
-Units of variables are thus omitted when simulating in R. An error is thrown in case any equation contains a unit string `u('')`. When simulating in Julia, use of units can be turned off by calling `compile()` or `simulate()` with `keep_unit = FALSE`.
+Units of variables are thus omitted when simulating in R. An error is thrown in case any equation contains a unit string `u('')`. When simulating in Julia, use of units can be turned off by calling `simulate()` with `keep_unit = FALSE`.
 

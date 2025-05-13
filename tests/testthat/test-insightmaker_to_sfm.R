@@ -4,7 +4,7 @@ test_that("translating Insight Maker models works", {
   expect_error(insightmaker_to_sfm(URL = URL), "This is not a URL to an Insight Maker model")
 
   # ** add stop() with useful message when there is a problem in translation
-
+  # ** test arguments to insightmaker_to_sfm()
 
   URL = "https://insightmaker.com/insight/3xgsvC7QKgPktHWZuXyGAl/Clone-of-Global-Climate-Change"
   expect_no_error(insightmaker_to_sfm(URL = URL))

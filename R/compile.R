@@ -174,7 +174,7 @@ detect_undefined_var = function(sfm){
     }) %>% unlist() %>% unname()
 
     return(list(issue = TRUE,
-                msg = paste0(c("The variable properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes.",
+                msg = paste0(c("The properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes.",
                               paste0(missing_ref_format, collapse = "\n")), collapse = "\n")))
   } else {
     return(list(issue = FALSE))
