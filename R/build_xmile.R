@@ -116,7 +116,9 @@ plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_s
   # Text wrap to prevent long names
   df$label = stringr::str_wrap(df$label, width = wrap_width)
   dict = stats::setNames(df$label, df$name)
-  dict_eqn = stats::setNames(df$eqn, df$name)
+
+  # Get equations and remove quotation marks from unit strings
+  dict_eqn = stats::setNames(stringr::str_replace_all(df$eqn, c("'" = "", "\"" = "")), df$name)
 
   stock_names = df[df$type == "stock", "name"]
   flow_names = df[df$type == "flow", "name"]
@@ -227,6 +229,8 @@ get_flow_df = function(sfm){
 #' @param add_constants If TRUE, include constants in plot. Defaults to FALSE.
 #' @param palette Colour palette. Must be one of hcl.pals().
 #' @param title Plot title. Character. Defaults to the name in the header of the model.
+#' @param family Font family. Defaults to "Times New Roman".
+#' @param size Font size. Defaults to 16.
 #' @param ... Optional parameters
 #'
 #' @return Plot object
@@ -239,6 +243,8 @@ get_flow_df = function(sfm){
 #' sim = simulate(sfm)
 #' plot(sim)
 plot.sdbuildR_sim = function(x, add_constants = FALSE, palette = "Dark 2", title=x$sfm$header$name,
+                             family = "Times New Roman",
+                             size = 16,
                              ...){
 
 
@@ -326,12 +332,17 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE, palette = "Dark 2", title
         )
     }
 
+    matched_time_unit = find_matching_regex(x$sfm$sim_specs$time_units, get_regex_time_units())
+
     # Customize layout
     pl <- pl %>% plotly::layout(
       showlegend = TRUE,
       title = title,
-      xaxis = list(title = paste0("Time (", x$sfm$sim_specs$time_units, ")")),
-      yaxis = list(title = "")
+      xaxis = list(title = paste0("Time (", matched_time_unit, ")")),
+      yaxis = list(title = ""),
+      font=list(
+        family = family, size = 16),
+      margin = list(t = 100, b = 50, l = 50, r = 50)  # Increase top margin to 100 pixels
     )
 
   } else {
@@ -450,12 +461,34 @@ summary.sdbuildR_xmile <- function(object, ...) {
                 ifelse(length(delay_func_names) == 1, "", "s"), paste0(delay_func_names, collapse = ", ")))
   }
 
+  matched_time_unit = find_matching_regex(object$sim_specs$time_units, get_regex_time_units())
+
   # Simulation specifications
-  cat(paste0("\nThe model will be simulated from ", object$sim_specs$start, " to ", object$sim_specs$stop, " ", object$sim_specs$time_units, " (dt = ", object$sim_specs$dt, ifelse(object$sim_specs$saveat == object$sim_specs$dt, "", paste0(", saveat = ", object$sim_specs$saveat)), ") with solver ", object$sim_specs$method, ifelse(is_defined(object$sim_specs$seed), paste0(" and seed ", object$sim_specs$seed), ""), " in ", object$sim_specs$language, ".\n"))
+  cat(paste0("\nSimulation time: ", object$sim_specs$start, " to ", object$sim_specs$stop, " ", matched_time_unit, " (dt = ", object$sim_specs$dt, ifelse(object$sim_specs$saveat == object$sim_specs$dt, "", paste0(", saveat = ", object$sim_specs$saveat)), ")\nSimulation settings: solver ", object$sim_specs$method, ifelse(is_defined(object$sim_specs$seed), paste0(" and seed ", object$sim_specs$seed), ""), " in ", object$sim_specs$language, ".\n"))
 
 }
 
 
+
+#' Find longest regex match
+#'
+#' @param x Value
+#' @param regex_units Regex units dictionary
+#'
+#' @returns Longest cleaned regex match
+#' @noRd
+find_matching_regex = function(x, regex_units){
+
+  matches = names(regex_units[regex_units == x])
+
+  # Clean regex and select longest match
+  matches = sub("\\$$", "", sub("^\\^", "", matches))
+  matches = sub("\\[s\\]\\?", "s", matches)
+
+  matches = unique(tolower(stringr::str_replace_all(matches, "\\[([a-zA-Z])\\|([a-zA-Z])\\]", "\\1")))
+  matches[which.max(nchar(matches))] # Return longest match
+
+}
 
 
 #' Get delayN and smoothN from stock-and-flow model
@@ -1868,10 +1901,10 @@ build = function(sfm, name, type,
     if (any(nonmatching_type)){
 
       if (erase){
-        stop(paste0("The following variables exist in your model but not as the type specified:\n",
+        stop(paste0("These variables exist in your model but not as the type specified:\n- ",
                     paste0(paste0(name[nonmatching_type], " (type: ", match_type[nonmatching_type], ")"), collapse = ", ") ))
       } else {
-        stop(paste0("The following variables already exist in your model, but not as the type specified. Either omit the type to modify the variable, or specify a unique variable name to add a new variable of that type:\n",
+        stop(paste0("These variables already exist in your model, but not as the type specified. Either omit the type to modify the variable, or specify a unique variable name to add a new variable of that type:\n- ",
                    paste0(paste0(name[nonmatching_type], " (type: ", match_type[nonmatching_type], ")"), collapse = ", ") ))
       }
     }
@@ -1942,7 +1975,7 @@ build = function(sfm, name, type,
   appr_prop = Reduce(intersect, keep_prop[type])
   idx_inappr = !(passed_arg %in% appr_prop)
   if (any(idx_inappr)){
-    warning(sprintf("The following properties are not appropriate for %s specified type%s (%s): %s\nThese will be ignored.",
+    warning(sprintf("These properties are not appropriate for %s specified type%s (%s):\n- %s\nThese will be ignored.",
                     ifelse(length(unique(type)) > 1, "all", "the"),
                     ifelse(length(unique(type)) > 1, "s", ""),
                     paste0(unique(type), collapse = ", "), paste0(passed_arg[idx_inappr], collapse = ", ")))
@@ -2466,7 +2499,6 @@ create_R_names = function(create_names, names_df, protected = c()){
     "if",
     "else", "repeat", "function", "return", "while", "for", "in", "next", "break", "TRUE", "FALSE", # already protected
     "T", "F",
-    "sleep", "yield", "yieldto",
     # "NULL", "Inf", "NaN", "NA", "NA_integer_", "NA_real_", "NA_complex_", "NA_character_", # already protected
     # "time", "Time", "TIME",
     # "constraints",
@@ -2727,7 +2759,7 @@ debugger = function(sfm, quietly = FALSE){
     idx = stock_names %in% flow_df$to | stock_names %in% flow_df$from
 
     if (any(!idx)){
-      potential_problems = c(potential_problems, paste0("* The following stocks are not connected to any flows: ",
+      potential_problems = c(potential_problems, paste0("* These stocks are not connected to any flows:\n- ",
                      paste0(stock_names[!idx], collapse = ", ")))
     }
 
@@ -2741,7 +2773,7 @@ debugger = function(sfm, quietly = FALSE){
     idx = !nzchar(flow_df$from) & !nzchar(flow_df$to)
 
     if (any(idx)){
-      problems = c(problems, paste0("* The following flows are not connected to any stock: ",
+      problems = c(problems, paste0("* These flows are not connected to any stock:\n- ",
                      paste0(flow_names[idx], collapse = ", "), "\nConnect a flow to a stock using 'to' and/or 'from' in build()."))
     }
 
@@ -2750,7 +2782,7 @@ debugger = function(sfm, quietly = FALSE){
     idx_from = (!flow_df$from %in% stock_names) & nzchar(flow_df$from)
 
     if (any(idx_to) | any(idx_from)){
-      problems = c(problems, paste0("* The following flows are connected to a stock that does not exist: ",
+      problems = c(problems, paste0("* These flows are connected to a stock that does not exist:\n - ",
                      paste0(c(flow_names[idx_to], flow_names[idx_from]), collapse = ", ")))
     }
 
@@ -2776,7 +2808,7 @@ debugger = function(sfm, quietly = FALSE){
     }) %>% unlist() %>% purrr::compact()
 
   if (length(zero_eqn) > 0){
-    potential_problems = c(potential_problems, paste0("* The following variables have an equation of 0: ", paste0(unname(zero_eqn), collapse = ", ")))
+    potential_problems = c(potential_problems, paste0("* These variables have an equation of 0:\n- ", paste0(unname(zero_eqn), collapse = ", ")))
   }
 
   ### Detect undefined variable references in equations
@@ -2817,7 +2849,7 @@ debugger = function(sfm, quietly = FALSE){
                                        lapply(function(x){lapply(x, `[[`, "units")}) %>% unlist(),
                                      regex_units= regex_units, R_or_Julia = "Julia")
   if (length(add_model_units) > 0){
-    problems = c(problems, paste0("* The following units are not defined: ",
+    problems = c(problems, paste0("* These units are not defined:\n- ",
                                   paste0(names(add_model_units), collapse = ", ")))
   }
 
@@ -2825,20 +2857,21 @@ debugger = function(sfm, quietly = FALSE){
 
   if (!quietly & length(problems) > 0){
     message("Problems:")
-    message(paste0(problems, collapse = "\n"))
+    message(paste0(problems, collapse = "\n\n"))
   } else if (!quietly){
     message("No problems detected!")
   }
 
   if (!quietly & length(potential_problems) > 0){
-    message("Potentially problematic:")
-    message(paste0(potential_problems, collapse = "\n"))
+    prefix = ifelse(!quietly & length(problems) > 0, "\n", "")
+    message(paste0(prefix, "Potentially problematic:"))
+    message(paste0(potential_problems, collapse = "\n\n"))
   }
 
 
   if (quietly){
-    return(list(problems = paste0(problems, collapse = "\n"),
-                potential_problems = paste0(potential_problems, collapse = "\n"))
+    return(list(problems = paste0(problems, collapse = "\n\n"),
+                potential_problems = paste0(potential_problems, collapse = "\n\n"))
            )
   } else {
     return(invisible())

@@ -1,5 +1,11 @@
 test_that("translating Insight Maker models works", {
 
+  URL = "https:"
+  expect_error(insightmaker_to_sfm(URL = URL), "This is not a URL to an Insight Maker model")
+
+  # ** add stop() with useful message when there is a problem in translation
+
+
   URL = "https://insightmaker.com/insight/3xgsvC7QKgPktHWZuXyGAl/Clone-of-Global-Climate-Change"
   expect_no_error(insightmaker_to_sfm(URL = URL))
   sfm = insightmaker_to_sfm(URL = URL)
@@ -19,7 +25,7 @@ test_that("translating Insight Maker models works", {
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
-  URL = 'https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-2022'
+  URL = 'https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022'
   expect_no_error(insightmaker_to_sfm(URL = URL))
   sfm = insightmaker_to_sfm(URL = URL)
   expect_no_error(as.data.frame(sfm))

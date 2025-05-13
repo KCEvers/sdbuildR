@@ -1,4 +1,4 @@
-# **to do return of compile and xmile
+# **to do documentation of return of compile and xmile
 
 
 
@@ -62,7 +62,7 @@ simulate = function(sfm,
   } else if (tolower(sfm$sim_specs$language) == "r"){
 
     if (!requireNamespace("deSolve", quietly = TRUE)){
-      stop("deSolve is not installed! Please install deSolve to simulate in R, or simulate in Julia by setting\nsfm %>% sim_specs(language = 'Julia')")
+      stop("deSolve is not installed! Please install deSolve to simulate in R,\nor simulate in Julia by setting\nsfm %>% sim_specs(language = 'Julia')")
     }
 
     return(simulate_R(sfm,
@@ -71,7 +71,7 @@ simulate = function(sfm,
                       keep_nonnegative_stock = keep_nonnegative_stock,
                       verbose = verbose, debug = debug))
   } else {
-    stop("Language not supported. Please run either sfm %>% sim_specs(language = 'Julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
+    stop("Language not supported.\nPlease run either sfm %>% sim_specs(language = 'Julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
   }
 
 }
@@ -107,7 +107,7 @@ compile = function(sfm,
                      keep_nonnegative_stock = keep_nonnegative_stock,
                      verbose = verbose, debug = debug))
   } else {
-    stop("Language not supported. Please run either sfm %>% sim_specs(language = 'julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
+    stop("Language not supported.\nPlease run either sfm %>% sim_specs(language = 'julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
   }
 
 }
@@ -174,7 +174,7 @@ detect_undefined_var = function(sfm){
     }) %>% unlist() %>% unname()
 
     return(list(issue = TRUE,
-                msg = paste0(c("The variable properties below contain references to undefined variables. Please define the missing variables or correct any spelling mistakes.",
+                msg = paste0(c("The variable properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes.",
                               paste0(missing_ref_format, collapse = "\n")), collapse = "\n")))
   } else {
     return(list(issue = FALSE))

@@ -2,18 +2,24 @@
 test_that("templates work", {
 
   sfm = xmile("SIR")
+  expect_no_error(plot(sfm))
+  expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
   sim = simulate(sfm)
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
   sfm = xmile("predator-prey")
+  expect_no_error(plot(sfm))
+  expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
   sim = simulate(sfm)
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
   sfm = xmile("logistic_model")
+  expect_no_error(plot(sfm))
+  expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
   sim = simulate(sfm)
   expect_equal(sim$success, TRUE)
@@ -27,6 +33,8 @@ test_that("templates work", {
 
   # Check whether coffee cup reaches room temperature
   sfm = xmile("coffee_cup")
+  expect_no_error(plot(sfm))
+  expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
   sim = simulate(sfm)
   expect_equal(sim$success, TRUE)
@@ -34,6 +42,8 @@ test_that("templates work", {
   expect_equal(dplyr::last(sim$df$coffee_temperature), sim$pars$room_temperature, tolerance = .01)
 
   sfm = xmile("Crielaard2022")
+  expect_no_error(plot(sfm))
+  expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
   sim = simulate(sfm)
   expect_equal(sim$success, TRUE)
@@ -41,12 +51,16 @@ test_that("templates work", {
 
   # Duffing previously had an error with cos()
   sfm = xmile("Duffing")
+  expect_no_error(plot(sfm))
+  expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
   sim = simulate(sfm)
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
   sfm = xmile("Chua")
+  expect_no_error(plot(sfm))
+  expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
   sim = simulate(sfm)
   expect_equal(sim$success, TRUE)
@@ -97,7 +111,7 @@ test_that("simulate with different components works", {
 
   sfm = xmile() %>% build("a", "stock") %>%
     build("b", "flow")
-  expect_error(simulate(sfm), "The following flows are not connected to any stock: b")
+  expect_error(simulate(sfm), "These flows are not connected to any stock:\\n- b")
 
   # With one stock and no flows and no parameters
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%

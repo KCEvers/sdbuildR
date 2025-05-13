@@ -193,8 +193,8 @@ We add a stock for Maya's work, which is the number of hours she works per day. 
 
 ```{r, fig.width=8, fig.height=4}
 sfm = sfm %>% 
-  build("work", "stock", eqn = 4) %>%
-  build("work_breeds_work", "flow", eqn = "work * pile_on", to = "work") %>%
+  build("workload", "stock", eqn = 4) %>%
+  build("work_breeds_work", "flow", eqn = "workload * pile_on", to = "workload") %>%
   build("pile_on", "constant", eqn = .1) 
 
 sim = simulate(sfm)
@@ -206,7 +206,7 @@ Maya's work day is increasing exponentially! We're clearly missing something. We
 ```{r, fig.width=8, fig.height=4}
 sfm = sfm %>%
   build("normal_workday", "constant", eqn = 8) %>%
-  build("aim_for_normal", "flow", eqn = "work - normal_workday", from = "work")
+  build("aim_for_normal", "flow", eqn = "workload - normal_workday", from = "workload")
 
 sim = simulate(sfm)
 plot(sim, add_constants = TRUE)
@@ -220,9 +220,9 @@ Let's now add sleep to our model. We create a stock for the daily hours of sleep
 sfm = sfm %>%
   build("sleep", "stock", eqn = "necessary_sleep") %>%
   build("necessary_sleep", "constant", eqn = 8) %>%
-  build("deterioration", "flow", 
-        eqn = "work * sleep_reduction", from = "sleep") %>%
-  build("sleep_reduction", "constant", eqn = .1) 
+  build("worry_about_work", "flow", 
+        eqn = "workload * worry_factor", from = "sleep") %>%
+  build("worry_factor", "constant", eqn = .1) 
 
 sim = simulate(sfm)
 plot(sim)
@@ -233,7 +233,7 @@ Maya's sleep is decreasing, but we haven't yet added the effect of her sleep def
 ```{r}
 sfm = sfm %>%
   build("aim_for_normal", change_name = "sleep_limits_work", 
-        eqn = "work * necessary_sleep / sleep") 
+        eqn = "workload * necessary_sleep / sleep") 
 ```
 
 What's more, Maya's sleep deficit also makes itself worse, as she lies awake worrying about how little she is sleeping. We change the outflow of sleep to get larger when Maya is sleeping less than she needs. For good measure, we increase the amount of work that piles on.
@@ -241,8 +241,8 @@ What's more, Maya's sleep deficit also makes itself worse, as she lies awake wor
 ```{r, fig.width=8, fig.height=4}
 sfm = sfm %>%
   build("pile_on", eqn = 1.5) %>%
-  build("deterioration", 
-        eqn = "work * sleep_reduction * necessary_sleep / sleep") 
+  build("worry_about_work", 
+        eqn = "workload * worry_factor * necessary_sleep / sleep") 
 
 sim = simulate(sfm)
 plot(sim)
@@ -254,9 +254,9 @@ But what if rather than only decreasing, Maya's daily sleep can also recover? To
 
 ```{r, fig.width=8, fig.height=4}
 sfm = sfm %>% sim_specs(stop = 15) %>%
-  build("deterioration", 
-        eqn = "(work - normal_workday) * sleep_reduction * necessary_sleep / sleep") %>%
-  build("sleep_reduction", eqn = .5) 
+  build("worry_about_work", 
+        eqn = "(workload - normal_workday) * worry_factor * necessary_sleep / sleep") %>%
+  build("worry_factor", eqn = .5) 
 
 sim = simulate(sfm)
 plot(sim, add_constants = TRUE)
@@ -279,9 +279,9 @@ XXX
 <!--   build("sleep_limits_work", "flow", eqn = "work * necessary_sleep / sleep", from = "work") %>% -->
 <!--   build("sleep", "stock", eqn = "necessary_sleep") %>% -->
 <!--   build("necessary_sleep", "constant", eqn = 8) %>% -->
-<!--   # build("deterioration", "flow", eqn = "(work - normal_workday) * sleep_reduction * necessary_sleep / sleep", from = "sleep") %>% -->
-<!--  build("deterioration", "flow", eqn = "work * sleep_reduction * necessary_sleep / sleep", from = "sleep") %>% -->
-<!--   build("sleep_reduction", "constant", eqn = .5)  -->
+<!--   # build("worry_about_work", "flow", eqn = "(work - normal_workday) * worry_factor * necessary_sleep / sleep", from = "sleep") %>% -->
+<!--  build("worry_about_work", "flow", eqn = "work * worry_factor * necessary_sleep / sleep", from = "sleep") %>% -->
+<!--   build("worry_factor", "constant", eqn = .5)  -->
 
 <!-- # plot(sfm) -->
 <!-- sim = simulate(sfm) -->
@@ -302,9 +302,9 @@ XXX
 <!--   build("aim_for_normal", "flow", eqn = "work * necessary_sleep / sleep / u('month')", from = "work", units = "hours/day/month") %>% -->
 <!--   build("sleep", "stock", eqn = "necessary_sleep", units = "hours/day") %>% -->
 <!--   build("necessary_sleep", "constant", eqn = 8, units = "hours/day") %>% -->
-<!--   build("deterioration", "flow", eqn = "(work - normal_workday) * sleep_reduction * necessary_sleep / sleep", from = "sleep", units = "hours/day/month") %>% -->
-<!--  # build("deterioration", "flow", eqn = "work * sleep_reduction * necessary_sleep / sleep", from = "sleep") %>% -->
-<!--   build("sleep_reduction", "constant", eqn = .5, units = "1/month")  -->
+<!--   build("worry_about_work", "flow", eqn = "(work - normal_workday) * worry_factor * necessary_sleep / sleep", from = "sleep", units = "hours/day/month") %>% -->
+<!--  # build("worry_about_work", "flow", eqn = "work * worry_factor * necessary_sleep / sleep", from = "sleep") %>% -->
+<!--   build("worry_factor", "constant", eqn = .5, units = "1/month")  -->
 
 <!-- # plot(sfm) -->
 <!-- sim = simulate(sfm) -->

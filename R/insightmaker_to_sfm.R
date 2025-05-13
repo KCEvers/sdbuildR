@@ -17,7 +17,7 @@
 #'
 #' @examples
 #' sfm = insightmaker_to_sfm(URL =
-#'  'https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-2022')
+#'  'https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022')
 #' plot(sfm)
 #' sim = simulate(sfm)
 #' plot(sim)
@@ -45,12 +45,16 @@ insightmaker_to_sfm = function(URL,
   }
 
   # Check whether URL is InsightMaker model; if so, create .InsightMaker file
-  is_URL = ifelse(!missing(URL), stringr::str_detect(URL, stringr::regex("http[s]?\\:\\/\\/[www\\.]?insightmaker")), 0)
-  if (is_URL){
-    # URL to .InsightMaker file
-    URL_XML = url_to_IM(URL, filepath_IM, directory)
-    header_info = URL_XML$header_info
-    filepath_IM = URL_XML$filepath_IM # File path may have been overwritten
+  if (!missing(URL)){
+    is_valid_URL = ifelse(!missing(URL), stringr::str_detect(URL, stringr::regex("http[s]?\\:\\/\\/[www\\.]?insightmaker")), 0)
+    if (is_valid_URL){
+      # URL to .InsightMaker file
+      URL_XML = url_to_IM(URL, filepath_IM, directory)
+      header_info = URL_XML$header_info
+      filepath_IM = URL_XML$filepath_IM # File path may have been overwritten
+    } else {
+      stop("This is not a URL to an Insight Maker model!")
+    }
   } else {
     header_info = list()
   }

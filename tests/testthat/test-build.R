@@ -1,6 +1,6 @@
 
 
-
+# add tests for:
 # ** macro
 # ** add macros with name
 # ** functions in variable
@@ -256,7 +256,7 @@ test_that("erase in build() works", {
   # erase while specifying wrong type
   sfm = xmile("Lorenz")
   expect_error(sfm %>% build("dy_dt", "stock", erase = TRUE),
-               "The following variables exist in your model but not as the type specified")
+               "These variables exist in your model but not as the type specified")
 
   # erase while specifying type and other properties; these should be ignored
   expect_no_error(sfm %>% build("x", "stock", eqn = "10", units = "kg", erase = TRUE))
@@ -272,7 +272,7 @@ test_that("erase in build() works", {
 test_that("inappropriate properties throw warning", {
 
   expect_warning(xmile() %>% build("c", "aux", from = "a"),
-                 "The following properties are not appropriate for the specified type")
+                 "These properties are not appropriate for the specified type")
   sfm = suppressWarnings(xmile() %>% build("c", "aux", from = "a"))
   expect_equal(sfm$model$variables$aux$c$from, NULL)
   expect_equal(sfm$model$variables$aux$c$to, NULL)
@@ -281,7 +281,7 @@ test_that("inappropriate properties throw warning", {
   expect_warning(xmile() %>% build(c("a", "b", "c"), c("aux", "stock", "flow"),
                                    eqn = 1,
                                    from = "b"),
-                 "The following properties are not appropriate for all specified types \\(aux, stock, flow\\): from\nThese will be ignored")
+                 "These properties are not appropriate for all specified types \\(aux, stock, flow\\):\\n- from\nThese will be ignored")
   sfm = suppressWarnings(xmile() %>% build(c("a", "b", "c"),
                                            c("aux", "stock", "flow"),
                                            eqn = 1,
@@ -347,7 +347,7 @@ test_that("vectorized adding variables works in build()", {
                                    units = c("kilograms", "10 meters", "3 Sec"),
                                    label = c("X", "Y", "Z"), from = c("a", "b", "c"),
                                    xpts = c(1, 2, 3), ypts = c(4, 5, 6)),
-                 "The following properties are not appropriate for the specified type \\(stock\\): from, xpts, ypts")
+                 "These properties are not appropriate for the specified type \\(stock\\):\\n- from, xpts, ypts")
   sfm = suppressWarnings(xmile() %>% build(c("x", "y", "z"), "stock", eqn = 300,
                                            units = c("kilograms", "10 meters", "3 Sec"),
                                            label = c("X", "Y", "Z"), from = c("a", "b", "c"),
@@ -414,7 +414,7 @@ test_that("build() works", {
   expect_equal(sfm$model$variables$stock$a$eqn, "10000")
 
   # Try to overwrite existing variable whilst specifying the wrong type
-  expect_error({sfm %>% build("a", "flow", eqn = "90")}, "The following variables already exist in your model, but not as the type specified")
+  expect_error({sfm %>% build("a", "flow", eqn = "90")}, "These variables already exist in your model, but not as the type specified")
   expect_equal(sfm$model$variables$stock$a$eqn, "10000")
 
   # Try to modify non-existing variable
@@ -679,7 +679,7 @@ test_that("create_R_names() works", {
 test_that("debugger() works", {
 
   expect_message({debugger(xmile("SIR"))}, "No problems detected")
-  expect_message({debugger(xmile("SIR"))}, "The following variables have an equation of 0: Recovered")
+  expect_message({debugger(xmile("SIR"))}, "These variables have an equation of 0:\\n- Recovered")
   expect_message({debugger(xmile("predator-prey"))}, "No problems detected!")
   expect_message({debugger(xmile("logistic_model"))}, "No problems detected!")
   expect_message({debugger(xmile("Crielaard2022"))}, "No problems detected!")
@@ -695,7 +695,7 @@ test_that("debugger() works", {
     build("Prey", "stock") %>%
     build("Predator", "stock") %>%
     build("births", "flow", eqn = "0.1 * Predator", to = "Prey")
-  expect_message({debugger(sfm)}, "The following stocks are not connected to any flows: Predator")
+  expect_message({debugger(sfm)}, "These stocks are not connected to any flows:\\n- Predator")
 
   # Detect circularities in equation definitions
   expect_message({debugger(sfm = xmile() %>% build("Prey", "stock", eqn = "Predator") %>%
@@ -706,8 +706,7 @@ test_that("debugger() works", {
     build("X", change_name = "tasks") %>%
     build("K", label = "Resource") %>%
     build("K", change_type = "stock")
-  as.data.frame(sfm)
-  expect_message(debugger(sfm), "The following stocks are not connected to any flows: K")
+  expect_message(debugger(sfm), "These stocks are not connected to any flows:\\n- K")
 
 
 
@@ -719,10 +718,11 @@ test_that("debugger() works", {
 
 
 test_that("detect_undefined_var() works", {
+
   # Check that undefined variables are detected
   sfm = xmile() %>% build("a", "aux", eqn = "b + c")
   out = detect_undefined_var(sfm)
-  expect_equal(grepl("The variable properties below contain references to undefined variables. Please define the missing variables or correct any spelling mistakes", out$msg), TRUE)
+  expect_equal(grepl("The variable properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes", out$msg), TRUE)
 
   # Check that no error is thrown for defined variables
   sfm = xmile() %>% build("a", "aux", eqn = "b + c") %>%
@@ -736,17 +736,18 @@ test_that("detect_undefined_var() works", {
 
 
 test_that("detect_undefined_units() works", {
+
   # Check that undefined variables are detected
   sfm = xmile() %>% build("a", "aux", units = "BMI")
-  expect_message(debugger(sfm), "The following units are not defined: BMI")
+  expect_message(debugger(sfm), "These units are not defined:\\n- BMI")
 
   sfm = xmile() %>% build("a", "aux", units = "BMI/year")
-  expect_message(debugger(sfm), "The following units are not defined: BMI")
+  expect_message(debugger(sfm), "These units are not defined:\\n- BMI")
 
   # Check that no error is thrown for defined units
   sfm = xmile() %>% build("a", "aux", units = "BMI/year") %>% model_units("BMI", eqn = "kilograms/meters^2")
   out = debugger(sfm, quietly = TRUE)
-  expect_equal(grepl("The following units are not defined", out$problems), FALSE)
+  expect_equal(grepl("These units are not defined", out$problems), FALSE)
 })
 
 
