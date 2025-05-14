@@ -3,7 +3,7 @@
 #'
 #' Create a stock-and-flow model from a template in the model library. The function will return a stock-and-flow model ready to be simulated and plotted, or modified in any way you like.
 #'
-#' @param name Name of model; one of "logistic_model", "SIR", "predator-prey", "Crielaard2022"
+#' @param name Name of model; one of "logistic_model", "SIR", "predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua"
 #'
 #' @noRd
 #' @return Stock-and-flow model of class sdbuildR_xmile.
