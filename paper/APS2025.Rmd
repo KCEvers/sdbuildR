@@ -1,0 +1,336 @@
+---
+title: "APS2025"
+author: "Kyra Evers"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.width=8, fig.height=5
+                      # out.width="80%", out.height="40%",
+                      # dpi = 600
+                      )
+```
+
+
+```{r libraries}
+library(sdbuildR)
+sdbuildR_setup()
+```
+
+
+## APS 2025 Example Model
+
+```{r}
+
+# workload
+# sleep
+# colors
+
+all_colors = c("#5855a2", "#f79556", "#fccc44","#d6d0a9", 
+               # "#bdb1e5", 
+               "#1e1735")
+# scales::show_col(all_colors)
+```
+
+
+```{r}
+sfm = xmile()
+```
+
+```{r}
+sfm = xmile()
+summary(sfm)
+```
+
+```{r}
+sfm = sfm %>% 
+  build("workload", "stock", 
+        eqn = 4, units = "hours/day") 
+
+plot(sfm)
+```
+
+```{r}
+sfm = sfm %>% 
+  build("workload", "stock", 
+        eqn = 4, units = "hours/day") 
+
+sim = simulate(sfm)
+plot(sim)
+```
+
+```{r}
+colors = all_colors
+plot(sim, colors=colors)
+```
+
+
+
+```{r}
+sfm = sfm %>% 
+  sim_specs(stop = 12, time_units = "month") 
+
+sim = simulate(sfm)
+plot(sim)
+```
+
+```{r}
+colors = all_colors
+plot(sim, colors=colors)
+```
+
+
+```{r}
+sfm = sfm %>% 
+  build("new_tasks", "flow", 
+        eqn = "workload * work_growth",
+        to = "workload", units = "hours/day/month")
+```
+
+
+```{r}
+sfm = sfm %>% 
+  build("new_tasks", "flow", 
+        eqn = "workload * work_growth",
+        to = "workload", units = "hours/day/month") %>%
+  build("work_growth", "constant", 
+        eqn = 1.5, units = "1/month")
+
+plot(sfm)
+```
+
+
+\newpage
+
+```{r}
+sfm = sfm %>% 
+  build("new_tasks", "flow", 
+        eqn = "workload * work_growth",
+        to = "workload", units = "hours/day/month") %>%
+  build("work_growth", "constant", 
+        eqn = 1.5, units = "1/month")
+
+sim = simulate(sfm)
+plot(sim)
+```
+
+
+```{r}
+colors = all_colors
+plot(sim, colors=colors)
+```
+
+<!-- ```{r} -->
+<!-- sfm = sfm %>% -->
+<!--   build("sleep", "stock", eqn = "necessary_sleep", units = "hours/day") %>% -->
+<!--   build("necessary_sleep", "constant", eqn = 8, units = "hours/day") %>% -->
+<!--   build("worry_about_work", "flow",  -->
+<!--         eqn = "workload * worry_factor", from = "sleep", units = "hours/day/month") %>% -->
+<!--   build("worry_factor", "constant", eqn = .1, units = "1/month")  -->
+
+<!-- sim = simulate(sfm) -->
+<!-- plot(sim) -->
+<!-- ``` -->
+
+\newpage
+
+```{r}
+sfm = sfm %>%
+  build(c("sleep", "necessary_sleep", "worry_factor"),
+        c("stock", "constant", "constant"), 
+        eqn = c("necessary_sleep", 8, .1), 
+        units = c("hours/day", "hours/day", "1/month")) 
+```
+
+
+\newpage
+
+```{r}
+sfm = sfm %>%
+  build("worry_about_work", "flow", 
+        eqn = "workload * worry_factor", 
+        from = "sleep", units = "hours/day/month") 
+
+plot(sfm)
+```
+
+```{r}
+plot(sfm, center_stocks = TRUE)
+```
+
+\newpage
+
+```{r}
+sfm = sfm %>%
+  build(c("sleep", "necessary_sleep", "worry_factor"),
+        c("stock", "constant", "constant"), 
+        eqn = c("necessary_sleep", 8, .1), 
+        units = c("hours/day", "hours/day", "1/month")) %>%
+  
+  build("worry_about_work", "flow", 
+        eqn = "workload * worry_factor", 
+        from = "sleep", units = "hours/day/month") 
+
+sim = simulate(sfm)
+plot(sim)
+```
+
+```{r}
+colors = all_colors
+colors[1] = all_colors[2] # switch 1 and 2
+colors[2] = all_colors[1] # switch 1 and 2
+plot(sim, colors=colors)
+```
+
+
+\newpage
+
+```{r}
+sfm = sfm %>%
+  build("need_for_rest",  "flow",
+        eqn = "workload * necessary_sleep / sleep / u('1month')",
+        from = "workload",
+        units = "hours/day/month")  
+
+plot(sfm)
+```
+
+```{r}
+plot(sfm, center_stocks = TRUE)
+```
+
+
+\newpage
+
+
+```{r}
+sfm = sfm %>%
+  build("need_for_rest",  "flow",
+        eqn = "workload * necessary_sleep / sleep / u('1month')",
+        from = "workload",
+        units = "hours/day/month")  
+
+sim = simulate(sfm)
+plot(sim)
+```
+
+```{r}
+colors = all_colors
+colors[1] = all_colors[2] # switch 1 and 2
+colors[2] = all_colors[1] # switch 1 and 2
+plot(sim, colors=colors)
+```
+
+
+<!-- created a minimal model of burnout. -->
+
+
+## Model iteration
+
+```{r}
+sfm = sfm %>% build("workload", eqn = 8)
+```
+
+```{r}
+sfm = sfm %>% build("sleep", change_name = "sleep_hours")
+```
+
+```{r}
+sfm = sfm %>% build("necessary_sleep", change_type = "aux")
+```
+
+```{r}
+sfm = sfm %>% build("workload", erase = TRUE)
+```
+
+```{r}
+sfm = xmile() %>%
+  macro("sig", eqn = "function(x, slope = 1, midpoint = .5){
+        1 / (1 + exp(-slope*(x-midpoint)))
+        }")
+```
+
+
+\newpage
+
+## Debugger
+
+```{r}
+sfm = xmile() %>% 
+  build("new_tasks", "flow", to = "workload")
+
+debugger(sfm)
+```
+
+## Units
+
+### regex
+
+
+
+### custom
+
+```{r}
+sfm = sfm %>%
+  model_units("quality", doc = "Quality of life") %>%
+  model_units("QALY", eqn = "years*quality", doc = "Quality-adjusted life year")
+```
+
+
+```{r}
+sfm = xmile() %>%
+  model_units("BMI", eqn = "kilograms per meters squared", 
+              doc = "Body Mass Index") 
+```
+
+```{r}
+sfm = xmile() %>%
+  model_units("BMI", eqn = "kilograms per meters squared", 
+              doc = "Body Mass Index") 
+as.data.frame(sfm)
+```
+
+### in equations
+
+```{r}
+sfm = xmile() %>%
+ build("weight_gain", "flow", eqn = "u('2 BMI / year')", 
+       units = "BMI/year")
+```
+
+<!-- 440% -->
+## not from scratch
+
+
+```{r message=FALSE, warning=FALSE}
+URL = "https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022"
+```
+
+```{r}
+sfm = insightmaker_to_sfm(URL)
+```
+
+```{r}
+sim = simulate(sfm, only_stocks = TRUE)
+plot(sim, colors = colors)
+```
+
+
+```{r}
+sfm = xmile("SIR")
+```
+
+```{r}
+plot(sfm)
+```
+
+```{r}
+sim = simulate(sfm)
+plot(sim)
+```

@@ -1,0 +1,788 @@
+---
+# title: "Stock-and-Flow Thinking to Aid Formalization in Psychology"
+title: "The Value of Stock-and-Flow Thinking for Formalizing Psychological Theories"
+date: "2022-11-09"
+abstract: >
+ The importance of formalization for improving psychological theories has been widely recognized. However, the tools and thinking aids required often remain abstract, leaving researchers with little guidance on the \textit{how} of formalization. In this paper, we lay out how stock-and-flow thinking from the field of System Dynamics can help in the process of formalizing psychological theories.
+
+    We highlight 6 benefits of stock-and-flow modelling: the classification of variables as stocks or flows, the disaggregation of net flow into inflow and outflow, the specification of units, the distinction between information and material flow, XXX delays, and the explicit communication of the model's boundary.
+
+    We illustrate these steps using the R package \textit{sdbuildR}, leaving readers with the tools to apply stock-and-flow thinking to their own models.
+    
+    
+    More familiar with dynamical systems
+    We argue the use of these principles extends beyond stock-and-flow models
+
+    % Formalizing psychological theories is on the rise. Verbal theories lack specificity and thus testability. However, a common format to share formal models is currently lacking.
+    
+    
+    
+    Finally, we point to the XMILE format, a standardized format to share stock-and-flow models. Such a template/format is currently missing in psychological models.
+
+draft: true
+author:  
+  - name: Quietest Quokka
+    affiliation: University of Little Mates
+    address:
+    - Department of Letter Q
+    - Somewhere, Australia
+    url: https://www.britannica.com/animal/quokka
+    orcid: 0000-1721-1511-1101
+    email:  qquo@ulm.edu
+  - name: Bounciest Bilby
+    affiliation:
+    - University of Little Mates
+    - University of Aussie Animals
+    address:
+    - Department of Letter Q, Somewhere, Australia
+    - Department of Marsupials, Somewhere, Australia
+    url: https://www.britannica.com/animal/bilby
+    email: bbil@ulm.edu
+    orcid: 0000-0002-0912-0225
+type: package
+output: pdf_document
+  # rjtools::rjournal_article:
+  #   self_contained: yes
+  #   toc: no
+bibliography: RJreferences.bib
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center",
+                      # For text wrapping, install formatR
+                      # tidy.opts = list(width.cutoff = 20), tidy = TRUE,
+                      tidy = "styler", tidy.opts = list(scope = "line_breaks"))
+# library(ggplot2)
+library(kableExtra)
+library(insightmakeR1)
+library(dplyr)
+```
+
+
+
+
+Researchers may be familiar with dynamical systems. Stock-and-flow models are a subtype of dynamical systems, with added restrictions and classifications on the type of variables.
+
+In this paper, we argue for the value of applying stock-and-flow thinking to aid the development and communication of formal models in psychology. 
+Our intention here is not to advocate for only using stock-and-flow models in formal models. Rather, we believe stock-and-flow thinking contains useful principles - which need not be unique to stock-and-flow models - to improve psychological theory development. 
+
+We lead with an example of a physical system as a stock-and-flow model.
+
+\subsection{A Bird's Eye View of Stock-and-Flow Models: A Physical Example}
+
+A Stock-and-flow model consists of Stocks, Flows, and auxiliaries. 
+
+bathtub or warehouse example
+For example, a river flowing into an ocean can be characterized by the Stock the volume of water in the ocean, with the inflow the volume of water per second \cite{Sterman, p. 198-199}.
+
+```{r}
+# Simple physical example
+sdm = xmile() %>% 
+  build("bathtub", "stock", eqn = "0", label = "Water in bathtub") %>%
+  build("desired_amount", "aux", eqn = "5", label = "Desired amount of water in bathtub") %>%
+  build("faucet", "flow", 
+        eqn = "desired_amount - bathtub",
+        to = "bathtub", label = "Faucet") %>%
+  build("leakage", "flow", 
+        eqn = ".1 * bathtub",
+        from = "bathtub", label = "Leakage")
+plot(sdm)
+out = simulate_Julia(sdm)
+plot_stocks(sdm, out$df) #** also plot inflow and outflow
+
+```
+
+constants are also Stocks
+
+<!-- from sdbuildR -->
+% Stocks define the state of the system. They accumulate material or information over time, such as
+% people, products, or beliefs, which creates memory and inertia in the system [@sterman]. Stocks are variables that can increase and decrease, and be measured at a single moment in time. The value of a Stock is increased or
+% decreased by *Flows*. Flows move material through the system. An inflow increases a Stock, and an outflow decreases a Stock, such that the net change in a Stock is the sum of its inflows minus the sum of its outflows. Flows are defined in units of material moved over time, such as birth rates, revenue, and sales. Material may flow from and to other Stocks, or may originate from or disappear to an unspecified
+% *source* or *sink* outside of the model. Variables included in the model
+% are endogenous, whereas sources and sinks which are outside of the model
+% boundary are exogenous. An exogenous source or sink is in actuality also
+% a Stock, but is not included in the model for simplicity and parsimony
+% [@sterman2002, @meadows]. As the dynamics of sinks and sources are not
+% modelled, their capacity is infinite [@sterman]. In addition to Stocks and Flows, a System Dynamics model may also contain two other building blocks: any other static parameters or intermediately
+
+
+XXX add that stocks can also have units per day, e.g. in Wittenborn, regulatory resources defined as units = "stressor/d", but it is a Stock? stressor/d you can handle
+
+
+
+\subsection{Challenges with applying stock-and-flow thinking}
+
+- Negative inflows
+- Bipolar variables
+- "Continuous Time and Instantaneous Flows" Sterman -> treating everything as continuous
+
+\subsubsection{Difference with general differential equations}
+
+youtube video John hayward: no one to one mapping from stock and flow to differential equations
+
+non-uniqueness of translation
+" n general, the flows will be functions of the stock and other state variables and parameters. Figure 6-2 shows four equivalent representations of the general stock and
+flow structure" \cite{sterman}
+
+
+
+Argument that these diagrams are too bloated:
+subsystem diagrams, interactive for exploring step-wise, storytelling feature
+
+\subsection{Benefit 1: Classify Stocks and Flows}
+
+At first glance, the classification of variables as Stocks and Flows may appear inappropriate for psychological models. Originating from business and engineering, Stocks are more easily recognized in physical systems, such as the stock of inventory in a warehouse. However, Stocks need not be \textit{tangible}. Stocks can be beliefs, perceptions, or expectations \cite{Sterman, p. 195}, and other ``soft'' variables which can theoretically be captured at a single moment in time. Stocks should be able to increase and decrease, and will accumulate over time. Without an outflow, a Stock will not decrease, meaning it forms a record of past inflows and outflows.
+
+Similarly, it may seem questionable whether anything truly \textit{flows} in a psychological system \cite{Bringmann2019}. Flows are typically imagined as the physical movement of material, such as water flowing in a river. However, as Flows are defined as the source of increase or decrease in Stocks, which themselves need not be tangible, Flows need not be tangible either. Flows carry whatever is in the Stock over a period of time, such as XXX.
+Many psychological variables naturally decay over time, such as anger, relationship quality or motivation. 
+without positive inputs.
+Importantly, your model does not need to detail for all flows where they go or where they come from. 
+
+One way to distinguish Stocks from flows is using the *snapshot test*. If a variable can theoretically be measured or observed at a single point in time, it is likely a Stock. If a variable can only be defined over a certain period of time, it is likely a Flow. For example, your savings account is a Stock, but income (defined for example as euros per month), is a flow. In addition, Stocks are generally nouns, and Flows can typically be written as verbs (XXX made this up myself). For instance, food consumption is a Stock, and eating is a flow.. In general, behaviours, decisions, and variables defined as frequencies (i.e. rates) are Flows \cite{jacobsen1987}, whereas XXX are Stocks. 
+Exceptions: interest rate is a Stock/auxiliary/constant
+
+This classification is particularly useful for developing psychological theories. Psychological variables are notoriously difficult to choose and define. Overlapping constructs, the trait versus state distinction, 
+
+
+
+Whether a variable is a Stock or a Flow tells us something about its \textit{nature}
+
+Once a variable is classified as a Stock, it raises the natural question of what makes it increase or decrease.
+A Flow
+
+forces the question how it develops over time
+
+clarifies connection between variables
+
+XXX: add processes and mechanisms; is a flow always a process?
+
+```{r}
+# Smoking example
+sdm = xmile() %>% 
+  build("risk_lung_cancer", "stock", label = "Risk of lung cancer") %>%
+  build("smoking", "flow",
+        to = "risk_lung_cancer", label = "Smoking")
+plot(sdm)
+
+# Self-injury example
+sdm = xmile() %>% 
+  build("urge", "stock", label = "Urge to self-injure") %>%
+  build("selfIinjury", "flow",
+        from = "urge", label = "Self-injury")
+plot(sdm)
+
+# Singing example
+sdm = xmile() %>% 
+  build("skill", "stock", label = "Singing skills") %>%
+  build("practice", "flow",
+        to = "skill", label = "Taking singing lessons")  %>%
+  build("decay", "flow",
+        from = "skill", label = "Decay")
+plot(sdm)
+
+# Body weight example
+sdm = xmile() %>% 
+  build("weight", "stock", eqn = ".5", label = "Weight") %>%
+  build("consumption", "flow",
+        to = "weight", label = "Energy consumption")  %>%
+  build("expenditure", "flow",
+        from = "weight", label = "Energy expenditure")
+plot(sdm)
+
+```
+
+
+
+
+\subsection{Benefit: Disaggregating Change in Stocks: Inflows and Outflows}
+
+Dynamical system models typically describe the net change in a state variable (i.e. Stock), consisting of the sum of all positive and negative influences on the state at that time. Conversely, the net change in stock-and-flow models is typically disaggregated into inflows and outflows. As such, the modeller is forced to explicate what increases the Stock, and what decreases the Stock. Though deceivingly simple, these questions are a basic starting point for any modelling practice. Without a source of increasing the Stock, it will stay constant or decay indefinitely (ceterus paribus? XXX). Without a way for the variable to decrease, it will stay constant or increase indefinitely. As outlined by Levine et al. (1993) \cite{Levine1993}, in psychological systems, identifying inflows and outflows may need some additional probing. For a desirable construct such as motivation, what processes enhance motivation (i.e. increase outflow)? What would help retain motivation (i.e. decrease outflow)? For an undesirable construct such as self-hatred, what processes would help prevent self-hatred (i.e. decrease inflow)? What processes would help 'cure' or dissipate self-hatred (i.e. increase outflow)? Such questions may prove more helpful for theory development than simply asking what changes the Stock.
+
+Though typically, an inflow increases a Stock and an outflow decreases a Stock, flows can technically negative or positive. Such flows are bidirectional: they can serve as both an inflow and an outflow, depending on XXX.
+
+XXX In psychological systems, we may have some control over the inflow but not the outflow or vice versa. e.g. stressors -> useful to disaggregate them
+
+Box \ref{} illustrates this with several examples.
+
+Box: Examples of specifying inflow and outflow
+- If the Stock is self-esteem, an inflow may be achieving one's goals, whereas an outflow may be XXX.
+- If the Stock is dysfunctional beliefs, XXX
+- If the Stock is attention, XXX
+- If the Stock is relationship quality, an inflow may be positive experiences together, whereas an outflow may be negative experiences.
+- If the Stock is motivation, XXX
+- trust
+
+Disaggregating the net change in a Stock clarifies that even though the inflow may decrease in rate, the Stock will continue to rise if the inflow is larger than the outflow. Similarly, though the outflow rate may increase, the Stock will continue to rise if the inflow rate is larger than the outflow rate.
+
+
+Though perhaps viewed as less parsimonious, the explicit disaggregation of flow into inflow and outflow can provide numerous benefits. Firstly, the process of identifying inflows and outflows can lead to more transparent and explicit theories. Which flows are only expected to increase the Stock, and which flows are expected to only decrease the Stock? For example, if the Stock is self-esteem, achieving one's goals may only serve as an inflow, whereas negative self-talk only decreases the Stock. 
+communicate
+
+This can help to clarify the nature of the Stock itself. 
+conceptualization
+ For example, if reaching a goal increases self-esteem, what does this tell us about the nature of self-esteem?
+
+Secondly, theories may be improved by separating inflows from outflows, because the processes governing inflows typically differ from those governing outflows. That is, the decision points, information inputs, timescales, and time delays are usually not the same for inflows and outflows. For example, the factors determining the birth rate (e.g. fertility, birth control availability) are very different from those determining the death rate (e.g. neurodegenerative disease, palliative care availability). 
+
+
+<!-- can help in both theory formation and communication. -->
+
+
+<!-- "First, the decision processes gov- -->
+<!-- erning the various flows often differ. These differences can include differences in -->
+<!-- the information inputs used in the decision and the decision rule for processing the -->
+<!-- cues. Time delays can differ as well. Second, it is often difficult to create robust -->
+<!-- and transparent formulations for net flows" -->
+
+
+
+Thirdly, the identification of inflows and outflows may help to identify leverage points to change the Stock. For example, if the Stock is arousal, and it is problematically high, different strategies may either reduce the inflow (e.g. decreasing environmental triggers), or increase the outflow (e.g. deep breathing exercises).
+
+<!-- identify whether a problem originates from the inflow or the outflow. For example, high arousal may be due to high inflow -->
+% funny business of 
+% if x < 0 x = 0
+Some models include a "hack" to prevent state variables from non-negative, wherein a state variable is set to zero in case it turns negative. In nearly all cases, this reflects an inadequacy of the model. If say suicidal thoughts can never be negative, yet the flows affecting suicidal thoughts deplete it more than it contains, this reflects a model error.
+
+!!! Benefit of disaggregating: Preventing incorrectly specified models and later corrections; I think disaggregating solves  this? see Sterman p. 549
+Wang: max()
+
+Incorrect vs correct stock and flow: Sterman p. 206
+
+
+
+
+
+
+
+XXX: adjust flow must have units of stock / time -> compatable units to Stock, I think
+"if there is a material flow from one stock to another, do the stocks need to have the same units?
+
+
+No, the stocks in a stock and flow model do not necessarily need to have the same units when there is a material flow from one stock to another, but the flow itself must be consistent with the units of the stocks it connects. Let me explain:
+
+Stocks represent accumulated quantities and can have different units depending on what they measure. For example, one stock could be "raw materials" measured in kilograms, while another stock could be "finished products" measured in units (e.g., number of items).
+Flows represent the rate at which material, energy, or information moves between stocks, and their units must be expressed as the stock's units per unit of time (e.g., kilograms per hour or items per day). The flow’s units need to align with the stock it’s adding to or subtracting from over time.
+Example:
+Stock 1: "Water in a reservoir" (liters)
+Stock 2: "Water in bottles" (number of bottles)
+Flow: Water moves from the reservoir to bottling at a rate of "liters per hour," and the bottling process converts it into "bottles per hour."
+Here, the stocks have different units (liters vs. bottles), but the flow includes a conversion process (e.g., 1 liter = 1 bottle). The flow’s units must make sense in context: liters per hour leaving the reservoir, and bottles per hour entering the bottled stock, with a conversion factor embedded in the system.
+
+Key Condition:
+The units don’t have to be identical, but the flow must ensure dimensional consistency. If there’s no conversion process (e.g., a direct transfer like water moving between two tanks), then the stocks typically would have the same units (e.g., liters for both), and the flow would be something like "liters per hour."
+
+So, in short: No, the stocks don’t need the same units, as long as the flow accounts for any necessary transformations or conversions between them."
+
+
+
+
+<!-- can the variable decrease and increase -> requirement for a stock. e.g. decisions are not a stock here  -->
+<!-- " In system dynamics the danger of reification arises again, and with particular -->
+<!-- acuteness, when deciding on which variables to model as levels. Forrester’s general -->
+<!-- rule, permitting variables to be modeled as levels only if their units can be thought -->
+<!-- of as materials flowing in and out over time in real life (Forrester 1961, 69-70), -->
+<!-- applies to sociological models too. By this criterion, to model human activities as -->
+<!-- levels is a reification, because an act, once done, can never be undone. Therefore, -->
+<!-- decisions, pronouncements, threats, moves, trips, and so on should not be modeled -->
+<!-- as levels, because though they can be counted and may even have cumulative effects, -->
+<!-- they cannot logically decrease." \cite{jacobsen1987} -->
+
+
+<!-- " Stocks can represent information as well as more tangible quantities such as people, money, and materials. Stocks can also represent intangible variables including psychological states, perceptions, and expectations such as employee morale, the expected rate of inflation, or perceived inventory" \cite{sterman} -->
+
+" Systems therefore consist of networks of stocks and flows linked by informa-
+tion feedbacks from the stocks to the rates (Figure 6-6). As shown in the figure, the
+determinants of rates include any constants and exogenous variables. These too are
+stocks. Constants are state variables that change so slowly they are considered to
+be constant over the time horizon of interest in the model. Exogenous variables are
+stocks you have chosen not to model explicitly and are therefore outside the model
+boundary."  \cite{sterman}
+
+
+system archetypes:
+drifting goals: lowering goal is immediate; corrective action takes longer
+
+
+XXX perhaps another benefit: 
+mixing vs. compartmentalization -> relates to level of aggregation
+
+
+XXX other model idea: memory and forgetting
+
+XXX about using the word rate
+"Often, however, the term “rate” is
+used as shorthand for thefractional rate of change of a variable. For example, the
+birth rate is often interpreted as the number of births per year per thousand people
+(also known as the crude birth rate). The crude birth rate in the city of one million
+would be 20 births per year per thousand people, or 2%/year. Similarly, we com-
+monly speak of the interest rate or the unemployment rate. The word “rate” in
+these cases actually means “ratio”: the interest rate is the ratio of the interest pay-
+ments you must make each period to the principal outstanding; the unemployment
+rate is the ratio of the number of unemployed workers to the labor force.
+You must carefully distinguish between absolute and fractional rates of change
+and between rates of change and ratios. Select variable names that minimize the
+chance for confusion. Be sure to check the units of measure for your rates. The
+units of measure for rates of flow are unitskime period; the units of measure for
+fractional rates of flow are units per unit per time period = l/time periods" sterman
+
+
+
+definition positive feedback loop:
+"Positive feedback exists in a system
+when a change propagates through the system to produce more change in the same
+direction.
+
+There are countless examples of positive feedback in the world around us. Here are
+just a few:
+• cell division — As the population grows, so does the number of cell divisions
+per hour.
+• expansion of a population — Similar to the cell population. The larger the
+population, the greater the number of births per year.
+• spread of a rumor — As the number of people that know the rumor increases,
+more people are able to spread the rumor.
+• spread of a disease — This feedback loop works the same way as the spread of
+a rumor.
+• growth of a company — As the size of a company increases, the funding
+available for expansion also increases allowing it to grow at an increasing rate.
+• spread of a forest fire — A forest fire’s ability to ignite the land around it
+increases with the size of the fire. "
+https://ocw.mit.edu/courses/15-988-system-dynamics-self-study-fall-1998-spring-1999/resources/positive/
+e.g. rate of change is less and less in logistic growth
+
+https://ocw.mit.edu/courses/15-988-system-dynamics-self-study-fall-1998-spring-1999/resources/negative/
+"Exercise 1. Several examples of negative feedback that you may be familiar with are:
+•running Initially you go fast, then slow down as you get more and more
+tired until you reach the point when you’re so tired you stop
+completely.
+•music When you get a new CD, you listen to it maybe ten times the
+first day, five times the second, and so on until you get sick of it.
+Eventually you only listen to it once a week or even less often.
+•making pals A college freshman tries to make many friends during
+orientation, but then starts building a small group of pals to spend
+time with and is less eager to make more friends. Eventually the
+individual has “enough” friends, and stops trying to strike up
+random conversations all the time.
+•business A company lays off a certain percentage of employees as part of
+cutting back, until it reaches the absolute minimum number
+needed to function.
+20 D-4347-7
+•dress If the temperature is 100 degrees and you're in a huge fur coat with
+lots of sweaters and accessories, you will immediately throw off
+some large item to cool yourself down. As you approach comfort
+level, you gradually take off smaller items like scarves or gloves
+and make smaller adjustments until you arrive at an ideal
+temperature. "
+
+<!-- ** importance of feedback loops Sterman p. 14-15 -->
+
+Moreover, the disaggregation of inflow and outflow can reveal whether feedback loops affect the inflow or the outflow to a Stock. Feedback loops are at the heart of any stock-and-flow model. If the increase of a variable leads to a further increase (through intermediary variables), a positive feedback loop is formed; if it leads to an eventual decrease, a negative feedback loop is formed. As such, positive feedback loops amplify change, whereas negative feedback loops counteract change. For example, rumination is typically conceived of as a positive feedback loop: Negative thoughts lead to more negative thoughts. Similarly, habit formation, belief strength, and arousal can form positive feedback loops. Negative feedback loops are balancing: 
+
+<!-- WRONG: Both positive and negative feedback loops can occur in inflows and outflows. -->
+
+negative Stock problem
+don't enforce positivity of flows, shows model mistake
+
+for the flows that strictly increase/contribute to the Stock -> inflow
+
+confusion is likely because there are balancing loops active
+
+<!-- For example, a positive feedback loop may be the increase in self-esteem after achieving a goal, which leads to further goal achievement. A negative feedback loop may be the decrease in self-esteem after failing to achieve a goal, which leads to lower goal achievement. -->
+
+<!-- "Note that the rate of price change and the change in the expected order rate can -->
+<!-- be positive or negative (prices and demand forecasts can rise or fall). Any flow into -->
+<!-- or out of a stock can be either positive or negative. The direction of the arrow -->
+<!-- (pointing into or out of a stock) defines the sign convention for the flow. An inflow -->
+<!-- adds to the stock when the flow is positive; if the flow is negative it subtracts from -->
+<!-- the stock. When the outflow is positive, the flow subtracts from the stock." sterman -->
+
+ On the flip side, decreases in the Stock lead to further decreases in the Stock. For example, not engaging in a habit weakens the strength of the habit. To change the exponential growth as shown in Figure ** to linear growth, the equation simply needs to be replaced by a constant, such as 2. In this case, the growth is no longer dependent on the Stock itself.
+
+Similarly, outflows can contain positive feedback loops. For example, a loss of employee morale can spread, accelerating  the loss of morale (Figure XXX). Other examples of positive feedback loops in outflows are . 
+
+Note that positive feedback loops do not mean that the Stock increases; rather, positive feedback loops indicate that the direction of change is amplified. Growth will lead to more growth, and decline will lead to more decline. Positive and negative feedback loops can thus both be at inflows and outflows.
+
+The opposite of a positive feedback loop is a negative feedback loop: The direction of change is countered.
+
+
+```{r}
+# Positive feedback loop in inflow
+sdm = xmile(time_units = "d") %>% # Set time units to day
+  build("negative_thoughts", "stock", eqn = ".5", label = "Negative Thoughts") %>%
+  build("rumination", "flow", 
+        eqn = ".1 * negative_thoughts",
+        to = "negative_thoughts", label = "Rumination")
+plot(sdm)
+out = simulate_Julia(sdm)
+plot_stocks(sdm, out$df)
+
+# Positive feedback loop in outflow
+sdm = xmile(time_units = "d") %>% # Set time units to day
+  build("employee_morale", "stock", eqn = ".5", label = "Employee Morale") %>%
+  build("infectious_demotivation", "flow", 
+        eqn = ".1 * employee_morale",
+        from = "employee_morale", label = "Infectious Demotivation")
+plot(sdm)
+out = simulate_Julia(sdm)
+plot_stocks(sdm, out$df)
+```
+
+\subsubsection{Preventing non-negativity in a Stock}
+
+Some variables, such as XXX, are typically conceived of as non-negative: zero or greater. To prevent Stocks from going negative, all outflows must contain a first-order negative feedback loop. This means that the outflow is dependent on the level of the Stock . \cite{Sterman, p.545}
+
+XX What if there are multiple outflows?
+S = .01
+dS1 = -S
+dS2 = -S
+dS3 = -S
+dt = .1
+
+
+"The exponential decay structure is a special case of the first-order linear nega-
+tive feedback system. As discussed in chapter 4, all negative feedback loops have
+goals. In the case of exponential decay, such as the death rate and depreciation ex-
+amples, the goal is implicit and equal to zero. In general, however, the goals of
+negative loops are not zero and should be made explicit."
+
+
+"13.3.1 All Outflows Require First-Order Control
+Real stocks such as inventories, personnel, cash, and other resources cannot
+become negative. You must formulate the rates in your models so that these stocks
+remain nonnegative even under extreme conditions. Doing so requires all outflows
+to have first-order control. First-order control means the outflows are governed by
+a first-order negative feedback loop that shuts down the flow as the stock drops to
+zero. For example, shipments of finished goods from inventory must be zero when
+inventory is zero no matter how great the demand for the product. These loops
+must be first-order because any time delay could allow the flow to continue even
+after the stock falls to zero"
+
+introduce level
+This is a classic example of a negative feedback loop.
+
+A level is also known as the carrying capacity
+
+
+\subsubsection{Polarity of Flow}
+
+In a similar vein, it is recommended that each flow is either positive or negative, but not both. This is known as monotonic polarity of the flow.
+
+other processes 'hiding' in an U-shaped function.
+
+A net flow may seem more parsimonious. However, this comes at the cost of interpretability, 
+The benefit of only having
+
+For example, an inverted U-shaped relationship is typically found between age and happiness:
+
+examples: hapiness and age
+Simonsohn, Uri, u relationships
+
+"14.4.3 Avoid Hump-Shaped Functions
+In chapter 5 I argued that all causal links in your models should have unambiguous
+polarity. The same principle applies to the nonlinear functions you specify in your
+models. Your functions should be either nondecreasing (flat or rising) or non-
+increasing (flat or falling). Nonlinear functions with rising and falling sections,
+with peaks or valleys, imply the polarity of the causal link between the input and
+output depends on the value of the input. A hump- or U-shaped relationship
+indicates the presence of multiple causal pathways between the input and output.
+You should represent each separately so the individual effects have a unique, un-
+ambiguous polarity.
+The famous Yerkes-Dodson Law in psychology provides an example. Yerkes
+and Dodson (1908) explored how performance in various tasks depended on the
+level of arousal or stress imposed. Low levels of arousal yield low performance.
+As stress or stimulation increases, performance increases, but at diminishing rates.
+As stress continues to rise, performance peaks and falls, forming an inverted U or
+hump-shaped function. The Yerkes-Dodson Law has been applied to a wide range
+of tasks, both physical and cognitive (see Fisher 1986 for a review). In the context
+of the backlog management model of section 14.3, schedule pressure measures
+the stress in the workers’ environment and output (the task completion rate)
+corresponds to performance. Consistent with the Yerkes-Dodson Law, many peo-
+ple argue that the impact of stress (measured by schedule pressure) on output is
+hump shaped, as illustrated in Figure 14-12. At low workloads, increasing sched-
+ule pressure boosts output as workers speed up, cut breaks, and work longer hours.
+However, these effects encounter diminishing returns, while the negative effects of
+fatigue and stress gain strength, eventually causing productivity per hour to decline
+more than hours increase.
+Even if the applicability of the Yerkes-Dodson Law to the model was estab-
+lished, it would be a mistake to specify a table function corresponding to Figure
+14-12. 
+First, the conflation of the different effects makes it hard to specify mean-
+ingful reference policies or rule out infeasible regions. Second, the output gains
+from working faster and overtime should be separated from each other and from
+the productivity-destroying effects of fatigue because each has different costs and
+benefits and each is affected differently by organizational policies and incentives.
+An increase in schedule pressure may boost overall throughput, but it makes a big
+difference whether that increase is gained by working longer hours or cutting the
+quality of work. Finally, the different effects may involve different time delays.
+Lumping them into a single function requires equal time delays in the causal links.
+A rise in schedule pressure will increase throughput quickly through overtime and
+corner cutting; only later, as sustained long work hours take their toll, will fatigue
+begin to erode productivity.
+
+Studies of the construction industry and other manual labor contexts indicate
+that long work hours begin to reduce productivity after a week or two, with the full
+effect requiring somewhat longer (Oliva 1996). Experience suggests the time con-
+stant for white collar work is similar, indicating the fatigue onset time constant
+should be several weeks. In the absence of strong evidence to the contrary, first-or-
+der smoothing is probably adequate to capture the recent workweek.x The fatigue
+effect captures not only the physiological and psychological effects of long work
+hours but also logistical considerations. In a crisis, people can work very long
+hours for short periods. Other important activities in their lives, from exercise to
+food shopping to laundry to spending time with their friends and family, can be de-
+ferred. As time passes, however, these activities can no longer be put off. People
+must again devote time to them, draining time from work and reducing productiv-
+ity. If these activities are deferred too long, the consequences grow increasingly
+dire, including declining health from lack of exercise and poor diet, loss of friends
+due to lack of a social life and of clean clothes, and, all too common, family prob-
+lems and divorce. The formulation here is a simple approximation to this more
+complex underlying structure.
+Figure 14-14 shows a plausible function for the effect of fatigue on productiv-
+ity. The input to the function is the recent workweek. A common error is to nor-
+malize the fatigue effect by the standard workweek (section 14.4.2). The standard
+workweek represents the organization’s norm for the workweek. Increasing it does
+not endow people with greater resistance to fatigue. If the function were normal-
+ized by the standard workweek, boosting the normal workweek from 40 to, say, 75
+hours would have no impact on fatigue, an absurdity.
+The function is normalized so the effect on productivity is one when the work-
+week is 40 hours. Reducing the workweek below 40 hours increases productivity
+only slightly. Longer hours, however, have a progressively greater effect; eventu-
+ally, of course, the function must gradually approach zero. People need an irre-
+ducible minimum amount of sleep, roughly 6 hourshight over the long term.
+Allowing just 3 hourdday for all other activities (eating, bathing, exercise, social
+life, etc.) implies productivity must fall quite low when the sustained workweek
+rises above 100 hours."
+
+
+
+\subsubsection{Combining positive and negative feedback loops}
+
+
+
+
+\subsection{Benefit: Units}
+
+Stock and Flow models differentiate between variables that can be captured at a single moment, and variables which are processes, which are not defined for a single moment. Flows are instantaneous, only defined over a period of time.
+This separates process and mechanism from ... -> philosophical description
+-> this is the reason for bringing units up in this paper, its crucial to stock and flow because this is how they can be distinguished and how they are defined
+
+This is different from dynamical systems thinking, where state variables are typically seen as your variables of interest, and the other variables are ... in between calculations?
+
+To differentiate variables as Stocks, Flows, constants, or auxiliaries, the unit of each variable needs to be specified. Specifying units has at least five benefits. Firstly, the process of choosing a unit help in the definition of the construct the variable is representing. Asking how a variable may be quantified can expose that some variables may be ill-chosen. For example, a variable like ``social environment'' has no obvious unit, but ``social support network'' may be described by the number of friends and family members one has. Similarly, XXX, as it is XXX. Not only does this make the model and theory more precise, measurable variables relate models to reality, allowing for testable theories. Though real-life units are preferred, some variables will not have obvious units, particularly in the case of psychological theories. For instance, the Stock ``self-esteem'' has no straight-forward unit, which need not always mean the variable is ill-chosen. While developing the model and theory, it is perfectly fine to invent units, where at a later stage the variable may be related to a questionnaire, for example.
+
+Secondly, units help keep variables interpretable. A common complaint of formal models is that the choice of parameters seems arbitrary. For example, an equation with a parameter $b3 = 1.5$ may not give a clear indication of what $b3$ is or why $1.5$ is chosen, as opposed to $1$ or $2$, for example. However, if the unit of $b3$ is the number of cigarettes smoked per hour, the meaning of $1.5$ becomes much more clear. Moreover, specifying units exposes contorted constructions in equations which have no clear interpretation, such as $cal^3/s^2/m$ \cite{sterman, p. 866}.
+\cite{Sterman, p. 866} warns against the use of arbitrary scaling factors
+Clearly interpretable units help to communicate the logic of the model and increases face validity.
+
+Thirdly, units help conceptualize how different variables relate to each other. For example, Flows are always in the units of their corresponding Stock divided by time. This makes clear that XXX. 
+
+Fourthly, units help identify and differentiate between time scales in the system. It may not feel natural to define each variable on the same timescale, where for instance the number of calories consumed is typically defined on a daily basis, but attention is more naturally thought of on the timescale of milliseconds.  
+XXX related by continuity assumption XXX. 
+"6.2.7 Continuous Time and Instantaneous Flows
+The stock and flow perspective (and its equivalent integral or differential equation
+structure) represents time as unfolding continuously. That is, as our experience
+suggests, time progresses smoothly and continuously. In system dynamics we
+almost always represent time as continuous. E"
+
+Finally, units help to verify the model, as all equations have to be dimensionally consistent. Dimensional consistency means that the units on both sides of the equation are equal, and that all mathematical operations are unit compatible. For instance, a Stock with the unit of calories ($cal$) can only be connected to flows with the units calories over a period of time ($t$), such that the change in calories computed over a period of time is correct ($cal = \frac{cal}{t} t$). Mathematical operations differ in their unit compatability requirements. Addition and subtraction can only be applied to variables that have the same unit, where for instance the number of calories consumed cannot be subtracted from bodyweight in kilograms. Conversely, division and multiplication \textit{can} be applied to variables of different units, as the unit is transformed. For example, dividing bodyweight in kilograms by height in centimeters squared gives BMI in units $\frac{kg}{cm^2}$. Exponentiation XXX
+
+Dimensional consistency is more than a mathematical requirement. It can highlight a lack of understanding of the model as well as identify missing variables. For example, a naive model of the effect of sleep on feeling rested may simply assume that sleeping is a direct inflow to feeling rested. However, if sleeping has the units $\frac{hr}{d}$, and feeling rested has the units of $rest$, sleeping cannot be a direct inflow to feeling rested. It becomes obvious there is a missing variable that defines how much rest each hour of sleep contributes, such that the effect of sleep is defined as $\frac{hr}{d} \frac{rest}{hr} = \frac{rest}{d}$, which can correctly flow into feeling rested.
+
+
+XXX add link to database with psych constructs for inspiration on units
+
+XXX add that dimensional consistency doesnt mean that
+1/seconds = 1/minutes 
+is wrong! compatable units, i help explain what compatability means
+also when having defined
+1 class = 12 children
+can do 
+class/minutes = children/seconds
+
+"Words are versatile, but they should also be grounded in facts. The range of
+concepts that can be included in causal loop diagrams extends from the hard
+and easily measureable, such as ‘new products’ and ‘recruits’, to the soft and
+intangible such as ‘morale’ or ‘customer perceived quality’. A powerful feature
+of feedback systems thinking and system dynamics is its ability to incorporate
+both tangible and intangible factors. However, for any variable no matter how
+soft, you should always have in mind a specific unit of measure, a way in
+which the variable might be quantified, even if formal recorded data do not
+exist. Hence, you might imagine morale on a scale from 0 (low) to 1 (high) or
+product quality on a scale from 1 (low) to 5 (high). Be sure to pick words that
+imply measureability, such as ‘delivery lead time’ thought of in weeks or
+months, rather than a vague concept like ‘delivery performance’." \ctep{morecroft}
+
+
+dimensional consistency
+"There are numerous guidelines for equation formulation to help modellers
+write good algebra that means what they intend. One of the most useful is to
+ensure dimensional consistency among the units of measure in an equation.
+This guideline is always useful in situations like the one above where the main
+formulation challenge is to pick the right arithmetical operation. Dimensional
+consistency requires that the units of measure on left and right of an equation
+match. In this case, ‘drug-related crime’ on the left is measured in incidents
+per month. So the operation on the right must combine ‘funds required’ and
+‘average yield’ in such a way as to create incidents per month."\citep{morecroft}
+
+"3As a rule of thumb, dt should be no more than one-quarter of the shortest time constant in the
+model. In the production control model, dt is half a week and there are two time constants (time to
+average ship rate and time to correct inventory) both of eight weeks. So dt is one-sixteenth of the
+smallest time constant, comfortably within the rule."\citep{orecroft}
+
+\section{Benefit : Distinguish Information from Material Flow}
+
+As we have seen, Stocks may affect each other in different ways. When the flow of one Stock is directly connected to another Stock, we speak of material flow: the content of one Stock flows directly to another Stock. For example, XXX. Conversely, if a Stock influences the flow of another Stock, but is not directly connected to it, we speak of information flow. Note how similar to how Stocks do not need to be tangible, flows need not be tangible either. 
+
+In other terms, material flow is a transer flow: once the material has flown from Stock A to Stock B, Stock A has lost that material.
+
+
+resources are material flow (time?)
+
+As explained in \cite{Bringmann2019 What do centrality measures measure in psychological networks} "Borgatti (2005) distinguishes between three different flow processes: parallel, serial, and transfer. W"\cite{Bringmann2019 What do centrality measures measure in psychological networks}
+
+"Conservation of Material in
+Stock and Flow Networks
+A major strength of the stock and flow representation is the clear distinction be-
+tween the physical flows through the stock and flow network and the information
+feedbacks that couple the stocks to the flows and close the loops in the system. The
+contents of the stock and flow networks are consewed in the sense that items en-
+tering a stock remain there until they flow out. When an item flows from one stock
+to another the first stock loses precisely as much as the second gains." sterman
+
+
+For example, attention or effort
+Once it is devoted to something, it goes down
+contrast with dynamical system, unclear what is information / material
+
+```{r}
+# Positive feedback loop in inflow
+sdm = xmile(time_units = "hr") %>% # Set time units to day
+  build("leisure_time", "stock", eqn = "0", label = "Time available for Leisure") %>%
+  build("time_progressing", "flow", 
+        eqn = "3",
+        to = "leisure_time", label = "Time progressing")  %>%
+  build("time_with_friends", "flow", 
+        eqn = ".5 * leisure_time",
+        from = "leisure_time", to = "relationship_quality", label = "Spending time with friends") %>%
+  build("relationship_quality", "stock", 
+        eqn = "3", label = "Relationship Quality") 
+plot(sdm)
+out = simulate_Julia(sdm)
+plot_stocks(sdm, out$df)
+
+```
+
+clarifies the flow of material
+is another Stock a moderating factor, or a source?
+clarifies theory, do things move together or are they sources or sinks of one another?
+relates to networks -> is there flow of material?
+different causal interpretation
+
+
+
+For instance, positive manifold, common in psychology
+common cause, how variables relate to each other.
+if flow, negative correlation
+
+
+
+
+\section{Benefit: Delays}
+
+
+XXX Why are delays relevant to stock and flow thinking? because every delay involves a stock!
+
+Not just fixed delays, smooth delays. Not unique to stock-and-flow models but strongly associated with stock and flow
+
+
+information versus material delay
+"Why do perceptions and forecasts inevitably involve delays? All beliefs, ex-
+pectations, forecasts, and projections are based on information available to the de-
+cision maker at the time, which means information about the past. It takes time to
+gather the information needed to form judgments, and people don’t change their
+minds immediately on the receipt of new information. Reflection and deliberation
+often take considerable time. We often need still more time to adjust emotionally
+to a new situation before our beliefs and behavior can change"
+
+difference information and material delay:
+"As long as the delay time remains fixed, the be-
+havior of the two delays is identical. However, in a material delay the output is the
+exit rate from the stock, while in the information delay the output is the stock 0.
+Changing the delay time causes the behavior of the two delays to differ. Even
+though their response under constant delay times is the same, modelers must be
+careful to use the proper type of delays: A delay time currently thought of as fixed
+may become variable as a model is developed."
+
+"All delays involve Stocks" Sterman
+
+example: satiation from eating
+
+Belief/perception delays -> integrating new information
+
+A first-order delay 
+
+```{r}
+# Positive feedback loop in inflow
+sdm = xmile(time_units = "d") %>% # Set time units to day
+  build("negative_thoughts", "stock", eqn = ".5", label = "Negative Thoughts") %>%
+  build("K", "aux", eqn = "5", label = "Capacity Negative Thoughts") %>%
+  build("d", "aux", eqn = "5", label = "Delay Time") %>%
+  build("rumination", "flow", 
+        eqn = "(K - negative_thoughts)",
+        to = "negative_thoughts", label = "Rumination")
+out = simulate_Julia(sdm)
+plot(out$df$time, out$df$negative_thoughts, type = "l")
+
+# Positive feedback loop in inflow with first-order delay
+sdm = xmile(time_units = "d") %>% # Set time units to day
+  build("negative_thoughts", "stock", eqn = ".5", label = "Negative Thoughts") %>%
+  build("K", "aux", eqn = "5", label = "Capacity Negative Thoughts") %>%
+  build("d", "aux", eqn = "5", label = "Delay Time") %>%
+  build("rumination", "flow", 
+        eqn = "(K - negative_thoughts)/d",
+        to = "negative_thoughts", label = "Rumination")
+out = simulate_Julia(sdm)
+lines(out$df$time, out$df$negative_thoughts, col = "red")
+
+
+```
+
+
+
+
+\section{Benefit : Explicit model boundary}
+
+Stock-and-Flow models explictly indicate Flows which come from or go to outside of the model boundary using clouds. Clouds indicate the presence of Stocks and other model components which do exist in reality, but are not included in the model. Clouds are different from other Stocks, however, as they are assumed to have infinite capacity and can never constrain the Flow they are connected to \cite{Sterman, p. 191}. That is, an inflow from a cloud is not limited to the materials available in the cloud, as these are limitless. 
+
+Not only does the explicit indication of clouds clearly communicate the flow of material (XXX), it may help point out flaws in the model. For example, XXX
+
+Explicit about inflow from outside the model, indicates endless source, what does this mean for theories?
+Such explicitness may help to reconsider whether variables left outside the model should perhaps be included.
+
+" 6.3.5 Setting the Model Boundary:
+“Challenging the Clouds”" 
+Any model is a simplification of reality. Though the reality of the system will always be more detailed and layered, for a model to be useful, it should be "made as simple as possible, but not simpler” (Einstein). As such, the system the model is embedded in is not modelled. We can thus distinguish between variables that are within the \textit{model boundary}, and those outside of it.
+
+
+
+<!-- \section{Modelling tips?} -->
+
+<!-- - no non-negative Stocks and Flows -->
+<!-- If Stock cannot go negative in reality, make outflows dependent on Stock -->
+
+\section{XMILE}
+
+Also allows for several models within one model, provides opportunity to link models together
+
+\section{Putting it all together: Three examples of stock-and-flow thinking in psychological theory formation}
+
+
+
+\section{Supplementary}
+
+\subsection{Suicide Model converted to Stock-and-Flow}
+
+\subsection{Panic Model converted to Stock-and-Flow}
+

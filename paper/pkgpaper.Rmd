@@ -1,0 +1,1224 @@
+---
+title: "sdbuildR: Building System Dynamics Models in R"
+date: "2022-11-09"
+abstract: >
+ Complex problems like climate change, geopolitical conflict, and disease have no straight-forward solutions. The field of System Dynamics aims to understand and intervene on complex systems by taking a feedback-centered view, where the interactions, nonlinearities, and delays within a system are central to addressing its problems. These systems can be mathematically described using differential equations in the form of stock-and-flow models. Software to build and simulate stock-and-flow models is predominantly not open-access or written in domain-specific language, limiting the accessibility of this powerful technique. This paper introduces the package *sdbuildR* to build and simulate stock-and-flow models in an accessible and flexible manner in R. System Dynamics modelling in R offers five main benefits: accessibility, compatibility, flexibility, scalability, and reproducibility. In addition, *sdbuildR* can translate stock-and-flow models created in Insight Maker, an open-access online System Dynamics tool. By promoting System Dynamics modelling in R, sdbuildR aims to support a collaborative, open-source approach to further integrate and advance System Dynamics tools.
+  <!-- An abstract of less than 150 words.-->
+draft: true
+author:  
+  - name: Quietest Quokka
+    affiliation: University of Little Mates
+    address:
+    - Department of Letter Q
+    - Somewhere, Australia
+    url: https://www.britannica.com/animal/quokka
+    orcid: 0000-1721-1511-1101
+    email:  qquo@ulm.edu
+  - name: Bounciest Bilby
+    affiliation:
+    - University of Little Mates
+    - University of Aussie Animals
+    address:
+    - Department of Letter Q, Somewhere, Australia
+    - Department of Marsupials, Somewhere, Australia
+    url: https://www.britannica.com/animal/bilby
+    email: bbil@ulm.edu
+    orcid: 0000-0002-0912-0225
+type: package
+output: pdf_document
+  # rjtools::rjournal_article:
+  #   self_contained: yes
+  #   toc: no
+bibliography: RJreferences.bib
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+
+<!-- pandoc::pandoc_activate(version = '3.1.6') -->
+<!-- rmarkdown::render('pkgpaper.Rmd', output_format = 'all') -->
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center",
+                      # For text wrapping, install formatR
+                      # tidy.opts = list(width.cutoff = 20), tidy = TRUE,
+                      tidy = "styler", tidy.opts = list(scope = "line_breaks"))
+library(ggplot2)
+library(kableExtra)
+library(insightmakeR1)
+library(dplyr)
+# library(units)
+```
+
+<!-- ```{r wrap-hook, include=FALSE} -->
+<!-- library(knitr) -->
+<!-- hook_output = knit_hooks$get('output') -->
+<!-- knit_hooks$set(output = function(x, options) { -->
+<!--   # this hook is used only when the linewidth option is not NULL -->
+<!--   if (!is.null(n <- options$linewidth)) { -->
+<!--     x = xfun::split_lines(x) -->
+<!--     # any lines wider than n should be wrapped -->
+<!--     if (any(nchar(x) > n)) x = strwrap(x, width = n) -->
+<!--     x = paste(x, collapse = '\n') -->
+<!--   } -->
+<!--   hook_output(x, options) -->
+<!-- }) -->
+<!-- ``` -->
+
+# Introduction
+
+Today's complex problems - the climate, disease, social divide - arise within interconnected, dynamic systems. A simple, linear understanding of the problem often does not suffice, as the relation between cause and effect is rarely proportional or immediate. Complex problems require a systems approach, in which behaviour emerges from interactions between system components over time [@kanti2017]. Offering tools to understand and model this complexity, System Dynamics takes a feedback-centered view, where the interactions, nonlinearities, and delays within a system are central to addressing its problems. By building stock-and-flow models consisting of a set of differential equations, System Dynamics seeks to create more effective interventions. Used in fields like ecology, economics, epidemiology, and social sciences, System Dynamics has been used to design interventions for the NHS [@LaneHusemann2008], polioviruses [@Thompson2008], and the Dutch energy transition [@Gooyert2016], among others.
+
+<!-- [@duggan introduction chapter for applications] -->
+
+<!-- System Dynamics thus holds the promise of understanding and intervening in complex problems.  -->
+
+Building and testing stock-and-flow models requires extensive software. Historically, System Dynamics software has been licensed and proprietary, such as Vensim, Stella, and Powersim [@stella]. Despite the rise of open-access System Dynamics software in the past decade [** pysd, insightmaker], in practice, accessibility remains limited when software is not easily incorporated into the platforms most researchers are used to and skilled in. Moreover, a domain-specific language limits the integration of new methodologies, such as those offered by machine learning and artificial intelligence [@XXX]. 
+
+R is well-suited to enable accessible, open-source System Dynamics modelling. In R, packages are easily distributed and integrated within one's workflow, facilitating collaborative research which makes use of recent software developments. The flexibility in data wrangling and visualization in R can further enhance the ease of use and communication of System Dynamic model results. R also supports computationally intensive analyses using parallel computing, allowing for extensive sensitivity testing and scenario simulation of System Dynamics models. Moreover, R could further enhance the robustness of System Dynamics models, as it is a leading platform for reproducible research {@XXX}, with robust version control and easily shareable scripts. 
+
+The accessibility, compatibility, flexibility, reproducibility, and scaleability offered by R could thus advance System Dynamics modelling. Likewise, the objective of System Dynamics to design better interventions could be particularly appealing to the R community, spanning fields such as social science, bioinformatics, statistics, and data science [@Giorgi 2022, @schilder]. Nevertheless, System Dynamics has seen very limited engagement within the R community. Few resources for System Dynamics modelling in R exist, two notable exceptions being the book *System Dynamics Modelling with R* by Jim Duggan and the R package *readsdr* (<https://github.com/jandraor/readsdr>). Duggan provides an incredibly useful introduction to System Dynamics models, yet a book may be too daunting for new users to engage with System Dynamics. The package *readsdr* translates System Dynamics models from licensed software to R, and includes sensitivity and policy testing. However, the translation is limited to simple models, and the model is not easily modified without knowledge of stock-and-flow models. For more complicated models and projects requiring model flexibility, this leaves a dependency on licensed software, which has existed for decades and aids the user to a much greater degree.
+
+<!-- XXX pysd2r !!! -->
+
+<!-- the number of built-in functions of System Dynamics that can be translated is quite limited. Moreover, the ease of model manipulation does not match up to what one finds in licensed software. Adding or removing variables or modifying equations is not straight-forward, meaning it lacks the flexibility required for an iterative modelling process. This  -->
+
+<!-- ** to offer system dynamics on an open-access platform -->
+
+To help connect the field of System Dynamics with the R community, this paper introduces *sdbuildR*, a package to build and simulate stock-and-flow models in R. The package is designed to lower the barrier to System Dynamics modelling, emphasizing ease of use with little prior knowledge required. Model components can easily be modified, as the simulation script is compiled anew. *sdbuildR* also supports the translation of models created in Insight Maker, an open-access online tool to create, simulate, and analyse System Dynamics models. To ensure correct implementation, *sdbuildR* has been validated with over a hundred Insight Maker models. After a brief introduction into the basics of System Dynamics modelling, we illustrate how to use *sdbuildR* and its capabilities, with the aim of promoting and facilitating System Dynamics modelling in R. 
+
+<!-- a ready-to-run R script. -->
+<!-- creates a barrier  -->
+
+<!-- System Dynamics models (specifically stock-and-flow models) -->
+<!-- functionality to make it scalable (not writing constraints for every var) -->
+
+
+
+
+<!-- kanti 2017: book on sd relying on stella and vensim -->
+
+<!-- " Systems thinking is a method of studying the dynamic behaviour of a complex -->
+<!-- system considering the systems approach, i.e. considering the entire system rather -->
+<!-- than in isolation, and system dynamics is a tool or a ﬁeld of knowledge for -->
+<!-- understanding the change and complexity over time of a dynamic system. In -->
+<!-- isolation a complex system may give a false impression of the dynamic behaviour -->
+<!-- which is far from the real behaviour of the actual system. Thus, systems thinking -->
+<!-- should consider all the interacting components inﬂuencing the dynamics of the -->
+<!-- complex system, and system dynamics methodology based on the feedback -->
+<!-- concepts of control theory developed by Forrester (1968) is the most appropriate -->
+<!-- technique to handle such complex systems to enhance systems thinking and systems -->
+<!-- learning"\citep{kanti2017} -->
+<!-- ". System dynamics is grounded in control theory and the modern theory of nonlinear -->
+<!-- dynamics. "(sterman all models are wrong) -->
+<!-- example limits to growth meadows -->
+
+<!-- System Dynamics thus holds the promise of understanding and intervening in complex problems. Nonetheless, it has not achieved the level of popularity one might expect. In the decades that have passed since its inception, comparatively a modest amount of attention -->
+<!-- literature has been published. -->
+
+<!-- in applied fields -->
+
+<!-- kunc 2018 -->
+
+<!-- need more for serious system dynamics modelling -->
+
+<!-- system dynamics could thus benefit from R, and R users could benefit from system dynamics -->
+
+<!-- XXX only 2091 articles have been published in management and organization (from 1987 to 2023, Forliano 2024), 301 articles in health and medicine (Darabi 2020, between 1960 and 2018), 15 articles in public-private partnerships (Pagoni 2020, between 1998 and 2020). -->
+
+<!-- reproducibility lacking -->
+<!-- 271 articles in strategic management (consenz 2014, up to 2014), -->
+
+<!-- Agular System dynamics simulation models on overweight and obesity in children and adolescents: A systematic review -->
+
+<!-- One explanation for this lack of popularity may be a lack of accessibility. Many of the developed software packages are commercially licensed, costing between \$800-\$2900 for a one-year licence with full capabilities. The most common platforms are Ventana's Vensim, isee Systems' Stella, and Powersim. Some offer a down-graded free version, yet these come with such restrictions that they only seem suited for educational purposes. However, the past decade has seen a rise of open-access System Dynamics software. -->
+
+<!-- \% AnyLogic % Forio -->
+<!-- <https://systemdynamics.org/product/introduction-to-system-dynamics-modeling-with-dynamo/> -->
+<!-- % free: % <https://github.com/oboy-1/LunaSim> % -->
+<!-- <https://sourceforge.net/projects/minsky/> % -->
+<!-- <http://sysdyn.simantics.org/> -->
+
+<!-- Moreover, domain-specific software can limit the integration of new developments. For instance, machine learning  -->
+<!-- big data analytics -->
+<!-- integration -->
+<!-- quick developments in machine learning -->
+<!-- not in paid software -->
+
+<!-- for open-access software to be a good alternative -->
+
+<!-- lowering the barrier to entry  -->
+
+<!-- Despite the rise of open-access System Dynamics software, accessibility remains limited in practice when software is not easily integrated into the platforms most researchers are used to and skilled in. Licensed or domain-specific software creates a barrier to achieving the high proficiency necessary for System Dynamics modelling. System Dynamics modelling is an iterative, hands-on process, which involves defining a problem, formulating a dynamic hypothesis, formalizing a model, testing and validating the model. Key subcomponents of this process are handling empirical data for model validation and model fitting, extensive simulations for sensitivity testing and what-if scenarios, and diverse visualisation to communicate model results and implications. Such an extensive skill set is not easily acquired in a foreign modelling platform, but is part of the basic skill set of a data scientist (Birkenkrahe 2023, Giorgi 2022).  -->
+
+<!-- A coding language like R is particularly well-suited to implement the steps necessary for System Dynamics (Figure \ref{}). Popular in the fields of statistics, bioinformatics, social science, and data science (Giorgi 2022, schilder), R is an open-access language with an active community. Packages are easily distributed and integrated within one's workflow, allowing for collaborative research which makes use of recent software developments. Though compromising on computational performance, the flexible data wrangling and visualisation make it an attractive language for many data scientists. Moreover, R is a leading platform for reproducible research, with robust version control and easily shareable scripts. All together, System Dynamics in R could thus help make great strides in System Dynamics research. -->
+
+
+<!-- ```{r echo=FALSE,  out.width="150%", fig.cap="Necessary components to make use of System Dynamics modelling"} -->
+<!-- DiagrammeR::grViz(" -->
+<!--   digraph G { -->
+<!--   layout=neato -->
+<!--   #margin = 0 // in inches -->
+<!--   pad = 0 -->
+<!-- 	start=11 // empiric value to set orientation -->
+<!--   #size=\"5,5\" -->
+<!-- 	node [shape=doublecircle style=filled height=.95 width=.95 fixedsize=true fontsize=10 margin = 0] -->
+<!-- 	1 [color='#1D7874', label = 'Compatability'] -->
+<!-- 	2 [color='#736372', label = 'Flexibility'] -->
+<!-- 	3 [color='#E6B89C', label = 'Scalability'] -->
+<!-- 	4 [color='#C5F4E0', label = 'Reproducibility'] -->
+<!-- 	5 [color='#258EA6', label = 'Accessibility'] -->
+<!-- 	2 -> 3 -> 4 -> 5 -> 1 -> 2 [label='', color='invis'] -->
+<!--   } -->
+<!-- ") -->
+<!-- ``` -->
+
+<!-- Few resources for System Dynamics in R exist. Two notable exceptions are the book *System Dynamics Modelling with R* by Jim Duggan, and the R package *readsdr* (<https://github.com/jandraor/readsdr>). Both make use of *deSolve* XXX. Duggan provides an introduction to basic aspects of System Dynamics models. XXX too daunting; few tools to start themselves. The package *readsdr* translates XMILE models from VenSim and Stella models to R, and includes sensitivity and policy testing. However, the number of built-in functions of System Dynamics that can be translated is quite limited. Moreover, the ease of model manipulation does not match up to what one finds in licensed software. Adding or removing variables or modifying equations is not straight-forward, meaning it lacks the flexibility required for an iterative modelling process. This leaves a dependency on licensed software XXX  -->
+
+<!-- System Dynamics modelling in R is thus currently only sparsely supported, despite its potential XXX. To address this gap, this paper introduces *sdbuildR*, an R package to build System Dynamics models, specifically stock-and-flow models. The System Dynamics model structure at the core of *sdbuildR* is based on the standard cross-platform format for System Dynamics models: XMILE (XML Modeling Interchange LanguagE, Eberlein, 2013). Most popular System Dynamics software such as Vensim and Stella are XMILE-compatible. XMILE is XML-based, meaning it is formatted as <tag>content</tag> with an arbitrary amount of nested tags (Bray 1997). The xmile object can easily be modified and compiled anew, alleviating the user from manually updating the simulation script. In the sections below, we illustrate how to use *sdbuildR* and its capabilities, with the aim of promoting and facilitating System Dynamics modeling. -->
+
+
+
+# Basics of System Dynamics 
+
+Introduced in the 1950s by MIT professor Jay Forrester, System Dynamics is both a conceptual tool and a modelling technique to understand the structure and dynamics of complex systems [@sterman2000]. A central axiom of System Dynamics modelling is that the structure of a system generates its behaviour: A system's components, interactions, nonlinearities, and delays are responsible for the events that occur over time. System Dynamics focuses on the *feedback loops* that permeate this structure. A feedback loop is "a closed chain of causal connections" [@Meadows, p. 27] through which a variable affects itself. A simple example is how the amount of your savings determines how much they increase through interest [@Meadows]. Feedback structures also involve information feedback, where for example drug-related crime can increase through a positive feedback loop including more police action, more arrests, less supply, higher prices, and more drug-related crime [@morecroft2015, chap. 2]. Feedback thinking is directly relevant to intervention design: A major insight of System Dynamics is that hidden feedback structures commonly underlie policy resistance, unintended consequences, and counterintuitive behaviour [@morecroft2015, @sterman2000]. By mapping out feedback structures, System Dynamics modelling is a tool to anticipate delayed and undesirable responses to interventions and design more effective policies [@sterman2000].
+
+The feedback-centred view illustrates that System Dynamics seeks an *endogenous* explanation for a problem, which locates XX arises from the interactions within the system itself. An *exogenous* variable acts on the system but is not affected by the system in turn. In the drug-related crime example, treating police action as an exogenous factor rather than endogenous would mean that police action does not increase if drug-related crime increases; causal influence would be unidirectional. Aside from endogenous and exogenous variables, many variables in a System Dynamics model are *excluded*. As any model is a simplification of reality, it will necessarily exclude variables that doubtlessly influence the system, but are less relevant for the problem at hand. A System Dynamics model thus communicates a *model boundary* constraining the variables that are being modelled. 
+<!-- For example, XXX -->
+
+<!-- At the heart of any System Dynamics model is the concept of *feedback* [@Richardson1991]: Rather than  (i.e. event-oriented thinking [@Morecroft2015, chap. 2], focus on how variable A influences variable B, feedback thinking considers how B will in turn (perhaps through intermediate steps) will come to influence A. This is contrary to the unidirectional causal thinking that drives many policies, such as the building of new roads to alleviate congestion, or XXX [@morecroft2015]. -->
+
+<!-- , as opposed to event-oriented thinking, -->
+
+<!-- "policy resistance: the tendency for interventions to be delayed, diluted, or defeated by the -->
+<!-- response of the system to the intervention itself (Meadows 1982)"  -->
+
+<!-- " -->
+<!-- In fact, the -->
+<!-- most complex behaviours usually arise from the interactions (feedbacks) among the -->
+<!-- components of the system, not from the complexity of the components themselves."\citep{sterman} -->
+
+<!-- XXX note: I'm thinking of switching the example to drug-related crime. -->
+
+
+The hypothesized causal structure of a system is commonly visualised in *Causal Loop Diagrams* (CLD). As a running example throughout the rest of the paper, we will use a modified version of Crielaard et al.'s (2022) model of compensatory behaviour in eating disorders [@crielaard2022]. In disordered eating, compensatory behaviours are acts to prevent weight gain or relieve feelings of guilt after eating, and include self-induced vomiting, laxative use and overexercise [@Stiles-Shields2012] Crielaard et al.'s (2022) CLD maps out the feedback loops of Food intake, Hunger, and Compensatory behaviour, with the addition of Eating triggers.^[Note that Crielaard et al.'s (2022) model was slightly modified to correspond with Sterman's recommendations for System Dynamics models. For example, the Stock "Eating" was changed to "Food intake", as it is recommended to use nouns or noun phrases for Stocks.] A feedback loop can be balancing (i.e. counteracting, goal-seeking, negative) or reinforcing (i.e. amplifying, destabilizing, positive). In this CLD, there are four negative feedback loops: between Food intake and Hunger, between Hunger and Compensatory behaviour, between Food intake and Compensatory behaviour, and Food intake with itself. For details explaining the relation between these variables, please see Crielaard et al. (2022). 
+
+<!-- mental model -->
+
+
+```{r include=FALSE, out.width='100%'}
+viz_str = "
+digraph stock_and_flow {
+
+  graph [layout = dot, rankdir = LR]
+  margin=0 # in inches
+
+  # Define variables
+  'Hunger' [shape = 'circle', width = 1.5, fontsize = 16]
+  'Food intake' [shape = 'circle', width = 1.5, fontsize = 16]
+  'Compensatory\nbehaviour' [shape = 'circle', width = 1.5, fontsize = 16]
+
+  # Define the links
+  'Eating triggers' -> 'Food intake'  [label='+', fontsize = 18]
+  'Hunger' -> 'Food intake' [label='+', fontsize = 18]
+  'Food intake' -> 'Hunger' [label='-', fontsize = 18]
+  
+  'Hunger' -> 'Compensatory\nbehaviour' [label='-', fontsize = 18]
+  'Compensatory\nbehaviour' -> 'Hunger' [label='+', fontsize = 18]
+  
+  'Food intake' -> 'Food intake' [label='-']
+  
+  'Food intake' -> 'Compensatory\nbehaviour' [label='+', fontsize = 18]
+  'Compensatory\nbehaviour' -> 'Food intake' [label='-', fontsize = 18]
+
+}
+      "
+
+pl = DiagrammeR::grViz(viz_str)
+pl
+```
+
+## Stock-and-flow models
+<!-- see table 3 roe paper for definitions -->
+
+A CLD conveys the feedback structures governing the behaviour of the system. However, a CLD merely describes the structure of the system on a conceptual level. In order to simulate the behaviour of the system over time, a mathematical model is needed. A *stock-and-flow* model is one way to formally describe a system with a set of differential equations which model how the system changes over time. As a first step, the units of each variable need to be defined. Units, such as seconds, kilocalories, or people over years, quantify each variable, and help to interpret and formulate interactions between variables. *Stocks* define the state of the system. They accumulate material or information over time, such as people, products, or beliefs, which creates memory and inertia in the system [@sterman]. Stocks are variables that can increase and decrease, and be measured at a single moment in time. The value of a Stock is increased or decreased by *Flows*. Flows move material through the system. An inflow increases a Stock, and an outflow decreases a Stock, such that the net change in a Stock is the sum of its inflows minus the sum of its outflows. Flows are defined in units of material moved over time, such as birth rates, revenue, and sales. Material may flow from and to other Stocks, or may originate from or disappear to an unspecified *source* or *sink* outside of the model. Variables included in the model are endogenous, whereas sources and sinks which are outside of the model boundary are exogenous. An exogenous source or sink is in actuality also a Stock, but is not included in the model for simplicity and parsimony [@sterman2002, @meadows]. As the dynamics of sinks and sources are not modelled, their capacity is infinite [@sterman]. In addition to Stocks and Flows, a System Dynamics model may also contain two other building blocks: any other static parameters or intermediately computed variables are *Auxiliaries*, and any user-defined linear interpolation functions are *Graphical Functions* (also called converters, or table or lookup functions).
+
+```{r echo=FALSE}
+functions_table <- data.frame(
+  Building.Block = c("Stock", "Flow", "Auxiliary", "Graphical Function"),
+  Description = c("Define the state of the system",
+                  "Move material between Stocks and outside the model boundary", 
+                  "Define static parameters or dynamic intermediate computation",
+                  "Custom interpolation functions"),
+  Example = c("People, products, beliefs, blood sugar, CO2 in atmosphere", "Birth rates, product order rates, revenue, sales", 
+              "Fixed prices, sum of all Stocks, ratios of flows", "Interventions or events occurring at known times such as vaccines or storms")
+)
+
+kable(functions_table, format = "markdown", col.names = c("Building Block", "Purpose", "Example"),
+      caption = "System Dynamics Building Blocks")
+```
+
+Figure \ref{XXX} shows the CLD translated to a stock-and-flow model. In Crielaard et al.'s (2022) model, the Stocks are Food intake, Hunger, and Compensatory behaviour. Note that a direct feedback loop between two variables in a CLD does not necessarily translate to Flows directly connecting two Stocks. If no material directly flows from one Stock to another, two Stocks are not directly connected by a Flow. Rather, the type of feedback is *information* feedback, where a Stock directly affects the inflow or outflow of another Stock. For example, in the feedback loop between Hunger and Food intake, Food intake decreases Hunger by increasing its outflow rate. It also becomes apparent that Eating triggers is not a Stock but an Auxiliary, as it does not accumulate. This stock-and-flow model will be used to illustrate the functionality of the *sdbuildR* package in the next sections.
+
+
+
+<!-- A stock-and-flow model consist of four building blocks: Stocks, Flows, -->
+<!-- Auxiliaries, and Graphical Functions (also called converters). -->
+
+
+
+<!-- "can be measured at one instant in time" -->
+<!-- Examples of Stocks -->
+<!-- • Water in a tub or reservoir -->
+<!-- • People of different types -->
+<!-- – {Susceptible, infective, -->
+<!-- immune} people -->
+<!-- – Pregnant women -->
+<!-- – Women between the age of -->
+<!-- x and y -->
+<!-- – High-risk individuals -->
+<!-- • Healthcare workers -->
+<!-- • Medicine in stocks -->
+<!-- • Money in bank account -->
+<!-- • CO2 -->
+<!-- in atmosphere -->
+<!-- • Blood sugar -->
+<!-- • Stored Energy -->
+<!-- • Degree of belief in X -->
+<!-- • Stockpiled vaccines -->
+<!-- • Goods in a warehouse -->
+<!-- • Beds in an emergency room -->
+<!-- • Owned vehicles -->
+
+<!-- Examples of Flows -->
+<!-- • Inflow or outflow of a -->
+<!-- bathtub (litres/minute) -->
+<!-- • Rate of incident cases -->
+<!-- (e.g. people/month) -->
+<!-- • Rate of recovery -->
+<!-- • Rate of mortality (e.g. -->
+<!-- people/year) -->
+<!-- • Rate of births (e.g. -->
+<!-- babies/year) -->
+<!-- • Rate of treatment -->
+<!-- (people/day) -->
+<!-- • Rate of caloric -->
+<!-- consumption (kcal/day) -->
+<!-- • Rate of pregnancies -->
+<!-- (pregnancies/month) -->
+<!-- • Reactivation Rate (# of TB -->
+<!-- cases reactivating per unit -->
+<!-- time) -->
+<!-- • Revenue ($/month) -->
+<!-- • Spending rate ($/month) -->
+<!-- • Power (Watts) -->
+<!-- • Rate of energy expenditure -->
+<!-- • Vehicle sales -->
+<!-- • Vaccine sales -->
+<!-- • Shipping rate of goods -->
+
+<!-- Auxiliary Variables -->
+<!-- • Auxiliary variables are convenience names we give -->
+<!-- to concepts that can be defined in terms of -->
+<!-- expressions involving stocks/flows at current time -->
+<!-- – Adding or eliminating an auxiliary variable does not -->
+<!-- change the mathematical structure of the system -->
+<!-- • Critical for model transparency -->
+<!-- – Can be reused at many places -->
+<!-- – References to auxiliary variables prevents need for -->
+<!-- modeler to think about all of details of definition -->
+<!-- • Enhanced modifiability: Single place to define -->
+<!-- • Convenient for reporting (graphing, tables) & -->
+<!-- analyzing model dynamics -->
+
+<!-- https://www.cs.usask.ca/faculty/ndo885/Classes/CMPT858LatestSDVersion/Lecture%208%20--%20Stock%20and%20Flows%202.pdf -->
+
+
+
+# The *sdbuildR* package
+
+To build and simulate stock-and-flow models, *sdbuildR* creates an easily modifiable object which contains all the information needed to simulate it. Users can easily add and remove variables, change equations and units XXX Stocks, and incorporate other R functionality XXX. As the simulation script is compiled anew each time, users are alleviated from manually updating the simulation script. The main object built by *sdbuildR* is a nested list which mimics the structure of the XMILE (XML Modeling Interchange LanguagE, [@Eberlein2013]) standard. XMILE is the main cross-platform format for System Dynamics models. Most popular System Dynamics software such as Vensim, Stella and Powersim are XMILE-compatible. XMILE uses Extensible Markup Language (XML) format, such that the model is structured using tags such as \<stock\> [@Bray1997]. The main top-level tags are "sim_specs" (simulation specifications), "model" (the stock-and-flow model), "model_units" (custom-defined units), and "macro" (global variables). In the model tag, the model's variables are separated into Stocks, Flows, Auxiliaries, and Graphical Functions. 
+
+The model is simulated using the *deSolve* package [@deSolve], an established package for simulating dynamical systems. Stock-and-flow models are a subset of dynamical systems, such that a dynamical system can be rewritten to an equivalent stock-and-flow model [@sterman2000, p. 194]. *deSolve* is written in C and offers a multitude of differential equation solvers, including the standard fixed timestep Runge-Kutta family, as well as a range of adaptive timestep solvers.
+
+Below, we demonstrate how to use *sdbuildR* to build, modify, and simulate stock-and-flow models. 
+<!-- XXX -->
+
+<!-- # Link to dynamical systems -->
+
+<!-- ". The bathtub and stock and flow diagrams may appear to be less rig- -->
+<!-- orous than the integral or differential equation representations, but -->
+<!-- they are pre- cisely equivalent and contain exactly the same -->
+<!-- information. From any system of integral or differential equations we -->
+<!-- can construct the corresponding stock and flow map; from any stock and -->
+<!-- flow map we can generate the corresponding inte- gral or differential -->
+<!-- equation system."(p. 194 sterman) -->
+
+
+## Building a Stock-and-Flow Model
+
+<!-- To make it fitting for R, syntactically valid, unique R names -->
+
+<!-- following recommendations by Hadley Wickham -->
+
+<!-- # https://adv-r.hadley.nz/s3.html -->
+
+<!-- To illustrate how to build a System Dynamics model, we here translate a -->
+<!-- basic dynamical system to a System Dynamics model. In this predator-prey -->
+<!-- system (also known as Lotka-Volterra model), there are two state -->
+<!-- variables: the prey Algae ($A$) and the predator Fish ($F$). -->
+
+<!-- $$ -->
+<!-- \begin{split} -->
+<!-- \frac{dA}{dt} = \alpha A - \beta AF \\ -->
+<!-- \frac{dF}{dt} = -\gamma F + \delta AF -->
+<!-- \end{split} -->
+<!-- $$ -->
+<!-- Here, $\alpha$ is the natural birth rate of Algae, $\beta$ is the predation rate of Fish on Algae, $\gamma$ is the natural death rate of Fish, and $\delta$ is the growth rate of Fish by consuming Algae. -->
+<!-- separate derivative into inflow and outflow. This dynamical system can easily be rewritten as a System Dynamics model with two Stocks, Fish and Algae, each have an inflow of births and an outflow of deaths.  -->
+
+In *sdbuildR*, stock-and-flow models can be created in three ways. Firstly, over XXX example models can be created using `template()`:
+
+```{r, eval = FALSE}
+sdm = template("Crielaard2022")
+```
+
+Secondly, an Insight Maker model can be translated to R using `insightmaker_to_R()`: 
+
+```{r eval=FALSE, include=TRUE, out.width="100%"}
+URL = "https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-2022"
+sdm = insightmaker_to_sdm(URL)
+```
+
+And lastly, a stock-and-flow model can be created from scratch. To do so, we first create an XMILE object using `xmile()`, which yields a nested list in the structure of the XMILE standard.  
+
+```{r}
+sdm = xmile()
+```
+
+
+
+XXX differentiate between constants and auxiliaries, not done in XMILE
+XXX can change with build(change_type)
+
+Simulation specifications - the start and stop time, the time step, the time units, and the integration method - can be changed via `sim_specs()`:
+
+```{r}
+sdm = sim_specs(sdm, method = 'euler', time_units = 'day',
+                  start = 0, stop = 500, dt = .01)
+```
+
+XXX edit inflow / outflow
+XXX note that outflows do not have a minus sign, automatically taken care of
+XXX add find_dependencies(sdm)
+
+We then include each variable using `build()`, which takes as the first argument the variable name, the second argument the type of building block ("stock", "flow", "aux", or "gf"), and then any appropriate properties for that type of building block (see Table \ref{XXX}). Below, we define for both Stocks their initial condition in the *eqn* property, the Flows increasing the Stock in *inflow*, the Flows decreasing the Stock in *outflow*, and an optional *label*. If needed, variable names are translated to syntactically valid and unique R names. For example, "Food intake" would be translated to "Food.intake". Throughout the paper, we make use of the convenient pipe operator `%\>%` from the *magrittr* package [@XXX], which simply passes the result of an expression to the next expression as a first argument.
+
+```{r}
+sdm = sdm %>%
+  build("Food_intake", "stock", eqn = "runif(1)", 
+            inflow = list(c("Feeling_hunger", "Eating_triggers")), 
+        outflow = list(c("Satiety", "Effect_of_compensatory_behaviour")),
+        label = "Food intake") %>%
+  build("Hunger", "stock", eqn = "runif(1)", 
+            inflow = "Losing_energy_by_compensatory_behaviour", 
+        outflow = "Food_intake_reduces_hunger") %>%
+  build("Compensatory_behaviour", "stock", eqn = "runif(1)", 
+        inflow = "Compensating_for_having_eaten", 
+        outflow = "Satisfaction_with_hungry_feeling",
+        label = "Compensatory behaviour") 
+```
+
+For each Flow, we define its rate of change in the *eqn* property.
+
+```{r}
+sdm = sdm %>%
+  build("Losing_energy_by_compensatory_behaviour", "flow", 
+        eqn = "(0.3 * Compensatory_behaviour) * ((1 - Hunger) / 1)", 
+        label = "Losing energy by compensatory behaviour") %>%
+  build("Feeling_hunger", "flow", 
+        eqn = "((0.8 * Hunger^a0) * Food_intake) * ((1 - Food_intake) / 1)", 
+        label = "Feeling hunger") %>%
+  build("Satiety", "flow", 
+        eqn = "(1.3 * (Food_intake)) * ((1 - Food_intake) / 1)") %>%
+  build("Food_intake_reduces_hunger", "flow", 
+        eqn = "((1.4 * Food_intake^a0) * Hunger) * ((1 - Hunger) / 1)", 
+        label = "Food intake reduces hunger") %>%
+  build("Compensating_for_having_eaten", "flow", 
+        eqn = "(Sig(a2 * Food_intake)) * ((1 - Compensatory_behaviour) / 1)", 
+        label = "Compensating for having eaten") %>%
+  build("Satisfaction_with_hungry_feeling", "flow",
+        eqn = "(1.3 * Hunger * Compensatory_behaviour) * ((1 - Compensatory_behaviour) / 1)",
+        label = "Satisfaction with hungry feeling") %>%
+  build("Eating_triggers", "flow", 
+        eqn = "(a1 * Food_intake) * ((1 - Food_intake) / 1)", 
+        label = "Effect of eating triggers") %>%
+  build("Effect_of_compensatory_behaviour", "flow",
+        eqn = "(2 * Compensatory_behaviour * Food_intake) * ((1 - Food_intake) / 1)", 
+        label = "Effect of compensatory behaviour") 
+```
+
+
+XXX equations can be multi-line, can also be left out to build the structure of the model first
+
+In this model, all Auxiliaries are constants, and their *eqn* property can thus be passed as a numerical value. Here, we show that variables may also be added in a vectorized manner for efficiency.
+ 
+```{r}
+sdm = sdm %>%
+  build(c("a0", "a1", "a2"), "aux", eqn = c(1.31, 1.5, 0.38)) 
+```
+
+Lastly, we define a global variable, i.e. macro, for the sigmoid fuction:
+
+```{r}
+sdm = sdm %>% macro(name = "Sig", eqn = "function(x) 1 / (1 + exp(1)^(-x))")
+```
+
+Macros may be variables, functions, or any other object.
+
+
+<!-- XXX ** show new_name -->
+
+<!-- ```{r} -->
+<!-- sdm = xmile(method = "euler") %>% -->
+<!--   build("Fish", "stock", eqn = 10,  -->
+<!--             inflow = "Fish.births", outflow = "Fish.deaths") %>% -->
+<!--   build("Algae", "stock", eqn = 50,  -->
+<!--             inflow = "Algae.births", outflow = "Algae.deaths") %>% -->
+<!--   build("Fish.births", "flow", eqn = "delta*Algae*Fish", label = "Fish births") %>% -->
+<!--   build("Fish.deaths", "flow", eqn = "gamma*Fish", label = "Fish deaths") %>% -->
+<!--   build("Algae.births", "flow", eqn = "alpha*Algae", label = "Algae births") %>% -->
+<!--   build("Algae.deaths", "flow", eqn = "beta*Algae*Fish", label = "Algea deaths") %>% -->
+<!--   build(c("delta", "gamma", "alpha", "beta"), "aux", eqn = c(.025, .5, .5, .05))  -->
+<!-- ``` -->
+
+
+For any given XMILE object, the code to build the model from scratch can be obtained with `get_build_code()`.
+
+```{r eval=FALSE, results='hide', out.width='100%'}
+get_build_code(template("SIR"))
+```
+
+<!-- XXX to do: remove default arguments -->
+
+```{r echo=FALSE}
+functions_table <- data.frame(
+  Property = c("label", "eqn", "units", "non_negative", "min", "max", "inflow", "outflow", "to", "from", "xpts", "ypts", "interpolation", "rule", "doc"),
+  Description = c("Name for plotting", "Equation (initial value in case of Stock)", "Units", "Enforce non-negativity", "Minimum value constraint",
+                   "Maximum value constraint", "Variable flowing into Stock", "Variable flowing from Stock", "Target variable of Flow", "Source variable of Flow", "x-domain points of GF", "y-domain points of GF", "Interpolation method of GF", "Rule determining behaviour of GF outside of x-domain", "Add documentation to variable"),
+  Example = c("`'Food intake'`", "`'sqrt(10)'`", "`'second'`", "`FALSE`", "`0`", "`300`", "`'Hunger'`", "`'Hunger'`", "`'Hunger'`", "`'Hunger'`", "`c(0, 1, 2, 3)`", "`c(10, 12, 14, 16)`", "`'linear'`", "`2`", "`'Subjectively assessed hunger on a scale from 0 to 10'`"),
+  Stock = c("x", "x", "x", "x", "x", "x", "x", "x", "", "", "", "", "", "", "x"),
+  Flow = c("x", "x", "x", "x", "x", "x", "", "", "x", "x", "", "", "", "", "x"),
+  Auxiliary = c("x","x", "x", "x", "x", "x", "", "", "", "", "", "", "", "", "x"),
+  GF = c("x","", "x", "", "x", "x", "", "", "", "", "x", "x", "x", "x", "x")
+)
+
+kable(functions_table, format = "markdown", col.names = c("Property", "Description", "Example", "Stock", "Flow", "Auxiliary", "GF"),
+      caption = "Properties for each Building Block")
+```
+
+Variable properties can be modified by using `build()` without the
+building block. In this example, the initial value of Food intake is changed:
+
+```{r echo=TRUE, results='hide'}
+sdm = build(sdm, "Food.intake", eqn = .5)
+```
+
+To view any variable properties, use `peek()`:
+
+```{r echo=TRUE, results='hide'}
+peek(sdm, "Food.intake", "eqn")
+```
+
+Variables can be removed using `erase()`:
+
+```{r eval = FALSE, echo=TRUE, results='hide'}
+sdm = erase(sdm, name = "Food_intake")
+```
+
+
+Previously added model units or macros can be removed by setting erase = T:
+```{r eval = FALSE, echo=TRUE, results='hide'}
+sdm = model_units(sdm, name = "XXX", erase = T)
+sdm = macro(sdm, name = "XXX", erase = T)
+```
+
+An overview of the variables in the model can be obtained with
+`summary()`:
+
+```{r}
+summary(sdm)
+```
+
+A model diagram of the Stocks and Flows can be plotted via the
+*DiagrammeR* package. Stocks are indicated as vertices, Flows are
+indicated by arrows entering (inflows) or leaving (outflows) Stocks, and
+sources and sinks of Flows are indicated by open hexagons (equivalent to
+clouds in traditional SD diagrams).
+
+```{r, out.width="120%"}
+plot(sdm)
+```
+
+To simulate the model, simply run `simulate()`. The timeseries of the Stocks can be plotted with `plot_stocks()`.
+
+```{r, out.width="75%"}
+sim = simulate(sdm)
+plot_stocks(sdm, sim$df)
+```
+
+The simulation script that is created can also be accessed by the user via `compile()`, which yields a complete, annotated R script. The R script includes the necessary libraries, variable and function definitions, a call to *deSolve* to simulate the ODE, and a basic time series plot (see Section \ref{}). An example of the output of `compile()` may be found in the Appendix.
+
+```{r echo=FALSE}
+functions_table <- data.frame(
+  Function = c("`xmile()`", "`build()`", "`plot()`", "`summary()`", "`simulate()`", "`plot_stocks()`", "`compile()`", "`peek()`", "`sim_specs()`", "`model_units()`", "`macro()`", "`header()`", "`get_build_code()`", "`template()`", "`insightmaker_to_R()`"),
+  Purpose = c("Create object of class xmile", "Add variable to model", "Plot model diagram", "Print summary of building blocks and variables", "Simulate model", "Plot timeseries of Stocks", "Get code to simulate model", "View desired variable properties", "Modify simulation specifications", "Define custom units", "Define global variables", "Define header of model", "Get code to build model from scratch", "Access template models", "Translate Insight Maker model to xmile object")
+)
+
+kable(functions_table, format = "markdown", col.names = c("Function", "Purpose"),
+      caption = "Main functions in *sdbuildR*")
+```
+
+
+
+<!-- subsystems can also be plotted -->
+
+
+
+## Model constraints
+
+System Dynamics models can typically have three types of constraints:
+non-negative Flows, non-negative Stocks, and minimum and maximum value
+constraints. When a Flow is constrained to be non-negative, it will only ever be zero or positive by setting it to zero when negative. Similarly, non-negative Stocks always remain zero or positive by setting the update in state to zero when the net flow is negative. Finally, minimum and maximum value constraints allow the user to
+specify the range of values a variable may have. When this latter
+constraint is violated, the simulation stops.
+
+To implement non-negativity of Stocks and Flows, *sdbuildR* constrains
+Flows and the change in Stocks in the ODE function. Specifically, Flows
+are kept non-negative using the `nonnegative()` function, which outputs
+0 in case Flows are negative (preserving units in case these are
+specified). Stocks can be constrained to only zero or positive values by
+making use of the root function in *deSolve*. The root function is triggered when selected Stocks go below or exceed a certain threshold. A corresponding event function specifies the change in the state variables when the root function is triggered. To enable non-negative Stocks, the root function is triggered when selected Stocks go below zero, and are set to zero in the event function.
+
+However, including such hard-coded constraints in the model is not
+recommended [@sterman2000]. If a Stock or Flow can logically never be negative, for
+example in the case of animals or deaths, this should ideally arise from
+the model equations and parameters itself. If they unintentionally turn
+negative, it is likely due to model misspecification and including
+hard-coded constraints can lead to unexpected results [@sterman2000]. To incorporate checks for when minimal and maximum values are crossed, each variable may have a *min* and *max* property:
+
+<!-- As the main purpose of \textit{insightmakeR} is to reproduce the model exactly, these constraints are kept, but this behaviour can be turned off by running insightmaker\_to\_R() with keep\_nonnegative\_flow = FALSE and keep\_nonnegative\_stock = FALSE. To see the difference, users are recommended to create a script with and without these constraints. -->
+
+
+```{r eval = FALSE, results='hide'}
+sdm = build(sdm, "Food_intake", min = 0, max = 1) %>%
+  build(sdm, "Losing_energy_by_compensatory_behaviour", max = 1)
+```
+
+When compiling the R script, minimum and maximum value constraints are
+created using `get_constraint_logical()`, which takes as input a list of
+minimum and maximum values. For example,
+
+```{r echo=TRUE}
+# Constraints of minimum and maximum value
+constraints_def = list("Food_intake" = c(min = 0, max = 1),
+                       "Losing_energy_by_compensatory_behaviour" = c(max = 1))
+constraints = get_logical_constraints(constraints_def) 
+print(constraints)
+```
+
+which outputs a vector of strings with constraints to evaluate. In the
+ODE, these constraints are checked using `check_constraints()`.
+
+```{r eval=FALSE, include=TRUE}
+check_constraints(constraints, environment(), t)
+```
+
+where `environment()` provides access to the variables computed in the
+ODE. When violated, the simulation stops, with a message
+
+```{r echo=FALSE, message=TRUE, warning=TRUE, error = TRUE}
+envir = new.env()
+envir$Food_intake = 2
+envir$Losing_energy_by_compensatory_behaviour = 0
+check_constraints(constraints, envir, 1)
+```
+
+## Interpolation functions
+
+In System Dynamics modelling, it is common to incorporate time-dependent exogenous inputs, which can represent various external influences on the system. Among these inputs are *step* functions for sudden, sustained level changes, *ramp* functions for gradual increases or decreases, *pulse* functions for instantaneous bursts, and *seasonal* functions for cyclical patterns. These functions can be created as an interpolation function using `approxfun()`, which underlies the convenience functions offered by *sdbuildR* to model these input functions:
+
+XXX check function
+
+```{r}
+times = seq(0, 50, by = .01)
+step = step(times, start_t_step = 10, h_step = 20)
+ramp = ramp(times, start_t_ramp = 10, end_t_ramp = 20)
+pulse = pulse(times, start_t_pulse = 10, h_pulse = 10,
+                   w_pulse = 5, repeat_interval = 20)
+seasonal = seasonal(times, peak_time = 1, 'years')
+```
+
+As an example, to model a regular pulse in eating triggers, we can create a pulse function named "trigger" which repeats every day (24 hours). This function can then be included in other equations, and here is indexed with the current time step $t$:
+
+```{r}
+sdm = sdm %>% build("ramp", "aux", eqn = "make_ramp(times, start_t_ramp = 0, end_t_ramp = 500, 
+                    start_h_ramp = 1, end_h_ramp = 1)") %>%
+  build("Eating_triggers", eqn = "(a1 * ramp(t) * Food_intake) * ((1 - Food_intake) / 1)") 
+
+sim = simulate(sdm)
+plot_stocks(sdm, sim$df)
+```
+Similarly, a Graphical Function is also an interpolation function. With a Graphical Function, the user can create a function of any shape by giving a set of points on the x-domain and y-domain:
+
+XXX add that without specifying source for gf, units of input are not added
+
+XXX erase is no longer possible, build(erase = T)
+
+```{r eval=FALSE}
+sdm = sdm %>% erase("ramp") %>%
+  build("ramp", "gf",
+                    xpts = c(0, 300, 350, 400, 500),
+                    ypts = c(.1, .5, .2, .5, 1.5))
+
+sim = simulate(sdm)
+plot_stocks(sdm, sim$df)
+```
+
+<!-- XXX to do: fix step, pulse, ramp, remove times -->
+
+## Delays, Smoothing, and Past Dependencies
+
+<!-- XXX smooth -->
+<!-- 11.7.4 Relation of Material and Information Delays (sterman) -->
+<!-- delay and smooth are equivalent only when delay time is fixed -->
+<!-- XXX -->
+
+Not all interactions in a system occur instantaneously. When the output of a variable lags behind its input, this is called a *delay* (Sterman, p. 411). A delay may be *fixed* (i.e. a pipeline delay) or *smooth* (i.e. first-order and higher-order delays). In the case of fixed delays, the input is delayed for a fixed delay length $\tau$ and arrives all at once. For example, material on a conveyor belt arrives at its destination after a fixed amount of time, without any mixing of materials. However, in other systems, the arrival of delayed material or information does not occur at a fixed time, but is rather a smooth process. The variability in delay time and arrival requires a smooth delay function. The simplest delay is a first-order delay function, in which an intermediate Stock (the accumulator) accrues input and releases it at a rate of $1/\tau$. This allows for intermediate mixing of material and a smooth delayed arrival of the input, as opposed to an abrupt release of all material. A first-order delay is suitable for processes with one intermediate step. When there are multiple stages in the delay process, a higher-order delay structure may be used. For example, there are multiple time delays between investment in innovation and the output of that innovation. The higher the order of the delay, the smoother the output. Higher-order delays are cascades of first-order delays, and need as many accumulators as the number of orders. Each stage is assumed to have the same time delay. 
+
+To facilitate modelling a fixed or smooth delay, *sdbuildR* sets up the necessary components of a delay structure, relieving the user from specifying this themselves. In brief, a fixed delay can be included by specifying `add_delay()` in the equation. As a first argument, the variable that is delayed is specified, followed by the length of the delay, with as an optional argument the default value when the simulation has not reached the length of the delay yet.
+
+```{r eval=FALSE, out.width="75%"}
+sdm = sdm %>%
+  build("Satiety", 
+        eqn = "(1.3 * add_delay(Food_intake, 1)) * ((1 - Food_intake) / 1)") 
+
+sim = simulate(sdm)
+plot_stocks(sdm, sim$df)
+```
+
+Note that the delay length is specified in time units, not indices, meaning a delay length of 1 with a simulation time unit "second" refers to one second in the past. Similarly, a *n*th-order delay can be included using `add_delayN()`, which takes as its first argument the variable that is delayed, as a second argument the length of the delay, as a third argument the order of the delay, and as an optional fourth argument the default value when simulation has not reached the length of the delay yet.
+
+```{r eval=FALSE, out.width="75%"}
+sdm = build(sdm, "Food_intake_reduces_hunger", 
+            eqn = "((1.4 * add_delayN(Food_intake, 1, 50)^a0) * Hunger) * ((1 - Hunger) / 1)") 
+sim = simulate(sdm)
+plot_stocks(sdm, sim$df)
+```
+
+Similar to a fixed delay, users may also access past values in a particular interval using `add_past()`. `add_past()` takes as its first argument the variable to access past values of, and as an optional second argument the interval to retrieve from the current time point. For example, a past interval of 10 retrieves at time 100 returns past values from time 90 to time 100 (inclusive). When the past interval is omitted, all past values from the current time point are returned. Here, we let Compensatory behaviour be influenced by the maximum value of Food intake over the last four hours.
+
+```{r eval=FALSE, out.width="75%"}
+sdm = sdm %>%
+  build("Compensating_for_having_eaten",
+        eqn = "(Sig(a2 * max(add_past(Food_intake, 4)))) * ((1 - Compensatory_behaviour) / 1)") 
+
+sim = simulate(sdm)
+plot_stocks(sdm, sim$df)
+```
+
+
+** difference material and information delay
+
+Material and information delays are equivalent when the delay time is constant [@sterman, p.466]. However, when the delay time is variable, 
+
+<!-- XXX -->
+<!-- A Stock may also be a conveyor. Refer to the actual value on the conveyor belt with the suffix "_conv", so "Fishfood_conv", and to the outflow with the regular stock name "Fishfood". -->
+
+<!-- ```{r eval=FALSE, out.width="75%"} -->
+<!-- sdm = build(sdm, "Fishfood", "stock", eqn = "1", conveyor = TRUE, len = 10,  -->
+<!--             # leakage = .1, leakage_type = "linear" ** to do -->
+<!--             )  -->
+<!-- sim = simulate(sdm) -->
+<!-- plot_stocks(sdm, sim$df) -->
+<!-- ``` -->
+
+
+XXX graphical overview of delay, delayN, past, conveyor, smooth
+
+
+```{r echo=FALSE}
+functions_table <- data.frame(
+  Function = c("add_delay", "add_delayN", "add_past"),
+  Purpose = c("Add a fixed delay", "Add a smooth delay of order N", "Retrieve past values"),
+  Arguments = c("Variable, delay length, (default value)", "Variable, delay length, delay order, (default value)", "Variable, (past interval)")
+)
+
+kable(functions_table, format = "markdown", col.names = c("Function Name", "Purpose", "Arguments"),
+      caption = "")
+```
+
+We briefly elaborate on how *sdbuildR* sets up the necessary components for delay structures and retrieving past values when compiling the R script or simulating the model. In the case of a fixed delay, access to a variable's history is needed, which is not provided by deSolve in all cases. In *deSolve*, past values can only be accessed using the `lagvalue()` and `lagderiv()` function when running a delay differential equation with `dede()`. These only give access to past values of state variables and derivatives, and the Euler and Runge-Kutta 4th order solvers are not available for `dede()`. To be able to access past values of all variables using the "euler" and "rk4" integration solver, *sdbuildR* uses a different solution. In the case of fixed delays, a global dataframe *archive* is created, which keeps track of all desired variables.
+
+```{r eval=FALSE, include=TRUE}
+arhive_var = c("Food_intake")
+archive <<- setup_archive(archive_var, times)
+```
+
+In the ODE, the archive is updated in each step using
+`update_archive()`, which requires the name of the global
+dataframe, the current timestep, and the current environment in the ODE. This convenience function allows the ODE function to remain uncluttered by individual updates for each variable, updating the archive in one sweep.
+
+```{r eval=FALSE, include=TRUE}
+update_archive("archive", t, environment())
+```
+
+To retrieve values from the archive, we can use either `delay()`
+(to retrieve a single value) or `past()` (to retrieve an interval of
+values). As in Insight Maker, values are linearly interpolated to deal
+with any numerical inaccuracies in the current time value *t* and to
+make the method suitable for the "rk4" solver. Notably, accessing past
+values is only possible when using either "euler" or "rk4" integration,
+not with solver methods which use variable time step sizes.
+
+```{r eval=FALSE, include=TRUE}
+past(archive, t, "Food_intake", pars$past_interval)
+delay(archive, t, "Food_intake", pars$delay_length)
+```
+
+This also illustrates that any specified parameters (length and order of delay, interval of past) are added to the model as Auxiliaries. 
+
+In the case of smooth delays, a delay accumulator chain needs to be included as a Stock. The number of links in the chain is the order of the delay, such that a 10th order delay requires 10 additional Stocks. Rather than writing an individual equation for each accumulator, *sdbuildR* sets up all accumulators using `setup_delayN()`: 
+
+```{r eval=FALSE, include=TRUE}
+xstart = c(xstart, setup_delayN("Food_intake_delayN_acc", xstart$Food_intake,
+                                pars$length_delayN, pars$order_delayN))
+```
+
+This allows the users to easily adjust the order of the delay. In the ODE, a separate variable is created to update the delay chain and to access the output of the last component in the chain.
+
+```{r eval=FALSE, include=TRUE}
+Food.intake_delayN = delayN(input, S[grep('^Food_intake_delayN_acc', names(S))], 
+                            pars$length_delay, pars$order_delay)
+```
+
+The flow from the last accumulator in the delay chain can be accessed
+with the *outflow* entry (`Food_intake_delayN$outflow`). Accumulators in the delay chain are updated using the *update* entry (`Food_intake_delayN$update`), which is of the same length as the number of orders in the chain.
+
+## Units
+
+Units in System Dynamics models serve two purposes: model verification
+and model flexibility. Units, such as meters, seconds, or degrees
+Fahrenheit, help the user check for logical consistency within their
+model. For instance, Flows need to have the units of the Stock they are
+connected to divided by a time unit. This means that any Flows connect to Food intake has to have the units kilocalories divided by a time unit such as hour or day. Similarly, mathematical
+operations between incompatible units are not allowed: *Satiety*
+(units Kilocalories/hour) cannot be subtracted from *Food.intake.reduces.hunger* (units
+Hunger intensity/hour). As such, specifying units forces users to think about the
+meaning of their variables and their equations.
+
+Units also allow for greater flexibility in how each model element is
+defined. System Dynamics software automatically converts between units,
+such that variables may be defined on different levels (e.g. seconds and
+minutes). An error is thrown in case units are incompatible, which
+provides a consistent model verification check.
+
+To implement units, *sdbuildR* uses the *units* package, which allows
+for flexible, comprehensive use of units. For example, to create a
+variable *a* of value 2 with units seconds:
+
+```{r}
+a = set_units(2, 'second')
+```
+
+Units of a variable may be specified via:
+
+```{r eval=FALSE, echo = TRUE, include=TRUE, results='hide'}
+sdm = build(sdm, "Food_intake", units = "Kilocalories")
+```
+
+All available units in the units package can be printed in a table using `units::valid_udunits()`, listing over 250 units. This table includes the definition of each unit in terms of other units. Moreover, each unit can be combined with a prefix, such as "nano". All possible prefixes are listed in `units::valid_udunits_prefixes()`. Some units, such as "year", may have an unexpected definition. Rather than 365 days, the unit "year" in the units package accounts for leap years, making it approximately 365.24 days. The unit "common_year" is 365 days. To check a unit's definition, simply convert it using `set_units()` to the desired unit.
+
+```{r}
+set_units(set_units(1, "year"), "day")
+```
+
+```{r}
+set_units(set_units(1, "common_year"), "day")
+```
+
+```{r}
+set_units(set_units(1, "month"), "day")
+```
+
+
+XXX removed months() and such -> setunit(t, u("wk"))
+
+<!-- ```{r} -->
+<!-- set_units(set_units(1, "common_month"), "day") -->
+<!-- ``` -->
+
+If these pre-defined units are insufficient, users can define their own custom units. In the XMILE format, there is a separate tag for custom units. To add these, use `model_units()` with as a first argument the symbol of the unit, as an optional second argument the definition of the unit in terms of other units, and as an optional third argument an alternative name. No definition or an empty definition creates a new base unit: a unit not defined in terms of other units. Unit symbols and names may be modified to create syntactically valid names. In this case, "Satiety Hunger Score" is changed to "Satiety_Hunger_Score".
+
+```{r eval = FALSE, results='hide'}
+sdm = model_units(sdm, name = "Satiety Hunger Score", eqn = "300 kilocalories", alias = "SHS") %>%
+  build("Hunger", units = "SHS")
+```
+
+XXX set prefix = TRUE to allow using power-of-ten prefixes, which can be viewed with
+unit_prefixes()
+
+If any units are used in the R script, the *units* package is loaded at
+the top of the R script with:
+
+```{r eval=FALSE, include=TRUE}
+# Add package for specifying units of each model element
+if (!require('units')) install.packages('units')
+library(units)
+units_options(allow_mixed = T, simplify = T, set_units_mode = 'standard')
+```
+
+These options ensure that vectors can contain variables with different
+units (*allow_mixed*), that units are reduced to the most simple
+expression (*simplify*), and that variables can be used to set units,
+without being interpreted as the unit itself (*set_units_mode*, e.g. `a = 'second'; set_units(1, a)`).
+
+Any undefined units are installed with *sdbuildR*'s wrapper function
+`install_custom_units()`, which ensures any existing units of the same
+name are removed before installation.
+
+```{r eval=FALSE, include=FALSE}
+invisible(list(c(symbol = 'Satiety_Hunger_Score', def = '300 kilocalories', 
+                 name = 'SHS')) %>%
+            lapply(., install_custom_unit)) 
+```
+
+Any variable without specified units is ensured to not have units using
+`drop_if_units()`.
+
+On a final note, though specifying units helps with model verification,
+calling functions from the units package in the ODE slows down the
+computation considerably. Users interested in efficient simulations are
+recommended to ensure unit compatibility manually, without using the
+units package in the ODE. All unit translation can be turned off by
+calling `compile()` or `simulate()` with `keep_unit = FALSE`, though this is
+set to TRUE by default to ensure the model is reproduced accurately.
+
+<!-- XXX The units package has noted performance issues (https://github.com/r-spatial/sf/issues/2376), so it is not recommended for speed. -->
+
+
+## Debugging
+undefined_var()
+find_dependencies
+check_name_exists
+
+## Implementation of `compile()`
+
+The function `compile()` creates an annotated, stand-alone script to simulate a stock-and-flow model. It calls the necessary libraries and defines the timing sequence, any optional custom-defined units, the ODE function, an optional root and event function in case of non-negative Stocks, static parameters, the initial condition, a call to the ODE solver to simulate the timeseries, and a basic plot of the timeseries. In order to do so, `compile()` executes the following:
+
+\begin{enumerate}
+  \item Any fixed or $n$th order delays, smoothing, or reference to past values are detected and the necessary components are assembled (see Section \ref{XXX});
+  \item Auxiliaries are divided into static parameters or dynamically updated variables in the ODE based on their dependencies;
+  \item Topological ordering is applied to both the static parameters and initial conditions as well as the ODE;
+  \item Any incompatible unit operations are attempted to be fixed (see section Units \ref{XXX});
+  \item Reference to static parameters or initial conditions outside of the ODE are prefixed with `pars$` or `xstart$`, respectively.
+\end{enumerate}
+
+XXX include figure with workflow
+
+Topological ordering ensures equations are ordered correctly according to their dependencies. For instance, if the initial value of Hunger depends on Food intake, then the initial value of Food intake should be defined before that of Hunger. All variables may be defined as a function of one another, as long as there are no circularities. For instance, the initial value of Food intake may not be
+defined as the initial value of Hunger:
+
+```{r eval = FALSE,echo=FALSE, message=TRUE, warning=TRUE, error = TRUE}
+sdm %>%
+  build("Food_intake", eqn = "Hunger") %>%
+  build("Hunger", eqn = "Food_intake") %>%
+  simulate()
+```
+
+To define variables in the correct order, the dependencies of each variable are
+transformed into graph "edges", where an edge "xstart\$Hunger,
+xstart\$Food_intake" means that xstart\$Hunger needs to be defined before
+xstart\$Food_intake These edges are then fed to `topo_sort()` from the
+*igraph* package, which yields a correct ordering of variables (though there may be multiple ways to order them).
+
+
+<!-- The latter is -->
+<!-- a more sophisticated way of incorporating a dependency on the past.  -->
+
+
+<!-- In other cases, the material or information is not delayed, but still depends on its history. For example, the evaluation of one's day may involve a recollection of the best and worst moments.  may be based on  an evaluation of a variable's history is needed.  -->
+<!-- XXX -->
+
+<!-- Smmoth XXX use for belief updating -->
+
+<!-- Delays in stock and flow diagrams are typically different from delay -->
+
+<!-- differential equations. XXX -->
+
+<!-- Delays function as a memory in the system, and need to be kept track of -->
+
+<!-- in the ODE. -->
+
+<!-- for computational speed (I don't know if this is faster \*\*), it is -->
+
+<!-- recommended to not use Past() but instead opt for a DelayN() with very -->
+
+<!-- high delay order, as this approximates a fixed delay. -->
+
+
+# Validation: Insight Maker to R
+
+To ensure stock-and-flow functionality was implemented correctly, *sdbuildR* has been validated using Insight Maker. Insight Maker is a free and open-source web-based tool (<https://insightmaker.com/>) to
+build, simulate, and optimize stock-and-flow models and agent-based Models, as well as draw Causal Loop Diagrams. InsightMaker runs on JavaScript supported by the *simulation*
+(openly available at <https://github.com/scottfr/simulation/>). Insight Maker includes extensive features to help communicate model structure and behaviour, such as scenarios and interactive exploration of parameter settings, as well as simple sensitivity testing and parameter optimization. Insight Maker is used among others for modelling health care, environment, ecological
+and biological systems, as well as for educational purposes. A handful of other free software exists (see <https://en.wikipedia.org/wiki/Comparison_of_system_dynamics_software>; <https://github.com/SDXorg/SD-Tools>), but Insight Maker stands out with its intuitive user interface and tutorial guidance, which makes modelling accessible to users without a technical background. 
+
+Though Insight Maker is highly accessible and powerful, users may want to export their Insight Maker model to R for the same reasons outlined in the Introduction: accessibility, compatibility, flexibility, scalability, and reproducibility. Though all these desiderata are supported by Java, this may not be the language users are versed in. For R users, an Insight Maker model in R enables more advanced System Dynamics techniques, or which they can use already existing R packages. For example, different sampling designs for parameter and structural sensitivity testing can easily be executed in R, such as Latin hypercube or Monte Carlo sampling [@XXX]. Implementing these analyses in R would also allow users to fully utilize the computational power they have access to. A fully reproducible analysis script will add robustness to the model, adding confidence to model results.
+
+InsightMaker offers 126 built-in functions relating to basic
+mathematical, vector and string operations, random number generators and
+statistical distributions, accessing past values, time conversion
+functions, and user input functions. To allow for greater flexibility,
+users can also define their own global variables. To ensure *sdbuildR* reproduced Insight Maker functionality, over a hundred stock-and-flow models were plucked from the community models available on Insight Maker. Each URL was
+translated to an .InsightMaker file. The models were simulated using the
+*simulation* package in JavaScript,\ref{} as well as in R after
+translation using `insightmaker_to_R()`. Model output was reproduced up until
+the fifth decimal, as shown in Supplementary Figure \ref{}. The scripts
+necessary to reproduce the validation may be found in the folder
+sdbuildR/validate.
+
+The translation of `insightmaker_to_R()` has three limitations. Firstly, the non-negative Stock feature is not reproduced in *sdbuildR* (see section \ref{}). *sdbuildR* uses *deSolve*'s root function to ensure Stocks remain non-negative, whereas Insight Maker adjusts outflows to maintain non-negativity. In simple cases, these approaches produce the same output, but for models where non-negative Stocks have multiple inflows and outflows, they do not. In the validation, all models have been adjusted to turn off the non-negative feature of Stocks. The second limitation concerns propagated double precision differences. Double precision floating point math engines
+(using the standard) have small inaccuracies in their representation of
+numbers. Though trivial, these differences can propagate
+throughout the simulation to create large differences. Models in which this occurred were excluded from the validation. The final limitation relates to the difference between the *simulation* package and *deSolve*. *deSolve* expects the initial condition, parameters, and ODE function
+to be specified separately. Conversely, Insight Maker allows the initial condition to be defined by dynamically computed variables. Models were excluded in case it was not possible to pluck this dynamically computed variable from the ODE to define the initial condition because of topological ordering impossibilities. For further details and implementation of the validation, please see the Appendix.
+
+
+<!-- For instance, \pi in R is 3.141592653589793115998, whereas in Insight Maker it is 3.14159265358979 3.141592653589793 3.141592653589793115998() double precision representation between Insight Maker and R. In addition, note that   -->
+
+
+# Limitations
+
+XXX
+vectorized models
+
+# Conclusion
+
+The package *sdbuildR* enables building and simulating stock-and-flow models in R, with the aim of making System Dynamics modelling accessible and flexible to fit the user's needs. *sdbuildR* supports the use of model constraints, constructing interpolation functions, implementing ($n$th order) delays, smoothing and retrieving past values, specifying (custom) units as well as global variables. As the main object is formatted in XMILE-style, it promotes coherence with other System Dynamics software. By translating Insight Maker models, *sdbuildR* facilitates flexible and advanced use of System Dynamics modelling.
+
+Providing the basic building blocks of stock-and-flow models is just the first step, however. System Dynamics modelling is an iterative, hands-on process, which involves defining a problem, formulating a dynamic hypothesis, formalizing a model, testing, and validation [@sterman2000]. Fortunately, many subcomponents of this process are already supported in R. Data wrangling needed both for empirical data and simulation results is well-supported by the *tidyverse* libraries (for a tutorial in the context of System Dynamics, see [@duggan2018]). Interactive simulations could be facilitated using a Shiny app to mimick the interface of Insight Maker [@Shiny]. For model testing, Duggan (2017) illustrates how the R package *RUnit* can be used to validate the model [@duggan2017, chap. 6]. Model validation includes structural validity - whether the system's structure conceptually and numerically corresponds to the real world - and behavioural validity - whether simulated system behaviour matches real-world behaviour [@duggan2017, chap. 6]. To identify the most influential parameters in a model, Duggan outlines how to implement statistical screening in R [@duggan2017, chap. 7].
+
+In addition to already existing tools, the integration and development of new tools for System Dynamics becomes possible. The Python package *pysd* is an excellent demonstration of new possibilities that emerge when System Dynamics is implemented in an open-access coding language. By drawing on functionality from other packages, *pysd* enables the estimation of model parameters from empirical data using Markov-chain Monte Carlo	simulation (MCMC), or even the estimation of the entire functional form of an equation using machine learning. Systems can be simulated in real-time with animated figures to better communicate the behaviour of the system over time. Support and guidance for such analyses could also be offered in R, and possible even extended. For example, AI-aided modelling can already be used to create Causal Loop Diagrams using the R package *theoraizer* [@Waaijers2024].
+
+Though the efficiency and analytical abilities of licensed System Dynamics software are vast, its proprietary nature makes is naturally less accessible and less able to integrate new research and tools. For example, as of yet, artificial intelligence supported modelling is not implemented in Stella, Vensim, or Powersim, whereas *pysd* has offered this since 2017. In the same vein, *sdbuildR* is an effort to encourage the R community to engage in a collaborative effort to utilize and advance System Dynamics modelling.
+
+
+
+XXX for a comparison between deSolve and DifferentialEquations, see
+https://github.com/SciML/diffeqr/tree/master
+
+<!-- "Stella® and Vensim® are excellent tools for model conceptualization and design using causal -->
+<!-- loop diagrams. Their solvers are easy to parametrize, efficient (implemented in C and C++) -->
+<!-- and thoroughly tested"  \citep{pysd joss} -->
+
+
+
+
+<!-- limitations: no nice gui -->
+
+<!-- pysd -->
+<!-- " While	system	dynamics	practice	has	much	to	gain	from	the	emergence	of	new	 -->
+<!-- volumes	of	social	data,	the	community	has	yet	to benefit	fully	from	the	data	science	 -->
+<!-- revolution. -->
+<!-- 3. Pruyt	E,	Cunningham	S.	From	data-poor	to	data-rich:	system	dynamics	in	the	 -->
+<!-- era	of	big	data.	… Conf	….	2014.	 -->
+<!-- http://repository.tudelft.nl/view/ir/uuid:6ac45297-47e5-4ceb-99dc3cc4f306a28c/.	Accessed	March	13,	2015. -->
+<!-- 4.	 Pruyt	E,	Kwakkel	J.	A	bright	future	for	system	dynamics:	From	art	to	 -->
+<!-- computational	science	and	beyond.	… 30th	Int	Conf	….	2012.	 -->
+<!-- http://repository.tudelft.nl/view/ir/uuid:3f5b22cb-1552-4ef4-88bf9f6d6deb14c3/.	Accessed	March	13,	2015. -->
+<!-- "  \citep{ysd} -->
+<!-- \citep{Pruyt2012, 2014} -->
+
+
+<!-- XMILE to insight maker feature, very meh maybe don't mention -->
+
+<!-- how i see it being used in combo with insight maker -->
+
+<!-- future -->
+
+
+<!-- variety of tests for model robustness -->
+
+<!-- stella: -->
+<!-- Scenario and Sensitivity Analysis -->
+
+<!-- vensim: -->
+<!-- Sensitivity and Monte Carlo Analysis:  -->
+<!-- optimization -->
+<!-- calibration -->
+<!-- Causal Tracing and Loop Analysis -->
+
+<!-- # References -->
+
+<!-- [@crosstalk] -->
+<!-- [@plotly] -->
+
+<!-- Bray T, Paoli J, Sperberg-McQueen CM, Maler E, Yergeau F. 1997. -->
+<!-- Extensible markup language (XML). World Wide Web Journal 2(4): 27–66 -->
+
+<!-- (Society MSCOTIC, IEEE Std 754-2008 (Revision of IEEE Std 754–1985), -->
+<!-- IEEE Standard for Floating-Point Arithmetic, 2008, pp. 1–70) -->
+
+# Appendix
+
+## Example compiled R script
+
+```{r, out.width="100%"}
+compile(sdm)
+```
+
+In general, *deSolve*'s `ode()` only outputs state variables (i.e. Stocks). In order to generate a complete dataframe with all computed variables in the ODE, all created variables are included using `collect_var()`.
+
+
+
+
+<!-- ## Trouble-shooting -->
+
+<!-- not exactly reproduced because precision difference between R and -->
+<!-- insight maker, difference gets propagated throughout the simulation -->
+
+<!-- Common mishaps: Older models are not updated to the non-default -->
+<!-- bidirectional links, so check by cloning the model first Plots are not -->
+<!-- automatically synchronized to model changes in non-negative constraints -->
+<!-- seed Secondary y-axis on plot makes it look like they're not reproduced -->
+
+<!-- ```{r, error = TRUE, out.width="100%"} -->
+<!-- 1 + set_units(2, "second") -->
+<!-- ``` -->
+
+<!-- "Error in Ops.units(x, a + d) : both operands of the expression should -->
+<!-- be "units" objects" -->
+
+
+<!-- ## Insight Maker -->
+
+<!--  Insight -->
+<!-- Maker versions older than XXX had bidirectional links by default, -->
+<!-- whereas the current version XXX does not. Cloning the model results in -->
+<!-- an updated, corrected version, but using an URL to an old model will not -->
+<!-- have all necessary links present, leading to unconnected variables. -->
+
+
+<!-- with an accessible, user-friendly interface -->
+
+<!-- preserve comments in equations -->
+
+<!-- ## Overview Insight Maker -->
+
+<!-- System dynamics models in InsightMaker are built with four key building -->
+<!-- blocks called \textit{primitives}: Stocks, Flows, Variables, and Links. -->
+<!-- Stocks are measurable quantities which can accumulate over time, such as -->
+<!-- people, money or fatigue. Flows define the inflow and outflow of -->
+<!-- "material" into Stocks. A Variable is either a constant or a dynamically -->
+<!-- updated value. Links connect Variables to other Variables, Flows or -->
+<!-- Stocks, whereas Flows can only connect Stocks to other Stocks or Stocks -->
+<!-- to the space outside the defined system. An example model is illustrated -->
+<!-- in Figure \ref{XXX} -->
+
+<!-- XXX we don't use Links, rather gve unique b=names -->
+
+
+<!-- In addition, most System Dynamics software (XXX check) works with -->
+<!-- case-insensitive, non-unique names of variables. The accessible domain -->
+<!-- of a variable needs to be specified, such that a variable only has -->
+<!-- access to another variable if they are connected. For instance, two -->
+<!-- variables may each be called "Variable" as long as they are not linked -->
+<!-- to and used by the same other variable. This means that another -->
+<!-- variable, say "A", may only refer to "Variable" if only one of the two -->
+<!-- variables called "Variable" is linked to it. To avoid confusion, -->
+<!-- *sdbuildR* translates all variable names to unique, syntactically valid -->
+<!-- R names, ensuring no illegal or double variable names are created. -->
+
+
+<!-- also allows users to specify their own custom data points with the -->
+<!-- interpolation function Lookup(), or as a model element using a Converter -->
+
+
+<!-- The simulation settings allow the user to change the integration method -->
+<!-- and the time sequence over which the simulation takes place. Either the -->
+<!-- Euler or Runge-Kutta 4th order\*\* solver may be chosen, and the -->
+<!-- starting time, simulation length, simulation time step, and simulation -->
+<!-- time unit (e.g. seconds) can be changed. The simulation may also be -->
+<!-- paused at regular intervals. -->
+
+<!-- ## Syntax -->
+
+<!-- Variables in InsightMaker are assigned using "\<-", whereas R both uses -->
+<!-- "\<-" and "=". The colon ":" in InsightMaker is reserved for named -->
+<!-- vectors, whereas R uses the equality sign "=". -->
+
+<!-- InsightMaker makes use of curly brackets for units (e.g. {1 month}), -->
+<!-- (named) vectors (e.g. {1,2,3} or {'a':1, 'b':2, 'c':3}), matrices (e.g. -->
+<!-- { {1, 2}, {3, 4} }), and indexing (e.g. {a{3}}). Square brackets are -->
+<!-- used to refer to variables (e.g. [Algae]). To find and convert these -->
+<!-- brackets, one may use regular expressions. However, regular expressions -->
+<!-- do not easily handle nested brackets. Instead, \textit{insightmakeR} -->
+<!-- takes the less efficient but safer approach of matching each opening -->
+<!-- bracket to a closing bracket, -->
+
+<!-- In contrast to R, statements like if-clauses, for- and while-loops, try -->
+<!-- statements, and function definitions are not enclosed in curly brackets. -->
+<!-- Rather, these are enclosed in statements such as "If ... then ... End -->
+<!-- if", which are case-insensitive. -->
+
+<!-- Logical operators differ between InsightMaker and R, where InsightMaker -->
+<!-- uses =; \<\>; AND, and, &; OR, or, \|; NOT, not, !, and R uses, ==; !=; -->
+<!-- &; \|; !, respectively. -->
+
+<!-- InsightMaker makes use of a blend of function and method invocation: -->
+<!-- Most built-in functions use function invocation (e.g. Min()), but some -->
+<!-- vector, string, and all Agent-Based modelling functions use method -->
+<!-- invocation (e.g. {1, 2, 3}.Length()). R only uses function invocation. -->
+<!-- Additionally, some functions in InsightMaker function differently when -->
+<!-- applied to a string or a vector. For instance, ""Hello world!".Length() -->
+<!-- and {"Hello world!"}.Length() output 12 and 1, respectively, whereas in -->
+<!-- R, length("Hello world!") and length(c("Hello world!")) both output 1. -->
+<!-- As in R, InsightMaker enables default and optional arguments, but no -->
+<!-- named arguments (e.g. "Round(3.6)" is correct, but "Round(Value = 3.6)" -->
+<!-- is not, whereas in R, both "round(3.6)" and "round(x = 3.6)" are -->
+<!-- correct). Arguments thus have to be passed without names and in the -->
+<!-- correct order in InsightMaker. -->
+
+<!-- ## Variable names -->
+
+<!-- InsightMaker offers large flexibility in the use of variable names, -->
+<!-- allowing for case-insensitive use of non-unique names by putting only -->
+<!-- connected primitives in the scope of each primitive. For instance, two -->
+<!-- variables may each be called "Variable" as long as they are not linked -->
+<!-- to and used by the same other primitive. This means that another -->
+<!-- primitive, say "A", may only refer to "[Variable]" if only one of the -->
+<!-- two primitives called "Variable" is linked to it. To avoid confusion, -->
+<!-- \textit{insightmakeR} translates all variable names to unique, -->
+<!-- syntactically valid R names, ensuring no illegal or double variable -->
+<!-- names are created. -->
+
+<!-- ## Variable types -->
+
+<!-- Besides the four main primitives, users may also specify Converters, -->
+<!-- which are constant or linear interpolation functions. Stocks also have a -->
+<!-- mode called Conveyor, which functions as a fixed delay. Double square -->
+<!-- bracket notation is used to refer to all material currently in transit, -->
+<!-- whereas single square bracket notation refers to the fixed delay value -->
+<!-- of the Stock. Lastly, to enhance visual clarity, Primitives may also be -->
+<!-- copied as Ghosts, which are references to the original primitive but can -->
+<!-- be moved independently to anywhere in the model. -->
+
+<!-- *insightmakeR* translates Converters to linear interpolation -->
+<!-- functions defined before the ODE, sets up Conveyor Stocks as fixed -->
+<!-- delays with correct initial values and access to past values, and -->
+<!-- removes Ghosts safely from the model. -->
+
+<!-- XXX -->
