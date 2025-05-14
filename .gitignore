@@ -4,5 +4,8 @@
 .Ruserdata
 inst/doc
 /doc/
+validate/
+paper/
+notes/
 /Meta/
 docs
