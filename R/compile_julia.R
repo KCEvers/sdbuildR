@@ -20,7 +20,10 @@ simulate_julia = function(sfm,
                           format_code=TRUE,
                           keep_nonnegative_flow = TRUE,
                           keep_nonnegative_stock = FALSE,
-                          keep_unit = TRUE, verbose = FALSE, debug = FALSE, only_stocks = FALSE){
+                          keep_unit = TRUE,
+                          only_stocks = FALSE,
+                          verbose = FALSE,
+                          debug = FALSE){
 
 
   # Collect arguments
@@ -36,7 +39,8 @@ simulate_julia = function(sfm,
                          format_code=format_code,
                          keep_nonnegative_flow = keep_nonnegative_flow,
                          keep_nonnegative_stock = keep_nonnegative_stock,
-                         keep_unit = keep_unit, debug = debug, only_stocks = only_stocks)
+                         only_stocks = only_stocks,
+                         keep_unit = keep_unit, debug = debug)
   filepath = write_script(script, ext = ".jl")
   script = readLines(filepath) %>% paste0(collapse = "\n")
 
@@ -112,7 +116,8 @@ compile_julia = function(sfm,
                          format_code=TRUE,
                          keep_nonnegative_flow = TRUE,
                          keep_nonnegative_stock = FALSE,
-                         keep_unit = TRUE, verbose = FALSE, debug = FALSE, only_stocks = FALSE){
+                         keep_unit = TRUE, only_stocks = FALSE,
+                         verbose = FALSE, debug = FALSE){
 
   # Add "inflow" and "outflow" entries to stocks to match flow "to" and "from" entries
   flow_df = get_flow_df(sfm)
@@ -195,9 +200,6 @@ compile_julia = function(sfm,
   ordering = order_equations(sfm)
 
   # If there are no dynamic variables or delayed variables, set only_stocks to TRUE
-  # intermediary = lapply(sfm$model$variables, function(x){
-  #   lapply(x, `[[`, "intermediary")
-  # }) %>% unlist() %>% unname()
   delay_past = get_delay_past(sfm)
 
   only_stocks = ifelse(is.null(ordering$dynamic$order) & length(delay_past) == 0, TRUE, only_stocks)
@@ -221,7 +223,7 @@ compile_julia = function(sfm,
   # func_def = compile_func_julia(sfm, keep_nonnegative_flow, keep_unit)
 
   # Prepare equations
-  sfm = prep_equations_variables(sfm, keep_unit, keep_nonnegative_flow)
+  sfm = prep_equations_variables_julia(sfm, keep_unit, keep_nonnegative_flow)
 
   # Static equations
   static_eqn = compile_static_eqn_julia(sfm, ordering, keep_unit)
@@ -546,7 +548,7 @@ compile_times_julia = function(sfm, keep_unit){
 #'
 #' @returns Updated stock-and-flow model with equations as strings
 #' @noRd
-prep_equations_variables = function(sfm, keep_unit, keep_nonnegative_flow){
+prep_equations_variables_julia = function(sfm, keep_unit, keep_nonnegative_flow){
 
   names_df = get_names(sfm)
 
@@ -641,7 +643,6 @@ prep_equations_variables = function(sfm, keep_unit, keep_nonnegative_flow){
                    })
 
   # Flow equations
-  # names_df = get_names(sfm)
   flow_df = get_flow_df(sfm)
   sfm$model$variables$flow = lapply(sfm$model$variables$flow,
                     function(x){
@@ -869,7 +870,7 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
   flow_eqn = lapply(sfm$model$variables$flow,`[[`, "eqn_str")
 
   # Compile and order all dynamic equations
-  dynamic_eqn = c(aux_eqn, flow_eqn)[ordering$dynamic$order] %>% unlist()
+  dynamic_eqn = unlist(c(aux_eqn, flow_eqn)[ordering$dynamic$order])
   dynamic_eqn
 
   # Compile and order all dynamic equations
@@ -1126,8 +1127,6 @@ compile_run_ode_julia = function(sfm,
                       sfm$sim_specs$method == "rk4", "RK4()", NA_character_
                     )
                   ),
-                  # dplyr::case_when(sfm$sim_specs$method == "euler" ~ "Euler()",
-                  #                  sfm$sim_specs$method == "rk4" ~ "RK4()"),
                   ifelse(sfm$sim_specs$method %in% c("euler", "rk4"),
                          paste0(", dt = ", P$timestep_name, ", adaptive=", ifelse(sfm$sim_specs$adaptive, "true", "false")), ""),
                   ifelse(!only_stocks, paste0(", ", P$callback_name, " = ", P$callback_name
@@ -1198,6 +1197,7 @@ compile_run_ode_julia = function(sfm,
   #   script = paste0(script, "\n# Assign empty dictionary to units\n", P$units_dict, " = Dict()\n")
   # }
 
+  # ** remove delays ?
 
   return(list(script=script))
 }

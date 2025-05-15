@@ -117,12 +117,16 @@ test_that("simulate with different components works", {
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build("A", "stock", eqn = "100")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sort(names(sim$df)), c("A", "time"))
 
   # One stock with flows, other stock without flows
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build(c("A", "B"), "stock", eqn = "100") %>%
     build("C", "flow", eqn = "1", to = "A")
   expect_no_error(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
 
   # With one intermediary -> error in constructing Dataframe before
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
@@ -130,6 +134,8 @@ test_that("simulate with different components works", {
     build("B", "flow", eqn = "1", to = "A") %>%
     build("C", "aux", eqn = "B + 1")
   expect_no_message(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
 
   # One intermediary variable that is also a stock, so it is removed -> does merging of df and intermediary_df still work?
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
@@ -145,6 +151,8 @@ test_that("simulate with different components works", {
     build("B", "stock", eqn = "1") %>%
     build("C", "aux", eqn = "B + 1")
   expect_no_message(simulate(sfm))
+  sim = simulate(sfm)
+  expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
 
   # # With macros
   # sfm = xmile(start = 0, stop = 10, dt = 0.1) %>%
@@ -157,16 +165,20 @@ test_that("simulate with different components works", {
   # **sigmoid() errorsfm = xmile() %>% header(name = "Maya's Burnout") %>%
   # eqn = "sigmoid((workday - normal_workday), midpoint = health)"
 
-
-
   # Only keep stocks
   sfm = xmile("SIR")
   sim = simulate(sfm, only_stocks = TRUE)
   expect_equal(ncol(as.data.frame(sim)), 1 + length(names(sfm$model$variables$stock)))
 
+  # All variables should be kept if only_stocks = FALSE
+  sfm = xmile("SIR")
+  sim = simulate(sfm, only_stocks = FALSE)
+  df = as.data.frame(sfm)
+  df = df[df$type != "constant", ]
+  expect_equal(ncol(as.data.frame(sim)), 1 + length(df$name))
 
 
-  # some have units
+  # ** some have units
 
 })
 

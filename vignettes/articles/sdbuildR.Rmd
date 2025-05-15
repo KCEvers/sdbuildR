@@ -89,13 +89,13 @@ as.data.frame(sfm)
 All package capabilities are described in the vignettes:
 
 * `vignette("build")` Learn how to build, modify, and debug stock-and-flow models.
-2. `vignette("units")` Learn why and how to use (custom) units.
+* `vignette("units")` Learn why and how to use (custom) units.
 <!-- 3. **Delays**: Not all dynamics are instantaneous. Learn about delays (fixed, smooth, material and information) and how to implement them with sdbuildR. -->
 <!-- 4. **Sensitivity**:  -->
 
 ## Limitations
 
-Unlike other System Dynamics software, sdbuildR makes a distinction between static and dynamic variables. This means that static variables - the initial values of stocks, constants, and graphical functions - cannot depend on dynamic variables - auxiliaries and flows. If this is the case, an error will be thrown with the problematic dependencies and the model will not be simulated. 
+<!-- Unlike other System Dynamics software, sdbuildR makes a distinction between static and dynamic variables. This means that static variables - the initial values of stocks, constants, and graphical functions - cannot depend on dynamic variables - auxiliaries and flows. If this is the case, an error will be thrown with the problematic dependencies and the model will not be simulated.  -->
 
 Non-negative stocks and flows are only minimally supported, where flows are not adjusted in case of non-negative stocks. Note that setting stocks and flows to be non-negative is not recommended [@sterman2000]. If a stock or flow can logically never be negative, for example in the case of animals or deaths, this should ideally arise from the model equations and parameters itself. If they unintentionally turn negative, it is likely due to model misspecification and including hard-coded constraints can lead to unexpected results [@sterman2000].
 

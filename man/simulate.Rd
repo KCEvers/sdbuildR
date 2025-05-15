@@ -10,9 +10,9 @@ simulate(
   keep_nonnegative_flow = TRUE,
   keep_nonnegative_stock = FALSE,
   keep_unit = TRUE,
+  only_stocks = FALSE,
   verbose = FALSE,
   debug = FALSE,
-  only_stocks = FALSE,
   ...
 )
 }
@@ -27,11 +27,11 @@ simulate(
 
 \item{keep_unit}{If TRUE, keeps units of variables. Defaults to TRUE.}
 
+\item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.}
+
 \item{verbose}{If TRUE, update on progress. Defaults to FALSE.}
 
 \item{debug}{If TRUE, print output for debugging. Defaults to FALSE.}
-
-\item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.}
 
 \item{...}{Optional arguments}
 }

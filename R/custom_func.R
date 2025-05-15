@@ -1,4 +1,3 @@
-### Custom functions to match Insight Maker functions
 
 #' Convert Insight Maker's Round() function to R
 #'
@@ -14,35 +13,11 @@
 #'
 #' @examples round_IM(.5)
 round_IM = function(x, digits = 0) {
-  # posneg = sign(x)
-  # z = abs(x)*10^digits
-  # z = z + 0.5 + sqrt(.Machine$double.eps)
-  # z = trunc(z)
-  # z = z/10^digits
-  # z*posneg
-#
-#   if (inherits(x, "units")){
-#     x_has_units = TRUE
-#     x_units = units(x)
-#     x = drop_if_units(x)
-#   } else {
-#     x_has_units = FALSE
-#   }
 
-  y = ifelse(x %% 1 == 0.5 | x %% 1 == -0.5,
+  return(ifelse(x %% 1 == 0.5 | x %% 1 == -0.5,
          ceiling(x),
-         round(x, digits))
-
-  # # Add units back in
-  # if (x_has_units){
-  #   y = units::set_units(y, x_units)
-  # }
-  return(y)
+         round(x, digits)))
 }
-
-
-
-
 
 
 #' Logit function
@@ -55,9 +30,6 @@ round_IM = function(x, digits = 0) {
 #' @examples
 #' logit(.1)
 logit = function(p){
-
-  # p = drop_if_unitless(p)
-
   return(log(p/(1-p)))
 }
 
@@ -74,8 +46,6 @@ logit = function(p){
 #' @examples
 #' expit(1)
 expit = function(x){
-
-  # x = drop_if_unitless(x)
   return(1 / (1+exp(-x)))
 }
 
@@ -443,12 +413,6 @@ nonnegative = function(x){
   # Safe comparison to zero
   if (is.na(x)){
     return(x)
-  # } else if (inherits(x, "units")){
-  #   if (drop_if_units(x) < 0){
-  #     return(x - x) # Preserve units, x - x will evaluate to 0 (with units) in case it is negative
-  #   } else {
-  #     return(x)
-  #   }
   } else {
     return(max(c(0, x)))
   }
@@ -562,5 +526,40 @@ sigmoid <- function(x, slope = 1, midpoint = 0) {
   stopifnot("midpoint must be numeric!" = is.numeric(midpoint))
 
   return(1 / (1 + exp(-slope*(x-midpoint))))
+}
+
+
+
+#' Function to save dataframe at specific times
+#'
+#' Internal function used to save the dataframe at specific times in case saveat != dt in the simulation specifications.
+#'
+#' @param df Dataframe
+#' @param time_col Name of the time column
+#' @param new_times Vector of new times to save the dataframe at
+#'
+#' @returns Dataframe with new times and interpolated values
+#' @export
+#'
+saveat_func <- function(df, time_col, new_times) {
+  # Extract the time column (first column)
+  time <- df[[time_col]]
+
+  # Get the columns to interpolate (all except the first)
+  cols_to_interpolate <- setdiff(names(df), time_col)
+
+  # Interpolate each column (except the first) at new_times
+  interpolated <- lapply(cols_to_interpolate, function(col) {
+    stats::approx(x = time, y = df[[col]], xout = new_times, method = "linear")$y
+  })
+
+  # Combine results into a new data frame
+  result <- data.frame(new_times)
+  names(result) <- time_col
+  for (i in seq_along(cols_to_interpolate)) {
+    result[[cols_to_interpolate[i]]] <- interpolated[[i]]
+  }
+
+  return(result)
 }
 

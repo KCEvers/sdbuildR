@@ -44,8 +44,9 @@ simulate = function(sfm,
                     keep_nonnegative_flow = TRUE,
                     keep_nonnegative_stock = FALSE,
                     keep_unit = TRUE,
+                    only_stocks = FALSE,
                     verbose = FALSE,
-                    debug = FALSE, only_stocks = FALSE, ...){
+                    debug = FALSE,  ...){
 
   # First assess whether the model is valid
   problems = debugger(sfm, quietly = TRUE)
@@ -58,7 +59,8 @@ simulate = function(sfm,
                           format_code=format_code,
                           keep_nonnegative_flow = keep_nonnegative_flow,
                           keep_nonnegative_stock = keep_nonnegative_stock,
-                          keep_unit = keep_unit, verbose = verbose, debug = debug, only_stocks = only_stocks))
+                          keep_unit = keep_unit, only_stocks = only_stocks,
+                          verbose = verbose, debug = debug))
   } else if (tolower(sfm$sim_specs$language) == "r"){
 
     if (!requireNamespace("deSolve", quietly = TRUE)){
@@ -69,6 +71,7 @@ simulate = function(sfm,
                       format_code=format_code,
                       keep_nonnegative_flow = keep_nonnegative_flow,
                       keep_nonnegative_stock = keep_nonnegative_stock,
+                      only_stocks = only_stocks,
                       verbose = verbose, debug = debug))
   } else {
     stop("Language not supported.\nPlease run either sfm %>% sim_specs(language = 'Julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
@@ -99,15 +102,18 @@ compile = function(sfm,
                                     format_code=format_code,
                                     keep_nonnegative_flow = keep_nonnegative_flow,
                                     keep_nonnegative_stock = keep_nonnegative_stock,
-                                    keep_unit = keep_unit, verbose = verbose, debug = debug, only_stocks = only_stocks))
+                                    keep_unit = keep_unit,
+                         only_stocks = only_stocks,
+                         verbose = verbose, debug = debug))
   } else if (tolower(sfm$sim_specs$language) == "r"){
     return(compile_R(sfm,
                      format_code=format_code,
                      keep_nonnegative_flow = keep_nonnegative_flow,
                      keep_nonnegative_stock = keep_nonnegative_stock,
+                     only_stocks = only_stocks,
                      verbose = verbose, debug = debug))
   } else {
-    stop("Language not supported.\nPlease run either sfm %>% sim_specs(language = 'julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
+    stop("Language not supported.\nPlease run either sfm %>% sim_specs(language = 'Julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
   }
 
 }
