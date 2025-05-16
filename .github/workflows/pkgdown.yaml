@@ -47,6 +47,12 @@ jobs:
           julia -e 'using Pkg; Pkg.add("Suppressor"); Pkg.precompile()'
         continue-on-error: false  # Fail if Suppressor installation fails
 
+      - name: Install and precompile Julia RCall package
+        run: |
+          julia -e 'using Pkg; Pkg.add("RCall"); Pkg.precompile()'
+        continue-on-error: false  # Fail if RCall installation fails
+
+
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
