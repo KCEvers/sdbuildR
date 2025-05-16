@@ -40,7 +40,7 @@ jobs:
       - name: Set up Julia
         uses: julia-actions/setup-julia@v2  # Updated to v2 for better reliability
         with:
-          version: '11'  # Stable Julia version compatible with JuliaCall
+          version: '1.11'  # Stable Julia version compatible with JuliaCall
 
       - name: Install and precompile Julia Suppressor package
         run: |
