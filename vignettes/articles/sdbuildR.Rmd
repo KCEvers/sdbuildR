@@ -11,6 +11,10 @@ knitr::opts_chunk$set(
 
 ### Quick start
 
+```{r libraries, include=FALSE}
+library(sdbuildR) 
+```
+
 Stock-and-flow models can be created in three ways. Firstly, dozens of example models can be loaded using `xmile()`. Plot the stock-and-flow diagram to get an overview of the model:
 
 ```{r SIR_diagram, fig.width=8, fig.height=2}

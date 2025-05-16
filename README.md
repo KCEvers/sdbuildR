@@ -4,6 +4,8 @@
 # sdbuildR: Stock-and-flow modelling with R
 
 <!-- badges: start -->
+
+[![R-CMD-check](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 Easily build and simulate stock-and-flow models with sdbuildR in R. With
