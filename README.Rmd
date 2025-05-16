@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# sdbuildR: Stock-and-flow modelling with R
+# sdbuildR: Stock-and-flow modelling in R
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml)

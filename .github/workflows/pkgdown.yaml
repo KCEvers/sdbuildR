@@ -20,6 +20,7 @@ jobs:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      AUTO_JULIA_INSTALL: true  # Enable automatic Julia installation for JuliaCall
     permissions:
       contents: write
     steps:
@@ -35,6 +36,16 @@ jobs:
         with:
           extra-packages: any::pkgdown, local::.
           needs: website
+
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v2  # Updated to v2 for better reliability
+        with:
+          version: '11'  # Stable Julia version compatible with JuliaCall
+
+      - name: Install and precompile Julia Suppressor package
+        run: |
+          julia -e 'using Pkg; Pkg.add("Suppressor"); Pkg.precompile()'
+        continue-on-error: false  # Fail if Suppressor installation fails
 
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)

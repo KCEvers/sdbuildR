@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# sdbuildR: Stock-and-flow modelling with R
+# sdbuildR: Stock-and-flow modelling in R
 
 <!-- badges: start -->
 
