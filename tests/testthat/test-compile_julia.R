@@ -77,7 +77,7 @@ test_that("templates work", {
 
 test_that("saveat works", {
 
-  sdbuildR_setup()
+  use_julia()
 
   # Cannot set saveat to lower than dt
   sfm = xmile("SIR")

@@ -11,12 +11,6 @@ knitr::opts_chunk$set(
 
 ### Quick start
 
-If using the Julia backend, the Julia environment needs to be set up for sdbuildR in each R session:
-
-```{r set-up sdbuildR, message=FALSE, results='hide'}
-library(sdbuildR)
-sdbuildR_setup()
-```
 Stock-and-flow models can be created in three ways. Firstly, dozens of example models can be loaded using `xmile()`. Plot the stock-and-flow diagram to get an overview of the model:
 
 ```{r SIR_diagram, fig.width=8, fig.height=2}
@@ -53,16 +47,12 @@ And lastly, a stock-and-flow model can be created from scratch. We make use of t
 ```{r logistic_plot, fig.width=8, fig.height=4}
 sfm = xmile() %>%
   header(name = "Population growth") %>%
-  build("X", "stock", eqn = ".01", label = "Population size", 
-        units = "people") %>%
-  build("inflow", "flow", eqn = "r * X / u('day')", to = "X", 
-        label = "Births", units = "people/day") %>%
-  build("outflow", "flow", eqn = "r * X^2 / K / u('day')", from = "X", 
-        label = "Deaths", units = "people/day") %>%
+  build("X", "stock", eqn = ".01", label = "Population size") %>%
+  build("change", "flow", eqn = "r * (1 - X/K)", to = "X", 
+        label = "Births and Deaths") %>%
   build("r", "constant", eqn = "0.1", label = "Growth rate") %>%
   build("K", "constant", eqn = "1", label = "Carrying capacity") %>%
-  sim_specs(time_units = "days", start = 0, stop = 200, dt = 0.01) %>%
-  model_units("people")
+  sim_specs(stop = 200) 
 plot(simulate(sfm))
 ```
 

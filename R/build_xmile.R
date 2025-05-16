@@ -287,12 +287,18 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE,
     }
   }
 
+  nonstock_names = nonstock_names[unname(nonstock_names) %in% colnames(x$df)]
+
   if (requireNamespace("plotly", quietly = TRUE)){
 
     # Put dataframe in long format
     x_col = "time"
 
-    x$df = x$df[, intersect(colnames(x$df), c(x_col, stock_names, nonstock_names)), drop = FALSE]
+    x$df = x$df[, intersect(colnames(x$df),
+                            c(x_col, unname(stock_names), unname(nonstock_names))),
+                drop = FALSE]
+
+    # Wide to long
     df_long <- stats::reshape(
       data = as.data.frame(x$df),
       direction = "long",
@@ -301,11 +307,13 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE,
       # varying = which(colnames(x$df) != "time"),
       v.names = "value",
       timevar = "variable",
-      new.row.names = NULL
-      # times = colnames(x$df)[colnames(x$df) != "time"]
-    )
+      # Ensure variable names are used
+      times = colnames(x$df)[colnames(x$df) != "time"]
+    ) %>% magrittr::set_rownames(NULL)
 
     n = length(unique(df_long$variable))
+
+    # Don't add check for template in hcl.pals(), because hcl is more flexible in palette names matching.
 
     if (is.null(colors)){
       colors = grDevices::hcl.colors(n = n, palette = palette)

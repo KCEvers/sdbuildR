@@ -53,7 +53,7 @@ julia_latest_version <- function(){
 
 #' Get the URL for a specific version of Julia
 #'
-#' @inheritParams sdbuildR_setup
+#' @inheritParams use_julia
 #'
 #' @noRd
 #' @returns URL

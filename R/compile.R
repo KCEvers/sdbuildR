@@ -4,7 +4,7 @@
 
 #' Simulate stock-and-flow model
 #'
-#' Simulate a stock-and-flow model with simulation specifications defined by `sim_specs()`. If not already run, the Julia environment will be set up with `sdbuildR_setup()`. If any problems are detected by `debugger()`, the model cannot be simulated.
+#' Simulate a stock-and-flow model with simulation specifications defined by `sim_specs()`. If not already run, the Julia environment will be set up with `use_julia()`. If any problems are detected by `debugger()`, the model cannot be simulated.
 #'
 #' @inheritParams insightmaker_to_sfm
 #' @inheritParams build
@@ -33,7 +33,7 @@
 #'
 #' # Use Julia for models with units or delay functions
 #' sfm = xmile("coffee_cup") %>% sim_specs(language = "Julia")
-#' sdbuildR_setup()
+#' use_julia()
 #' sim = simulate(sfm)
 #' plot(sfm)
 #'

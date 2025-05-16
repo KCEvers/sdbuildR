@@ -48,7 +48,7 @@ List with variables created in the simulation script
 }
 }
 \description{
-Simulate a stock-and-flow model with simulation specifications defined by \code{sim_specs()}. If not already run, the Julia environment will be set up with \code{sdbuildR_setup()}. If any problems are detected by \code{debugger()}, the model cannot be simulated.
+Simulate a stock-and-flow model with simulation specifications defined by \code{sim_specs()}. If not already run, the Julia environment will be set up with \code{use_julia()}. If any problems are detected by \code{debugger()}, the model cannot be simulated.
 }
 \examples{
 sfm = xmile("SIR")
@@ -57,7 +57,7 @@ plot(sfm)
 
 # Use Julia for models with units or delay functions
 sfm = xmile("coffee_cup") \%>\% sim_specs(language = "Julia")
-sdbuildR_setup()
+use_julia()
 sim = simulate(sfm)
 plot(sfm)
 

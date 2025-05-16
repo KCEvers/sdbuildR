@@ -87,7 +87,7 @@ Units thus help to verify and interpret our models. Next, we'll use the simple e
 
 ```{r libraries, echo=FALSE}
 library(sdbuildR)
-sdbuildR_setup()
+use_julia()
 ```
 
 The following example is taken from Meadows' *Thinking in Systems* \cite{meadows}. We model the temperature of a coffee cup adjusting to room temperature. The temperature of the coffee cup is a stock, which either cools down or heats up, depending on the difference between the temperature of the coffee cup and the room temperature. 
