@@ -20,8 +20,6 @@ build(
   to = NULL,
   from = NULL,
   non_negative = FALSE,
-  min = NULL,
-  max = NULL,
   xpts = NULL,
   ypts = NULL,
   source = NULL,
@@ -60,10 +58,6 @@ build(
 
 \item{non_negative}{If TRUE, variable is enforced to be non-negative (i.e. strictly 0 or positive). Defaults to FALSE.}
 
-\item{min}{Minimum value constraint of variable. Defaults to NULL (no constraint).}
-
-\item{max}{Maximum value constraint of variable. Defaults to NULL (no constraint).}
-
 \item{xpts}{Only for graphical function: vector of x-domain points. Must be of the same length as ypts.}
 
 \item{ypts}{Only for graphical function: vector of y-domain points. Must be of the same length as xpts.}
@@ -83,25 +77,25 @@ Variables in stock-and-flow models may be stocks, flows, constants, auxiliaries,
 \section{Stocks}{
  Stocks define the state of the system. They accumulate material or information over time, such as people, products, or beliefs, which creates memory and inertia in the system. As such, stocks need not be tangible. Stocks are variables that can increase and decrease, and can be measured at a single moment in time. The value of a stock is increased or decreased by flows. A stock may have multiple inflows and multiple outflows. The net change in a stock is the sum of its inflows minus the sum of its outflows.
 
-The obligatory properties of a stock are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative", "min", "max", "conveyor", "len".
+The obligatory properties of a stock are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative", "conveyor", "len".
 }
 
 \section{Flows}{
  Flows move material and information through the system. Stocks can only decrease or increase through flows. A flow must flow from and/or flow to a stock. If a flow is not flowing from a stock, the source of the flow is outside of the model boundary. Similarly, if a flow is not flowing to a stock, the destination of the flow is outside the model boundary. Flows are defined in units of material or information moved over time, such as birth rates, revenue, and sales.
 
-The obligatory properties of a flow are "name", "type", "eqn", and either "from", "to", or both. Optional additional properties are "units", "label", "doc", "non_negative", "min", "max".
+The obligatory properties of a flow are "name", "type", "eqn", and either "from", "to", or both. Optional additional properties are "units", "label", "doc", "non_negative".
 }
 
 \section{Constants}{
  Constants are variables that do not change over the course of the simulation - they are time-independent. These may be numbers, but also functions. They can depend only on other constants.
 
-The obligatory properties of a constant are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative", "min", "max".
+The obligatory properties of a constant are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative".
 }
 
 \section{Auxiliaries}{
  Auxiliaries are dynamic variables that change over time. They are used for intermediate calculations in the system, and can depend on other flows, auxiliaries, constants, and stocks.
 
-The obligatory properties of an auxiliary are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative", "min", "max".
+The obligatory properties of an auxiliary are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative".
 }
 
 \section{Graphical functions}{
@@ -148,7 +142,7 @@ sfm = sfm \%>\%
        doc = c("Birth rate of predators", "Death rate of predators",
                "Birth rate of prey", "Death rate of prey by predators"))
 
-# We now have a complete predator-prey model which can be simulated:
+# We now have a complete predator-prey model which is ready to be simulated
 sim = simulate(sfm)
 plot(sim)
 

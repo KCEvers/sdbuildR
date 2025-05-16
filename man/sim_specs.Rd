@@ -14,7 +14,7 @@ sim_specs(
   adaptive = FALSE,
   seed = NULL,
   time_units = "s",
-  language = "Julia",
+  language = "R",
   ...
 )
 }
@@ -37,7 +37,7 @@ sim_specs(
 
 \item{time_units}{Simulation time unit, e.g. 's' (second). Defaults to "s".}
 
-\item{language}{Coding language in which to simulate model. Either "Julia" (recommended) or "R". Defaults to "Julia".}
+\item{language}{Coding language in which to simulate model. Either "R" or "Julia". Julia is necessary for using units or delay functions. Defaults to "R".}
 
 \item{...}{Optional additional parameters}
 }
@@ -80,7 +80,7 @@ sim2 = simulate(sfm)
 plot(sim1)
 plot(sim2)
 
-# Not recommended: change the simulation language to R.
-# Note that units and delay functions are not supported in R.
-sfm = sfm \%>\% sim_specs(language = "R")
+# Change the simulation language to Julia to use units and delay functions
+sfm = sfm \%>\% sim_specs(language = "Julia")
+
 }

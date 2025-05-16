@@ -94,11 +94,11 @@ The following example is taken from Meadows' *Thinking in Systems* \cite{meadows
 
 ### Simulation time unit
 
-We first specify the simulation time unit. Think of the time axis of your simulation plot - if it spans from 0 to 100, are these a hundred hours, days, years? The simulation time unit can be modified using `sim_specs()`:
+We first specify the simulation time unit. Think of the time axis of your simulation plot - if it spans from 0 to 100, are these a hundred hours, days, years? The simulation time unit can be modified using `sim_specs()`. We also change the simulation engine to Julia.
 
 ```{r}
 # Simulation time unit of a day
-sfm = xmile() %>% sim_specs(time_units = "day")
+sfm = xmile() %>% sim_specs(time_units = "day", language = "Julia")
 
 # Simulation time unit of a year
 sfm = xmile() %>% sim_specs(time_units = "year")
@@ -206,7 +206,7 @@ We have now fully specified all units in the model, and are ready to simulate! W
 
 ```{r}
 sfm = xmile() %>% header(name = "Coffee cup") %>% 
-  sim_specs(time_units = "minute") %>%
+  sim_specs(time_units = "minute", language = "Julia") %>%
   build("coffee_temperature", "stock", eqn = "100", 
         units = "Celsius", label = "Coffee temperature") %>%
   build("room_temperature", "constant", eqn = "18", 
@@ -293,7 +293,7 @@ debugger(sfm)
 
 ### Why are units not supported in R?
 
-sdbuildR only supports units in Julia, not in R. Though technically, the *units* package in R could provide unit support for system dynamics models in R, it is practically unfeasable. The *deSolve* package strips units from state variables and derivatives, such that units need to be reassigned in each iteration. This massively slows down computation, rendering unit support in R unworkable. Conversely, the *Unitful* package in Julia offers unit support without additional runtime cost, as well as compatability with the *DifferentialEquations* package.
+sdbuildR only supports units in Julia, not in R. Though technically, the *units* package in R could provide unit support for system dynamics models in R, it is practically unfeasible. The *deSolve* package strips units from state variables and derivatives, such that units need to be reassigned in each iteration. This massively slows down computation, rendering unit support in R unworkable. Conversely, the *Unitful* package in Julia offers unit support without additional runtime cost, as well as compatability with the *DifferentialEquations* package.
 
 Units of variables are thus omitted when simulating in R. An error is thrown in case any equation contains a unit string `u('')`. When simulating in Julia, use of units can be turned off by calling `simulate()` with `keep_unit = FALSE`.
 

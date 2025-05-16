@@ -487,13 +487,13 @@ test_that("adding scientific notation", {
 test_that("functions in Julia work", {
 
   # round() with units
-  sfm = xmile() %>% build("a", "stock", eqn = "round(10.235)")
+  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "round(10.235)")
   expect_no_error(simulate(sfm))
 
-  sfm = xmile() %>% build("a", "stock", eqn = "round(u('100.80 kilograms'))")
+  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "round(u('100.80 kilograms'))")
   expect_no_error(simulate(sfm))
 
-  sfm = xmile() %>% build("a", "stock", eqn = "round(u('108.67 seconds'))")
+  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "round(u('108.67 seconds'))")
   expect_no_error(simulate(sfm))
 
   # # with digits argument ** to do: digits is a keyword argument in Julia and cannot be a float!
@@ -501,13 +501,13 @@ test_that("functions in Julia work", {
   # expect_no_error(simulate(sfm))
 
   # Cosine function needs unitless argument or argument in radians
-  sfm = xmile() %>% build("a", "stock", eqn = "cos(10)")
+  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "cos(10)")
   expect_no_error(simulate(sfm))
 
-  sfm = xmile() %>% build("a", "stock", eqn = "cos(u('10meters'))")
+  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "cos(u('10meters'))")
   expect_warning(simulate(sfm), "An error occurred while running the Julia script")
 
-  sfm = xmile() %>% build("a", "stock", eqn = "cos(u('10radians'))")
+  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "cos(u('10radians'))")
   expect_no_error(simulate(sfm))
 
 })

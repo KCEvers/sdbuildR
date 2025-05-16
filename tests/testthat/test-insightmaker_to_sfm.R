@@ -19,11 +19,13 @@ test_that("translating Insight Maker models works", {
   expect_equal("xpts" %in% names(df), TRUE)
   expect_equal("ypts" %in% names(df), TRUE)
 
-  expect_no_error(simulate(sfm))
-
-  sim = simulate(sfm)
+  expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = simulate(sfm %>% sim_specs(language = "Julia"))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
+
+  expect_error(simulate(sfm %>% sim_specs(language = "R")), "The model contains unit strings u\\(''\\), which are not supported for simulations in R")
+
 
   URL = 'https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022'
   expect_no_error(insightmaker_to_sfm(URL = URL))
@@ -33,9 +35,13 @@ test_that("translating Insight Maker models works", {
   expect_equal(nrow(df) > 0, TRUE)
   expect_equal("macro" %in% df$type, TRUE)
 
-  expect_no_error(simulate(sfm))
+  expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
-  sim = simulate(sfm)
+  expect_no_error(simulate(sfm %>% sim_specs(language = "R")))
+  sim = simulate(sfm %>% sim_specs(language = "R"))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
@@ -47,9 +53,13 @@ test_that("translating Insight Maker models works", {
   expect_equal(nrow(df) > 0, TRUE)
   expect_equal("macro" %in% df$type, TRUE)
 
-  expect_no_error(simulate(sfm))
+  expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  expect_equal(sim$success, TRUE)
+  expect_equal(nrow(sim$df) > 0, TRUE)
 
-  sim = simulate(sfm)
+  expect_no_error(simulate(sfm %>% sim_specs(language = "R")))
+  sim = simulate(sfm %>% sim_specs(language = "R"))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 })

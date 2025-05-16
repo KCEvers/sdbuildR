@@ -988,7 +988,7 @@ model_units = function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_nam
     }
   } else {
 
-    # Change units to units valid for julia's Unitful package
+    # Change units to units valid for Julia's Unitful package
     regex_units = get_regex_units()
 
     if (!is.null(change_name)){
@@ -1084,7 +1084,7 @@ model_units = function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_nam
                                            old_eqn = x$eqn
                                            x$eqn = clean_unit_in_u(x$eqn, dict)
 
-                                           # If equation changed, redo julia
+                                           # If equation changed, redo Julia translation
                                            if (old_eqn != x$eqn){
                                               x$eqn_julia = convert_equations_julia(sfm, x$type,
                                                                                x$name, x$eqn,
@@ -1233,7 +1233,7 @@ macro = function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = F
                 stringr::str_sub(x$eqn, idx_df[i, "start"], idx_df[i, "end"]) = change_name
               }
 
-              # Update julia translation
+              # Update Julia translation
               idx_df = get_range_names(x$eqn_julia, name, names_with_brackets = FALSE)
               if (nrow(idx_df) > 0){
                 # Reverse indices to replace correctly
@@ -1300,7 +1300,7 @@ macro = function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = F
     eqn = clean_unit_in_u(eqn, regex_units)
     eqn = ensure_length(eqn, name)
 
-    # Convert equation to julia
+    # Convert equation to Julia
     eqn_julia = sapply(1:length(name), function(i){
 
       # Assign name already to convert functions correctly
@@ -1407,7 +1407,7 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 #' @param adaptive If TRUE, an adaptive (instead of a fixed) time step is used. Defaults to FALSE.
 #' @param seed Seed number to ensure reproducibility across runs in case of random elements. Must be an integer. Defaults to NULL (no seed).
 #' @param time_units Simulation time unit, e.g. 's' (second). Defaults to "s".
-#' @param language Coding language in which to simulate model. Either "Julia" (recommended) or "R". Defaults to "Julia".
+#' @param language Coding language in which to simulate model. Either "R" or "Julia". Julia is necessary for using units or delay functions. Defaults to "R".
 #' @param ... Optional additional parameters
 #'
 #' @return Updated stock-and-flow model with new simulation specifications
@@ -1445,9 +1445,9 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 #'plot(sim1)
 #'plot(sim2)
 #'
-#'# Not recommended: change the simulation language to R.
-#'# Note that units and delay functions are not supported in R.
-#'sfm = sfm %>% sim_specs(language = "R")
+#'# Change the simulation language to Julia to use units and delay functions
+#'sfm = sfm %>% sim_specs(language = "Julia")
+#'
 sim_specs = function(sfm,
                      method = "euler",
                      start = "0.0",
@@ -1457,7 +1457,7 @@ sim_specs = function(sfm,
                      adaptive = FALSE,
                      seed = NULL,
                      time_units = "s",
-                     language = "Julia", ...){
+                     language = "R", ...){
 
   # Basic check
   if (missing(sfm)){
@@ -1755,19 +1755,19 @@ report_name_change = function(old_names, new_names){
 #'
 #' @section Stocks: Stocks define the state of the system. They accumulate material or information over time, such as people, products, or beliefs, which creates memory and inertia in the system. As such, stocks need not be tangible. Stocks are variables that can increase and decrease, and can be measured at a single moment in time. The value of a stock is increased or decreased by flows. A stock may have multiple inflows and multiple outflows. The net change in a stock is the sum of its inflows minus the sum of its outflows.
 #'
-#' The obligatory properties of a stock are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative", "min", "max", "conveyor", "len".
+#' The obligatory properties of a stock are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative", "conveyor", "len".
 #'
 #' @section Flows: Flows move material and information through the system. Stocks can only decrease or increase through flows. A flow must flow from and/or flow to a stock. If a flow is not flowing from a stock, the source of the flow is outside of the model boundary. Similarly, if a flow is not flowing to a stock, the destination of the flow is outside the model boundary. Flows are defined in units of material or information moved over time, such as birth rates, revenue, and sales.
 #'
-#' The obligatory properties of a flow are "name", "type", "eqn", and either "from", "to", or both. Optional additional properties are "units", "label", "doc", "non_negative", "min", "max".
+#' The obligatory properties of a flow are "name", "type", "eqn", and either "from", "to", or both. Optional additional properties are "units", "label", "doc", "non_negative".
 #'
 #' @section Constants: Constants are variables that do not change over the course of the simulation - they are time-independent. These may be numbers, but also functions. They can depend only on other constants.
 #'
-#' The obligatory properties of a constant are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative", "min", "max".
+#' The obligatory properties of a constant are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative".
 #'
 #' @section Auxiliaries: Auxiliaries are dynamic variables that change over time. They are used for intermediate calculations in the system, and can depend on other flows, auxiliaries, constants, and stocks.
 #'
-#' The obligatory properties of an auxiliary are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative", "min", "max".
+#' The obligatory properties of an auxiliary are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative".
 #'
 #' @section Graphical functions: Graphical functions, also known as table or lookup functions, are interpolation functions used to define the desired output (y) for a specified input (x). They are defined by a set of x- and y-domain points, which are used to create a piecewise linear function. The interpolation method defines the behaviour of the graphical function between x-points ("constant" to return the value of the previous x-point, "linear" to linearly interpolate between defined x-points), and the extrapolation method defines the behaviour outside of the x-points ("NA" to return NA values outside of defined x-points, "nearest" to return the value of the closest x-point).
 #'
@@ -1787,8 +1787,6 @@ report_name_change = function(old_names, new_names){
 #' @param from Source of flow. Must be a stock in the model. Defaults to NULL to indicate no source.
 #' @param units Unit of variable, such as 'meter'. Defaults to "1" (no units).
 #' @param non_negative If TRUE, variable is enforced to be non-negative (i.e. strictly 0 or positive). Defaults to FALSE.
-#' @param min Minimum value constraint of variable. Defaults to NULL (no constraint).
-#' @param max Maximum value constraint of variable. Defaults to NULL (no constraint).
 #' @param xpts Only for graphical function: vector of x-domain points. Must be of the same length as ypts.
 #' @param ypts Only for graphical function: vector of y-domain points. Must be of the same length as xpts.
 #' @param source Only for graphical function: name of variable which will serve as the input to the graphical function. Necessary to specify if units are used. Defaults to NULL.
@@ -1838,7 +1836,7 @@ report_name_change = function(old_names, new_names){
 #'        doc = c("Birth rate of predators", "Death rate of predators",
 #'                "Birth rate of prey", "Death rate of prey by predators"))
 #'
-#'# We now have a complete predator-prey model which can be simulated:
+#'# We now have a complete predator-prey model which is ready to be simulated
 #'sim = simulate(sfm)
 #'plot(sim)
 #'
@@ -1856,7 +1854,8 @@ build = function(sfm, name, type,
                  # Flow arguments
                  to = NULL, from = NULL,
                  # Rarely used arguments
-                 non_negative = FALSE, min = NULL, max = NULL,
+                 non_negative = FALSE,
+                 # min = NULL, max = NULL,
                  # Graphical function arguments
                  xpts = NULL, ypts = NULL,
                  source = NULL,
@@ -2220,7 +2219,7 @@ build = function(sfm, name, type,
 
 
   # Only need regex_units if any of the following are passed
-  if (any(c("eqn", "units", "min", "max", "len") %in% passed_arg)){
+  if (any(c("eqn", "units", "len") %in% passed_arg)){
     regex_units = get_regex_units()
   }
 
@@ -2279,30 +2278,30 @@ build = function(sfm, name, type,
     units = ensure_length(units, name)
   }
 
-  # Minimum and maximum constraint
-  if (!is.null(min)){
-
-    min = clean_unit_in_u(min, regex_units)
-    # min = sapply(min, function(x){clean_unit_in_u(x, regex_units)}) %>% unname()
-
-    min_julia = sapply(min, function(x){convert_equations_julia(sfm, "min", "min", x, var_names,
-                                                                regex_units = regex_units,
-                                                                debug = FALSE)$eqn_julia}) %>% unname()
-    min = ensure_length(min, name)
-    min_julia = ensure_length(min_julia, name)
-    passed_arg = c(passed_arg, "min_julia")
-  }
-
-  if (!is.null(max)){
-    max = clean_unit_in_u(max, regex_units)
-
-    max_julia = sapply(max, function(x){convert_equations_julia(sfm, "max", "max", x, var_names,
-                                                                regex_units = regex_units,
-                                                                debug = FALSE)$eqn_julia}) %>% unname()
-    max = ensure_length(max, name)
-    max_julia = ensure_length(max_julia, name)
-    passed_arg = c(passed_arg, "max_julia")
-  }
+  # # Minimum and maximum constraint
+  # if (!is.null(min)){
+  #
+  #   min = clean_unit_in_u(min, regex_units)
+  #   # min = sapply(min, function(x){clean_unit_in_u(x, regex_units)}) %>% unname()
+  #
+  #   min_julia = sapply(min, function(x){convert_equations_julia(sfm, "min", "min", x, var_names,
+  #                                                               regex_units = regex_units,
+  #                                                               debug = FALSE)$eqn_julia}) %>% unname()
+  #   min = ensure_length(min, name)
+  #   min_julia = ensure_length(min_julia, name)
+  #   passed_arg = c(passed_arg, "min_julia")
+  # }
+  #
+  # if (!is.null(max)){
+  #   max = clean_unit_in_u(max, regex_units)
+  #
+  #   max_julia = sapply(max, function(x){convert_equations_julia(sfm, "max", "max", x, var_names,
+  #                                                               regex_units = regex_units,
+  #                                                               debug = FALSE)$eqn_julia}) %>% unname()
+  #   max = ensure_length(max, name)
+  #   max_julia = ensure_length(max_julia, name)
+  #   passed_arg = c(passed_arg, "max_julia")
+  # }
 
   if ("conveyor" %in% passed_arg){
     if (!inherits(conveyor, "logical")){
@@ -2391,17 +2390,17 @@ build = function(sfm, name, type,
 get_building_block_prop = function(){
   list(
     "stock" = c("type", "name", "eqn", "units", "label", "doc",
-                "non_negative", "min", "max", "conveyor", "len",
-                "eqn_julia", "min_julia", "max_julia"),
+                "non_negative", "conveyor", "len",
+                "eqn_julia"),
     "flow" = c("type", "name", "eqn", "to", "from", "units", "label", "doc",
-               "non_negative", "min", "max",
-               "eqn_julia", "min_julia", "max_julia"),
+               "non_negative",
+               "eqn_julia"),
     "constant" = c("type", "name", "eqn", "units", "label", "doc",
-      "non_negative", "min", "max",
-      "eqn_julia", "min_julia", "max_julia"),
+      "non_negative",
+      "eqn_julia"),
     "aux" = c("type", "name", "eqn", "units", "label", "doc",
-              "non_negative", "min", "max",
-              "eqn_julia", "min_julia", "max_julia"),
+              "non_negative",
+              "eqn_julia"),
     "gf" = c("type", "name", "units", "label",  "xpts", "ypts", "source", "interpolation", "extrapolation", "doc")
   ) %>% return()
 }
@@ -2509,14 +2508,13 @@ get_exported_functions <- function(package) {
   sort(functions)
 }
 
-#' Create syntactically valid, unique R names
+#' Create syntactically valid, unique names for use in R and Julia
 #'
 #' @param create_names Vector of strings with names to transform to valid names
 #' @param names_df Dataframe with at least the column name
 #' @param protected Optional vector of protected names
 #'
 #' @return Translated names
-#' @importFrom rlang .data
 #' @noRd
 #'
 create_R_names = function(create_names, names_df, protected = c()){

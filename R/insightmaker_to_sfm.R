@@ -110,8 +110,19 @@ insightmaker_to_sfm = function(URL,
   # Convert equations and macros to Julia
   sfm = convert_equations_julia_wrapper(sfm, regex_units = regex_units, debug = debug)
 
-  # As a last step, split auxiliaries into constants and auxiliaries
+  # As a last step in the translation, split auxiliaries into constants and auxiliaries
   sfm = split_aux_wrapper(sfm)
+
+  # Determine simulation language: if using units or delay functions, set to Julia
+  delayN_smoothN = get_delayN_smoothN(sfm)
+  delay_past = get_delay_past(sfm)
+  unit_strings = find_unit_strings(sfm)
+  df = as.data.frame(sfm, type = c("stock", "aux", "constant", "gf"))
+
+  if (length(delayN_smoothN) > 0 | length(delay_past) > 0 | length(unit_strings) > 0 | length(sfm$model_units) > 0 | any(df$units != "1")){
+    sfm$sim$specs$language = "Julia"
+  }
+
 
   return(sfm)
 }

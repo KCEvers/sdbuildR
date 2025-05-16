@@ -19,10 +19,10 @@ You can install the development version of sdbuildR like so:
 remotes::install_github("KCEvers/sdbuildR")
 ```
 
-sdbuildR uses Julia as its primary backend, with limited R-based
-simulation support. To enable full functionality, install Julia and
-required packages via JuliaCall. Run `sdbuildR_setup()` to configure
-Julia (initial setup may take 5–15 minutes):
+sdbuildR offers two simulation engines: R and Julia. If you would like
+to use units and delay functions, you will need to set up the Julia
+environment. Run `sdbuildR_setup()` to install Julia and required
+packages (initial setup may take 5–15 minutes):
 
 ``` r
 sdbuildR::sdbuildR_setup()

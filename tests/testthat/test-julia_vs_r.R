@@ -70,3 +70,18 @@ test_that("compare output julia and r for templates", {
   comp = compare_sim(sim1, sim2)
   expect_equal(comp$equal, TRUE)
 })
+
+
+
+test_that("as.data.frame(sim) works", {
+
+  sfm = xmile("SIR")
+  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  expect_equal(class(as.data.frame(sim)), "data.frame")
+  expect_equal(nrow(as.data.frame(sim)) > 0, TRUE)
+
+  sim = simulate(sfm %>% sim_specs(language = "R"))
+  expect_equal(class(as.data.frame(sim)), "data.frame")
+  expect_equal(nrow(as.data.frame(sim)) > 0, TRUE)
+
+})

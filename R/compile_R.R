@@ -132,82 +132,17 @@ compile_R = function(sfm,
                                            return(x)
                                          })
 
-
-  # Function to remove unit
-
-  # # **don't use Unitful with R
-  # replace_unit_old = function(x){
-  #   # print(x)
-  #   new_x = JuliaCall::julia_eval(paste0("Unitful.ustrip(",
-  #                                        stringr::str_replace_all(x, "u\\(['|\"]", "u\"") %>%
-  #                                          stringr::str_replace_all("['|\"]\\)$", "\""),
-  #                                        ")"))
-  #   # print(new_x)
-  #   return(new_x)
-  # }
-  #
-  # # ** this doesn;t work; see
-  # # URL = "https://insightmaker.com/insight/6u2G5l9tGzD73cWnZAoabS/Influence-of-Surface-Temperature-on-Albedo-and-Greenhouse-Effect"
-  # replace_unit = function(x){
-  #   print(x)
-  #   x_split = split_units(stringr::str_replace_all(x, "u\\(['|\"]", "") %>%
-  #                           stringr::str_replace_all("['|\"]\\)$", "")) %>% unlist()
-  #   print(x_split)
-  #   new_x = stringr::str_replace_all(x_split, "([a-zA-z][a-zA-Z0-9_]*)", "") %>% trimws() %>% paste0(collapse = "")
-  #   print(new_x)
-  #   # new_x = JuliaCall::julia_eval(paste0("Unitful.ustrip(",
-  #   #                                      stringr::str_replace_all(x, "u\\(['|\"]", "u\"") %>%
-  #   #                                        stringr::str_replace_all("['|\"]\\)$", "\""),
-  #   #                                      ")"))
-  #   return(new_x)
-  # }
-
-  # # Remove all unit strings from equations
-  # sfm$model$variables = sfm$model$variables %>%
-  #   purrr::map_depth(2, function(x){
-  #     if (is_defined(x$eqn)){
-  #       x$eqn = stringr::str_replace_all(x$eqn, "\\bu\\([\"|'](.*?)[\"|']\\)", "")
-  #       # x$eqn = stringr::str_replace_all(x$eqn, "\\bu\\([\"|'](.*?)[\"|']\\)", replace_unit)
-  #     }
-  #     return(x)
-  #   })
-  #
-  # # Remove all unit strings from macros
-  # sfm$macro = sfm$macro %>%
-  #   purrr::map(function(x){
-  #     if (is_defined(x$eqn)){
-  #       x$eqn = stringr::str_replace_all(x$eqn, "\\bu\\([\"|'](.*?)[\"|']\\)", "")
-  #     }
-  #     return(x)
-  #   })
-
-  # Extract all unit strings from equations
-  var_units = lapply(sfm$model$variables, function(y){
-    lapply(y, function(x){
-      if (is_defined(x$eqn)){
-        return(stringr::str_extract_all(x$eqn, "\\bu\\([\"|'](.*?)[\"|']\\)"))
-      }
-    })
-    }) %>% unname() %>% unlist()
-
-  # Extract all unit strings from macros
-  macro_units = lapply(sfm$macro, function(x){
-      if (is_defined(x$eqn)){
-        return(stringr::str_extract_all(x$eqn, "\\bu\\([\"|'](.*?)[\"|']\\)"))
-      }
-      return(x)
-    }) %>% unlist()
-
-  eqn_units = c(var_units, macro_units)
+  # Check model for unit strings
+  eqn_units = find_unit_strings(sfm)
 
   # Stop if equations contain unit strings
   if (length(eqn_units) > 0){
 
-    eqn_units_format = eqn_units %>% purrr::imap(function(x, name){
-      paste0(name, "$eqn contains ", unname(x))
-    }) %>% unlist() %>% unname()
+    # eqn_units_format = eqn_units %>% purrr::imap(function(x, name){
+    #   paste0(name, "$eqn contains ", unname(x))
+    # }) %>% unlist() %>% unname()
 
-    stop(paste0("The model contains unit strings u(''), which are not supported for simulations in R.\nSet sfm %>% sim_specs(language = 'Julia') or modify the following unit strings:\n\n", paste0(eqn_units_format, collapse = "\n")))
+    stop(paste0("The model contains unit strings u(''), which are not supported for simulations in R.\nSet sfm %>% sim_specs(language = 'Julia') or modify the equations of these variables:\n\n", paste0(names(eqn_units), collapse = ", ")))
   }
 
   # Check model for delayN() and smoothN() functions
@@ -229,7 +164,7 @@ compile_R = function(sfm,
 
   # Compile all parts of the R script
   times = compile_times(sfm)
-  constraints = compile_constraints(sfm)
+  # constraints = compile_constraints(sfm)
   ordering = order_equations(sfm)
 
   # Only need to save stocks if there are no dynamic variables
@@ -274,14 +209,16 @@ library(sdbuildR)
 ", Sys.time(), zeallot_def$script, seed_str, times$script, macros$script, nonneg_stocks$func_def)
 
 
-  ode = compile_ode(sfm, ordering, prep_script, static_eqn, constraints, keep_nonnegative_flow, keep_nonnegative_stock,
+  ode = compile_ode(sfm, ordering, prep_script, static_eqn,
+                    # constraints,
+                    keep_nonnegative_flow, keep_nonnegative_stock,
                     only_stocks)
   run_ode = compile_run_ode(sfm, nonneg_stocks)
 
   script = sprintf("%s
-%s%s%s%s", prep_script,
+%s%s%s", prep_script,
                    ode$script,
-                   constraints$script,
+                   # constraints$script,
                    static_eqn$script,
                    run_ode$script
   )
@@ -305,6 +242,36 @@ library(sdbuildR)
   return(script)
 }
 
+
+#' Title
+#'
+#' @inheritParams build
+#'
+#' @returns List with unit strings
+#' @noRd
+find_unit_strings = function(sfm){
+
+  # Extract all unit strings from equations
+  var_units = lapply(sfm$model$variables, function(y){
+    lapply(y, function(x){
+      if (is_defined(x$eqn)){
+        return(stringr::str_extract_all(x$eqn, "\\bu\\([\"|'](.*?)[\"|']\\)"))
+      }
+    })
+  }) %>% unname() %>% unlist()
+
+  # Extract all unit strings from macros
+  macro_units = lapply(sfm$macro, function(x){
+    if (is_defined(x$eqn)){
+      return(stringr::str_extract_all(x$eqn, "\\bu\\([\"|'](.*?)[\"|']\\)"))
+    }
+    return(x)
+  }) %>% unlist()
+
+  eqn_units = c(var_units, macro_units)
+
+  return(eqn_units)
+}
 
 
 #' Compile script for enabling destructuring assignment in R
@@ -552,7 +519,7 @@ compile_times = function(sfm){
 #' @inheritParams build
 #' @noRd
 #'
-compile_constraints = function(sfm){
+compile_constraints_old = function(sfm){
 
   # Compile string of minimum and maximum constraints
   constraint_def = lapply(sfm$model$variables, function(x){
@@ -882,14 +849,17 @@ attributes(%s)$valroot
 #' @inheritParams compile_static_eqn
 #' @param prep_script Intermediate output of compile_R()
 #' @param static_eqn Output of compile_static_eqn()
-#' @param constraints Output of compile_constraints()
 #'
 #' @return List
 #' @importFrom rlang .data
 #' @noRd
 #'
-compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep_nonnegative_flow, keep_nonnegative_stock,
+compile_ode = function(sfm, ordering, prep_script, static_eqn,
+                       # constraints,
+                       keep_nonnegative_flow, keep_nonnegative_stock,
                        only_stocks){
+
+  # @param constraints Output of compile_constraints()
 
   # Auxiliary equations (dynamic auxiliaries)
   aux_eqn = lapply(sfm$model$variables$aux,`[[`, "eqn_str")
@@ -989,7 +959,7 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep
 
     # Combine change in stocks
     %s
-    %s
+
     return(list(%s%s))
   })
 }", P$ode_func_name,P$time_name, P$state_name, P$parameter_name,
@@ -998,7 +968,7 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn, constraints, keep
                    dynamic_eqn_str,
                    stock_change_str,
                    state_change_str,
-                   constraints$update_ode,
+                   # constraints$update_ode,
                    P$change_state_name, save_var_str)
 
   return(list(script = script))

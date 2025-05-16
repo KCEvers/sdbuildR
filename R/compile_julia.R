@@ -105,11 +105,11 @@ simulate_julia = function(sfm,
 }
 
 
-#' Compile julia script to simulate stock-and-flow model
+#' Compile Julia script to simulate stock-and-flow model
 #'
 #' @inheritParams simulate
 #'
-#' @return julia script
+#' @return Julia script
 #' @noRd
 #'
 compile_julia = function(sfm,
@@ -187,7 +187,7 @@ compile_julia = function(sfm,
 
   # Compile all parts of the R script
   times = compile_times_julia(sfm, keep_unit)
-  constraints = compile_constraints_julia(sfm)
+  # constraints = compile_constraints_julia(sfm)
   # constants = split_aux(sfm)
   # ordering = order_equations(sfm, constants)
 
@@ -247,7 +247,7 @@ compile_julia = function(sfm,
   # Compile ODE script
   ode = compile_ode_julia(sfm, ordering,
                           prep_script, static_eqn,
-                          constraints,
+                          # constraints,
                           keep_nonnegative_stock,
                           keep_unit,
                           only_stocks = only_stocks)
@@ -343,7 +343,7 @@ prep_delayN_smoothN = function(sfm, delayN_smoothN){
 #' @inheritParams build
 #'
 #' @noRd
-compile_constraints_julia = function(sfm){
+compile_constraints_julia_old = function(sfm){
 
   # # **to do
   # # eval(Meta.parse()) has issues with environment in ODE, doesn't recognize variables...
@@ -852,7 +852,6 @@ prep_stock_change_julia = function(sfm, keep_unit){
 #' @inheritParams order_equations
 #' @inheritParams compile_static_eqn
 #' @param prep_script Intermediate output of compile_julia()
-#' @param constraints Intermediate output of compile_constraints_julia()
 #' @param static_eqn Output of compile_static_eqn()
 #'
 #' @return List
@@ -860,9 +859,11 @@ prep_stock_change_julia = function(sfm, keep_unit){
 #' @noRd
 #'
 compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
-                             constraints,
+                             # constraints,
                              keep_nonnegative_stock, keep_unit,
                              only_stocks){
+
+  # @param constraints Intermediate output of compile_constraints_julia()
 
   # Auxiliary equations (dynamic auxiliaries)
   aux_eqn = lapply(sfm$model$variables$aux,`[[`, "eqn_str")
@@ -1046,7 +1047,7 @@ function %s!(%s, %s%s, %s)",
                   paste0(paste0(static_eqn$par_names, collapse = ", "), ", = ", P$parameter_name)), ""),
     "\n\n\t# Update auxiliaries\n\t",
     dynamic_eqn_str,
-    constraints$script,
+    # constraints$script,
     "\n\n\t# Collect inflows and outflows for each Stock\n\t",
     stock_change_str,
 

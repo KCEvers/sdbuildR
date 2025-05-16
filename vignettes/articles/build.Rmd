@@ -90,19 +90,6 @@ To create a stock-and-flow model from scratch, we first create an XMILE object u
 sfm = xmile() %>% header(name = "Predator-Prey Model") 
 summary(sfm)
 ```
-
-If you would like to simulate with Julia, set up the Julia environment:
-
-```{r}
-sdbuildR_setup()
-```
-
-Otherwise, switch the simulation language to R:
-
-```{r}
-sfm = sfm %>% sim_specs(language = "R")
-```
-
 We add two stocks, predators and prey. `build()` takes the variable name, building block type (`stock`, `flow`, `constant`, `aux`, or `gf`), and type-specific properties (e.g., `eqn` for equation, `label` for plotting). Here, we start the simulation with 10 predators and 50 prey. We use the `%>%` pipe to pass the result of an expression to the next expression as a first argument.
 
 ```{r, fig.width=8, fig.height=4}

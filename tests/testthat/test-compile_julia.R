@@ -1,7 +1,7 @@
 
 test_that("templates work", {
 
-  sfm = xmile("SIR")
+  sfm = xmile("SIR") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
@@ -9,7 +9,7 @@ test_that("templates work", {
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
-  sfm = xmile("predator-prey")
+  sfm = xmile("predator-prey") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
@@ -17,7 +17,7 @@ test_that("templates work", {
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
-  sfm = xmile("logistic_model")
+  sfm = xmile("logistic_model") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
@@ -32,7 +32,7 @@ test_that("templates work", {
   expect_equal(dplyr::last(sim$df$X), sim$pars$K, tolerance = .01)
 
   # Check whether coffee cup reaches room temperature
-  sfm = xmile("coffee_cup")
+  sfm = xmile("coffee_cup") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
@@ -41,7 +41,7 @@ test_that("templates work", {
   expect_equal(nrow(sim$df) > 0, TRUE)
   expect_equal(dplyr::last(sim$df$coffee_temperature), sim$pars$room_temperature, tolerance = .01)
 
-  sfm = xmile("Crielaard2022")
+  sfm = xmile("Crielaard2022") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
@@ -50,7 +50,7 @@ test_that("templates work", {
   expect_equal(nrow(sim$df) > 0, TRUE)
 
   # Duffing previously had an error with cos()
-  sfm = xmile("Duffing")
+  sfm = xmile("Duffing") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
@@ -58,7 +58,7 @@ test_that("templates work", {
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
-  sfm = xmile("Chua")
+  sfm = xmile("Chua") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
   expect_no_error(simulate(sfm))
@@ -87,45 +87,40 @@ test_that("saveat works", {
   # Check whether dataframe is returned at saveat times
   sfm = sfm %>%
     sim_specs(saveat = 0.1, dt = 0.001, start = 100, stop = 200)
-  sim = simulate(sfm)
+  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  expect_equal(diff(sim$df$time)[1], as.numeric(sfm$sim_specs$saveat))
+
+  sim = simulate(sfm %>% sim_specs(language = "R"))
   expect_equal(diff(sim$df$time)[1], as.numeric(sfm$sim_specs$saveat))
 
 })
 
 
-test_that("as.data.frame(sim) works", {
-
-  sfm = xmile("SIR")
-  sim = simulate(sfm)
-  expect_equal(class(as.data.frame(sim)), "data.frame")
-  expect_equal(nrow(as.data.frame(sim)) > 0, TRUE)
-
-})
 
 
 test_that("simulate with different components works", {
 
   # Without stocks throws error
   sfm = xmile()
-  expect_error(simulate(sfm), "Your model has no stocks.")
+  expect_error(simulate(sfm %>% sim_specs(language = "Julia")), "Your model has no stocks.")
 
   sfm = xmile() %>% build("a", "stock") %>%
     build("b", "flow")
-  expect_error(simulate(sfm), "These flows are not connected to any stock:\\n- b")
+  expect_error(simulate(sfm %>% sim_specs(language = "Julia")), "These flows are not connected to any stock:\\n- b")
 
   # With one stock and no flows and no parameters
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build("A", "stock", eqn = "100")
-  expect_no_error(simulate(sfm))
-  sim = simulate(sfm)
+  expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = simulate(sfm %>% sim_specs(language = "Julia"))
   expect_equal(sort(names(sim$df)), c("A", "time"))
 
   # One stock with flows, other stock without flows
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build(c("A", "B"), "stock", eqn = "100") %>%
     build("C", "flow", eqn = "1", to = "A")
-  expect_no_error(simulate(sfm))
-  sim = simulate(sfm)
+  expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = simulate(sfm %>% sim_specs(language = "Julia"))
   expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
 
   # With one intermediary -> error in constructing Dataframe before
@@ -133,16 +128,16 @@ test_that("simulate with different components works", {
     build("A", "stock", eqn = "100") %>%
     build("B", "flow", eqn = "1", to = "A") %>%
     build("C", "aux", eqn = "B + 1")
-  expect_no_message(simulate(sfm))
-  sim = simulate(sfm)
+  expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = simulate(sfm %>% sim_specs(language = "Julia"))
   expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
 
   # One intermediary variable that is also a stock, so it is removed -> does merging of df and intermediary_df still work?
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build("A", "stock", eqn = "100") %>%
     build("B", "flow", eqn = "delay(A, 5)", to = "A")
-  expect_no_message(simulate(sfm))
-  sim = simulate(sfm)
+  expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = simulate(sfm %>% sim_specs(language = "Julia"))
   expect_equal(sort(names(sim$df)), c("A", "B", "time"))
 
   # Stocks without flows
@@ -150,8 +145,8 @@ test_that("simulate with different components works", {
     build("A", "stock", eqn = "100") %>%
     build("B", "stock", eqn = "1") %>%
     build("C", "aux", eqn = "B + 1")
-  expect_no_message(simulate(sfm))
-  sim = simulate(sfm)
+  expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = simulate(sfm %>% sim_specs(language = "Julia"))
   expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
 
   # # With macros
@@ -167,12 +162,12 @@ test_that("simulate with different components works", {
 
   # Only keep stocks
   sfm = xmile("SIR")
-  sim = simulate(sfm, only_stocks = TRUE)
+  sim = simulate(sfm %>% sim_specs(language = "Julia"), only_stocks = TRUE)
   expect_equal(ncol(as.data.frame(sim)), 1 + length(names(sfm$model$variables$stock)))
 
   # All variables should be kept if only_stocks = FALSE
   sfm = xmile("SIR")
-  sim = simulate(sfm, only_stocks = FALSE)
+  sim = simulate(sfm %>% sim_specs(language = "Julia"), only_stocks = FALSE)
   df = as.data.frame(sfm)
   df = df[df$type != "constant", ]
   expect_equal(ncol(as.data.frame(sim)), 1 + length(df$name))
@@ -189,7 +184,7 @@ test_that("seed works", {
   # Without a seed, simulations shouldn't be the same
   sfm = xmile("predator-prey") %>%
     sim_specs(seed = NULL) %>%
-    build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
+    build(c("predator", "prey"), eqn = "runif(1, 20, 50)") %>% sim_specs(language = "Julia")
   sim1 = simulate(sfm)
   sim2 = simulate(sfm)
   expect_equal(sim1$df$predator[1] == sim2$df$predator[1], FALSE)
@@ -234,7 +229,7 @@ test_that("delay() works", {
   # Chapter 4 Duggan: Fixed Delay
   # https://github.com/JimDuggan/SDMR/blob/master/models/04%20Chapter/Extra%20Examples/FixedDelay.R
 
-  sfm = xmile() %>%
+  sfm = xmile()  %>% sim_specs(language = "Julia") %>%
     sim_specs(start = 0, stop = 20, dt = 0.1) %>%
     build("MaterialinTransit", "stock", eqn = "400") %>%
     build("Inflow", "flow", eqn = "ifelse(t < 8, 100, 200)", to = "MaterialinTransit") %>%
@@ -266,7 +261,7 @@ test_that("past() works", {
   expect_error({xmile() %>% build("a", "aux", eqn = "past()")}, "Obligatory argument variable is missing for function past")
 
 
-  sfm = xmile() %>%
+  sfm = xmile()  %>% sim_specs(language = "Julia") %>%
     sim_specs(start = 0, stop = 20, dt = 0.1) %>%
     build("MaterialinTransit", "stock", eqn = "400") %>%
     build("Inflow", "flow", eqn = "ifelse(t < 8, 100, 200)", to = "MaterialinTransit") %>%
@@ -298,7 +293,7 @@ test_that("delayN() works", {
 
 
   # Test delayN() in simple model
-  sfm = xmile() %>%
+  sfm = xmile() %>% sim_specs(language = "Julia") %>%
     sim_specs(start = 0, stop = 20, dt = 0.1) %>% # dt=.125->dt=.1
     build("MaterialinTransit", "stock", eqn = "400") %>%
     build("Inflow", "flow", eqn = "ifelse(t < 8, 100, 200)", to = "MaterialinTransit") %>%
@@ -366,10 +361,10 @@ test_that("mixing delay family functions works", {
 test_that("units in stocks and flows", {
 
   # No unit specified in stock yet stock evaluates to unit
-  sfm = xmile() %>% build("a", "stock", eqn = "round(u('100.80 kilograms'))")
+  sfm = xmile()  %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "round(u('100.80 kilograms'))")
   expect_no_error(simulate(sfm))
 
-  sfm = xmile() %>% build("a", "stock", eqn = "round(u('108.67 seconds'))")
+  sfm = xmile()  %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "round(u('108.67 seconds'))")
   expect_no_error(simulate(sfm))
 
 })

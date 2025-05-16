@@ -45,16 +45,6 @@ test_that("templates work", {
 
 
 
-test_that("as.data.frame(sim) works", {
-
-  sfm = xmile("SIR") %>% sim_specs(language = "R")
-  sim = simulate(sfm)
-  expect_equal(class(as.data.frame(sim)), "data.frame")
-  expect_equal(nrow(as.data.frame(sim)) > 0, TRUE)
-
-})
-
-
 
 
 test_that("simulate with different components works", {

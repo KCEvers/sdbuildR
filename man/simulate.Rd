@@ -55,11 +55,9 @@ sfm = xmile("SIR")
 sim = simulate(sfm)
 plot(sfm)
 
-sfm = xmile("logistic_model")
-sim = simulate(sfm)
-plot(sfm)
-
-sfm = xmile("predator-prey")
+# Use Julia for models with units or delay functions
+sfm = xmile("coffee_cup") \%>\% sim_specs(language = "Julia")
+sdbuildR_setup()
 sim = simulate(sfm)
 plot(sfm)
 
