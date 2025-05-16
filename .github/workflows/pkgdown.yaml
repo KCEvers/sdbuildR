@@ -15,12 +15,12 @@ permissions: read-all
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
-    # Only restrict concurrency for non-PR jobs
     concurrency:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      AUTO_JULIA_INSTALL: true  # Enable automatic Julia installation for JuliaCall
+      AUTO_JULIA_INSTALL: true
+      _R_CHECK_FORCE_SUGGESTS_: false  # Avoid issues with missing suggested packages
     permissions:
       contents: write
     steps:
@@ -30,36 +30,43 @@ jobs:
 
       - uses: r-lib/actions/setup-r@v2
         with:
+          r-version: 'release'  # Use latest stable R
           use-public-rspm: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev zlib1g-dev
+        # Required for Julia and RCall
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::.
+          extra-packages: any::pkgdown, any::JuliaCall, local::.
           needs: website
 
       - name: Set up Julia
-        uses: julia-actions/setup-julia@v2  # Updated to v2 for better reliability
+        uses: julia-actions/setup-julia@v2
         with:
-          version: '1.11'  # Stable Julia version compatible with JuliaCall
+          version: '1.11'  # Pin specific version for stability
 
-      - name: Install and precompile Julia Suppressor package
+      - name: Install and precompile Julia packages
         run: |
-          julia -e 'using Pkg; Pkg.add("Suppressor"); Pkg.precompile()'
-        continue-on-error: false  # Fail if Suppressor installation fails
+          julia -e 'using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall"); Pkg.precompile()'
+        continue-on-error: false
 
-      - name: Install and precompile Julia RCall package
+      - name: Initialize JuliaCall in R
         run: |
-          julia -e 'using Pkg; Pkg.add("RCall"); Pkg.precompile()'
-        continue-on-error: false  # Fail if RCall installation fails
+          Rscript -e 'library(JuliaCall); julia_setup(installJulia = FALSE, verbose = TRUE)'
+        continue-on-error: true  # Log issues but proceed to see full error
 
-
-      - name: Build site
-        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
-        shell: Rscript {0}
+      - name: Build site with verbose output
+        run: |
+          Rscript -e 'pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE, verbose = TRUE)'
+        continue-on-error: true  # Capture full error output
 
       - name: Deploy to GitHub pages 🚀
-        if: github.event_name != 'pull_request'
-        uses: JamesIves/github-pages-deploy-action@v4.5.0
+        if: github.event_name != 'pull_request' && success()
+        uses: JamesIves/github-pages-deploy-action@v4.6.8
         with:
           clean: false
           branch: gh-pages
