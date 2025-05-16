@@ -246,7 +246,7 @@ get_flow_df = function(sfm){
 plot.sdbuildR_sim = function(x, add_constants = FALSE,
                              palette = "Dark 2",
                              colors = NULL,
-                             title=x$sfm$header$name,
+                             title=x[["sfm"]][["header"]][["name"]],
                              family = "Times New Roman",
                              size = 16,
                              ...){
@@ -292,16 +292,18 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE,
     # Put dataframe in long format
     x_col = "time"
 
-    x$df = x$df[, intersect(colnames(x$df), c(x_col, stock_names, nonstock_names))]
+    x$df = x$df[, intersect(colnames(x$df), c(x_col, stock_names, nonstock_names)), drop = FALSE]
     df_long <- stats::reshape(
-      data = x$df,
+      data = as.data.frame(x$df),
       direction = "long",
       idvar = "time",
       varying = colnames(x$df)[colnames(x$df) != "time"],
+      # varying = which(colnames(x$df) != "time"),
       v.names = "value",
       timevar = "variable",
-      times = colnames(x$df)[colnames(x$df) != "time"]
-    ) %>% magrittr::set_rownames(NULL)
+      new.row.names = NULL
+      # times = colnames(x$df)[colnames(x$df) != "time"]
+    )
 
     n = length(unique(df_long$variable))
 
@@ -420,7 +422,7 @@ as.data.frame.sdbuildR_sim = function(x, ...){
 
 
 
-#' Summary of stock-and-flow model
+#' Print overview of stock-and-flow model
 #'
 #' Print summary of stock-and-flow model, including number of stocks, flows, constants, auxiliaries, graphical functions, macros, custom model units, and use of delay functions. Also prints simulation specifications.
 #'
@@ -444,15 +446,16 @@ summary.sdbuildR_xmile <- function(object, ...) {
   model_units_str = names(object$model_units)
   macro_str = lapply(object$macro, `[[`, "property") %>% unlist() %>% Filter(nzchar, .)
 
-  cat("Your model contains:\n")
-  cat(sprintf("* %d Stocks%s%s\n", length(stocks), ifelse(length(stocks) > 0, ": ", ""), paste0(stocks, collapse = ", ")))
-  cat(sprintf("* %d Flows%s%s\n", length(flows), ifelse(length(flows) > 0, ": ", ""),paste0(flows, collapse = ", ")))
-  cat(sprintf("* %d Constants%s%s\n", length(constants), ifelse(length(constants) > 0, ": ", ""),paste0(constants, collapse = ", ")))
-  cat(sprintf("* %d Auxiliaries%s%s\n", length(auxs), ifelse(length(auxs) > 0, ": ", ""),paste0(auxs, collapse = ", ")))
-  cat(sprintf("* %d Graphical Functions%s%s\n", length(gfs), ifelse(length(gfs) > 0, ": ", ""),paste0(gfs, collapse = ", ")))
-  cat(sprintf("* %d Custom model units%s%s\n", length(model_units_str),
+  ans = ""
+  ans = paste0(ans, "Your model contains:\n")
+  ans = paste0(ans, sprintf("* %d Stocks%s%s\n", length(stocks), ifelse(length(stocks) > 0, ": ", ""), paste0(stocks, collapse = ", ")))
+  ans = paste0(ans, sprintf("* %d Flows%s%s\n", length(flows), ifelse(length(flows) > 0, ": ", ""), paste0(flows, collapse = ", ")))
+  ans = paste0(ans, sprintf("* %d Constants%s%s\n", length(constants), ifelse(length(constants) > 0, ": ", ""), paste0(constants, collapse = ", ")))
+  ans = paste0(ans, sprintf("* %d Auxiliaries%s%s\n", length(auxs), ifelse(length(auxs) > 0, ": ", ""), paste0(auxs, collapse = ", ")))
+  ans = paste0(ans, sprintf("* %d Graphical Functions%s%s\n", length(gfs), ifelse(length(gfs) > 0, ": ", ""), paste0(gfs, collapse = ", ")))
+  ans = paste0(ans, sprintf("* %d Custom model units%s%s\n", length(model_units_str),
               ifelse(length(model_units_str) > 0, ": ", ""), paste0(model_units_str, collapse = ", ")))
-  cat(sprintf("* %d Macro%s\n", length(macro_str), ifelse(length(macro_str) == 1, "", "s")))
+  ans = paste0(ans, sprintf("* %d Macro%s\n", length(macro_str), ifelse(length(macro_str) == 1, "", "s")))
 
 
   # Check for use of past() or delay()
@@ -467,8 +470,8 @@ summary.sdbuildR_xmile <- function(object, ...) {
 
     names_delay = unique(names(delay_past))
 
-    cat("\nDelay family functions:\n")
-    cat(sprintf("* %d variable%s uses past() or delay(): %s\n",
+    ans = paste0(ans, "\nDelay family functions:\n")
+    ans = paste0(ans, sprintf("* %d variable%s uses past() or delay(): %s\n",
                 length(names_delay),
                 ifelse(length(names_delay) == 1, "", "s"), paste0(names_delay, collapse = ", ")))
   }
@@ -479,15 +482,19 @@ summary.sdbuildR_xmile <- function(object, ...) {
   if (length(delay_func) > 0){
 
     delay_func_names = unique(names(delay_func))
-    cat("\n\nDelay family functions:\n")
-    cat(sprintf("* %d variable%s uses delayN() or smoothN(): %s\n", length(delay_func_names),
+    ans = paste0(ans, "\n\nDelay family functions:\n")
+    ans = paste0(ans, sprintf("* %d variable%s uses delayN() or smoothN(): %s\n", length(delay_func_names),
                 ifelse(length(delay_func_names) == 1, "", "s"), paste0(delay_func_names, collapse = ", ")))
   }
 
   matched_time_unit = find_matching_regex(object$sim_specs$time_units, get_regex_time_units())
 
   # Simulation specifications
-  cat(paste0("\nSimulation time: ", object$sim_specs$start, " to ", object$sim_specs$stop, " ", matched_time_unit, " (dt = ", object$sim_specs$dt, ifelse(object$sim_specs$saveat == object$sim_specs$dt, "", paste0(", saveat = ", object$sim_specs$saveat)), ")\nSimulation settings: solver ", object$sim_specs$method, ifelse(is_defined(object$sim_specs$seed), paste0(" and seed ", object$sim_specs$seed), ""), " in ", object$sim_specs$language))
+  ans = paste0(ans, paste0("\nSimulation time: ", object$sim_specs$start, " to ", object$sim_specs$stop, " ", matched_time_unit, " (dt = ", object$sim_specs$dt, ifelse(object$sim_specs$saveat == object$sim_specs$dt, "", paste0(", saveat = ", object$sim_specs$saveat)), ")\nSimulation settings: solver ", object$sim_specs$method, ifelse(is_defined(object$sim_specs$seed), paste0(" and seed ", object$sim_specs$seed), ""), " in ", object$sim_specs$language))
+
+  class(ans) <- "summary.sdbuildR_xmile"
+  cat(ans)
+  invisible(ans)
 
 }
 
@@ -920,7 +927,7 @@ switch_list = function(x){
 
 #' Create, modify or remove custom units
 #'
-#' A large library of units already exists, but you may want to define your own custom units. Use `model_units()` to add, change, or erase custom units from a stock-and-flow model. Custom units may be new base units, or may be defined in terms of other (custom) units.
+#' A large library of units already exists, but you may want to define your own custom units. Use `model_units()` to add, change, or erase custom units from a stock-and-flow model. Custom units may be new base units, or may be defined in terms of other (custom) units. See `?u()` for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
 #'
 #' @inheritParams build
 #' @param name Name of unit. A character vector.

@@ -447,3 +447,82 @@ order_equations <- function(sfm, print_msg = TRUE){
 
 
 
+#' Compare two simulations
+#'
+#' @param sim1 Simulation 1
+#' @param sim2 Simulation 2
+#' @param tolerance Numeric; tolerance for comparing values. Defaults to 0.00001.
+#'
+#' @returns List with comparison results
+#' @export
+#'
+compare_sim = function(sim1, sim2, tolerance = .00001){
+
+  if (sim1$success & !sim2$success){
+    return(c(equal = FALSE,
+                msg = "Simulation 1 was successful, but simulation 2 failed."))
+  }
+
+  if (!sim1$success & sim2$success){
+    return(c(equal = FALSE,
+                msg = "Simulation 2 was successful, but simulation 1 failed."))
+  }
+
+  get_prop = function(sim){
+    list(colnames = colnames(sim[[P$sim_df_name]]),
+         nrow = nrow(sim[[P$sim_df_name]]),
+         ncol = ncol(sim[[P$sim_df_name]]),
+         n_xstart = length(sim[[P$initial_value_name]]),
+         n_pars = length(sim[[P$parameter_name]]),
+         language = sim$sfm$sim_specs$language,
+         method = sim$sfm$sim_specs$method
+         )
+  }
+
+  prop1 = get_prop(sim1)
+  prop2 = get_prop(sim2)
+
+  overlapping_colnames = intersect(prop1$colnames, prop2$colnames)
+  nonoverlapping_colnames = setdiff(union(prop1$colnames, prop2$colnames), overlapping_colnames)
+
+  check_diff = function(col1, col2){
+
+    col1 = as.numeric(col1)
+    col2 = as.numeric(col2)
+
+    if (length(col1) != length(col2)){
+      return(c(equal = FALSE,
+                  msg = paste0("Column lengths are not equal: ", length(col1)," (sim1) vs ", length(col2), " (sim2)")))
+    }
+
+    # Calculate Euclidean distance, ignoring NAs
+    return(c(
+      equal = all(abs(col1 - col2) < tolerance, na.rm = TRUE),
+      first_diff = which(abs(col1 - col2) > tolerance)[1],
+      nr_diff = sum(abs(col1 - col2) > tolerance, na.rm = TRUE),
+      max_diff = max(abs(col1 - col2), na.rm = TRUE),
+      sqrt_sum_diff = sqrt(sum((col1 - col2)^2, na.rm = TRUE))))
+  }
+
+  df = lapply(overlapping_colnames,
+         function(name){c(name = name,
+                          check_diff(sim1$df[[name]], sim2$df[[name]]))}) %>%
+    do.call(dplyr::bind_rows, .) %>%
+    as.data.frame()
+
+  return(list(
+    equal = all(as.logical(as.numeric(df$equal))),
+    overlapping_colnames = overlapping_colnames,
+    nonoverlapping_colnames = nonoverlapping_colnames,
+    msg = paste0("The following columns are not equal:\n",
+                 paste0(df$name, ": ", df$first_diff, " (", df$nr_diff, " differences, max diff: ", df$max_diff, ")\n", collapse = ""),
+                 "\n"),
+    prop1 = prop1,
+    prop2 = prop2,
+    df = df)
+  )
+
+
+}
+
+

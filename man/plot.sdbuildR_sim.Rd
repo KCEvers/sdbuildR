@@ -9,7 +9,7 @@
   add_constants = FALSE,
   palette = "Dark 2",
   colors = NULL,
-  title = x$sfm$header$name,
+  title = x[["sfm"]][["header"]][["name"]],
   family = "Times New Roman",
   size = 16,
   ...

@@ -72,11 +72,17 @@ simulate_R = function(sfm,
     #      pars = envir[[P$parameter_name]],
     #      ode_func = envir[[P$ode_func_name]]
     #      )
-    envir$script = script
-    envir$filepath = filepath
-    envir$success = TRUE
-    envir$duration = end_t - start_t
-    as.list(envir) %>% utils::modifyList(argg) %>%
+    out = list()
+    out[[P$sim_df_name]] = envir[[P$sim_df_name]]
+    out[[P$initial_value_name]] = envir[[P$initial_value_name]]
+    out[[P$parameter_name]] = envir[[P$parameter_name]]
+    out$keep_unit = FALSE
+    out$script = script
+    out$filepath = filepath
+    out$success = TRUE
+    out$duration = end_t - start_t
+    # as.list(envir)
+    out %>% utils::modifyList(argg) %>%
       structure(., class = "sdbuildR_sim")
   },
   error = function(e) {
@@ -504,20 +510,20 @@ compile_macros = function(sfm){
 #'
 compile_times = function(sfm){
 
-  # Only track variables in "past"
-  obligatory_var = sfm$model$variables %>% purrr::map_depth(2, "archive_var") %>% unname() %>%
-    purrr::list_flatten() %>% unlist() %>% unname() %>% unique()
-
-  if (length(obligatory_var) > 0){
-    add_extra_dt = sprintf("+ %s", P$timestep_name)
-  } else {
-    add_extra_dt = ""
-  }
+  # # Only track variables in "past"
+  # obligatory_var = sfm$model$variables %>% purrr::map_depth(2, "archive_var") %>% unname() %>%
+  #   purrr::list_flatten() %>% unlist() %>% unname() %>% unique()
+  #
+  # if (length(obligatory_var) > 0){
+  #   add_extra_dt = sprintf("+ %s", P$timestep_name)
+  # } else {
+  #   add_extra_dt = ""
+  # }
 
   script = sprintf("
 # Define time sequence
 %s = %s
-%s = seq(from=%s, to=%s%s, by=%s)
+%s = seq(from=%s, to=%s, by=%s)
 %s = %s[1]
 
 # Simulation time unit (smallest time scale in your model)
@@ -527,7 +533,7 @@ compile_times = function(sfm){
                    P$times_name,
                    as.character(sfm$sim_specs$start),
                    as.character(sfm$sim_specs$stop),
-                   add_extra_dt, # P$timestep_name,
+                   # add_extra_dt, # P$timestep_name,
                    P$timestep_name,
                    P$time_name, P$times_name,
                    P$time_units_name,

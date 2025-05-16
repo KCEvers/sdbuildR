@@ -298,6 +298,7 @@ prep_delayN_smoothN = function(sfm, delayN_smoothN){
                                          y$units = names_df[names_df$name == bare_var, ]$units
                                          y$name = names(delayN_smoothN)[i]
                                          y$label = names(delayN_smoothN)[i]
+                                         # y$initial = x[["initial"]]
                                          y$type = "delayN"
 
                                          y$eqn_julia = x[["setup"]]
@@ -334,7 +335,7 @@ prep_delayN_smoothN = function(sfm, delayN_smoothN){
 
 
 
-#' Compile script for setting minimum and maximum constraints in julia
+#' Compile script for setting minimum and maximum constraints in Julia
 #'
 #'
 #' @return List
@@ -405,7 +406,7 @@ compile_constraints_julia = function(sfm){
 
 
 
-#' Compile script for defining a units module in julia
+#' Compile script for defining a units module in Julia
 #'
 #' @inheritParams compile_julia
 #'
@@ -1144,7 +1145,8 @@ compile_run_ode_julia = function(sfm,
 
                     ifelse(length(intermediary_var) > 1, paste0(P$intermediaries, ".saveval, ", P$intermediary_names),
                            # Error is thrown for dataframe creation of there is only one variable
-                           paste0(intermediary_var, " = ", P$intermediaries, ".saveval")),
+                           # Necessary to add first.() because otherwise the column is a list in R, causing issues in plot(sim)
+                           paste0(intermediary_var, " = first.(", P$intermediaries, ".saveval)")),
 
                     ")", ifelse(keep_unit, ")", ""), "\n",
 
@@ -1164,6 +1166,7 @@ compile_run_ode_julia = function(sfm,
   #                 sprintf("\n# Strip units from parameters\n%s = (; (name => isa(val, Unitful.Quantity) ? ustrip(val) : val for (name, val) in pairs(%s))...)", P$parameter_name, P$parameter_name), "\n")
 
 
+
   # If different times need to be saved, linearly interpolate
   if (sfm$sim_specs$dt != sfm$sim_specs$saveat){
     script = paste0(script, "\n# Linearly interpolate to reduce stored values to saveat\n",
@@ -1179,6 +1182,25 @@ compile_run_ode_julia = function(sfm,
     [Symbol(col) => ", P$saveat_func, "(", P$sim_df_name, ".time, ", P$sim_df_name, "[!, col], new_times) for col in names(", P$sim_df_name, ") if col != \"time\"]...
 ))\n")
 
+  } else {
+    # In some cases, not setting saveat results in a dataframe that is too long.
+    #  For some models, setting saveat throws an error when xstart has units. This happens when the solver t is not exactly t %% dt == 0.
+    # e.g. "https://insightmaker.com/insight/77C9XTvvb66nQnGepYAn5m/Wind-Resistance-Model"
+    #  We thus cannot use saveat but need to ensure the solution is saved at correct times.
+
+
+    script = paste0(script, "\nif nrow(", P$sim_df_name, ") != length(", P$times_name, "[1]:", P$timestep_name, ":", P$times_name, "[2])", "\n# Linearly interpolate to reduce stored values to saveat\n",
+                    ifelse(keep_unit, paste0(P$times_name, " = Unitful.ustrip.(", P$times_name, ")\n"),""),
+                    "new_times = collect(", P$times_name, "[1]:",
+                    # ifelse(keep_unit, paste0("u\"", sfm$sim_specs$saveat, sfm$sim_specs$time_units, "\""),
+                    #        sfm$sim_specs$saveat),
+                    sfm$sim_specs$saveat,
+                    ":", P$times_name, "[2]) # Create new time vector\n",
+
+                    P$sim_df_name, " = DataFrame(Dict(\n",
+                    ":time => new_times,
+    [Symbol(col) => ", P$saveat_func, "(", P$sim_df_name, ".time, ", P$sim_df_name, "[!, col], new_times) for col in names(", P$sim_df_name, ") if col != \"time\"]...
+))\nend\n")
   }
 
 

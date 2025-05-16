@@ -484,7 +484,8 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
               start = settings$TimeStart,
               stop = as.numeric(settings$TimeStart) + as.numeric(settings$TimeLength),
               dt = settings$TimeStep,
-              saveat = settings$TimeStep)
+              saveat = settings$TimeStep,
+              method_insightmaker = settings$SolutionAlgorithm)
 
   # Header
   # header_list = list(insightmaker_version = settings$Version) %>% utils::modifyList(header_info)

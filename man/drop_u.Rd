@@ -13,7 +13,14 @@ drop_u(x)
 Unitless variable
 }
 \description{
-In rare cases, it may be desirable to drop the units of a variable within an equation. Use \code{drop_unit()} to render a variable unitless. Note that units are only supported in Julia, not in R.
+In rare cases, it may be desirable to drop the units of a variable within an equation. Use \code{drop_unit()} to render a variable unitless. See \code{?u()} for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
+}
+\examples{
+# For example, the cosine function only accepts unitless arguments or
+# arguments with units in radians or degrees
+sfm = xmile() \%>\%
+build("a", "constant", eqn = "10", units = "minutes") \%>\%
+build("b", "constant", eqn = "cos(drop_u(a))")
 }
 \seealso{
 \code{\link[=model_units]{model_units()}}, \code{\link[=unit_prefixes]{unit_prefixes()}}, \code{\link[=u]{u()}}, \code{\link[=convert_u]{convert_u()}}

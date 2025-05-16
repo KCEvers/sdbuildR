@@ -2,7 +2,7 @@
 % Please edit documentation in R/build_xmile.R
 \name{summary.sdbuildR_xmile}
 \alias{summary.sdbuildR_xmile}
-\title{Summary of stock-and-flow model}
+\title{Print overview of stock-and-flow model}
 \usage{
 \method{summary}{sdbuildR_xmile}(object, ...)
 }

@@ -15,7 +15,7 @@ convert_u(x, unit_def)
 Variable with new unit
 }
 \description{
-In rare cases, it may be desirable to change the units of a variable within an equation. Use \code{convert_u()} to convert a variable to another matching unit. Note that units are only supported in Julia, not in R.
+In rare cases, it may be desirable to change the units of a variable within an equation. Use \code{convert_u()} to convert a variable to another matching unit. See \code{?u()} for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
 }
 \examples{
 # Change the unit of rate from minutes to hours

@@ -1088,6 +1088,7 @@ get_syntax_julia = function(){
     "sigmoid", "sigmoid", "syntax1", "", "", T,
     "logit", "logit", "syntax1", "", "", T,
     "expit", "expit", "syntax1", "", "", T,
+    "convert_u", "convert_u", "syntax1", "", "", T,
     "drop_u", "Unitful.ustrip", "syntax1", "", "", T,
     # ** to do: check units go well
     "seasonal", "seasonal", "syntax1", "", "", T,

@@ -23,7 +23,7 @@ model_units(sfm, name, eqn = "1", doc = "", erase = FALSE, change_name = NULL)
 The modified stock-and-flow object with the specified unit(s) added or removed.
 }
 \description{
-A large library of units already exists, but you may want to define your own custom units. Use \code{model_units()} to add, change, or erase custom units from a stock-and-flow model. Custom units may be new base units, or may be defined in terms of other (custom) units.
+A large library of units already exists, but you may want to define your own custom units. Use \code{model_units()} to add, change, or erase custom units from a stock-and-flow model. Custom units may be new base units, or may be defined in terms of other (custom) units. See \code{?u()} for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
 }
 \examples{
 sfm = xmile("Crielaard2022")

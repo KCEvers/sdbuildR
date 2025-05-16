@@ -9,6 +9,7 @@
 test_that("xmile() works", {
 
   expect_equal(class(xmile()), "sdbuildR_xmile")
+  expect_s3_class(xmile(), "sdbuildR_xmile")
 
   # Check time units
   sfm = xmile()
@@ -48,6 +49,8 @@ test_that("sim_specs() works", {
   # Check that negative times are possible
   sfm = xmile("logistic_model")
   sfm = sfm %>% sim_specs(start = -100)
+  expect_no_error({sim = simulate(sfm)})
+  sfm = sfm %>% sim_specs(language = "R")
   expect_no_error({sim = simulate(sfm)})
 
   # Check that seed must be an integer
@@ -541,6 +544,9 @@ test_that("model_units() works", {
   expect_equal(df[df$name == "BMI", "eqn"], "kg/m^2")
   expect_equal(df[df$name == "BMI", "doc"], "Body Mass Index")
 
+  # Check use of per in custom units
+  expect_warning(xmile() %>% model_units("Person per year"), "The custom unit name Person per year was modified to Person_yr to comply with Julia's syntactic rules")
+
 })
 
 
@@ -864,6 +870,15 @@ test_that("as.data.frame(sfm) works", {
   expect_no_error(as.data.frame(xmile("SIR"), properties = c("eqn_julia")))
   expect_equal(colnames(as.data.frame(xmile("SIR"), properties = c("eqn_julia"))), "eqn_julia")
   expect_equal(sort(colnames(as.data.frame(xmile("SIR"), properties = c("eqn_julia", "eqn")))), c("eqn", "eqn_julia"))
+
+})
+
+
+test_that("summary() works", {
+
+  ans = summary(xmile("SIR"))
+  expect_equal(!grepl("NULL", ans), TRUE)
+
 
 })
 

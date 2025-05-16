@@ -20,7 +20,6 @@ knitr::opts_chunk$set(
 library(sdbuildR)
 library(knitr) 
 library(kableExtra) 
-sdbuildR_setup()
 ```
 
 Stock-and-flow models represent systems as variables (stocks) that accumulate over time with processes (flows) that change these variables. Foundational to system dynamics, stock-and-flow models are widely used in fields such as epidemiology, economics, and environmental science to represent systems complicated by nonlinearities, delays, and feedback loops. In this vignette, we will explore how to build stock-and-flow models using sdbuildR. We will first go through the basics: What are the building blocks of a stock-and-flow model? How can we combine them to create a model of our system? We will then use sdbuildR to recreate a well-known predator-prey model. To show how sdbuildR can be used to iteratively develop a stock-and-flow model, we will build a model from scratch using a psychological example.
@@ -90,6 +89,18 @@ To create a stock-and-flow model from scratch, we first create an XMILE object u
 ```{r}
 sfm = xmile() %>% header(name = "Predator-Prey Model") 
 summary(sfm)
+```
+
+If you would like to simulate with Julia, set up the Julia environment:
+
+```{r}
+sdbuildR_setup()
+```
+
+Otherwise, switch the simulation language to R:
+
+```{r}
+sfm = sfm %>% sim_specs(language = "R")
 ```
 
 We add two stocks, predators and prey. `build()` takes the variable name, building block type (`stock`, `flow`, `constant`, `aux`, or `gf`), and type-specific properties (e.g., `eqn` for equation, `label` for plotting). Here, we start the simulation with 10 predators and 50 prey. We use the `%>%` pipe to pass the result of an expression to the next expression as a first argument.
@@ -182,11 +193,11 @@ Of course, in reality, creating a stock-and-flow model isn’t a one-shot proces
 
 Let's say Maya has just switched from a part-time to a full-time job, and she wants to impress her supervisor. She is working hard and putting in extra hours. However, the more she works, the more projects, meetings, and emails pile on - work breeds work. This comes at the cost of her sleep, which she can only sustain for a limited time. Maya ends up working far beyond her capacity, to the point where she is unable to work at all. 
 
-As a first step in creating this stock-and-flow model, let's start by setting up our model. We change the name, and specify that we want to see Maya's burnout develop over the course of 9 months:
+As a first step in creating this stock-and-flow model, let's start by setting up our model. We change the name, and specify that we want to see Maya's burnout develop over the course of 12 months:
 
 ```{r}
 sfm = xmile() %>% header(name = "Maya's Burnout") %>%
-  sim_specs(stop = 9, time_units = "month") 
+  sim_specs(stop = 12, time_units = "month") 
 ```
 
 We add a stock for Maya's work, which is the number of hours she works per day. She starts from 4 hours per day, her part-time job. We add a flow that increases Maya's daily work hours as a function of the work she's doing and a multiplier. 
@@ -197,6 +208,10 @@ sfm = sfm %>%
   build("new_tasks", "flow", eqn = "workload * work_growth", to = "workload") %>%
   build("work_growth", "constant", eqn = .1) 
 
+plot(sfm)
+```
+
+```{r, fig.width=8, fig.height=4}
 sim = simulate(sfm)
 plot(sim)
 ```
@@ -206,7 +221,7 @@ Maya's work day is increasing exponentially! We're clearly missing something. We
 ```{r, fig.width=8, fig.height=4}
 sfm = sfm %>%
   build("normal_workday", "constant", eqn = 8) %>%
-  build("aim_for_normal", "flow", eqn = "workload - normal_workday", from = "workload")
+  build("back_to_normal", "flow", eqn = "workload - normal_workday", from = "workload")
 
 sim = simulate(sfm)
 plot(sim, add_constants = TRUE)
@@ -224,36 +239,50 @@ sfm = sfm %>%
         eqn = "workload * worry_factor", from = "sleep") %>%
   build("worry_factor", "constant", eqn = .1) 
 
+plot(sfm, center_stocks = TRUE)
+```
+
+The model now contains two stocks and three flows.
+
+```{r, fig.width=8, fig.height=4}
 sim = simulate(sfm)
 plot(sim)
 ```
 
-Maya's sleep is decreasing, but we haven't yet added the effect of her sleep deficit on how much she is working. The further Maya's sleep is from what she needs, the more she tries to reduce her work. We change the outflow from work to be determined by both her work and the ratio of the sleep she needs to the sleep she is getting.
+Maya's sleep is decreasing, but we haven't yet added the effect of her sleep deficit on how much she is working. The further Maya's sleep is from what she needs, the more she tries to reduce her work. We change the outflow from work to increase the less she sleeps, and increase the amount of work that piles on, for good measure.
 
 ```{r}
 sfm = sfm %>%
-  build("aim_for_normal", change_name = "need_for_rest", 
-        eqn = "workload * necessary_sleep / sleep") 
+  build("back_to_normal", change_name = "need_for_rest", 
+        eqn = "workload * necessary_sleep / sleep") %>%
+  build("work_growth", eqn = 1.5)
 ```
 
-What's more, Maya's sleep deficit also makes itself worse, as she lies awake worrying about how little she is sleeping. We change the outflow of sleep to get larger when Maya is sleeping less than she needs. For good measure, we increase the amount of work that piles on.
+<!-- What's more, Maya's sleep deficit also makes itself worse, as she lies awake worrying about how little she is sleeping. We change the outflow of sleep to get larger when Maya is sleeping less than she needs.  -->
+<!-- For good measure, we increase the amount of work that piles on. -->
+
+<!-- ```{r, fig.width=8, fig.height=4} -->
+<!-- sfm = sfm %>% -->
+<!--   build("work_growth", eqn = 1.5) #%>% -->
+<!--   # build("worry_about_work",  -->
+<!--   #       eqn = "workload * worry_factor * necessary_sleep / sleep")  -->
+
+<!-- sim = simulate(sfm) -->
+<!-- plot(sim) -->
+<!-- ``` -->
 
 ```{r, fig.width=8, fig.height=4}
-sfm = sfm %>%
-  build("work_growth", eqn = 1.5) %>%
-  build("worry_about_work", 
-        eqn = "workload * worry_factor * necessary_sleep / sleep") 
-
 sim = simulate(sfm)
 plot(sim)
 ```
 
 We've now created burnout in our model: Maya's work hours increase far beyond what is sustainable, to the point where she stops working completely. This is a classic example of overshoot and collapse, in which tasks beyond an individual's resources deplete their resources, making the behaviour unsustainable in the long-term.
 
-But what if rather than only decreasing, Maya's daily sleep can also recover? To do so, we change the equation of deficit to not always increase with the hours worked per day, but to only increase when the hours worked per day exceed a normal work day. When the hours worked per day are less than a normal work day, Maya's sleep will improve. We extend the length of our simulation to 15 months and increase the effect of work on sleep. What will this look like?
+But what if rather than only decreasing, Maya's daily sleep can also recover? To do so, we change the outflow from sleep to not always increase with the hours worked per day, but to only increase when the hours worked per day exceed a normal work day. When the hours worked per day are less than a normal work day, Maya's sleep will improve. What will this look like?
 
 ```{r, fig.width=8, fig.height=4}
-sfm = sfm %>% sim_specs(stop = 15) %>%
+sfm = sfm %>% 
+  # sim_specs(stop = 15) %>%
   build("worry_about_work", 
         # eqn = "(workload - normal_workday) * worry_factor * necessary_sleep / sleep") %>%
         eqn = "(workload - normal_workday) * worry_factor") %>%
@@ -263,8 +292,8 @@ sim = simulate(sfm)
 plot(sim, add_constants = TRUE)
 ```
 
-We've created oscillations in the system! Maya is now trapped in a cycle of overworking, which causes her sleep to deteriorate to the point of collapse. As she takes more time off work, her sleep recovers, but this only starts the cycle anew. What's worse, the oscillations are growing in amplitude, with each cycle becoming more extreme. A future refinement could prevent the daily work hours from exceeding 24 hours per day - every model is just a starting point.
-XXX
+We've created oscillations in the system! Maya is now trapped in a cycle of overworking, which causes her sleep to deteriorate to the point of collapse. As she takes more time off work, her sleep recovers, but this only starts the cycle anew. What's worse, the oscillations are growing in amplitude, with each cycle becoming more extreme. Of course, the model becomes untenable beyond this time horizon, as Maya would work more than 24 hours a day. 
+
 
 
 
@@ -300,7 +329,7 @@ XXX
 <!--   build("normal_workday", "constant", eqn = 8, units = "hours/day") %>% -->
 <!--   build("new_tasks", "flow", eqn = "work * work_growth", to = "work", units = "hours/day/week") %>% -->
 <!--   build("work_growth", "constant", eqn = 1.5, units = "1/month") %>% -->
-<!--   build("aim_for_normal", "flow", eqn = "work * necessary_sleep / sleep / u('month')", from = "work", units = "hours/day/month") %>% -->
+<!--   build("back_to_normal", "flow", eqn = "work * necessary_sleep / sleep / u('month')", from = "work", units = "hours/day/month") %>% -->
 <!--   build("sleep", "stock", eqn = "necessary_sleep", units = "hours/day") %>% -->
 <!--   build("necessary_sleep", "constant", eqn = 8, units = "hours/day") %>% -->
 <!--   build("worry_about_work", "flow", eqn = "(work - normal_workday) * worry_factor * necessary_sleep / sleep", from = "sleep", units = "hours/day/month") %>% -->
