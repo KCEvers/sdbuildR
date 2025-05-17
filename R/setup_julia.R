@@ -7,6 +7,7 @@
 #' @param version Julia version. Default is "latest", which will install the most recent stable release.
 #' @param JULIA_HOME Path to Julia installation. Defaults to NULL to locate Julia automatically.
 #' @param dir Directory to install Julia. Defaults to NULL to use default location.
+#' @param force If TRUE, force Julia setup to execute again.
 #' @param force_install If TRUE, force Julia installation even if existing version is found. Defaults to FALSE.
 #' @param ... Optional arguments passed to JuliaCall::julia_setup()
 #'
@@ -19,10 +20,11 @@ use_julia <- function(
     version = "latest",
     JULIA_HOME = NULL,
     dir = NULL,
+    force = FALSE,
     force_install = FALSE, ...){
 
   # Check whether use_julia() was run
-  if (!is.null(options()[["initialization_sdbuildR"]])){
+  if (!force & !force_install & !is.null(options()[["initialization_sdbuildR"]])){
     return(invisible())
   }
 
@@ -96,8 +98,6 @@ use_julia <- function(
 
   if (installJulia){
 
-
-
     if (version == "latest"){
       version = julia_latest_version()
     } else {
@@ -117,6 +117,7 @@ use_julia <- function(
 
   julia <- JuliaCall::julia_setup(JULIA_HOME = JULIA_HOME, installJulia=FALSE,
                                   install = TRUE, # Install dependencies
+                                  force = force,
                                   ...)
 
   # Run initialization

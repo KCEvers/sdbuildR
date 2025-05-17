@@ -50,7 +50,7 @@ jobs:
 
       - name: Initialize Julia environment
         run: |
-          Rscript -e 'library(sdbuildR); use_julia()'
+          Rscript -e 'library(sdbuildR); use_julia(force = TRUE)'
 
       - name: Build site
         run: |
