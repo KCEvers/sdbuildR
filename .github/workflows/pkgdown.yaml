@@ -41,7 +41,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, any::JuliaCall=0.9.14, local::.
+          extra-packages: any::pkgdown, any::JuliaCall=0.17.6, local::.
           needs: website
 
       - name: Configure swap space
