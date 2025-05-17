@@ -116,7 +116,7 @@ use_julia <- function(
   }
 
   julia <- JuliaCall::julia_setup(JULIA_HOME = JULIA_HOME, installJulia=FALSE,
-                                  install = TRUE, # Install dependencies
+                                  install = FALSE, # Don't run - this installs dependencies into the global environment
                                   force = force,
                                   ...)
 
