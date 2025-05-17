@@ -82,8 +82,8 @@ as.data.frame(sfm)
 
 All package capabilities are described in the vignettes:
 
-* `vignette("build")` Learn how to build, modify, and debug stock-and-flow models.
-* `vignette("units")` Learn why and how to use (custom) units.
+* `article("build")` Learn how to build, modify, and debug stock-and-flow models.
+* `article("units")` Learn why and how to use (custom) units.
 <!-- 3. **Delays**: Not all dynamics are instantaneous. Learn about delays (fixed, smooth, material and information) and how to implement them with sdbuildR. -->
 <!-- 4. **Sensitivity**:  -->
 

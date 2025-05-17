@@ -37,20 +37,20 @@ jobs:
           extra-packages: any::pkgdown, any::JuliaCall, local::.
           needs: website
 
-      - name: Set up Julia
-        uses: julia-actions/setup-julia@v2
-        with:
-          version: '1.11.5'
-
-      - name: Verify Julia installation
-        run: |
-          julia --version
-          which julia
-          ls -l $(which julia)
+      # - name: Set up Julia
+      #   uses: julia-actions/setup-julia@v2
+      #   with:
+      #     version: '1.11.5'
+#
+#       - name: Verify Julia installation
+#         run: |
+#           julia --version
+#           which julia
+#           ls -l $(which julia)
 
       - name: Initialize Julia environment
         run: |
-          Rscript -e 'library(sdbuildR); use_julia(version="1.11.5")'
+          Rscript -e 'library(sdbuildR); use_julia()'
 
       - name: Build site
         run: |
