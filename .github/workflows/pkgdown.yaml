@@ -15,12 +15,10 @@ permissions: read-all
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
-    # Only restrict concurrency for non-PR jobs
     concurrency:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      JULIA_PROJECT: ${{ github.workspace }}/inst
     permissions:
       contents: write
     steps:
@@ -47,28 +45,15 @@ jobs:
         run: |
           julia --version
           which julia
-          ls -l $(which julia)
-          echo "JULIA_PROJECT=$JULIA_PROJECT"
+          echo "Julia binary: $(which julia)"
 
-      - name: Pre-activate sdbuildR Julia environment
+      - name: Install Julia packages Suppressor and RCall
         run: |
-          julia -e 'using Pkg; Pkg.activate(ENV["JULIA_PROJECT"]); Pkg.instantiate(); Pkg.status()'
-          julia -e 'using Pkg; Pkg.activate(ENV["JULIA_PROJECT"]); Pkg.build("RCall")'
+          julia -e 'using Pkg; Pkg.add(["Suppressor", "RCall"]); Pkg.build("RCall")'
 
       - name: Initialize Julia environment
         run: |
-          Rscript -e '
-            library(sdbuildR)
-            Sys.setenv(JULIA_PROJECT = Sys.getenv("JULIA_PROJECT"))
-            julia_home <- Sys.which("julia")
-            if (julia_home == "") stop("Julia not found")
-            julia_home <- dirname(julia_home)
-            message("Using JULIA_HOME: ", julia_home)
-            JuliaCall::julia_setup(JULIA_HOME = julia_home, installJulia = FALSE)
-            JuliaCall::julia_command("using Pkg; Pkg.activate(\"" + Sys.getenv("JULIA_PROJECT") + "\"); Pkg.status()")
-            JuliaCall::julia_source(system.file("julia/setup.jl", package = "JuliaCall"))
-            use_julia(force = TRUE)
-          '
+          Rscript -e 'library(sdbuildR); use_julia(force=TRUE)'
 
       - name: Build site
         run: |
@@ -81,77 +66,3 @@ jobs:
           clean: false
           branch: gh-pages
           folder: docs
-
-
-          # # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
-# on:
-#   push:
-#     branches: [main, master]
-#   pull_request:
-#   release:
-#     types: [published]
-#   workflow_dispatch:
-#
-# name: pkgdown.yaml
-#
-# permissions: read-all
-#
-# jobs:
-#   pkgdown:
-#     runs-on: ubuntu-latest
-#     # Only restrict concurrency for non-PR jobs
-#     concurrency:
-#       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
-#     env:
-#       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-#     permissions:
-#       contents: write
-#     steps:
-#       - uses: actions/checkout@v4
-#
-#       - uses: r-lib/actions/setup-pandoc@v2
-#
-#       - uses: r-lib/actions/setup-r@v2
-#         with:
-#           r-version: '4.4.1'  # Updated to match your R version
-#           use-public-rspm: true
-#
-#       - uses: r-lib/actions/setup-r-dependencies@v2
-#         with:
-#           extra-packages: any::pkgdown, any::JuliaCall, local::.
-#           needs: website
-#
-#       - name: Set up Julia
-#         uses: julia-actions/setup-julia@v2
-#         with:
-#           version: '1.11.5'
-#
-#       - name: Verify Julia installation
-#         run: |
-#           julia --version
-#           which julia
-#           ls -l $(which julia)
-#
-#       - name: Pre-activate sdbuildR Julia environment
-#         run: |
-#           Rscript -e 'cat(system.file(package = "sdbuildR"), "\n")'
-#           julia -e 'using Pkg; Pkg.activate(ENV["SDBUILDR_PATH"]); Pkg.instantiate(); Pkg.status()'
-#         env:
-#           SDBUILDR_PATH: ${{ github.workspace }}/inst
-#
-#       - name: Initialize Julia environment
-#         run: |
-#           Rscript -e 'library(sdbuildR); use_julia(force = TRUE)'
-#
-#       - name: Build site
-#         run: |
-#           Rscript -e 'pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)'
-#
-#       - name: Deploy to GitHub pages 🚀
-#         if: github.event_name != 'pull_request'
-#         uses: JamesIves/github-pages-deploy-action@v4.5.0
-#         with:
-#           clean: false
-#           branch: gh-pages
-#           folder: docs

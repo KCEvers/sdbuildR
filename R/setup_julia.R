@@ -115,9 +115,12 @@ use_julia <- function(
     }
   }
 
+  # Find set-up location for sdbuildR in Julia
+  # sysimage_path = file.path(env_path, "Sysimage.so")
   julia <- JuliaCall::julia_setup(JULIA_HOME = JULIA_HOME, installJulia=FALSE,
                                   install = FALSE, # Don't run - this installs dependencies into the global environment
                                   force = force,
+                                  # sysimage_path = sysimage_path,
                                   ...)
 
   # Run initialization
