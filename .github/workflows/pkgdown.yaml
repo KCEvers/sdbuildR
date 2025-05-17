@@ -20,7 +20,6 @@ jobs:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      JULIA_HOME: /home/runner/.juliaup/julia-1.11.5+0.x64.linux.gnu/bin
     permissions:
       contents: write
     steps:
@@ -46,10 +45,12 @@ jobs:
       - name: Verify Julia installation
         run: |
           julia --version
+          which julia
+          ls -l $(which julia)
 
       - name: Initialize Julia environment
         run: |
-          Rscript -e 'library(sdbuildR); use_julia(version="1.11.5", JULIA_HOME=Sys.getenv("JULIA_HOME"))'
+          Rscript -e 'library(sdbuildR); use_julia(version="1.11.5")'
 
       - name: Build site
         run: |
