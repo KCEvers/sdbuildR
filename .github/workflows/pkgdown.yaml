@@ -43,21 +43,57 @@ jobs:
 
       - name: Verify Julia installation
         run: |
+          echo "Checking Julia installation..."
           julia --version
           which julia
           echo "Julia binary: $(which julia)"
+          julia -e 'println("Julia environment: ", Base.active_project())'
+          julia -e 'using Pkg; Pkg.status()'
+          echo "Julia installation verified."
+
+      - name: Inspect JuliaCall scripts
+        run: |
+          echo "Locating and inspecting JuliaCall scripts..."
+          Rscript -e 'cat(system.file("julia/setup.jl", package = "JuliaCall"), "\n")' > setup.jl
+          Rscript -e 'cat(system.file("julia/install_dependency.jl", package = "JuliaCall"), "\n")' > install_dependency.jl
+          echo "Contents of setup.jl:"
+          cat setup.jl
+          echo "Contents of install_dependency.jl:"
+          cat install_dependency.jl
+          echo "JuliaCall scripts inspection complete."
+
+      - name: Test JuliaCall setup.jl
+        run: |
+          echo "Testing setup.jl in standalone Julia session..."
+          julia -e 'try; include("setup.jl"); println("setup.jl executed successfully"); catch e; println("Error in setup.jl: ", e); exit(1); end'
+          echo "setup.jl test complete."
+
+      - name: Test JuliaCall install_dependency.jl
+        run: |
+          echo "Testing install_dependency.jl in standalone Julia session..."
+          julia -e 'try; include("install_dependency.jl"); println("install_dependency.jl executed successfully"); catch e; println("Error in install_dependency.jl: ", e); exit(1); end'
+          echo "install_dependency.jl test complete."
 
       - name: Install Julia packages Suppressor and RCall
         run: |
-          julia -e 'using Pkg; Pkg.add(["Suppressor", "RCall"]); Pkg.build("RCall")'
+          echo "Installing Suppressor and RCall..."
+          julia -e 'using Pkg; Pkg.add(["Suppressor", "RCall"]); Pkg.build("RCall"); Pkg.status()'
+          echo "Julia package installation complete."
 
       - name: Initialize Julia environment
         run: |
-          Rscript -e 'library(sdbuildR); use_julia(force=TRUE)'
+          echo "Running use_julia()..."
+          Rscript -e 'library(sdbuildR); print(packageVersion("JuliaCall")); use_julia(force=TRUE)'
+          echo "use_julia() complete."
+          echo "Post-use_julia Julia environment:"
+          julia -e 'println("Julia environment: ", Base.active_project())'
+          julia -e 'using Pkg; Pkg.status()'
 
       - name: Build site
         run: |
+          echo "Building pkgdown site..."
           Rscript -e 'pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)'
+          echo "Site build complete."
 
       - name: Deploy to GitHub pages 🚀
         if: github.event_name != 'pull_request'
