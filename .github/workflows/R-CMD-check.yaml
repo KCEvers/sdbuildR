@@ -27,6 +27,7 @@ jobs:
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      AUTO_JULIA_INSTALL: true
       R_KEEP_PKG_SOURCE: yes
 
     steps:
@@ -44,6 +45,11 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.11.5'  # Pin specific version for stability
 
       - uses: r-lib/actions/check-r-package@v2
         with:

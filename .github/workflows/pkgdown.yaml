@@ -20,7 +20,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       AUTO_JULIA_INSTALL: true
-      _R_CHECK_FORCE_SUGGESTS_: false  # Avoid issues with missing suggested packages
+      _R_CHECK_FORCE_SUGGESTS_: false
     permissions:
       contents: write
     steps:
@@ -30,39 +30,56 @@ jobs:
 
       - uses: r-lib/actions/setup-r@v2
         with:
-          r-version: 'release'  # Use latest stable R
+          r-version: 'release'
           use-public-rspm: true
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev libssl-dev zlib1g-dev
-        # Required for Julia and RCall
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev zlib1g-dev libblas-dev liblapack-dev
+        # Added BLAS/LAPACK for Julia numerical stability
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, any::JuliaCall, local::.
+          extra-packages: any::pkgdown, any::JuliaCall=0.9.14, local::.
           needs: website
+
+      - name: Configure swap space
+        run: |
+          sudo fallocate -l 2G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+        if: runner.os == 'Linux'
 
       - name: Set up Julia
         uses: julia-actions/setup-julia@v2
         with:
-          version: '1.11'  # Pin specific version for stability
+          version: '1.11.0'  # Specific version as requested
+
+      - name: Clear Julia package cache
+        run: rm -rf ~/.julia
+        if: runner.os == 'Linux'
 
       - name: Install and precompile Julia packages
         run: |
-          julia -e 'using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall"); Pkg.precompile()'
+          julia -e 'using Pkg; Pkg.add(Pkg.PackageSpec(name="Suppressor", version="0.2.8")); Pkg.add(Pkg.PackageSpec(name="RCall", version="0.14.1")); Pkg.precompile()'
         continue-on-error: false
+
+      - name: Debug Julia environment
+        run: |
+          julia -e 'using Pkg; Pkg.status(); println("Julia version: ", VERSION)'
+        # Log Julia package status and version
 
       - name: Initialize JuliaCall in R
         run: |
-          Rscript -e 'library(JuliaCall); julia_setup(installJulia = FALSE, verbose = TRUE)'
-        continue-on-error: true  # Log issues but proceed to see full error
+          Rscript -e 'library(JuliaCall); julia_setup(installJulia = FALSE, verbose = TRUE, useRCall = TRUE)'
+        continue-on-error: true  # Log errors without failing immediately
 
       - name: Build site with verbose output
         run: |
           Rscript -e 'pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE, verbose = TRUE)'
-        continue-on-error: true  # Capture full error output
+        continue-on-error: true
 
       - name: Deploy to GitHub pages 🚀
         if: github.event_name != 'pull_request' && success()
