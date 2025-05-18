@@ -61,9 +61,10 @@ simulate = function(sfm,
                           verbose = verbose, debug = debug))
   } else if (tolower(sfm$sim_specs$language) == "r"){
 
-    if (!requireNamespace("deSolve", quietly = TRUE)){
-      stop("deSolve is not installed! Please install deSolve to simulate in R,\nor simulate in Julia by setting\nsfm %>% sim_specs(language = 'Julia')")
-    }
+    # Remove - deSolve is now a required installation
+    # if (!requireNamespace("deSolve", quietly = TRUE)){
+    #   stop("deSolve is not installed! Please install deSolve to simulate in R,\nor simulate in Julia by setting\nsfm %>% sim_specs(language = 'Julia')")
+    # }
 
     return(simulate_R(sfm,
                       format_code=format_code,

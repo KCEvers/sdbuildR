@@ -51,6 +51,25 @@ jobs:
           julia -e 'using Pkg; Pkg.status()'
           echo "Julia installation verified."
 
+      - name: Install Julia packages Suppressor and RCall
+        run: |
+          echo "Installing Suppressor and RCall to global environment..."
+          julia -e 'using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall"); Pkg.build("RCall"); Pkg.status()'
+          echo "Verifying Project.toml contents..."
+          cat /home/runner/.julia/environments/v1.11/Project.toml || echo "Failed to read Project.toml"
+          echo "Julia package installation complete."
+
+      - name: Verify Julia environment and package availability
+        run: |
+          echo "Checking Julia environment and package availability..."
+          julia -e 'println("Active Julia environment: ", Base.active_project())'
+          julia -e 'using Pkg; Pkg.status()'
+          echo "Checking for Suppressor..."
+          julia -e 'try; using Suppressor; println("Suppressor found"); catch e; println("Suppressor not found: ", e); end'
+          echo "Checking for RCall..."
+          julia -e 'try; using RCall; println("RCall found"); catch e; println("RCall not found: ", e); end'
+          echo "Julia environment and package check complete."
+
       - name: Inspect JuliaCall scripts
         run: |
           echo "Locating and inspecting JuliaCall scripts..."
@@ -80,16 +99,10 @@ jobs:
           julia -e 'try; include("install_dependency.jl"); println("install_dependency.jl executed successfully"); catch e; println("Error in install_dependency.jl: ", e); exit(1); end'
           echo "install_dependency.jl test complete."
 
-      - name: Install Julia packages Suppressor and RCall
-        run: |
-          echo "Installing Suppressor and RCall..."
-          julia -e 'using Pkg; Pkg.add(["Suppressor", "RCall"]); Pkg.build("RCall"); Pkg.status()'
-          echo "Julia package installation complete."
-
       - name: Initialize Julia environment
         run: |
           echo "Running use_julia()..."
-          Rscript -e 'library(sdbuildR); print(packageVersion("JuliaCall")); use_julia(force=TRUE)'
+          Rscript -e 'library(sdbuildR); print(packageVersion("JuliaCall")); use_julia(version="1.11.5", force=TRUE)'
           echo "use_julia() complete."
           echo "Post-use_julia Julia environment:"
           julia -e 'println("Julia environment: ", Base.active_project())'

@@ -34,7 +34,7 @@
 P = list(initial_value_name = "xstart",
          initial_value_names = "xstart_names",
                           parameter_name = "pars",
-                          state_name = "S",
+                          state_name = "CURRENT_STATE",
                           change_prefix = "d",
                           time_name = "t",
          change_state_name = "dSdt",

@@ -9,6 +9,7 @@ use_julia(
   JULIA_HOME = NULL,
   dir = NULL,
   force = FALSE,
+  force_install = FALSE,
   ...
 )
 }
@@ -19,7 +20,9 @@ use_julia(
 
 \item{dir}{Directory to install Julia. Defaults to NULL to use default location.}
 
-\item{force}{If TRUE, force Julia installation even if existing version is found. Defaults to FALSE.}
+\item{force}{If TRUE, force Julia setup to execute again.}
+
+\item{force_install}{If TRUE, force Julia installation even if existing version is found. Defaults to FALSE.}
 
 \item{...}{Optional arguments passed to JuliaCall::julia_setup()}
 }
