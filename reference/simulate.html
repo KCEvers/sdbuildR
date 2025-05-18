@@ -98,26 +98,26 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>List with variables created in the simulation script</p><dl><dt>df</dt>
+    <p>Object of class sdbuildR_sim, which is a list containing:</p><dl><dt>df</dt>
 <dd><p>Dataframe, timeseries of computed variables in the ODE</p></dd>
 
-<dt>dt</dt>
-<dd><p>Numeric, the timestep</p></dd>
-
-<dt>times</dt>
-<dd><p>Numeric, sequence of time values</p></dd>
-
-<dt>ode_func</dt>
-<dd><p>Function, the ODE function</p></dd>
-
 <dt>pars</dt>
-<dd><p>List, constant parameters (i.e. static Auxiliaries)</p></dd>
+<dd><p>Constant parameters</p></dd>
 
 <dt>xstart</dt>
-<dd><p>Numeric, initial value of Stocks</p></dd>
+<dd><p>Initial value of stocks</p></dd>
+
+<dt>script</dt>
+<dd><p>Simulation script</p></dd>
+
+<dt>duration</dt>
+<dd><p>Duration of simulation</p></dd>
+
+<dt>success</dt>
+<dd><p>If TRUE, simulation was successful. If FALSE, simulation failed.</p></dd>
 
 <dt>...</dt>
-<dd><p>Other variables created in the simulation script.</p></dd>
+<dd><p>Other parameters passed to simulate</p></dd>
 
 
 </dl></div>
