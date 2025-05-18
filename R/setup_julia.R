@@ -4,6 +4,7 @@
 #'
 #' Create Julia environment to simulate stock-and-flow models. `use_julia()` looks for a Julia installation, and will install Julia as well as some required packages if not found. Keep in mind that the first time running `use_julia()` can take around 5-15 minutes, and all subsequent calls can take around 1 minute.
 #'
+#' @param stop If TRUE, stop active Julia session. Defaults to FALSE.
 #' @param version Julia version. Default is "latest", which will install the most recent stable release.
 #' @param JULIA_HOME Path to Julia installation. Defaults to NULL to locate Julia automatically.
 #' @param dir Directory to install Julia. Defaults to NULL to use default location.
@@ -17,11 +18,16 @@
 #' @examples
 #' use_julia()
 use_julia <- function(
+    stop = FALSE,
     version = "latest",
     JULIA_HOME = NULL,
     dir = NULL,
     force = FALSE,
     force_install = FALSE, ...){
+
+  if (stop){
+    JuliaConnectoR::stopJulia()
+  }
 
   # Check whether use_julia() was run
   if (!force & !force_install & !is.null(options()[["initialization_sdbuildR"]])){
@@ -115,13 +121,20 @@ use_julia <- function(
     }
   }
 
-  # Find set-up location for sdbuildR in Julia
-  # sysimage_path = file.path(env_path, "Sysimage.so")
-  julia <- JuliaCall::julia_setup(JULIA_HOME = JULIA_HOME, installJulia=FALSE,
-                                  install = FALSE, # Don't run - this installs dependencies into the global environment
-                                  force = force,
-                                  # sysimage_path = sysimage_path,
-                                  ...)
+  # # Find set-up location for sdbuildR in Julia
+  # # sysimage_path = file.path(env_path, "Sysimage.so")
+  # julia <- JuliaCall::julia_setup(JULIA_HOME = JULIA_HOME, installJulia=FALSE,
+  #                                 install = FALSE, # Don't run - this installs dependencies into the global environment
+  #                                 force = force,
+  #                                 # sysimage_path = sysimage_path,
+  #                                 ...)
+
+  Sys.setenv(JULIA_BINDIR = JULIA_HOME)
+
+  JuliaConnectoR::startJuliaServer()
+  JuliaConnectoR::juliaSetupOk()
+
+  # JuliaConnectoR::juliaEval("VERSION") # Should return "1.11.5"
 
   # Run initialization
   run_init()
@@ -150,8 +163,12 @@ run_init = function(){
   julia_cmd <- sprintf("using Pkg; Pkg.activate(\"%s\"); Pkg.instantiate()", env_path)
 
   # Execute the command in Julia
-  JuliaCall::julia_command(julia_cmd)
-  JuliaCall::julia_source(file.path(env_path, "init.jl"))
+  # JuliaCall::julia_command(julia_cmd)
+  # JuliaCall::julia_source(file.path(env_path, "init.jl"))
+
+  JuliaConnectoR::juliaEval(julia_cmd)
+  JuliaConnectoR::juliaEval(paste0('include("', normalizePath(file.path(env_path, "init.jl"),
+                                                              winslash = "/", mustWork = FALSE), '")')) # Source the script
 
   return(NULL)
 }

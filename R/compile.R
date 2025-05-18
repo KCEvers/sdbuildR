@@ -37,6 +37,9 @@
 #' sim = simulate(sfm)
 #' plot(sfm)
 #'
+#' # Close Julia session
+#' use_julia(stop = TRUE)
+#'
 simulate = function(sfm,
                     format_code=TRUE,
                     keep_nonnegative_flow = TRUE,
@@ -78,44 +81,6 @@ simulate = function(sfm,
 
 }
 
-
-
-#' Compile script to simulate stock-and-flow model in either Julia or R
-#'
-#' @inheritParams build
-#' @inheritParams insightmaker_to_sfm
-#' @inheritParams simulate
-#'
-#' @return Julia or R script
-#' @noRd
-#'
-compile = function(sfm,
-                   format_code=TRUE,
-                   keep_nonnegative_flow = TRUE,
-                   keep_nonnegative_stock = FALSE,
-                   keep_unit = TRUE, verbose = FALSE, debug = FALSE, only_stocks = FALSE){
-
-
-  if (tolower(sfm$sim_specs$language) == "julia"){
-    return(compile_julia(sfm,
-                                    format_code=format_code,
-                                    keep_nonnegative_flow = keep_nonnegative_flow,
-                                    keep_nonnegative_stock = keep_nonnegative_stock,
-                                    keep_unit = keep_unit,
-                         only_stocks = only_stocks,
-                         verbose = verbose, debug = debug))
-  } else if (tolower(sfm$sim_specs$language) == "r"){
-    return(compile_R(sfm,
-                     format_code=format_code,
-                     keep_nonnegative_flow = keep_nonnegative_flow,
-                     keep_nonnegative_stock = keep_nonnegative_stock,
-                     only_stocks = only_stocks,
-                     verbose = verbose, debug = debug))
-  } else {
-    stop("Language not supported.\nPlease run either sfm %>% sim_specs(language = 'Julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
-  }
-
-}
 
 
 

@@ -15,6 +15,7 @@ permissions: read-all
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
+    # Only restrict concurrency for non-PR jobs
     concurrency:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
     env:
@@ -28,111 +29,16 @@ jobs:
 
       - uses: r-lib/actions/setup-r@v2
         with:
-          r-version: '4.4.1'
           use-public-rspm: true
-
-      - name: Set R_HOME environment variable
-        run: |
-          echo "R_HOME=$(Rscript -e 'cat(Sys.getenv(\"R_HOME\"))')" >> $GITHUB_ENV
-          echo "R_HOME set to: $R_HOME"
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, any::JuliaCall, local::.
+          extra-packages: any::pkgdown, local::.
           needs: website
 
-      - name: Set LD_LIBRARY_PATH for R
-        run: |
-          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/R/lib:/usr/lib/R/library" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH updated: $LD_LIBRARY_PATH"
-
-      - name: Set up Julia
-        uses: julia-actions/setup-julia@v2
-        with:
-          version: '1.11.5'
-
-      - name: Verify Julia installation
-        run: |
-          echo "Checking Julia installation..."
-          julia --version
-          which julia
-          echo "Julia binary: $(which julia)"
-          julia -e 'println("Julia environment: ", Base.active_project())'
-          julia -e 'using Pkg; Pkg.status()'
-          echo "Julia installation verified."
-
-      - name: Install Julia packages Suppressor and RCall
-        run: |
-          echo "Installing Suppressor and RCall to global environment..."
-          julia -e 'using Pkg; Pkg.add("Suppressor"); Pkg.add("RCall"); Pkg.build("RCall"); Pkg.status()'
-          echo "Verifying Project.toml contents..."
-          cat /home/runner/.julia/environments/v1.11/Project.toml || echo "Failed to read Project.toml"
-          echo "Julia package installation complete."
-
-      - name: Verify Julia environment and package availability
-        run: |
-          echo "Checking Julia environment and package availability..."
-          julia -e 'println("Active Julia environment: ", Base.active_project())'
-          julia -e 'using Pkg; Pkg.status()'
-          echo "Checking for Suppressor..."
-          julia -e 'try; using Suppressor; println("Suppressor found"); catch e; println("Suppressor not found: ", e); end'
-          echo "Checking for RCall..."
-          julia -e 'try; using RCall; println("RCall found"); catch e; println("RCall not found: ", e); end'
-          echo "Julia environment and package check complete."
-
-      - name: Inspect JuliaCall scripts
-        run: |
-          echo "Locating and inspecting JuliaCall scripts..."
-          echo "Path to JuliaCall julia directory:"
-          Rscript -e 'cat(system.file("julia", package = "JuliaCall"), "\n")'
-          echo "Creating directory structure..."
-          mkdir -p display
-          echo "Copying setup.jl..."
-          Rscript -e 'writeLines(readLines(system.file("julia/setup.jl", package = "JuliaCall")), "setup.jl")'
-          echo "Copying install_dependency.jl..."
-          Rscript -e 'writeLines(readLines(system.file("julia/install_dependency.jl", package = "JuliaCall")), "install_dependency.jl")'
-          echo "Copying display scripts..."
-          Rscript -e 'file.copy(system.file("julia/display", package = "JuliaCall"), ".", recursive = TRUE)'
-          echo "Copying other JuliaCall scripts..."
-          for file in REPLhook.jl incomplete_console.jl RmdStd.jl convert.jl JuliaObject.jl asR.jl dispatch.jl interface1.jl; do
-            Rscript -e 'writeLines(readLines(system.file("julia/'$file'", package = "JuliaCall")), "'$file'")' || echo "Failed to copy $file"
-          done
-          echo "Listing copied files..."
-          ls -R || echo "Failed to list files"
-          echo "Contents of setup.jl:"
-          cat setup.jl || echo "Failed to read setup.jl"
-          echo "Contents of install_dependency.jl:"
-          cat install_dependency.jl || echo "Failed to read install_dependency.jl"
-          echo "Contents of display/basic.jl:"
-          cat display/basic.jl || echo "Failed to read display/basic.jl"
-          echo "JuliaCall scripts inspection complete."
-
-      - name: Test JuliaCall setup.jl
-        run: |
-          echo "Testing setup.jl in standalone Julia session..."
-          julia -e 'try; include("setup.jl"); println("setup.jl executed successfully"); catch e; println("Error in setup.jl: ", e); exit(1); end'
-          echo "setup.jl test complete."
-
-      - name: Test JuliaCall install_dependency.jl
-        run: |
-          echo "Testing install_dependency.jl in standalone Julia session..."
-          julia -e 'try; include("install_dependency.jl"); println("install_dependency.jl executed successfully"); catch e; println("Error in install_dependency.jl: ", e); exit(1); end'
-          echo "install_dependency.jl test complete."
-
-      - name: Initialize Julia environment
-        run: |
-          echo "Running use_julia()..."
-          Rscript -e 'library(sdbuildR); print(packageVersion("JuliaCall")); use_julia(version="1.11.5", force=TRUE)'
-          echo "use_julia() complete."
-          echo "Post-use_julia Julia environment:"
-          julia -e 'println("Julia environment: ", Base.active_project())'
-          julia -e 'using Pkg; Pkg.status()'
-
       - name: Build site
-        run: |
-          echo "Building pkgdown site..."
-          Rscript -e 'pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)'
-          echo "Site build complete."
+        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+        shell: Rscript {0}
 
       - name: Deploy to GitHub pages 🚀
         if: github.event_name != 'pull_request'

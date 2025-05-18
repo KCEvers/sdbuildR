@@ -7,6 +7,7 @@ using Statistics
 using Unitful
 using DataInterpolations
 using Random
+using CSV
 
 # julia initialization for sdbuildR package
 # Required when extending a module’s function
@@ -276,13 +277,13 @@ end
 nonnegative(x::Real) = max(0.0, x)
 
 # Scalar case: Unitful.Quantity
-nonnegative(x::Unitful.Quantity) = max(0.0, ustrip(x)) * unit(x)
+nonnegative(x::Unitful.Quantity) = max(0.0, Unitful.ustrip(x)) * Unitful.unit(x)
 
 # Array case: non-unitful elements
 nonnegative(x::AbstractArray{<:Real}) = max.(0.0, x)
 
 # Array case: Unitful.Quantity elements
-nonnegative(x::AbstractArray{<:Unitful.Quantity}) = max.(0.0, ustrip.(x)) .* unit.(x)
+nonnegative(x::AbstractArray{<:Unitful.Quantity}) = max.(0.0, Unitful.ustrip.(x)) .* Unitful.unit.(x)
 
 # Generate random boolean value, equivalent of RandBoolean() in Insight Maker
 function rbool(p)

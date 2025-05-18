@@ -61,4 +61,7 @@ use_julia()
 sim = simulate(sfm)
 plot(sfm)
 
+# Close Julia session
+use_julia(stop = TRUE)
+
 }

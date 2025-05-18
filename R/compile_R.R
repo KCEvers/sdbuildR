@@ -37,7 +37,7 @@ simulate_R = function(sfm,
                      keep_nonnegative_stock = keep_nonnegative_stock,
                      only_stocks = only_stocks,
                      debug = debug)
-  filepath = write_script(script, ext = ".R")
+  # filepath = write_script(script, fileext = ".R")
 
   # Evaluate script
   sim = tryCatch({
@@ -51,6 +51,10 @@ simulate_R = function(sfm,
     eval(parse(text = script), envir = envir)
 
     end_t = Sys.time()
+
+    # # Delete file
+    # unlink(filepath)
+
     if (verbose){
       message(paste0("Simulation took ", round(end_t - start_t, 4), " seconds"))
     }
@@ -78,7 +82,7 @@ simulate_R = function(sfm,
     out[[P$parameter_name]] = envir[[P$parameter_name]]
     out$keep_unit = FALSE
     out$script = script
-    out$filepath = filepath
+    # out$filepath = filepath
     out$success = TRUE
     out$duration = end_t - start_t
     # as.list(envir)
@@ -88,7 +92,9 @@ simulate_R = function(sfm,
   error = function(e) {
     warning("\nAn error occurred while running the R script.")
     # print(e$message)
-    list(success = FALSE, error_message = e$message, script = script, filepath = filepath) %>%
+    list(success = FALSE, error_message = e$message, script = script
+         # , filepath = filepath
+         ) %>%
       structure(., class = "sdbuildR_sim")
   })
 

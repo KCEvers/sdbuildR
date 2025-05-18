@@ -34,14 +34,18 @@ simulate_julia = function(sfm,
   # Remove some elements
   # argg[c("sfm")] = NULL
 
-  # Compile script without plot
-  script = compile_julia(sfm,
-                         format_code=format_code,
+  # Get output filepaths
+  filepath_df = get_tempfile(fileext = ".csv")
+  filepath = get_tempfile(fileext = ".jl")
+
+  # Compile script
+  script = compile_julia(sfm, filepath_df = filepath_df,
+                         format_code = format_code,
                          keep_nonnegative_flow = keep_nonnegative_flow,
                          keep_nonnegative_stock = keep_nonnegative_stock,
                          only_stocks = only_stocks,
                          keep_unit = keep_unit, debug = debug)
-  filepath = write_script(script, ext = ".jl")
+  write_script(script, filepath)
   script = readLines(filepath) %>% paste0(collapse = "\n")
 
   # Evaluate script
@@ -61,7 +65,10 @@ simulate_julia = function(sfm,
     use_julia()
 
     start_t = Sys.time()
-    JuliaCall::julia_source(filepath)
+
+    # JuliaCall::julia_source(filepath)
+    invisible(JuliaConnectoR::juliaEval(paste0('include("', filepath, '")')))
+
     end_t = Sys.time()
     if (verbose){
       message(paste0("Simulation took ", round(end_t - start_t, 4), " seconds"))
@@ -70,9 +77,19 @@ simulate_julia = function(sfm,
     # Delete simulation file
     file.remove(filepath)
 
-    df = JuliaCall::julia_eval(P$sim_df_name)
-    pars_julia = JuliaCall::julia_eval(P$parameter_name)
-    xstart_julia = JuliaCall::julia_eval(P$initial_value_name)
+    # df = JuliaCall::julia_eval(P$sim_df_name)
+    # pars_julia = JuliaCall::julia_eval(P$parameter_name)
+    # xstart_julia = JuliaCall::julia_eval(P$initial_value_name)
+
+    # df = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(P[["sim_df_name"]]))
+    pars_julia = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(P[["parameter_name"]]))
+    xstart_julia = JuliaConnectoR::juliaEval(P[["initial_value_name"]])
+
+    # df <- utils::read.csv(filepath_df)
+    df = data.table::fread(filepath_df, na.strings = c("", "NA"))
+
+    # Temporary
+
     # units_julia = JuliaCall::julia_eval(P$units_dict)
 
     # if (include_plot){
@@ -112,7 +129,7 @@ simulate_julia = function(sfm,
 #' @return Julia script
 #' @noRd
 #'
-compile_julia = function(sfm,
+compile_julia = function(sfm, filepath_df,
                          format_code=TRUE,
                          keep_nonnegative_flow = TRUE,
                          keep_nonnegative_stock = FALSE,
@@ -252,7 +269,8 @@ compile_julia = function(sfm,
                           keep_unit,
                           only_stocks = only_stocks)
 
-  run_ode = compile_run_ode_julia(sfm, only_stocks = only_stocks,
+  run_ode = compile_run_ode_julia(sfm, filepath_df = filepath_df,
+                                  only_stocks = only_stocks,
                                   stock_names = static_eqn$stock_names,
                                   intermediary_var = ode$intermediary_var,
                                   keep_unit = keep_unit)
@@ -1103,6 +1121,7 @@ function %s(%s, %s, integrator)",
 
 #' Compile Julia script for running ODE
 #'
+#' @param filepath_df Path to output file
 #' @param nonneg_stocks Output of compile_nonneg_stocks()
 #' @param stock_names Names of stocks
 #' @param intermediary_var Names of intermediary variables
@@ -1114,7 +1133,7 @@ function %s(%s, %s, integrator)",
 #' @inheritParams compile_R
 #' @noRd
 #'
-compile_run_ode_julia = function(sfm,
+compile_run_ode_julia = function(sfm, filepath_df,
                                  nonneg_stocks,
                                  stock_names,
                                  intermediary_var,
@@ -1216,6 +1235,11 @@ compile_run_ode_julia = function(sfm,
                     P$parameter_name, " = (; (name => isa(val, Unitful.Quantity) ? Unitful.ustrip(val) : val for (name, val) in pairs(pars))...)")
 
   }
+
+  # Save to CSV
+  script = paste0(script, '\nCSV.write("', filepath_df, '", ', P[["sim_df_name"]], ')\nNothing')
+
+
   # else {
   #   script = paste0(script, "\n# Assign empty dictionary to units\n", P$units_dict, " = Dict()\n")
   # }
@@ -1230,43 +1254,44 @@ compile_run_ode_julia = function(sfm,
 
 
 
-#' Write a string to a R or julia script file with a unique filename
+#' Write a string to a temporary file
 #'
 #' @param script String containing the code to write
-#' @param base_name Base name for the file (without extension, default: "script")
-#' @param dir Directory to save the file (default: current working directory)
-#' @param ext String with file extension, either ".R" or ".jl"
-#' @param overwrite Boolean; whether to overwrite the file if it does exist
+#' @param fileext String with file extension, either ".R" or ".jl"
 #' @return The path to the created file
 #'
 #' @noRd
 #' @examples
 #' julia_code <- "println(\"Hello from julia!\")"
-#' filepath <- write_script(julia_code, "my_script", ext = ".jl")
-#' print(filepath)
+#' filepath = get_tempfile(".jl")
+#' write_script(julia_code, filepath)
 write_script <- function(script,
-                         base_name = "model",
-                         dir = file.path(tempdir(), "julia_output"),
-                         ext = ".jl",
-                         overwrite = FALSE) {
+                         # base_name = "model",
+                         # dir = file.path(tempdir(), "julia_output"),
+                         filepath) {
 
-  # Ensure directory exists
-  if (!dir.exists(dir)) {
-    dir.create(dir, recursive = TRUE)
-  }
+  # # Ensure directory exists
+  # if (!dir.exists(dir)) {
+  #   dir.create(dir, recursive = TRUE)
+  # }
+#
+#   # Initial filename
+#   filepath <- file.path(dir, paste0(base_name, ext))
+#   filepath <- normalizePath(filepath, winslash = "/", mustWork = FALSE)
+#
+#   # Check if file exists and generate a unique name
+#   counter <- 1
+#   while (file.exists(filepath) & !overwrite) {
+#     filepath <- file.path(dir, paste0(base_name, "_", counter, ext))
+#     counter <- counter + 1
+#   }
+#
+  # filepath = get_tempfile(fileext = fileext)
+  filepath <- normalizePath(filepath, winslash = "/", mustWork = FALSE)
 
-  # Initial filename
-  filepath <- file.path(dir, paste0(base_name, ext))
 
-  # Check if file exists and generate a unique name
-  counter <- 1
-  while (file.exists(filepath) & !overwrite) {
-    filepath <- file.path(dir, paste0(base_name, "_", counter, ext))
-    counter <- counter + 1
-  }
-
-  # Decode unicode characters when writing to julia
-  if (ext == ".jl"){
+  # Decode unicode characters when writing to Julia
+  if (tools::file_ext(filepath) == "jl"){
     if (grepl("(\\\\u|\\\\\\\\u)[0-9a-fA-F]{4}", script)){
       script = decode_unicode(script)
     }
@@ -1275,7 +1300,18 @@ write_script <- function(script,
   # Write the script to the file
   writeLines(script, filepath)
 
-  # Return the file path
+  invisible()
+}
+
+
+#' Get a temporary file path with a specific extension
+#'
+#' @param fileext String with file extension, either ".R" or ".jl"
+#'
+#' @returns Filepath to temporary file
+#' @noRd
+get_tempfile = function(fileext){
+  filepath <- normalizePath(tempfile(fileext = fileext), winslash = "/", mustWork = FALSE)
   return(filepath)
 }
 

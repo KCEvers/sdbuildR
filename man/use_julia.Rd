@@ -5,6 +5,7 @@
 \title{Set up Julia environment for sdbuildR}
 \usage{
 use_julia(
+  stop = FALSE,
   version = "latest",
   JULIA_HOME = NULL,
   dir = NULL,
@@ -14,6 +15,8 @@ use_julia(
 )
 }
 \arguments{
+\item{stop}{If TRUE, stop active Julia session. Defaults to FALSE.}
+
 \item{version}{Julia version. Default is "latest", which will install the most recent stable release.}
 
 \item{JULIA_HOME}{Path to Julia installation. Defaults to NULL to locate Julia automatically.}

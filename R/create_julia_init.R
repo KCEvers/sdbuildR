@@ -41,6 +41,7 @@ using Statistics
 using Unitful
 using DataInterpolations
 using Random
+using CSV
 
 # julia initialization for sdbuildR package
 # Required when extending a module’s function
@@ -102,6 +103,7 @@ Base.round(x::Unitful.Quantity, digits::Float64) = round(Unitful.ustrip.(x), dig
 
   # Write script
   env_path <- system.file(package = "sdbuildR")
-  filepath = write_script(script, base_name = "init", dir = env_path, ext = ".jl", overwrite = TRUE)
+  filepath = file.path(env_path, "init.jl")
+  write_script(script, filepath)
   invisible()
 }
