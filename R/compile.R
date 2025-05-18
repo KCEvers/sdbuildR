@@ -1,4 +1,3 @@
-# **to do documentation of return of compile and xmile
 
 
 
@@ -15,15 +14,15 @@
 #' @param only_stocks If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.
 #' @param ... Optional arguments
 #'
-#' @return List with variables created in the simulation script
+#' @return Object of class sdbuildR_sim, which is a list containing:
 #' \describe{
 #'   \item{df}{Dataframe, timeseries of computed variables in the ODE}
-#'   \item{dt}{Numeric, the timestep}
-#'   \item{times}{Numeric, sequence of time values}
-#'   \item{ode_func}{Function, the ODE function}
-#'   \item{pars}{List, constant parameters (i.e. static Auxiliaries)}
-#'   \item{xstart}{Numeric, initial value of Stocks}
-#'   \item{...}{Other variables created in the simulation script.}
+#'   \item{pars}{Constant parameters}
+#'   \item{xstart}{Initial value of stocks}
+#'   \item{script}{Simulation script}
+#'   \item{duration}{Duration of simulation}
+#'   \item{success}{If TRUE, simulation was successful. If FALSE, simulation failed.}
+#'   \item{...}{Other parameters passed to simulate}
 #' }
 #' @export
 #'

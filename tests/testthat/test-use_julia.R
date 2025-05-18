@@ -9,4 +9,6 @@ test_that("use_julia() works", {
   expect_no_warning(use_julia())
   expect_no_message(use_julia())
 
+  expect_no_error(use_julia(stop=TRUE))
+
 })

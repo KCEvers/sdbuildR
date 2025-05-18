@@ -2,7 +2,7 @@
 title: "Building stock-and-flow models"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Units}
+  %\VignetteIndexEntry{Building stock-and-flow models}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

@@ -33,5 +33,8 @@ use_julia(
 Create Julia environment to simulate stock-and-flow models. \code{use_julia()} looks for a Julia installation, and will install Julia as well as some required packages if not found. Keep in mind that the first time running \code{use_julia()} can take around 5-15 minutes, and all subsequent calls can take around 1 minute.
 }
 \examples{
+# Start Julia session
 use_julia()
+# Stop Julia session
+use_julia(stop = TRUE)
 }

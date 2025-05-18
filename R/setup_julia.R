@@ -16,7 +16,10 @@
 #' @export
 #'
 #' @examples
+#' # Start Julia session
 #' use_julia()
+#' # Stop Julia session
+#' use_julia(stop = TRUE)
 use_julia <- function(
     stop = FALSE,
     version = "latest",
@@ -25,8 +28,19 @@ use_julia <- function(
     force = FALSE,
     force_install = FALSE, ...){
 
+  # # Ensure Julia session is stopped on exit
+  # # Necessary for correct clean up in devtools::check() of examples
+  # on.exit({
+  #   if (!stop){
+  #     options("initialization_sdbuildR" = NULL)
+  #     JuliaConnectoR::stopJulia()
+  #   }
+  # }, add = TRUE)
+
   if (stop){
+    options("initialization_sdbuildR" = NULL)
     JuliaConnectoR::stopJulia()
+    return(invisible())
   }
 
   # Check whether use_julia() was run
@@ -129,12 +143,14 @@ use_julia <- function(
   #                                 # sysimage_path = sysimage_path,
   #                                 ...)
 
+  # Set path to Julia executable
   Sys.setenv(JULIA_BINDIR = JULIA_HOME)
 
   JuliaConnectoR::startJuliaServer()
-  JuliaConnectoR::juliaSetupOk()
 
-  # JuliaConnectoR::juliaEval("VERSION") # Should return "1.11.5"
+  # # Start Julia with simple statement
+  # ans = JuliaConnectoR::juliaEval("1+1")
+  JuliaConnectoR::juliaSetupOk()
 
   # Run initialization
   run_init()

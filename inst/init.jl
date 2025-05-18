@@ -1,5 +1,6 @@
 # Load packages
-using DifferentialEquations#: ODEProblem, solve, Euler, RK4, Tsit5
+#using DifferentialEquations#: ODEProblem, solve, Euler, RK4, Tsit5
+using OrdinaryDiffEq
 using DiffEqCallbacks#: SavingCallback, SavedValues
 using DataFrames#: DataFrame, select, innerjoin, rename!
 using Distributions

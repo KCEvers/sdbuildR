@@ -1,5 +1,10 @@
 ---
 title: "Using (custom) units"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using (custom) units}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}

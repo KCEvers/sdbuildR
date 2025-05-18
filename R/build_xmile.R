@@ -425,7 +425,7 @@ as.data.frame.sdbuildR_sim = function(x, ...){
     stop("This is not an object of class sdbuildR_sim! Simulate a stock-and-flow model with simulate().")
   }
 
-  return(as.data.frame(x$df))
+  return(x$df)
 }
 
 

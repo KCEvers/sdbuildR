@@ -33,7 +33,8 @@ create_julia_init = function(){
                     "\n\tUnitful.register(", P$sdbuildR_units, ")\nend\n\n", P$unit_context, " = [Unitful.Unitful, ", P$sdbuildR_units, "];\n\n")
 
   script = paste0("# Load packages
-using DifferentialEquations#: ODEProblem, solve, Euler, RK4, Tsit5
+#using DifferentialEquations#: ODEProblem, solve, Euler, RK4, Tsit5
+using OrdinaryDiffEq
 using DiffEqCallbacks#: SavingCallback, SavedValues
 using DataFrames#: DataFrame, select, innerjoin, rename!
 using Distributions

@@ -86,7 +86,7 @@ simulate_julia = function(sfm,
     xstart_julia = JuliaConnectoR::juliaEval(P[["initial_value_name"]])
 
     # df <- utils::read.csv(filepath_df)
-    df = data.table::fread(filepath_df, na.strings = c("", "NA"))
+    df = as.data.frame(data.table::fread(filepath_df, na.strings = c("", "NA")))
 
     # Temporary
 
@@ -102,7 +102,8 @@ simulate_julia = function(sfm,
          df = df, pars = pars_julia,
          xstart = xstart_julia,
          # units = units_julia,
-         script = script, filepath = filepath,
+         script = script,
+         # filepath = filepath,
          duration = end_t - start_t) %>% utils::modifyList(argg) %>%
       structure(., class = "sdbuildR_sim")
 
