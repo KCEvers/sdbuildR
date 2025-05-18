@@ -54,12 +54,18 @@ jobs:
       - name: Inspect JuliaCall scripts
         run: |
           echo "Locating and inspecting JuliaCall scripts..."
-          Rscript -e 'cat(system.file("julia/setup.jl", package = "JuliaCall"), "\n")' > setup.jl
-          Rscript -e 'cat(system.file("julia/install_dependency.jl", package = "JuliaCall"), "\n")' > install_dependency.jl
+          echo "Path to setup.jl:"
+          Rscript -e 'cat(system.file("julia/setup.jl", package = "JuliaCall"), "\n")'
+          echo "Path to install_dependency.jl:"
+          Rscript -e 'cat(system.file("julia/install_dependency.jl", package = "JuliaCall"), "\n")'
+          echo "Copying setup.jl..."
+          Rscript -e 'writeLines(readLines(system.file("julia/setup.jl", package = "JuliaCall")), "setup.jl")'
+          echo "Copying install_dependency.jl..."
+          Rscript -e 'writeLines(readLines(system.file("julia/install_dependency.jl", package = "JuliaCall")), "install_dependency.jl")'
           echo "Contents of setup.jl:"
-          cat setup.jl
+          cat setup.jl || echo "Failed to read setup.jl"
           echo "Contents of install_dependency.jl:"
-          cat install_dependency.jl
+          cat install_dependency.jl || echo "Failed to read install_dependency.jl"
           echo "JuliaCall scripts inspection complete."
 
       - name: Test JuliaCall setup.jl
@@ -83,7 +89,7 @@ jobs:
       - name: Initialize Julia environment
         run: |
           echo "Running use_julia()..."
-          Rscript -e 'library(sdbuildR); print(packageVersion("JuliaCall")); use_julia(version="1.11.5", force=TRUE)'
+          Rscript -e 'library(sdbuildR); print(packageVersion("JuliaCall")); use_julia(force=TRUE)'
           echo "use_julia() complete."
           echo "Post-use_julia Julia environment:"
           julia -e 'println("Julia environment: ", Base.active_project())'
