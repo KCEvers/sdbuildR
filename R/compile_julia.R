@@ -88,15 +88,7 @@ simulate_julia = function(sfm,
     # df <- utils::read.csv(filepath_df)
     df = as.data.frame(data.table::fread(filepath_df, na.strings = c("", "NA")))
 
-    # Temporary
-
     # units_julia = JuliaCall::julia_eval(P$units_dict)
-
-    # if (include_plot){
-    #   # Plot stocks
-    #   pl = plot_sim(sfm, df)
-    #   argg$pl = pl
-    # }
 
     list(success = TRUE,
          df = df, pars = pars_julia,
