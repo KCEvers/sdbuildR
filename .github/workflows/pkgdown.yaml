@@ -83,7 +83,7 @@ jobs:
       - name: Initialize Julia environment
         run: |
           echo "Running use_julia()..."
-          Rscript -e 'library(sdbuildR); print(packageVersion("JuliaCall")); use_julia(force=TRUE)'
+          Rscript -e 'library(sdbuildR); print(packageVersion("JuliaCall")); use_julia(version="1.11.5", force=TRUE)'
           echo "use_julia() complete."
           echo "Post-use_julia Julia environment:"
           julia -e 'println("Julia environment: ", Base.active_project())'
