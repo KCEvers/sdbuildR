@@ -1,11 +1,11 @@
-pandoc: '3.4'
+pandoc: 3.1.11
 pkgdown: 2.1.2
 pkgdown_sha: ~
 articles:
   articles/build: build.html
   articles/sdbuildR: sdbuildR.html
   articles/units: units.html
-last_built: 2025-05-17T09:37Z
+last_built: 2025-05-18T13:29Z
 urls:
   reference: https://kcevers.github.io/sdbuildR/reference
   article: https://kcevers.github.io/sdbuildR/articles
