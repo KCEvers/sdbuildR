@@ -56,6 +56,10 @@ jobs:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
 
+      - name: Install sdbuildR
+        run: |
+          Rscript -e 'devtools::install(dependencies = FALSE)'
+
       - name: Time use_julia initial run
         run: |
           Rscript -e 'library(sdbuildR); start <- Sys.time(); use_julia(force = TRUE); end <- Sys.time(); cat("use_julia initial run:", as.numeric(difftime(end, start, units = "secs")), "seconds\n")'
