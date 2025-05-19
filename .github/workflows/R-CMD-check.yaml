@@ -55,3 +55,19 @@ jobs:
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+
+      - name: Time use_julia initial run
+        run: |
+          Rscript -e 'library(sdbuildR); start <- Sys.time(); use_julia(force = TRUE); end <- Sys.time(); cat("use_julia initial run:", as.numeric(difftime(end, start, units = "secs")), "seconds\n")'
+
+      - name: Run use_julia stop
+        run: |
+          Rscript -e 'library(sdbuildR); use_julia(stop = TRUE)'
+
+      - name: Time use_julia after stop
+        run: |
+          Rscript -e 'library(sdbuildR); start <- Sys.time(); use_julia(force = TRUE); end <- Sys.time(); cat("use_julia after stop:", as.numeric(difftime(end, start, units = "secs")), "seconds\n")'
+
+      - name: Time use_julia subsequent run
+        run: |
+          Rscript -e 'library(sdbuildR); start <- Sys.time(); use_julia(); end <- Sys.time(); cat("use_julia subsequent run:", as.numeric(difftime(end, start, units = "secs")), "seconds\n")'

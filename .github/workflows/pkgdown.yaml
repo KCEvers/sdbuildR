@@ -31,53 +31,10 @@ jobs:
         with:
           use-public-rspm: true
 
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: '1.9'  # Adjust to your required Julia version
-
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, any::JuliaConnectoR, local::.
+          extra-packages: any::pkgdown, local::.
           needs: website
-
-      - name: Time use_julia function
-        if: github.event_name != 'pull_request'
-        run: |
-          Rscript -e '
-            library(sdbuildR)  # Replace with your package name
-            cat("Timing first use_julia():\n")
-            time1 <- tryCatch({
-              system.time(use_julia())[3]
-            }, error = function(e) {
-              cat("Error:", conditionMessage(e), "\n")
-              NA
-            })
-            cat("Elapsed time:", if (is.na(time1)) "Failed" else paste(time1, "seconds"), "\n")
-            cat("Running use_julia(stop = TRUE):\n")
-            tryCatch({
-              use_julia(stop = TRUE)
-              cat("Completed successfully\n")
-            }, error = function(e) {
-              cat("Error:", conditionMessage(e), "\n")
-            })
-            cat("Timing second use_julia():\n")
-            time2 <- tryCatch({
-              system.time(use_julia())[3]
-            }, error = function(e) {
-              cat("Error:", conditionMessage(e), "\n")
-              NA
-            })
-            cat("Elapsed time:", if (is.na(time2)) "Failed" else paste(time2, "seconds"), "\n")
-            cat("Timing third use_julia():\n")
-            time3 <- tryCatch({
-              system.time(use_julia())[3]
-            }, error = function(e) {
-              cat("Error:", conditionMessage(e), "\n")
-              NA
-            })
-            cat("Elapsed time:", if (is.na(time3)) "Failed" else paste(time3, "seconds"), "\n")
-          '
-        shell: bash
 
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
