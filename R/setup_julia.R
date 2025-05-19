@@ -2,7 +2,7 @@
 
 #' Set up Julia environment for sdbuildR
 #'
-#' Create Julia environment to simulate stock-and-flow models. `use_julia()` looks for a Julia installation, and will install Julia as well as some required packages if not found. Keep in mind that the first time running `use_julia()` can take around 5-15 minutes, and all subsequent calls can take around 1 minute.
+#' Create Julia environment to simulate stock-and-flow models. `use_julia()` looks for a Julia installation, and will install Julia as well as some required packages if not found. Keep in mind that the installation can take around 5-15 minutes. In every R session, `use_julia()` needs to be run once, which can take around 15 seconds.
 #'
 #' @param stop If TRUE, stop active Julia session. Defaults to FALSE.
 #' @param version Julia version. Default is "latest", which will install the most recent stable release.
