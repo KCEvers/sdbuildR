@@ -41,11 +41,16 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      - name: Verify devtools installation
+        run: |
+          Rscript -e 'if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools", repos = "https://cloud.r-project.org"); library(devtools); packageVersion("devtools")'
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
           needs: check
 
+      # Necessary to prevent CHOLMOD error
       - name: Set up Julia
         uses: julia-actions/setup-julia@v2
         with:

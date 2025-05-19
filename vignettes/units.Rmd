@@ -166,7 +166,6 @@ sfm = sfm %>% build("coffee_amount", units = "cm^3")
 # or:
 
 sfm = sfm %>% build("coffee_amount", units = "cubed centimeters")
-
 ```
 
 We leave out the coffee amount for now, as it is not relevant for the example.
