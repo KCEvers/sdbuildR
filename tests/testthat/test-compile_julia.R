@@ -4,32 +4,17 @@ test_that("templates work", {
   sfm = xmile("SIR") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
-  expect_no_error(simulate(sfm))
-  sim = simulate(sfm)
-  expect_equal(sim$success, TRUE)
-  expect_equal(nrow(sim$df) > 0, TRUE)
+
+  # Already simulate templates in julia_vs_r
 
   sfm = xmile("predator-prey") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
-  expect_no_error(simulate(sfm))
-  sim = simulate(sfm)
-  expect_equal(sim$success, TRUE)
-  expect_equal(nrow(sim$df) > 0, TRUE)
 
   sfm = xmile("logistic_model") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
-  expect_no_error(simulate(sfm))
-  sim = simulate(sfm)
-  expect_equal(sim$success, TRUE)
-  expect_equal(nrow(sim$df) > 0, TRUE)
 
-  # Check whether the population converges to the carrying capacity
-  sim = simulate(sfm)
-  expect_equal(sim$success, TRUE)
-  expect_equal(nrow(sim$df) > 0, TRUE)
-  expect_equal(dplyr::last(sim$df$X), sim$pars$K, tolerance = .01)
 
   # Check whether coffee cup reaches room temperature
   sfm = xmile("coffee_cup") %>% sim_specs(language = "Julia")
@@ -44,27 +29,15 @@ test_that("templates work", {
   sfm = xmile("Crielaard2022") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
-  expect_no_error(simulate(sfm))
-  sim = simulate(sfm)
-  expect_equal(sim$success, TRUE)
-  expect_equal(nrow(sim$df) > 0, TRUE)
 
   # Duffing previously had an error with cos()
   sfm = xmile("Duffing") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
-  expect_no_error(simulate(sfm))
-  sim = simulate(sfm)
-  expect_equal(sim$success, TRUE)
-  expect_equal(nrow(sim$df) > 0, TRUE)
 
   sfm = xmile("Chua") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
-  expect_no_error(simulate(sfm))
-  sim = simulate(sfm)
-  expect_equal(sim$success, TRUE)
-  expect_equal(nrow(sim$df) > 0, TRUE)
 
   # Non existing template
   expect_error(xmile("A"), "A is not an available template. The available templates are")

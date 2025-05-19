@@ -26,7 +26,7 @@ library(knitr)
 library(kableExtra) 
 ```
 
-Stock-and-flow models represent systems as variables (stocks) that accumulate over time with processes (flows) that change these variables. Foundational to system dynamics, stock-and-flow models are widely used in fields such as epidemiology, economics, and environmental science to represent systems complicated by nonlinearities, delays, and feedback loops. In this vignette, we will explore how to build stock-and-flow models using sdbuildR. We will first go through the basics: What are the building blocks of a stock-and-flow model? How can we combine them to create a model of our system? We will then use sdbuildR to recreate a well-known predator-prey model. To show how sdbuildR can be used to iteratively develop a stock-and-flow model, we will build a model from scratch using a psychological example.
+Stock-and-flow models represent systems as variables (stocks) that accumulate over time with processes (flows) that change these variables. Foundational to system dynamics, stock-and-flow models are widely used in fields such as epidemiology, economics, and environmental science to represent systems complicated by nonlinearities, delays, and feedback loops. In this vignette, we will explore how to build stock-and-flow models using sdbuildR. We will first go through the basics: What are the building blocks of a stock-and-flow model? How can we combine them to create a model of our system? We will then use sdbuildR to recreate a well-known predator-prey model. To show how sdbuildR can be used to iteratively develop your own models, we will build a model from scratch using a psychological example.
 
 ## Stock-and-flow models
 
@@ -94,6 +94,7 @@ To create a stock-and-flow model from scratch, we first create an XMILE object u
 sfm = xmile() %>% header(name = "Predator-Prey Model") 
 summary(sfm)
 ```
+
 We add two stocks, predators and prey. `build()` takes the variable name, building block type (`stock`, `flow`, `constant`, `aux`, or `gf`), and type-specific properties (e.g., `eqn` for equation, `label` for plotting). Here, we start the simulation with 10 predators and 50 prey. We use the `%>%` pipe to pass the result of an expression to the next expression as a first argument.
 
 ```{r, fig.width=8, fig.height=4}
@@ -285,60 +286,8 @@ plot(sim, add_constants = TRUE)
 
 We've created oscillations in the system! Maya is now trapped in a cycle of overworking, which causes her sleep to deteriorate to the point of collapse. As she takes more time off work, her sleep recovers, but this only starts the cycle anew. What's worse, the oscillations are growing in amplitude, with each cycle becoming more extreme. Of course, the model becomes untenable beyond this time horizon, as Maya would work more than 24 hours a day. 
 
-
-
-
-<!-- # working model -->
-
-<!-- ```{r} -->
-<!-- sfm = xmile() %>% -->
-<!--   sim_specs(stop = 15) %>% -->
-<!--   build("work", "stock", eqn = "normal_workday") %>% -->
-<!--   build("normal_workday", "constant", eqn = 8) %>% -->
-<!--   build("new_tasks", "flow", eqn = "work * work_growth", to = "work") %>% -->
-<!--   build("work_growth", "constant", eqn = 1.5) %>% -->
-<!--   build("need_for_rest", "flow", eqn = "work * necessary_sleep / sleep", from = "work") %>% -->
-<!--   build("sleep", "stock", eqn = "necessary_sleep") %>% -->
-<!--   build("necessary_sleep", "constant", eqn = 8) %>% -->
-<!--   # build("worry_about_work", "flow", eqn = "(work - normal_workday) * worry_factor * necessary_sleep / sleep", from = "sleep") %>% -->
-<!--  build("worry_about_work", "flow", eqn = "work * worry_factor * necessary_sleep / sleep", from = "sleep") %>% -->
-<!--   build("worry_factor", "constant", eqn = .5)  -->
-
-<!-- # plot(sfm) -->
-<!-- sim = simulate(sfm) -->
-<!-- plot(sim) -->
-
-<!-- ``` -->
-<!-- with units, original: -->
-
-
-<!-- ```{r} -->
-
-<!-- sfm = xmile() %>% header(name = "Maya's Burnout") %>% -->
-<!--   sim_specs(start = 0, stop = 15, time_units = "months") %>% -->
-<!--   build("work", "stock", eqn = 4, units = "hours/day") %>% -->
-<!--   build("normal_workday", "constant", eqn = 8, units = "hours/day") %>% -->
-<!--   build("new_tasks", "flow", eqn = "work * work_growth", to = "work", units = "hours/day/week") %>% -->
-<!--   build("work_growth", "constant", eqn = 1.5, units = "1/month") %>% -->
-<!--   build("back_to_normal", "flow", eqn = "work * necessary_sleep / sleep / u('month')", from = "work", units = "hours/day/month") %>% -->
-<!--   build("sleep", "stock", eqn = "necessary_sleep", units = "hours/day") %>% -->
-<!--   build("necessary_sleep", "constant", eqn = 8, units = "hours/day") %>% -->
-<!--   build("worry_about_work", "flow", eqn = "(work - normal_workday) * worry_factor * necessary_sleep / sleep", from = "sleep", units = "hours/day/month") %>% -->
-<!--  # build("worry_about_work", "flow", eqn = "work * worry_factor * necessary_sleep / sleep", from = "sleep") %>% -->
-<!--   build("worry_factor", "constant", eqn = .5, units = "1/month")  -->
-
-<!-- # plot(sfm) -->
-<!-- sim = simulate(sfm) -->
-<!-- plot(sim) -->
-
-<!-- ``` -->
-
-
-
-
 <!-- XXX non negative slows down simulation -->
 
-<!-- Something seems to go wrong here - . Let's run `debugger()` to identify some potential issues. -->
 <!-- Macros may be variables, functions, or any other object. -->
 
 ## Overview of package functions
@@ -363,7 +312,8 @@ kableExtra::kbl(functions_table, format = "markdown",
 We may want to observe the system over a longer time period, or with a different time step. To change the simulation specifications, use `sim_specs()`. Below, we simulate from 0 to 250 days.  To decrease the size of the resulting dataframe, the simulation time step `dt` should *not* be lowered, as this can affect the accuracy of the simulation. Rather, we can save the simulation results only every 0.1 days, which preserves accuracy. The method is set to `"euler"`, which is the simplest numerical integration method. 
 
 ```{r}
-sfm = xmile("predator-prey") %>% sim_specs(time_units = "days",
+sfm = xmile("predator-prey") %>% 
+  sim_specs(time_units = "days",
                      start = 0,
                      stop = 250,
                      method = "euler",

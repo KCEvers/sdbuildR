@@ -1,11 +1,4 @@
 
-
-# add tests for:
-# ** macro
-# ** add macros with name
-# ** functions in variable
-
-
 test_that("xmile() works", {
 
   expect_equal(class(xmile()), "sdbuildR_xmile")

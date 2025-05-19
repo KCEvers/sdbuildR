@@ -1371,7 +1371,9 @@ split_aux_wrapper = function(sfm){
   # Constants are not dependent on time, have no dependencies in names, or are only dependent on constants
   # constants = names(dependencies %>% purrr::keep(\(x) length(x) == 0))
   constants = names(dependencies %>%
-                      purrr::keep(\(x) (!P$time_name %in% x) & (length(intersect(x, var_names)) == 0)))  #%>% setdiff(delay_var)
+                      purrr::keep(function(x){
+                        (!P$time_name %in% x) & (length(intersect(x, var_names)) == 0)
+                        }))  #%>% setdiff(delay_var)
   # dependencies %>% purrr::map(\(x) intersect(x, names_df$name))
 
   # Iteratively find constants
@@ -1387,7 +1389,9 @@ split_aux_wrapper = function(sfm){
     } else {
 
       new_constants = dependencies[remaining_aux] %>%
-        purrr::keep(\(x) (!P$time_name %in% x) & all(intersect(x, var_names) %in% constants))
+        purrr::keep(function(x){
+          (!P$time_name %in% x) & all(intersect(x, var_names) %in% constants)
+          })
       constants = c(constants, names(new_constants)) #%>% setdiff(delay_var)
 
       # While-loop ends if there is no change

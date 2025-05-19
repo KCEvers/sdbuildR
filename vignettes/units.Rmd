@@ -78,8 +78,9 @@ In summary, units help ensure equations are correctly formulated. If equations a
 
 ### Model interpretation & communication
 
-In addition to verifying the model is dimensionally consistent, units help keep variables interpretable. Units give meaning and a timescale to variables. For instance, a variable such as productivity could be defined in numerous ways. Specifying its unit as $\frac{\text{tasks}}{hr}$ clearly communicates what higher or lower productivity means and how it can be measured. Equations with puzzling constructions of units without a clear interpretation are immediately suspect, such as $kcal^3/s^2/m$ \cite{sterman, p. 866}. As such, units help to relate your model to the real world, and make it possible to compare your model results with empirical data.
-
+In addition to verifying the model is dimensionally consistent, units help keep variables interpretable. Units give meaning and a timescale to variables. For instance, a variable such as productivity could be defined in numerous ways. Specifying its unit as $\frac{\text{tasks}}{hr}$ clearly communicates what higher or lower productivity means and how it can be measured. Equations with puzzling constructions of units without a clear interpretation are immediately suspect, such as $kcal^3/s^2/m$. As such, units help to relate your model to the real world, and make it possible to compare your model results with empirical data.
+ <!-- \cite{sterman, p. 866} -->
+ 
 Moreover, units help identify and differentiate between time scales in the system. It may not feel natural to define each variable on the same timescale, where for instance the number of hours slept is typically defined on a daily basis, but attention is more naturally thought of on the timescale of milliseconds. Units help keep these timescales preserved without needing to scale every variable to the same time scale. 
 
 <!-- For example, if the model specifies that motivation evolves on the timescale of an hour, and a feeling of belonging changes on the timescale of a week, the simulation time unit will be an hour. This means that the model will be simulated in hours, and the feeling of belonging will be updated every hour, even though it is not changing on that timescale. -->
@@ -88,14 +89,21 @@ Moreover, units help identify and differentiate between time scales in the syste
 
 ## Units with sdbuildR
 
-Units thus help to verify and interpret our models. Next, we'll use the simple example of a coffee cup to explore how to specify the simulation time unit, units of variables, and units in equations. We will finish with how to define and use your own custom units. Note that using units is only supported for running models with `sim_specs(language = 'Julia')` (the default), not in R (see *Why are units not supported in R?* below). Set up the Julia environment first:
+Units thus help to verify and interpret our models. Next, we'll use the simple example of a coffee cup to explore how to specify the simulation time unit, units of variables, and units in equations. We will finish with how to define and use your own custom units. Note that using units is only supported for running models with `sim_specs(language = 'Julia')`, not in R (see *Why are units not supported in R?* below). Set up the Julia environment first:
 
 ```{r libraries, echo=FALSE}
 library(sdbuildR)
 use_julia()
 ```
 
-The following example is taken from Meadows' *Thinking in Systems* \cite{meadows}. We model the temperature of a coffee cup adjusting to room temperature. The temperature of the coffee cup is a stock, which either cools down or heats up, depending on the difference between the temperature of the coffee cup and the room temperature. 
+For all models, the simulation engine has to be changed to Julia:
+
+```{r}
+sfm = xmile() %>%
+  sim_specs(language = "Julia")
+```
+
+The following example is taken from Meadows' *Thinking in Systems*. We model the temperature of a coffee cup adjusting to room temperature. The temperature of the coffee cup is a stock, which either cools down or heats up, depending on the difference between the temperature of the coffee cup and the room temperature. 
 
 ### Simulation time unit
 
@@ -103,7 +111,7 @@ We first specify the simulation time unit. Think of the time axis of your simula
 
 ```{r}
 # Simulation time unit of a day
-sfm = xmile() %>% sim_specs(time_units = "day", language = "Julia")
+sfm = xmile() %>% sim_specs(time_units = "day")
 
 # Simulation time unit of a year
 sfm = xmile() %>% sim_specs(time_units = "year")
@@ -230,10 +238,11 @@ plot(sim)
 For convenience, you may want to define custom units. Custom units can be added to your model with `model_units()`. Some examples:
 
 ```{r}
-sfm = xmile() %>% model_units("BMI", eqn = "kilograms/meters^2", 
+sfm = xmile() %>% 
+  model_units("BMI", eqn = "kilograms/meters^2", 
                           doc = "Body Mass Index") %>%
   model_units("BAC", eqn = "grams/deciliter", 
-              doc = "Blood Alcohol Concentration, grams of alcohol per deciliter of blood") %>%
+              doc = "Blood Alcohol Concentration") %>%
   model_units("bottle", eqn = "2liters") %>% 
   model_units("meal", eqn = "700kcal")
 ```

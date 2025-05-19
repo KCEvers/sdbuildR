@@ -2652,7 +2652,7 @@ get_build_code = function(sfm, format_code = TRUE){
   # Model units
   if (length(sfm$model_units) > 0){
     model_units_str = lapply(sfm$model_units, function(x){
-        x = x %>% purrr::map_if(is.character, \(z) paste0("'", z, "'"))
+        x = x %>% purrr::map_if(is.character, function(z){paste0("'", z, "'")})
         sprintf("model_units(%s)", paste0(names(x), " = ", unname(x), collapse = ", "))
       }) %>% unlist() %>% paste0(., collapse = "%%>%%\n\t\t")
     model_units_str = paste0(" %>%\n\t\t", model_units_str)
@@ -2701,7 +2701,7 @@ get_build_code = function(sfm, format_code = TRUE){
           z[grepl("_julia", names(z))] = NULL
 
           # z = z %>% purrr::map_if(is.character, \(a) paste0("'", a, "'"))
-          z = lapply(z, function(a) if (is.character(a)) paste0("'", a, "'") else a)
+          z = lapply(z, function(a){ifelse(is.character(a), paste0("'", a, "'"), a)})
 
           sprintf("build('%s', '%s'%s)",
                   y$name, y$type, ifelse(length(z) > 0, paste0(", ", paste0(names(z), " = ", unname(z), collapse = ", ")), "") )

@@ -67,15 +67,15 @@ simulate_julia = function(sfm,
     start_t = Sys.time()
 
     # JuliaCall::julia_source(filepath)
-    invisible(JuliaConnectoR::juliaEval(paste0('include("', filepath, '")')))
+
+    # Wrap in invisible and capture.output to not show message of units module being overwritten
+    invisible(capture.output(JuliaConnectoR::juliaEval(paste0('include("', filepath, '")'))))
 
     end_t = Sys.time()
     if (verbose){
       message(paste0("Simulation took ", round(end_t - start_t, 4), " seconds"))
     }
 
-    # Delete simulation file
-    file.remove(filepath)
 
     # df = JuliaCall::julia_eval(P$sim_df_name)
     # pars_julia = JuliaCall::julia_eval(P$parameter_name)
@@ -87,6 +87,10 @@ simulate_julia = function(sfm,
 
     # df <- utils::read.csv(filepath_df)
     df = as.data.frame(data.table::fread(filepath_df, na.strings = c("", "NA")))
+
+    # Delete files
+    file.remove(filepath)
+    file.remove(filepath_df)
 
     # units_julia = JuliaCall::julia_eval(P$units_dict)
 
@@ -219,8 +223,7 @@ compile_julia = function(sfm, filepath_df,
     ordering$static_and_dynamic$issue = TRUE
   }
 
-
-  # # Translate julia equations
+  # # Translate Julia equations
   # sfm = convert_equations_julia_wrapper(sfm, debug = debug)
 
   # Macros
