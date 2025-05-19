@@ -44,7 +44,7 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           Rscript -e '
-            library(yourpackage)  # Replace with your package name
+            library(sdbuildR)  # Replace with your package name
             cat("Timing first use_julia():\n")
             time1 <- tryCatch({
               system.time(use_julia())[3]

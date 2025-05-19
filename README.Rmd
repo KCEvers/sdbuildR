@@ -36,6 +36,7 @@ All package capabilities are described in the vignettes:
 <!-- 3. **Delays**: Not all dynamics are instantaneous. Learn about delays (fixed, smooth, material and information) and how to implement them with sdbuildR. -->
 <!-- 4. **Sensitivity**:  -->
 
+
 ## Installation
 
 You can install the development version of sdbuildR like so:
@@ -51,15 +52,18 @@ sdbuildR offers two simulation engines: R and Julia. If you would like to use un
 sdbuildR::use_julia()
 ```
 
+
 ## Limitations
 
 <!-- Unlike other System Dynamics software, sdbuildR makes a distinction between static and dynamic variables. This means that static variables - the initial values of stocks, constants, and graphical functions - cannot depend on dynamic variables - auxiliaries and flows. If this is the case, an error will be thrown with the problematic dependencies and the model will not be simulated.  -->
 
 Non-negative stocks and flows are minimally supported, Setting stocks to non-negative will not adjust flows. Hard-coding non-negativity is not recommended, as it may mask model misspecification. Stocks and flows that logically cannot be negative (e.g., animals or deaths) should remain non-negative through appropriate model equations and parameters to avoid unexpected results. In addition, sdbuildR does not support vectorized operations. 
+
 ## Other System Dynamics software
 
 sdbuildR is heavily based on common System Dynamics software such as [Vensim](https://vensim.com/), [Powersim](https://powersim.com/), [Stella](https://www.iseesystems.com/), and [Insight Maker](https://insightmaker.com/). To translate xmile models to R, see the R package [readsdr](https://github.com/jandraor/readsdr). To build stock-and-flow models with the R package [deSolve](https://cran.r-project.org/web/packages/deSolve/index.html), the book [System Dynamics Modelling with R](https://link.springer.com/book/10.1007/978-3-319-34043-2) by Jim Duggan will prove useful. In Python, stock-and-flow models are supported by [PySD](https://pysd.readthedocs.io/en/master/).
 
+
 ## Troubleshooting
 
-sdbuildR is under active development, leveraging Julia for high-performance simulations via custom R-to-Julia translations. While thoroughly tested, the package may have bugs, particularly in complex model translations. We encourage users to report issues on GitHub (https://github.com/KCEvers/sdbuildR/issues) - your input helps the package improve! Use `debugger()` to diagnose model errors, and use the vignettes for guidance.
+sdbuildR is under active development. While thoroughly tested, the package may have bugs, particularly in complex model translations. We encourage users to report issues on GitHub (https://github.com/KCEvers/sdbuildR/issues) - your input helps the package improve! Use `debugger()` to diagnose model errors, and use the vignettes for guidance.

@@ -63,7 +63,9 @@ recommended, as it may mask model misspecification. Stocks and flows
 that logically cannot be negative (e.g., animals or deaths) should
 remain non-negative through appropriate model equations and parameters
 to avoid unexpected results. In addition, sdbuildR does not support
-vectorized operations. \## Other System Dynamics software
+vectorized operations.
+
+## Other System Dynamics software
 
 sdbuildR is heavily based on common System Dynamics software such as
 [Vensim](https://vensim.com/), [Powersim](https://powersim.com/),
@@ -79,10 +81,9 @@ by [PySD](https://pysd.readthedocs.io/en/master/).
 
 ## Troubleshooting
 
-sdbuildR is under active development, leveraging Julia for
-high-performance simulations via custom R-to-Julia translations. While
-thoroughly tested, the package may have bugs, particularly in complex
-model translations. We encourage users to report issues on GitHub
+sdbuildR is under active development. While thoroughly tested, the
+package may have bugs, particularly in complex model translations. We
+encourage users to report issues on GitHub
 (<https://github.com/KCEvers/sdbuildR/issues>) - your input helps the
 package improve! Use `debugger()` to diagnose model errors, and use the
 vignettes for guidance.
