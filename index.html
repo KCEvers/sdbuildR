@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Stock-and-Flow Modelling in R • sdbuildR</title>
+<title>Easily build and simulate stock-and-flow models in R • sdbuildR</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Stock-and-Flow Modelling in R">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Easily build and simulate stock-and-flow models in R">
 <meta name="description" content="Easily build and simulate stock-and-flow models with sdbuildR in R. With Julia as a backend, sdbuildR combines fast performance with flexibility in a user-friendly R environment.">
 <meta property="og:description" content="Easily build and simulate stock-and-flow models with sdbuildR in R. With Julia as a backend, sdbuildR combines fast performance with flexibility in a user-friendly R environment.">
 </head>
@@ -53,11 +53,35 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="sdbuildr-stock-and-flow-modelling-in-r">sdbuildR: Stock-and-flow modelling in R<a class="anchor" aria-label="anchor" href="#sdbuildr-stock-and-flow-modelling-in-r"></a>
+<div class="page-header"><h1 id="sdbuildr-easily-build-and-simulate-stock-and-flow-models-in-r">sdbuildR: Easily build and simulate stock-and-flow models in R<a class="anchor" aria-label="anchor" href="#sdbuildr-easily-build-and-simulate-stock-and-flow-models-in-r"></a>
 </h1></div>
 <!-- badges: start -->
 
-<p>Easily build and simulate stock-and-flow models with sdbuildR in R. With Julia as a backend, sdbuildR combines fast performance with flexibility in a user-friendly R environment.</p>
+<p>Model systems as stock-and-flow models in R. Stock-and-flow models are foundational to system dynamics, and help to understand systems complicated by nonlinearities, delays, and feedback loops. sdbuildR aims to make stock-and-flow modelling accessible and effortless, enabling you to dedicate your expertise to what matters most: building insightful, high-quality models. Get started at <a href="https://kcevers.github.io/sdbuildR/" class="uri">https://kcevers.github.io/sdbuildR/</a>.</p>
+<div class="section level2">
+<h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
+</h2>
+<ul>
+<li>
+<strong>Accessibility</strong>: Get started with stock-and-flow models with limited knowledge.</li>
+<li>
+<strong>Flexibility</strong>: Modify your models easily and robustly.</li>
+<li>
+<strong>Insight Maker integration</strong>: Import models from Insight Maker.</li>
+<li>
+<strong>Julia backend</strong>: Leverage Julia for high-performance simulations, without any knowledge of Julia.</li>
+<li>
+<strong>Unit support</strong>: Use standard or custom units to verify and interpret your model.</li>
+</ul>
+<p>All package capabilities are described in the vignettes:</p>
+<ul>
+<li>
+<code><a href="articles/build.html">vignette("build")</a></code> Learn how to build, modify, and debug stock-and-flow models.</li>
+<li>
+<code><a href="articles/units.html">vignette("units")</a></code> Learn why and how to use (custom) units. <!-- 3. **Delays**: Not all dynamics are instantaneous. Learn about delays (fixed, smooth, material and information) and how to implement them with sdbuildR. --> <!-- 4. **Sensitivity**:  -->
+</li>
+</ul>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -68,6 +92,22 @@
 <p>sdbuildR offers two simulation engines: R and Julia. If you would like to use units and delay functions, you will need to set up the Julia environment. Run <code><a href="reference/use_julia.html">use_julia()</a></code> to install Julia and required packages (initial setup may take 5–15 minutes):</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">sdbuildR</span><span class="fu">::</span><span class="fu"><a href="reference/use_julia.html">use_julia</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="limitations">Limitations<a class="anchor" aria-label="anchor" href="#limitations"></a>
+</h2>
+<!-- Unlike other System Dynamics software, sdbuildR makes a distinction between static and dynamic variables. This means that static variables - the initial values of stocks, constants, and graphical functions - cannot depend on dynamic variables - auxiliaries and flows. If this is the case, an error will be thrown with the problematic dependencies and the model will not be simulated.  -->
+<p>Non-negative stocks and flows are minimally supported, Setting stocks to non-negative will not adjust flows. Hard-coding non-negativity is not recommended, as it may mask model misspecification. Stocks and flows that logically cannot be negative (e.g., animals or deaths) should remain non-negative through appropriate model equations and parameters to avoid unexpected results. In addition, sdbuildR does not support vectorized operations.</p>
+</div>
+<div class="section level2">
+<h2 id="other-system-dynamics-software">Other System Dynamics software<a class="anchor" aria-label="anchor" href="#other-system-dynamics-software"></a>
+</h2>
+<p>sdbuildR is heavily based on common System Dynamics software such as <a href="https://vensim.com/" class="external-link">Vensim</a>, <a href="https://powersim.com/" class="external-link">Powersim</a>, <a href="https://www.iseesystems.com/" class="external-link">Stella</a>, and <a href="https://insightmaker.com/" class="external-link">Insight Maker</a>. To translate xmile models to R, see the R package <a href="https://github.com/jandraor/readsdr" class="external-link">readsdr</a>. To build stock-and-flow models with the R package <a href="https://cran.r-project.org/web/packages/deSolve/index.html" class="external-link">deSolve</a>, the book <a href="https://link.springer.com/book/10.1007/978-3-319-34043-2" class="external-link">System Dynamics Modelling with R</a> by Jim Duggan will prove useful. In Python, stock-and-flow models are supported by <a href="https://pysd.readthedocs.io/en/master/" class="external-link">PySD</a>.</p>
+</div>
+<div class="section level2">
+<h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
+</h2>
+<p>sdbuildR is under active development. While thoroughly tested, the package may have bugs, particularly in complex model translations. We encourage users to report issues on GitHub (<a href="https://github.com/KCEvers/sdbuildR/issues" class="external-link uri">https://github.com/KCEvers/sdbuildR/issues</a>) - your input helps the package improve! Use <code><a href="reference/debugger.html">debugger()</a></code> to diagnose model errors, and use the vignettes for guidance.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="license">
