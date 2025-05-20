@@ -69,7 +69,7 @@ simulate_julia = function(sfm,
     # JuliaCall::julia_source(filepath)
 
     # Wrap in invisible and capture.output to not show message of units module being overwritten
-    invisible(capture.output(JuliaConnectoR::juliaEval(paste0('include("', filepath, '")'))))
+    invisible(utils::capture.output(JuliaConnectoR::juliaEval(paste0('include("', filepath, '")'))))
 
     end_t = Sys.time()
     if (verbose){

@@ -30,7 +30,7 @@ use_julia(
 \item{...}{Optional arguments passed to JuliaCall::julia_setup()}
 }
 \description{
-Create Julia environment to simulate stock-and-flow models. \code{use_julia()} looks for a Julia installation, and will install Julia as well as some required packages if not found. Keep in mind that the first time running \code{use_julia()} can take around 5-15 minutes, and all subsequent calls can take around 1 minute.
+Create Julia environment to simulate stock-and-flow models. \code{use_julia()} looks for a Julia installation, and will install Julia as well as some required packages if not found. Keep in mind that the installation can take around 5-15 minutes. In every R session, \code{use_julia()} needs to be run once, which can take around 20 seconds.
 }
 \examples{
 # Start Julia session

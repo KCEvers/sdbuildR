@@ -4,7 +4,17 @@
 \alias{plot.sdbuildR_xmile}
 \title{Plot stock-and-flow diagram}
 \usage{
-\method{plot}{sdbuildR_xmile}(x, format_label = TRUE, wrap_width = 25, center_stocks = FALSE, ...)
+\method{plot}{sdbuildR_xmile}(
+  x,
+  format_label = TRUE,
+  wrap_width = 25,
+  center_stocks = FALSE,
+  font_size = 18,
+  font_name = "times bold",
+  stock_col = "#83d3d4",
+  flow_col = "#f48153",
+  ...
+)
 }
 \arguments{
 \item{x}{Stock-and-flow model of class sdbuildR_xmile}
@@ -13,7 +23,15 @@
 
 \item{wrap_width}{Width of text wrapping for labels. Must be an integer.}
 
-\item{center_stocks}{If TRUE, stocks are centered in the diagram. Defaults to FALSE.}
+\item{center_stocks}{If TRUE, stocks are vertically aligned in the middle of the diagram. Defaults to FALSE.}
+
+\item{font_size}{Font size. Defaults to 18.}
+
+\item{font_name}{Font name. Defaults to "times bold".}
+
+\item{stock_col}{Colour of stocks. Defaults to "#83d3d4".}
+
+\item{flow_col}{Colour of flows. Defaults to "#f48153".}
 
 \item{...}{Optional arguments}
 }
@@ -21,7 +39,7 @@
 Stock-and-flow diagram plotted with DiagrammeR()
 }
 \description{
-Visualise a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary.
+Visualise a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Hover over the stocks and flows to see their equations.
 }
 \examples{
 sfm = xmile("SIR")
