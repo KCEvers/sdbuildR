@@ -10,8 +10,8 @@
   palette = "Dark 2",
   colors = NULL,
   title = x[["sfm"]][["header"]][["name"]],
-  family = "Times New Roman",
-  size = 16,
+  font_family = "Times New Roman",
+  font_size = 16,
   ...
 )
 }
@@ -26,9 +26,9 @@
 
 \item{title}{Plot title. Character. Defaults to the name in the header of the model.}
 
-\item{family}{Font family. Defaults to "Times New Roman".}
+\item{font_family}{Font family. Defaults to "Times New Roman".}
 
-\item{size}{Font size. Defaults to 16.}
+\item{font_size}{Font size. Defaults to 16.}
 
 \item{...}{Optional parameters}
 }

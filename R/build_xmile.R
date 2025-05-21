@@ -79,12 +79,16 @@ is_defined = function(x){
 
 #' Plot stock-and-flow diagram
 #'
-#' Visualise a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary.
+#' Visualise a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Hover over the stocks and flows to see their equations.
 #'
 #' @param x Stock-and-flow model of class sdbuildR_xmile
 #' @param format_label If TRUE, apply default formatting to labels if labels are the same as variable names.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer.
-#' @param center_stocks If TRUE, stocks are centered in the diagram. Defaults to FALSE.
+#' @param center_stocks If TRUE, stocks are vertically aligned in the middle of the diagram. Defaults to FALSE.
+#' @param font_size Font size. Defaults to 18.
+#' @param font_name Font name. Defaults to "times bold".
+#' @param stock_col Colour of stocks. Defaults to "#83d3d4".
+#' @param flow_col Colour of flows. Defaults to "#f48153".
 #' @param ... Optional arguments
 #'
 #' @return Stock-and-flow diagram plotted with DiagrammeR()
@@ -95,7 +99,12 @@ is_defined = function(x){
 #' @examples
 #' sfm = xmile("SIR")
 #' plot(sfm)
-plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_stocks = FALSE, ...){
+plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_stocks = FALSE,
+                               font_size = 18,
+                               font_name = "times bold",
+                               stock_col = "#83d3d4",
+                               flow_col = "#f48153",
+                               ...){
 
   check_xmile(x)
   sfm = x
@@ -125,7 +134,7 @@ plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_s
 
   # Prepare all nodes
   if (length(stock_names) > 0){
-    stock_nodes = sprintf("%s [label='%s',tooltip = 'eqn = %s',shape=box,style=filled,fillcolor=lightblue,fontsize=18,fontname='times bold']", paste0("'", stock_names, "'"), dict[stock_names], dict_eqn[stock_names])
+    stock_nodes = sprintf("%s [label='%s',tooltip = 'eqn = %s',shape=box,style=filled,fillcolor='%s',fontsize=%s,fontname='%s']", paste0("'", stock_names, "'"), dict[stock_names], dict_eqn[stock_names], stock_col, font_size, font_name)
   } else {
     stock_nodes = ""
   }
@@ -148,7 +157,7 @@ plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_s
       cloud_names = paste0("Cloud", 1:length(idxs))
       flow_df[idxs] = cloud_names
       # External environment is represented as a cloud
-      cloud_nodes = sprintf("%s [label='', tooltip = '',shape=doublecircle, fixedsize=true, width = .25, height = .25,orientation=15]",
+      cloud_nodes = sprintf("%s [label='', tooltip = '',shape=doublecircle, fixedsize=true, width = .25, height = .25, orientation=15]",
                             paste0("'", cloud_names, "'"))
     }
 
@@ -157,7 +166,7 @@ plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_s
       paste0("'", flow_df[, "from"], "'"),
       " -> ",
       paste0("'", flow_df[, "to"], "'"),
-      " [arrowhead='normal', label='", dict[flow_df[, "name"]], "', tooltip = 'eqn = ", dict_eqn[flow_df[, "name"]], "', fontsize=18,fontname='times bold', color='black:LightSalmon:black',arrowsize = 1.2,penwidth=1.1,minlen=3]")
+      " [arrowhead='normal', label='", dict[flow_df[, "name"]], "', tooltip = 'eqn = ", dict_eqn[flow_df[, "name"]], "', fontsize=", font_size, ",fontname='", font_name, "', color='black:", flow_col, ":black',arrowsize = 1.2,penwidth=1.1,minlen=3]")
 
 
   }
@@ -194,6 +203,7 @@ plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_s
 
   pl = DiagrammeR::grViz(viz_str)
   pl
+
   return(pl)
 }
 
@@ -230,8 +240,8 @@ get_flow_df = function(sfm){
 #' @param palette Colour palette. Must be one of hcl.pals().
 #' @param colors Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
 #' @param title Plot title. Character. Defaults to the name in the header of the model.
-#' @param family Font family. Defaults to "Times New Roman".
-#' @param size Font size. Defaults to 16.
+#' @param font_family Font family. Defaults to "Times New Roman".
+#' @param font_size Font size. Defaults to 16.
 #' @param ... Optional parameters
 #'
 #' @return Plot object
@@ -247,8 +257,8 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE,
                              palette = "Dark 2",
                              colors = NULL,
                              title=x[["sfm"]][["header"]][["name"]],
-                             family = "Times New Roman",
-                             size = 16,
+                             font_family = "Times New Roman",
+                             font_size = 16,
                              ...){
 
 
@@ -374,7 +384,7 @@ plot.sdbuildR_sim = function(x, add_constants = FALSE,
       xaxis = list(title = paste0("Time (", matched_time_unit, ")")),
       yaxis = list(title = ""),
       font=list(
-        family = family, size = size),
+        family = font_family, size = font_size),
       margin = list(t = 50, b = 50, l = 50, r = 50)  # Increase top margin to 100 pixels
     )
 
