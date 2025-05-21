@@ -1091,13 +1091,13 @@ get_syntax_julia = function(){
     "convert_u", "convert_u", "syntax1", "", "", T,
     "drop_u", "Unitful.ustrip", "syntax1", "", "", T,
     # ** to do: check units go well
-    "seasonal", "seasonal", "syntax1", "", "", T,
-    "IM_length", "length", "syntax1", "", "", T,
+    "seasonal", "seasonal", "syntax1", "", "", F,
+    "IM_length", "length", "syntax1", "", "", F,
 
-    "delay", "retrieve_past", "delay", "", "", T,
-    "past", "retrieve_past", "past", "", "", T,
-    "delayN", "compute_delayN", "delayN", "", "", T,
-    "smoothN", "compute_smoothN", "smoothN", "", "", T,
+    "delay", "retrieve_past", "delay", "", "", F,
+    "past", "retrieve_past", "past", "", "", F,
+    "delayN", "compute_delayN", "delayN", "", "", F,
+    "smoothN", "compute_smoothN", "smoothN", "", "", F,
 
     # Random Number Functions (13)
     "runif", "rand", "syntaxD", "Distributions.Uniform", "", F,
@@ -1321,17 +1321,6 @@ get_syntax_julia = function(){
   # Convert to dataframe
   conv_df <- as.data.frame(conv_df, stringsAsFactors = FALSE)
 
-  # %>% t() %>%
-    # magrittr::set_colnames(c(
-    #   "R",
-    #   "julia",
-    #   "syntax",
-    #   "add_first_arg",
-    #   "add_second_arg",
-    #   "add_broadcast"
-    # )) %>%
-    # magrittr::set_rownames(NULL) %>%
-    # as.data.frame()
   conv_df
 
   # **to do: add optionally that someone uses Base::

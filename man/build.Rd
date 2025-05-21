@@ -40,7 +40,7 @@ build(
 
 \item{label}{Name of variable used for plotting. Defaults to the same as name.}
 
-\item{doc}{Description of variable (optional). Defaults to "".}
+\item{doc}{Description of variable. Defaults to "".}
 
 \item{change_name}{New name for variable (optional). Defaults to NULL to indicate no change.}
 
@@ -48,9 +48,9 @@ build(
 
 \item{erase}{If TRUE, remove variable from model. Defaults to FALSE.}
 
-\item{conveyor}{Boolean indicating whether the Stock is a conveyor. Defaults to FALSE.}
+\item{conveyor}{If TRUE, the stock behaves as a conveyor. This feature is coming soon, but is now unusable. Defaults to FALSE.}
 
-\item{len}{Numerical value indicating the delay length of the conveyor Stock. Defaults to NULL.}
+\item{len}{Numerical value indicating the delay length of the conveyor stock. This feature is coming soon, but is now unusable. Defaults to NULL.}
 
 \item{to}{Target of flow. Must be a stock in the model. Defaults to NULL to indicate no target.}
 
@@ -58,15 +58,15 @@ build(
 
 \item{non_negative}{If TRUE, variable is enforced to be non-negative (i.e. strictly 0 or positive). Defaults to FALSE.}
 
-\item{xpts}{Only for graphical function: vector of x-domain points. Must be of the same length as ypts.}
+\item{xpts}{Only for graphical functions: vector of x-domain points. Must be of the same length as ypts.}
 
-\item{ypts}{Only for graphical function: vector of y-domain points. Must be of the same length as xpts.}
+\item{ypts}{Only for graphical functions: vector of y-domain points. Must be of the same length as xpts.}
 
-\item{source}{Only for graphical function: name of variable which will serve as the input to the graphical function. Necessary to specify if units are used. Defaults to NULL.}
+\item{source}{Only for graphical functions: name of the variable which will serve as the input to the graphical function. Necessary to specify if units are used. Defaults to NULL.}
 
-\item{interpolation}{Only for graphical function: interpolation method. Must be either "constant" or "linear". Defaults to "linear".}
+\item{interpolation}{Only for graphical functions: interpolation method. Must be either "constant" or "linear". Defaults to "linear".}
 
-\item{extrapolation}{Only for graphical function: extrapolation method. Must be either "nearest" or "NA". Defaults to "nearest".}
+\item{extrapolation}{Only for graphical functions: extrapolation method. Must be either "nearest" or "NA". Defaults to "nearest".}
 }
 \value{
 Updated stock-and-flow model.

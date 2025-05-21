@@ -322,12 +322,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
       return(x)
     }) %>%
     # Remove comments from equations
-    purrr::imap(function(x, i){
-
-      # print(x$name)
-      # print(i)
-      # print("original eqn")
-      # print(x$eqn_insightmaker)
+    lapply(function(x){
 
       # Graphical functions won't have an equation
       if (is_defined(x$eqn_insightmaker)){
@@ -345,9 +340,9 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
   model_elements
 
   # Converters
-  converter_prop = c("doc", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "xpts", "ypts", "interpolation", "source", "extrapolation"
+  converter_prop = c("doc", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "xpts", "ypts", "interpolation", "source", "extrapolation",
                      # "access", "access_ids",
-                     # "id"
+                     "id_insightmaker"
                      )
   model_elements[model_element_names == "Converter"] = model_elements[model_element_names == "Converter"] %>%
     lapply(., function(x){
@@ -363,6 +358,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
       x$source = ifelse(x$Source == "Time", P$time_name, new_names[x$Source == ids])
       x$extrapolation = "nearest" # Default
       x$units_insightmaker = x$Units
+      x[["id_insightmaker"]] = x[["id"]]
 
       # Only keep selected properties
       x = x[names(x) %in% converter_prop]
@@ -373,13 +369,14 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
 
 
   # Variables -> Auxiliaries
-  variable_prop = c("doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max"
+  variable_prop = c("doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max",
                     # "access", "access_ids",
-                    # "id"
+                    "id_insightmaker"
                     )
   model_elements["Variable" == model_element_names] = model_elements["Variable" == model_element_names] %>%
     lapply(., function(x){
       x$units_insightmaker = x$Units
+      x[["id_insightmaker"]] = x[["id"]]
 
       # Only keep selected properties
       x$type = "aux"
@@ -394,9 +391,9 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
                  "eqn_insightmaker",
                  # "StockMode", "Delay",
                  "conveyor", "len",
-                 "non_negative"
+                 "non_negative",
                  # "access", "access_ids",
-                 # "id"
+                 "id_insightmaker"
                  )
   flows = model_elements["Flow" == model_element_names]
   flow_ids = flows %>% get_map("id")
@@ -409,6 +406,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
       x$non_negative = ifelse(x$NonNegative == "true", TRUE, FALSE)
       x$units_insightmaker = x$Units
       x$type = "stock"
+      x[["id_insightmaker"]] = x[["id"]]
 
       if (x$StockMode == "Conveyor"){
         x$conveyor = TRUE
@@ -421,15 +419,17 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
     })
 
   # Flows
-  flow_prop = c("doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "from", "to", "non_negative"
+  flow_prop = c("doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "from", "to", "non_negative",
                 # "access", "access_ids",
-                # "id"
+                "id_insightmaker"
                 )
   model_elements["Flow" == model_element_names] = model_elements["Flow" == model_element_names] %>%
     # Only keep selected properties and rename
     lapply(., function(x){
 
-      # Which Stocks are the Flows connected to?
+      x[["id_insightmaker"]] = x[["id"]]
+
+      # Which stocks are the flows connected to?
       x$from = ifelse("source" %in% names(x), new_names[x$source == ids], "")
       x$to = ifelse("target" %in% names(x), new_names[x$target == ids], "")
       x$type = "flow"
@@ -450,8 +450,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
 
 
   # Name elements
-  model_elements = model_elements %>%
-    stats::setNames(model_elements %>% get_map("name"))
+  model_elements = stats::setNames(model_elements, get_map(model_elements, "name"))
 
 
   # Find which primitives to plot
@@ -503,7 +502,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
     # Remove leading and last \" before replacing \" with "
     stringr::str_replace("^\\\"", "")  %>%
     stringr::str_replace("\\\"$", ""))
-#
+
 
   # Temporary entries in sfm
   sfm$model_units_str = settings$Units
@@ -539,7 +538,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
   # for a stock A which is a conveyor,
   # [A] refers to A_conveyor
   # [[A]] refers to A
-  conveyor_stocks = sfm$model$variables$stock %>% purrr::map("conveyor") %>% unlist() %>% names()
+  conveyor_stocks = names(unlist(lapply(sfm$model$variables$stock, `[[`, "conveyor")))
   if (length(conveyor_stocks) > 0){
 
     # Ensure correct referencing of conveyors

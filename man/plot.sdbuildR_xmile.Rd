@@ -7,12 +7,13 @@
 \method{plot}{sdbuildR_xmile}(
   x,
   format_label = TRUE,
-  wrap_width = 25,
+  wrap_width = 20,
   center_stocks = FALSE,
   font_size = 18,
-  font_name = "times bold",
+  font_family = "Georgia",
   stock_col = "#83d3d4",
   flow_col = "#f48153",
+  minlen = 2,
   ...
 )
 }
@@ -21,17 +22,19 @@
 
 \item{format_label}{If TRUE, apply default formatting to labels if labels are the same as variable names.}
 
-\item{wrap_width}{Width of text wrapping for labels. Must be an integer.}
+\item{wrap_width}{Width of text wrapping for labels. Must be an integer. Defaults to 20.}
 
 \item{center_stocks}{If TRUE, stocks are vertically aligned in the middle of the diagram. Defaults to FALSE.}
 
 \item{font_size}{Font size. Defaults to 18.}
 
-\item{font_name}{Font name. Defaults to "times bold".}
+\item{font_family}{Font name. Defaults to "Georgia".}
 
 \item{stock_col}{Colour of stocks. Defaults to "#83d3d4".}
 
 \item{flow_col}{Colour of flows. Defaults to "#f48153".}
+
+\item{minlen}{Minimum length of edges; must be an integer. Defaults to 2.}
 
 \item{...}{Optional arguments}
 }
@@ -46,5 +49,5 @@ sfm = xmile("SIR")
 plot(sfm)
 }
 \seealso{
-\code{\link[=insightmaker_to_sfm]{insightmaker_to_sfm()}}
+\code{\link[=insightmaker_to_sfm]{insightmaker_to_sfm()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=plot.sdbuildR_sim]{plot.sdbuildR_sim()}}
 }
