@@ -47,12 +47,13 @@
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  format_label <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  wrap_width <span class="op">=</span> <span class="fl">25</span>,</span>
+<span>  wrap_width <span class="op">=</span> <span class="fl">20</span>,</span>
 <span>  center_stocks <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  font_size <span class="op">=</span> <span class="fl">18</span>,</span>
-<span>  font_name <span class="op">=</span> <span class="st">"times bold"</span>,</span>
+<span>  font_family <span class="op">=</span> <span class="st">"Georgia"</span>,</span>
 <span>  stock_col <span class="op">=</span> <span class="st">"#83d3d4"</span>,</span>
 <span>  flow_col <span class="op">=</span> <span class="st">"#f48153"</span>,</span>
+<span>  minlen <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -70,7 +71,7 @@
 
 
 <dt id="arg-wrap-width">wrap_width<a class="anchor" aria-label="anchor" href="#arg-wrap-width"></a></dt>
-<dd><p>Width of text wrapping for labels. Must be an integer.</p></dd>
+<dd><p>Width of text wrapping for labels. Must be an integer. Defaults to 20.</p></dd>
 
 
 <dt id="arg-center-stocks">center_stocks<a class="anchor" aria-label="anchor" href="#arg-center-stocks"></a></dt>
@@ -81,8 +82,8 @@
 <dd><p>Font size. Defaults to 18.</p></dd>
 
 
-<dt id="arg-font-name">font_name<a class="anchor" aria-label="anchor" href="#arg-font-name"></a></dt>
-<dd><p>Font name. Defaults to "times bold".</p></dd>
+<dt id="arg-font-family">font_family<a class="anchor" aria-label="anchor" href="#arg-font-family"></a></dt>
+<dd><p>Font name. Defaults to "Georgia".</p></dd>
 
 
 <dt id="arg-stock-col">stock_col<a class="anchor" aria-label="anchor" href="#arg-stock-col"></a></dt>
@@ -91,6 +92,10 @@
 
 <dt id="arg-flow-col">flow_col<a class="anchor" aria-label="anchor" href="#arg-flow-col"></a></dt>
 <dd><p>Colour of flows. Defaults to "#f48153".</p></dd>
+
+
+<dt id="arg-minlen">minlen<a class="anchor" aria-label="anchor" href="#arg-minlen"></a></dt>
+<dd><p>Minimum length of edges; must be an integer. Defaults to 2.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -103,7 +108,7 @@
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="insightmaker_to_sfm.html">insightmaker_to_sfm()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="insightmaker_to_sfm.html">insightmaker_to_sfm()</a></code>, <code><a href="xmile.html">xmile()</a></code>, <code><a href="plot.sdbuildR_sim.html">plot.sdbuildR_sim()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -111,7 +116,7 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">sfm</span> <span class="op">=</span> <span class="fu"><a href="xmile.html">xmile</a></span><span class="op">(</span><span class="st">"SIR"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span></span></span>
 <div id="htmlwidget-4018eef1a407a0df6b52" style="width:700px;height:432.632880098888px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-4018eef1a407a0df6b52">{"x":{"diagram":"\n    digraph stock_and_flow {\n\n      graph [layout = dot, rankdir = LR, center=true]\n      margin=0 # in inches\n\n      # Define stock nodes\n      \"Recovered\" [label=\"Recovered\",tooltip = \"eqn = 0.0\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"times bold\"]\n\t\t\"Infected\" [label=\"Infected\",tooltip = \"eqn = 1\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"times bold\"]\n\t\t\"Susceptible\" [label=\"Susceptible\",tooltip = \"eqn = 99999\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"times bold\"]\n\n      # Define external cloud nodes\n      \n\n      # Define edges between clouds and flows and between flows and stocks\n      \"Susceptible\" -> \"Infected\" [arrowhead=\"normal\", label=\"Infection Rate\", tooltip = \"eqn = Susceptible * Lambda\", fontsize=18,fontname=\"times bold\", color=\"black:#f48153:black\",arrowsize = 1.2,penwidth=1.1,minlen=3]\n\t\t\"Infected\" -> \"Recovered\" [arrowhead=\"normal\", label=\"Recovery Rate\", tooltip = \"eqn = Infected / Delay\", fontsize=18,fontname=\"times bold\", color=\"black:#f48153:black\",arrowsize = 1.2,penwidth=1.1,minlen=3]\n\n      \n    }\n          ","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script></code></pre></div>
+<script type="application/json" data-for="htmlwidget-4018eef1a407a0df6b52">{"x":{"diagram":"\n    digraph stock_and_flow {\n\n      graph [layout = dot, rankdir = LR, center=true]\n      margin=0 # in inches\n\n      # Define stock nodes\n      \"Recovered\" [label=\"Recovered\",tooltip = \"eqn = 0.0\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"Georgia\"]\n\t\t\"Infected\" [label=\"Infected\",tooltip = \"eqn = 1\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"Georgia\"]\n\t\t\"Susceptible\" [label=\"Susceptible\",tooltip = \"eqn = 99999\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"Georgia\"]\n\n      # Define external cloud nodes\n      \n\n      # Define edges between clouds and flows and between flows and stocks\n      \"Susceptible\" -> \"Infected\" [arrowhead=\"normal\", label=\"Infection Rate\", tooltip = \"eqn = Susceptible * Lambda\", fontsize=18,fontname=\"Georgia\", color=\"black:#f48153:black\",arrowsize = 1.2,penwidth=1.1,minlen=2]\n\t\t\"Infected\" -> \"Recovered\" [arrowhead=\"normal\", label=\"Recovery Rate\", tooltip = \"eqn = Infected / Delay\", fontsize=18,fontname=\"Georgia\", color=\"black:#f48153:black\",arrowsize = 1.2,penwidth=1.1,minlen=2]\n\n      \n    }\n          ","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script></code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
