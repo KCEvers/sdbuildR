@@ -489,7 +489,7 @@ end", P$unit_context),
     # "seasonal" = "# Create seasonal wave\nfunction seasonal(;wave_unit=u\"yr\", wave_peak=0u\"yr\")
     #     (t, u=wave_unit, p=wave_peak) -> cos.(Unitful.ustrip.(Unitful.uconvert.(u, t - p)))
     # end"
-    "seasonal" = "# Create seasonal wave\nfunction seasonal(t; period = u\"1yr\", shift = u\"0yr\")
+    "seasonal" = "# Create seasonal wave\nfunction seasonal(t, period = u\"1yr\", shift = u\"0yr\")
     phase = 2 * pi * (t - shift) / period  # π radians
     return(cos(phase))
 end",

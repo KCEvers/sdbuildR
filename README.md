@@ -14,7 +14,7 @@ complicated by nonlinearities, delays, and feedback loops. sdbuildR aims
 to make stock-and-flow modelling accessible and effortless, enabling you
 to dedicate your expertise to what matters most: building insightful,
 high-quality models. Get started at
-<https://kcevers.github.io/sdbuildR/>.
+<https://kcevers.github.io/sdbuildR/>!
 
 ## Features
 
@@ -22,8 +22,8 @@ high-quality models. Get started at
   knowledge.
 - **Flexibility**: Modify your models easily and robustly.
 - **Insight Maker integration**: Import models from Insight Maker.
-- **Julia backend**: Leverage Julia for high-performance simulations,
-  without any knowledge of Julia.
+- **Julia backend**: Use Julia for high-performance simulations, without
+  any knowledge of Julia.
 - **Unit support**: Use standard or custom units to verify and interpret
   your model.
 

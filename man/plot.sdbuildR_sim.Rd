@@ -44,5 +44,5 @@ sim = simulate(sfm)
 plot(sim)
 }
 \seealso{
-\code{\link[=simulate]{simulate()}}
+\code{\link[=simulate]{simulate()}}, \code{\link[=as.data.frame.sdbuildR_sim]{as.data.frame.sdbuildR_sim()}}, \code{\link[=plot.sdbuildR_xmile]{plot.sdbuildR_xmile()}}
 }

@@ -26,19 +26,20 @@ library(knitr)
 library(kableExtra) 
 ```
 
-Stock-and-flow models represent systems as variables (stocks) that accumulate over time with processes (flows) that change these variables. Foundational to system dynamics, stock-and-flow models are widely used in fields such as epidemiology, economics, and environmental science to represent systems complicated by nonlinearities, delays, and feedback loops. In this vignette, we will explore how to build stock-and-flow models using sdbuildR. We will first go through the basics: What are the building blocks of a stock-and-flow model? How can we combine them to create a model of our system? We will then use sdbuildR to recreate a well-known predator-prey model. To show how sdbuildR can be used to iteratively develop your own models, we will build a model from scratch using a psychological example.
+Stock-and-flow models represent systems as states (stocks) that accumulate over time with processes (flows) that change these variables. Foundational to the field of system dynamics, stock-and-flow models are widely used in areas such as epidemiology, economics, and environmental science to model systems complicated by nonlinearities, delays, and feedback loops. In this vignette, we will explore how to build stock-and-flow models from scratch using sdbuildR. We will first go through the basics: What are the building blocks of a stock-and-flow model? How can we combine them to create a model of our system? To give a quick overview of how sdbuildR works, we will recreate a well-known predator-prey model. We will then develop a model of our own to show how sdbuildR facilitates iterative model development.
 
 ## Stock-and-flow models
 
-Stock-and-flow models are composed of stocks, the variables that determine the state of the system, and flows, the way stocks change. Stocks accumulate material or information over time, such as people or products. Stocks are variables that can increase and decrease, and can be measured at a single moment in time. Despite what their name may imply, stocks need not be tangible, and can also be variables such as beliefs, feelings, or knowledge. 
+Stock-and-flow models are composed of stocks, which are the variables that determine the state of the system, and flows, which are the way stocks change. Stocks accumulate material or information over time, such as people or products. Stocks are variables that can increase and decrease, and can be measured at a single moment in time. Despite what their name may imply, stocks need not be tangible, and can also be variables such as beliefs, feelings, or knowledge. 
 
-The value of a stock is increased or decreased by flows. Flows represent the rates at which stocks change, measured in units per time (e.g., people per year, dollars per month). Flows either flow from a stock, flow into a stock, or cross the model boundary. For instance, in a population model, births are an inflow, and deaths are an outflow. Usually, we don't specify where the flow of deaths is going to, meaning it is outside of the model boundary.
+The value of a stock is increased or decreased by flows. Flows represent the rates at which stocks change, measured in units per time (e.g., people per year, dollars per month). Flows transport whatever is in the stock, and have to come and go somewhere. The source and sink of flows may be another stock, or may be left unspecified as outside the model boundary. For instance, in a population model, births are an inflow, and deaths are an outflow. Usually, we don't specify where the outflow of deaths is going to, meaning it is outside of the model boundary.
 
 ```{r echo=FALSE, fig.width=4, fig.height=2}
 sfm = xmile() %>% 
   build("Stock", "stock") %>%
   build("Inflow", "flow", to = "Stock") %>%
   build("Outflow", "flow", from = "Stock") 
+
 plot(sfm)
 ```
 

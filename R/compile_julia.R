@@ -46,18 +46,10 @@ simulate_julia = function(sfm,
                          only_stocks = only_stocks,
                          keep_unit = keep_unit, debug = debug)
   write_script(script, filepath)
-  script = readLines(filepath) %>% paste0(collapse = "\n")
+  script = paste0(readLines(filepath), collapse = "\n")
 
   # Evaluate script
   sim = tryCatch({
-
-    # # Create a new environment to collect variables
-    # envir <- new.env()
-
-    # from diffeqr
-    # julia_locate <- do.call(":::", list("JuliaCall", quote(julia_locate)))
-    # julia_locate()
-
 
     # Evaluate script
     # JuliaCall::julia_setup()
@@ -66,26 +58,23 @@ simulate_julia = function(sfm,
 
     start_t = Sys.time()
 
-    # JuliaCall::julia_source(filepath)
-
     # Wrap in invisible and capture.output to not show message of units module being overwritten
     invisible(utils::capture.output(JuliaConnectoR::juliaEval(paste0('include("', filepath, '")'))))
 
     end_t = Sys.time()
+
     if (verbose){
       message(paste0("Simulation took ", round(end_t - start_t, 4), " seconds"))
     }
 
-
-    # df = JuliaCall::julia_eval(P$sim_df_name)
-    # pars_julia = JuliaCall::julia_eval(P$parameter_name)
-    # xstart_julia = JuliaCall::julia_eval(P$initial_value_name)
-
     # df = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(P[["sim_df_name"]]))
     pars_julia = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(P[["parameter_name"]]))
+
+    # pars_julia = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(paste0("values(", P[["parameter_name"]], ")")))
+
     xstart_julia = JuliaConnectoR::juliaEval(P[["initial_value_name"]])
 
-    # df <- utils::read.csv(filepath_df)
+    # df <- utils::read.csv(filepath_df) # reads numbers as strings
     df = as.data.frame(data.table::fread(filepath_df, na.strings = c("", "NA")))
 
     # Delete files
@@ -1231,6 +1220,21 @@ compile_run_ode_julia = function(sfm, filepath_df,
                     P$parameter_name, " = (; (name => isa(val, Unitful.Quantity) ? Unitful.ustrip(val) : val for (name, val) in pairs(pars))...)")
 
   }
+
+
+  # Remove pars that are not floats or vectors
+  script = paste0(script,
+
+
+  "\n\n# Find keys where values are Float64 or Vector
+  valid_keys = [k for k in keys(", P$parameter_name, ") if isa(", P$parameter_name, "[k], Float64) || isa(", P$parameter_name, "[k], Vector)]
+
+  # Convert valid_keys to a tuple for NamedTuple construction
+  valid_keys_tuple = Tuple(valid_keys)
+
+  # Reconstruct filtered named tuple\n", P$parameter_name, " = NamedTuple{valid_keys_tuple}(",
+  P$parameter_name, "[k] for k in valid_keys)\n")
+
 
   # Save to CSV
   script = paste0(script, '\nCSV.write("', filepath_df, '", ', P[["sim_df_name"]], ')\nNothing')

@@ -391,7 +391,7 @@ function convert_u(x::Float64, unit_def::String)
 end
 
 # Create seasonal wave
-function seasonal(t; period = u"1yr", shift = u"0yr")
+function seasonal(t, period = u"1yr", shift = u"0yr")
     phase = 2 * pi * (t - shift) / period  # π radians
     return(cos(phase))
 end

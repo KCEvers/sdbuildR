@@ -83,27 +83,31 @@ is_defined = function(x){
 #'
 #' @param x Stock-and-flow model of class sdbuildR_xmile
 #' @param format_label If TRUE, apply default formatting to labels if labels are the same as variable names.
-#' @param wrap_width Width of text wrapping for labels. Must be an integer.
+#' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 20.
 #' @param center_stocks If TRUE, stocks are vertically aligned in the middle of the diagram. Defaults to FALSE.
 #' @param font_size Font size. Defaults to 18.
-#' @param font_name Font name. Defaults to "times bold".
+#' @param font_family Font name. Defaults to "Georgia".
 #' @param stock_col Colour of stocks. Defaults to "#83d3d4".
 #' @param flow_col Colour of flows. Defaults to "#f48153".
+#' @param minlen Minimum length of edges; must be an integer. Defaults to 2.
 #' @param ... Optional arguments
 #'
 #' @return Stock-and-flow diagram plotted with DiagrammeR()
 #' @export
 #' @method plot sdbuildR_xmile
-#' @seealso [insightmaker_to_sfm()]
+#' @seealso [insightmaker_to_sfm()], [xmile()], [plot.sdbuildR_sim()]
 #'
 #' @examples
 #' sfm = xmile("SIR")
 #' plot(sfm)
-plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_stocks = FALSE,
+plot.sdbuildR_xmile = function(x, format_label = TRUE,
+                               wrap_width = 20,
+                               center_stocks = FALSE,
                                font_size = 18,
-                               font_name = "times bold",
+                               font_family = "Georgia",
                                stock_col = "#83d3d4",
                                flow_col = "#f48153",
+                               minlen = 2,
                                ...){
 
   check_xmile(x)
@@ -134,7 +138,7 @@ plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_s
 
   # Prepare all nodes
   if (length(stock_names) > 0){
-    stock_nodes = sprintf("%s [label='%s',tooltip = 'eqn = %s',shape=box,style=filled,fillcolor='%s',fontsize=%s,fontname='%s']", paste0("'", stock_names, "'"), dict[stock_names], dict_eqn[stock_names], stock_col, font_size, font_name)
+    stock_nodes = sprintf("%s [label='%s',tooltip = 'eqn = %s',shape=box,style=filled,fillcolor='%s',fontsize=%s,fontname='%s']", paste0("'", stock_names, "'"), dict[stock_names], dict_eqn[stock_names], stock_col, font_size, font_family)
   } else {
     stock_nodes = ""
   }
@@ -166,7 +170,7 @@ plot.sdbuildR_xmile = function(x, format_label = TRUE, wrap_width = 25, center_s
       paste0("'", flow_df[, "from"], "'"),
       " -> ",
       paste0("'", flow_df[, "to"], "'"),
-      " [arrowhead='normal', label='", dict[flow_df[, "name"]], "', tooltip = 'eqn = ", dict_eqn[flow_df[, "name"]], "', fontsize=", font_size, ",fontname='", font_name, "', color='black:", flow_col, ":black',arrowsize = 1.2,penwidth=1.1,minlen=3]")
+      " [arrowhead='normal', label='", dict[flow_df[, "name"]], "', tooltip = 'eqn = ", dict_eqn[flow_df[, "name"]], "', fontsize=", font_size, ",fontname='", font_family, "', color='black:", flow_col, ":black',arrowsize = 1.2,penwidth=1.1,minlen=", minlen, "]")
 
 
   }
@@ -246,14 +250,15 @@ get_flow_df = function(sfm){
 #'
 #' @return Plot object
 #' @export
-#' @seealso [simulate()]
+#' @seealso [simulate()], [as.data.frame.sdbuildR_sim()], [plot.sdbuildR_xmile()]
 #' @method plot sdbuildR_sim
 #'
 #' @examples
 #' sfm = xmile("SIR")
 #' sim = simulate(sfm)
 #' plot(sim)
-plot.sdbuildR_sim = function(x, add_constants = FALSE,
+plot.sdbuildR_sim = function(x,
+                             add_constants = FALSE,
                              palette = "Dark 2",
                              colors = NULL,
                              title=x[["sfm"]][["header"]][["name"]],
@@ -477,11 +482,6 @@ summary.sdbuildR_xmile <- function(object, ...) {
 
 
   # Check for use of past() or delay()
-  # intermediary = unname(object$model$variables) %>% purrr::list_flatten() %>%
-  #   purrr::map("intermediary") %>% purrr::compact()
-  # past_list = list_extract(object$model$variables, "past")
-  # delay_list = list_extract(object$model$variables, "delay")
-  # intermediary = c(past_list, delay_list)
   delay_past = get_delay_past(object)
 
   if (length(delay_past) > 0){
@@ -718,6 +718,14 @@ validate_xmile = function(sfm){
     sfm$model$variables$flow = lapply(sfm$model$variables$flow, function(x){
 
         if (is_defined(x$from)){
+
+          # If length of from is more than 1, select first
+          if (length(x$from) > 1){
+            message(paste0(x$name, " is flowing from more than one variable (",
+                           paste0(x$from, collapse = ", "), ")! Only keeping ", x$from[1], "..."))
+            x$from = x$from[1]
+          }
+
           # If from is not in stocks but is another variable, remove
           non_stocks = x$from[!x$from %in% stock_names & x$from %in% nonstock_names]
           if (length(non_stocks) > 0){
@@ -730,6 +738,14 @@ validate_xmile = function(sfm){
         }
 
         if (is_defined(x$to)){
+
+          # If length of to is more than 1, select first
+          if (length(x$to) > 1){
+            message(paste0(x$name, " is flowing to more than one variable (",
+                           paste0(x$to, collapse = ", "), ")! Only keeping ", x$to[1], "..."))
+            x$to = x$to[1]
+          }
+
           # If to is not in stocks but is another variable, remove
           non_stocks = x$to[!x$to %in% stock_names & x$to %in% nonstock_names]
           if (length(non_stocks) > 0){
@@ -744,7 +760,7 @@ validate_xmile = function(sfm){
         return(x)
       })
 
-    # Ensure sfm$behavior matches non-negativity properties of variables: Get non-negative Stocks and Flows
+    # Ensure sfm$behavior matches non-negativity properties of variables: Get non-negative stocks and flows
     nonneg_stock = names(sfm$model$variables$stock)[sapply(sfm$model$variables$stock, function(x) x[["non_negative"]] == TRUE)]
     nonneg_flow = names(sfm$model$variables$flow)[sapply(sfm$model$variables$flow, function(x) x[["non_negative"]] == TRUE)]
     sfm$behavior$stock$non_negative = nonneg_stock
@@ -752,8 +768,6 @@ validate_xmile = function(sfm){
 
 
   }
-
-# **ensure from and to are length 1
 
   # Ensure model units have default properties
   defaults <- as.list(formals(model_units))
@@ -785,37 +799,7 @@ validate_xmile = function(sfm){
   names(sfm$macro) = unname(unlist(lapply(sfm$macro, `[[`, "name")))
 
 
-
-  #** don't do this, gives priority to one entry ('from' from flow or 'inflow' from stock)
-  # # Ensure stock "inflow" and "outflow" entries match flow "to" and "from" entries
-  # stock_inflow = sfm$model$variables$stock %>% purrr::map("inflow")
-  # stock_outflow = sfm$model$variables$stock %>% purrr::map("outflow")
-  # flow_to = sfm$model$variables$flow %>% purrr::map("to")
-  # flow_from = sfm$model$variables$flow %>% purrr::map("from")
-  #
-  # # Switch names and entries
-  # stock_inflow_switch = switch_list(stock_inflow)
-  # stock_outflow_switch = switch_list(stock_outflow)
-  # flow_to_switch = switch_list(flow_to)
-  # flow_from_switch = switch_list(flow_from)
-  #
-  # sfm$model$variables = sfm$model$variables %>%
-  #   purrr::imap(function(x, type){
-  #     purrr::imap(x, function(y, name){
-  #       if (type == "stock"){
-  #         y$inflow = c(stock_inflow[[name]], flow_to_switch[[name]]) %>% unique() %>% Filter(nzchar, .)
-  #         y$outflow = c(stock_outflow[[name]], flow_from_switch[[name]]) %>% unique() %>% Filter(nzchar, .)
-  #       } else if (type == "flow"){
-  #         y$to = c(flow_to[[name]], stock_inflow_switch[[name]]) %>% unique() %>% Filter(nzchar, .)
-  #         y$from = c(flow_from[[name]], stock_outflow_switch[[name]]) %>% unique() %>% Filter(nzchar, .)
-  #       }
-  #       return(y)
-  #     })
-  #
-  #   })
-
-
-  # ** don't do this: the simulation time unit may change, leading to unexpected results. you can do this in compile()
+  # ** Don't do the following, because the simulation time unit may change, leading to unexpected results. you can do this in compile()
   # # Dimensional consistency: Units of Flows need to be units of corresponding Stocks divided by sfm$sim_specs$time_units or some time unit
   # names_df = get_names(sfm)
   # sfm$model$variables$flow = sfm$model$variables$flow %>%
@@ -854,72 +838,12 @@ validate_xmile = function(sfm){
   #
   # })
 
-  # column_names = c("name", "inflow", "outflow", "to", "from")
-  # suppressWarnings(
-  #   edge_df <- sfm$model$variables[c("stock", "flow")] %>% purrr::flatten() %>%
-  #   purrr::map(\(x){ x[column_names]}) %>%
-  #   data.table::rbindlist(fill = F, use.names=FALSE) %>%
-  #   magrittr::set_colnames(column_names) %>%
-  #   as.data.frame()
-  # )
-  # edge_df
-  #
-  # sfm$model$variables = sfm$model$variables %>%
-  #   purrr::imap(\(x, y){
-  #                     purrr::map(x, function(z){
-  #                       if (y == "stock"){
-  #
-  #                         z$inflow = Filter(nzchar, c(z$inflow, edge_df %>% dplyr::filter(.data$to == z$name) %>% dplyr::pull(.data$name)) %>% unique())
-  #                         z$outflow = Filter(nzchar, c(z$outflow, edge_df %>% dplyr::filter(.data$from == z$name) %>% dplyr::pull(.data$name)) %>% unique())
-  #
-  #                       } else if (y == "flow"){
-  #                         z$to = Filter(nzchar, c(z$to, edge_df %>% dplyr::filter(.data$inflow == z$name) %>% dplyr::pull(.data$name)) %>% unique())
-  #                         z$from = Filter(nzchar, c(z$from, edge_df %>% dplyr::filter(.data$outflow == z$name) %>% dplyr::pull(.data$name)) %>% unique())
-  #                       }
-  #                       return(z)
-  #                     })
-  #                   })
+  # To prevent downstream errors, don't:
+  # - add inflows and outflows to stocks
 
-
-
-  # **massively slows down code, make sure eqn_julia exists in build()
-  # # Check julia translation
-  # sfm$model$variables = sfm$model$variables %>%
-  #   purrr::map_depth(2, \(x){
-  #
-  #     # Ensure every equation is a character string
-  #     if (is_defined(x$eqn)){
-  #       x$eqn = as.character(x$eqn)
-  #     }
-  #
-  #     # Ensure every equation has a julia translation
-  #     if (is_defined(x$eqn) & !is_defined(x$eqn_julia)){
-  #       x$eqn_julia = convert_equations_julia(sfm, x$eqn, names_df,
-  #                                             regex_units = regex_units, debug = F)
-  #     }
-  #
-  #     return(x)
-  #   })
-#
-#   sfm$macro = sfm$macro %>% purrr::map(function(x){
-#     # Ensure every equation has a julia translation
-#     if (is_defined(x$eqn) & !is_defined(x$eqn_julia)){
-#       x$eqn_julia = convert_equations_julia(sfm, x$eqn, names_df,
-#                                             regex_units = regex_units,
-#                                             debug = F)
-#     } else if (x$eqn == "" & !is_defined(x$eqn_julia)){
-#       x$eqn_julia = ""
-#     }
-#     return(x)
-#   })
-
-  # **move to compile(), massively slows down build()
-  # # Ensure all units are defined
-  # add_model_units = detect_undefined_units(sfm,
-  #                                    new_eqns = c(sfm$model$variables %>% purrr::map_depth(2, "eqn_julia") %>% unlist(),
-  #                                                 sfm$macro %>% purrr::map_vec("eqn_julia")))
-  # sfm$model_units = sfm$model_units %>% utils::modifyList(add_model_units)
-
+  # To prevent massively slowing down code, don't:
+  # - translate all equations to Julia here
+  # - detect undefined units
 
   return(sfm)
 }
@@ -1409,6 +1333,18 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 }
 
 
+# get_regex_method = function(){
+#
+#   matrix(c(
+#     "euler", "rk2", "rk4", "rk23", "rk23bs", "rk34f", "rk45f", "rk45ck", "rk45e", "rk45dp6", "rk45dp7", "rk78dp",
+#     "rk78f", "irk3r", "irk5r", "irk4hh", "irk6kb", "irk4l", "irk6l", "ode23", "ode45"
+#
+#   ))
+#
+#   ncol = 6, byrow = TRUE, dimnames = list(NULL, c("R", "julia", "syntax", "add_first_arg", "add_second_arg", "add_broadcast"))
+#
+#
+# }
 
 
 
@@ -1799,18 +1735,18 @@ report_name_change = function(old_names, new_names){
 #' @param erase If TRUE, remove variable from model. Defaults to FALSE.
 #' @param label Name of variable used for plotting. Defaults to the same as name.
 #' @param eqn Equation (or initial value in the case of stocks). Defaults to "0.0".
-#' @param conveyor Boolean indicating whether the Stock is a conveyor. Defaults to FALSE.
-#' @param len Numerical value indicating the delay length of the conveyor Stock. Defaults to NULL.
+#' @param conveyor If TRUE, the stock behaves as a conveyor. This feature is coming soon, but is now unusable. Defaults to FALSE.
+#' @param len Numerical value indicating the delay length of the conveyor stock. This feature is coming soon, but is now unusable. Defaults to NULL.
 #' @param to Target of flow. Must be a stock in the model. Defaults to NULL to indicate no target.
 #' @param from Source of flow. Must be a stock in the model. Defaults to NULL to indicate no source.
 #' @param units Unit of variable, such as 'meter'. Defaults to "1" (no units).
 #' @param non_negative If TRUE, variable is enforced to be non-negative (i.e. strictly 0 or positive). Defaults to FALSE.
-#' @param xpts Only for graphical function: vector of x-domain points. Must be of the same length as ypts.
-#' @param ypts Only for graphical function: vector of y-domain points. Must be of the same length as xpts.
-#' @param source Only for graphical function: name of variable which will serve as the input to the graphical function. Necessary to specify if units are used. Defaults to NULL.
-#' @param interpolation Only for graphical function: interpolation method. Must be either "constant" or "linear". Defaults to "linear".
-#' @param extrapolation Only for graphical function: extrapolation method. Must be either "nearest" or "NA". Defaults to "nearest".
-#' @param doc Description of variable (optional). Defaults to "".
+#' @param xpts Only for graphical functions: vector of x-domain points. Must be of the same length as ypts.
+#' @param ypts Only for graphical functions: vector of y-domain points. Must be of the same length as xpts.
+#' @param source Only for graphical functions: name of the variable which will serve as the input to the graphical function. Necessary to specify if units are used. Defaults to NULL.
+#' @param interpolation Only for graphical functions: interpolation method. Must be either "constant" or "linear". Defaults to "linear".
+#' @param extrapolation Only for graphical functions: extrapolation method. Must be either "nearest" or "NA". Defaults to "nearest".
+#' @param doc Description of variable. Defaults to "".
 #'
 #' @return Updated stock-and-flow model.
 #' @seealso [xmile()]
@@ -2958,13 +2894,6 @@ static_depend_on_dyn = function(sfm){
       names(static_with_dyn_dep), " depends on ", static_with_dyn_dep), collapse = "\n")),
       collapse = "\n")
 
-    # for (i in seq_along(static_with_dyn_dep)){
-    #   stock_or_constant = names_df[names_df$name == names(static_with_dyn_dep)[i], "type"]
-    #
-    #   message(paste0(
-    #     ifelse(stock_or_constant == "stock", "The initial value of stock ", "The constant "),
-    #     names(static_with_dyn_dep)[i], " depends on ", paste0(static_with_dyn_dep[[i]], collapse = ", ")))
-    # }
     return(list(issue = TRUE, msg = msg))
   } else {
     return(list(issue = FALSE))
@@ -3006,11 +2935,6 @@ as.data.frame.sdbuildR_xmile = function(x,
 
   check_xmile(x)
   sfm = x
-
-  # nr_var = length(sfm$model$variables %>% purrr::flatten())
-  # if (nr_var == 0){
-  #   stop("Your model contains no variables!")
-  # }
 
   # Only keep specified types
   if (!is.null(type)){
