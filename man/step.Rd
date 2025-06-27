@@ -4,12 +4,12 @@
 \alias{step}
 \title{Create step function}
 \usage{
-step(start_t_step, h_step = 1)
+step(start, height = 1)
 }
 \arguments{
-\item{start_t_step}{Start time of step}
+\item{start}{Start time of step}
 
-\item{h_step}{Height of step, defaults to 1}
+\item{height}{Height of step, defaults to 1}
 }
 \value{
 Interpolation function

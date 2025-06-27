@@ -358,7 +358,7 @@ curly_to_vector_brackets = function(eqn, var_names) {
   # - Vectors
   # - Nested lists
 
-  done = F
+  done = FALSE
   max_iter = 1000
   i = 1
   while (!done & i < max_iter) {
@@ -1275,7 +1275,8 @@ get_syntax_IM = function(){
     "Step", "conv_step", "syntax3", F, T, "",
     "Pulse", "conv_pulse", "syntax3", F, T, "",
     "Ramp", "conv_ramp", "syntax3", F, T, "",
-    "Seasonal", "conv_seasonal", "syntax3", F, F, sprintf("%s, %s", P$times_name, P$time_units_name),
+    # "Seasonal", "conv_seasonal", "syntax3", F, F, sprintf("%s, %s", P$times_name, P$time_units_name),
+    "Seasonal", "conv_seasonal", "syntax3", F, T, "",
     "Lookup", "conv_lookup", "syntax3", F, T, "",
     "Repeat", "conv_repeat", "syntax3", F, T, "",
 
@@ -2044,7 +2045,10 @@ conv_delayN = function(func, arg) {
   }
   delay_length = arg[2]
 
-  replacement = sprintf("delayN(%s, %s, %s%s)",
+  func_name = ifelse(grepl("smooth", func), "smooth", "delay")
+
+  replacement = sprintf("%sN(%s, %s, %s%s)",
+                        func_name,
                         arg[1], delay_length, delay_order,
                         ifelse(nzchar(delay_0), paste0(", ", delay_0), ""))
 
@@ -2066,7 +2070,6 @@ conv_delayN = function(func, arg) {
 #' @inheritParams conv_delayN
 #'
 conv_fix = function(func, arg, name, type) {
-
 
   # ** to do
   add_Rcode = list()
@@ -2117,7 +2120,6 @@ conv_fix = function(func, arg, name, type) {
 # Ramp, pulse, step functions
 # These are functions that translate to forcings in deSolve::ode (not events, as these functions may also be used to change variables other than state variables/stocks). These functions need to be defined with an interpolation function at the beginning of the script, and are used in the ODE as func(t).
 
-# Convert step, pulse, and ramp Insight Maker functions to corresponding R functions. Rewrite equation eqn and define interpolation function to be put at beginning of the script
 
 
 #' Convert Insight Maker's Step() function to R
@@ -2144,9 +2146,10 @@ conv_step = function(func, arg, match_idx, name,  # Default settings of Insight 
 
   # Define interpolation function
   h_step = ifelse(is.na(arg[2]), h_step, arg[2])
+
   # Function definition to put at beginning of script
   func_def_str = sprintf(
-    "step(start_t_step = %s, h_step = %s)",
+    "step(start = %s, height = %s)",
     # P$times_name,
     start_t_step,
     h_step
@@ -2154,7 +2157,6 @@ conv_step = function(func, arg, match_idx, name,  # Default settings of Insight 
 
   )
   add_Rcode = list(aux = list(list(eqn = func_def_str
-                                   # , source = P$time_name
                                    )) %>% stats::setNames(func_name_str))
 
   return(list(replacement = replacement,
@@ -2201,7 +2203,7 @@ conv_pulse = function(func,
 
   # Function definition to put at beginning of script
   func_def_str = sprintf(
-    "pulse(start_t_pulse = %s(%s, %s), h_pulse = %s, w_pulse = %s(%s, %s), repeat_interval = %s)",
+    "pulse(start = %s(%s, %s), height = %s, width = %s(%s, %s), repeat_interval = %s)",
     # P$times_name,
     P$convert_u_func,
     start_t_pulse, P$time_units_name,
@@ -2251,7 +2253,7 @@ conv_ramp = function(func, arg, match_idx, name, # Default settings of Insight M
 
   # Function definition to put at beginning of script
   func_def_str = sprintf(
-    "ramp(start_t_ramp = %s(%s, %s), end_t_ramp = %s(%s, %s), start_h_ramp = 0, end_h_ramp = %s)",
+    "ramp(start = %s(%s, %s), finish = %s(%s, %s), height = %s)",
     # P$times_name,
     P$convert_u_func,
     start_t_ramp, P$time_units_name,
@@ -2282,7 +2284,8 @@ conv_ramp = function(func, arg, match_idx, name, # Default settings of Insight M
 #' @noRd
 #' @inheritParams conv_step
 #'
-conv_seasonal = function(func, arg, match_idx, name, period = "u(\"1common_yr\")", shift ="u(\"0common_yr\")") {
+conv_seasonal = function(func, arg, match_idx, name,
+                         period = "u(\"1common_yr\")", shift ="u(\"0common_yr\")") {
 
   # # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   # func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
@@ -2290,6 +2293,23 @@ conv_seasonal = function(func, arg, match_idx, name, period = "u(\"1common_yr\")
   # replacement = sprintf("[%s](%s)", func_name_str, P$time_name)
 
   # Seasonal(Peak=0)
+
+  # # If an argument is specified, it's the peak time
+  # if (nzchar(arg)) {
+  #   # If there are only numbers and a period in there, add unit
+  #   if (grepl("^[0-9]+\\.?[0-9]*$", arg[1]) | grepl("^[\\.?[0-9]*$", arg[1])){
+  #     shift = paste0("u(\"", arg[1], "common_yr\")")
+  #   } else {
+  #     shift = arg[1]
+  #   }
+  # }
+  # replacement = paste0("seasonal(", P$time_name, ", period = ", period, ", shift = ", shift, ")")
+  # add_Rcode = list()
+
+  # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
+  func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
+                          as.character(match_idx))
+  replacement = sprintf("[%s](%s)", func_name_str, P$time_name)
 
   # If an argument is specified, it's the peak time
   if (nzchar(arg)) {
@@ -2300,19 +2320,16 @@ conv_seasonal = function(func, arg, match_idx, name, period = "u(\"1common_yr\")
       shift = arg[1]
     }
   }
-  replacement = paste0("seasonal(", P$time_name, ", period = ", period, ", shift = ", shift, ")")
 
-  # # Function definition to put at beginning of script
-  # func_def_str = sprintf(
-  #   "seasonal(%s, peak_time = %s, %s = %s)",
-  #   P$times_name,
-  #   peak_time, P$time_units_name, P$time_units_name
-  # )
-  # add_Rcode = list(aux = list(list(eqn = func_def_str
-  #                                  # , source = P$time_name
-  #                                  )) %>%
-  #                    stats::setNames(func_name_str))
-  add_Rcode = list()
+  # Function definition to put at beginning of script
+  func_def_str = sprintf(
+    "seasonal(%s, %s)",
+    period, shift
+  )
+  add_Rcode = list(aux = list(list(eqn = func_def_str
+                                   # , source = P$time_name
+  )) %>% stats::setNames(func_name_str))
+
 
   return(list(replacement = replacement,
               add_Rcode = add_Rcode

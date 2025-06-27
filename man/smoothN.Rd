@@ -4,7 +4,7 @@
 \alias{smoothN}
 \title{Smoothing of order N}
 \usage{
-smoothN(variable, length, order, default_value = NULL)
+smoothN(variable, length, order, initial = NULL)
 }
 \arguments{
 \item{variable}{Variable to smooth}
@@ -13,11 +13,11 @@ smoothN(variable, length, order, default_value = NULL)
 
 \item{order}{Order of smoothing.}
 
-\item{default_value}{Value to initialize the accumulator with. If NULL, the first value of the variable to smooth is used. Defaults to NULL.}
+\item{initial}{Value to initialize the accumulator with. If NULL, the first value of the variable to smooth is used. Defaults to NULL.}
 }
 \value{
 Smoothed variable
 }
 \description{
-This function is coming soon, but is now unusable.
+Smoothing of order N
 }

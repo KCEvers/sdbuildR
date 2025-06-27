@@ -102,10 +102,16 @@ test_that("converting functions to Julia with named arguments", {
   expected = "extrema(10.0, 8.0)"
   expect_equal(result$eqn_julia, expected)
 
-  result = convert_equations_julia(sfm, type, name, "sigmoid(x, midpoint = 8)", var_names,
+  result = convert_equations_julia(sfm, type, name, "logistic(x, midpoint = 8)", var_names,
                                    regex_units, debug = FALSE)
-  expected = "sigmoid.(x, 1, 8.0)"
+  expected = "logistic.(x, 1.0, 8.0, 1.0)"
   expect_equal(result$eqn_julia, expected)
+
+  result = convert_equations_julia(sfm, type, name, "logistic(x, upper = 8)", var_names,
+                                   regex_units, debug = FALSE)
+  expected = "logistic.(x, 1.0, 0.0, 8.0)"
+  expect_equal(result$eqn_julia, expected)
+
 
   # Error for na.rm
   expect_error(xmile() %>% build("a", "stock", eqn = "sd(x = test, na.rm = T)"), "na\\.rm is not supported as an argument in sdbuildR. Please use na\\.omit\\(x\\) instead")
@@ -398,64 +404,83 @@ test_that("convert_distribution() to Julia", {
 
   # When n = 1, don't add n, otherwise this create a vector
   result = convert_builtin_functions_julia(type, name, "runif(1)", var_names, debug = F)$eqn
-  expected = "rand(Distributions.Uniform(0, 1))"
+  expected = "rand(Distributions.Uniform(0.0, 1.0))"
   expect_equal(result, expected)
 
   result = convert_builtin_functions_julia(type, name, "runif(1, min =1, max=3)", var_names, debug = F)$eqn
-  expected = "rand(Distributions.Uniform(1, 3))"
+  expected = "rand(Distributions.Uniform(1.0, 3.0))"
   expect_equal(result, expected)
 
   result = convert_builtin_functions_julia(type, name, "runif(10, min =-1, max=3)", var_names, debug = F)$eqn
-  expected = "rand(Distributions.Uniform(-1, 3), 10)"
+  expected = "rand(Distributions.Uniform(-1.0, 3.0), 10)"
   expect_equal(result, expected)
 
   result = convert_builtin_functions_julia(type, name, "rnorm(1)", var_names, debug = F)$eqn
-  expected = "rand(Distributions.Normal(0, 1))"
+  expected = "rand(Distributions.Normal(0.0, 1.0))"
   expect_equal(result, expected)
 
   # Different order of arguments
   result = convert_builtin_functions_julia(type, name, "rnorm(10, sd =1, mean=3)", var_names, debug = F)$eqn
-  expected = "rand(Distributions.Normal(3, 1), 10)"
+  expected = "rand(Distributions.Normal(3.0, 1.0), 10)"
   expect_equal(result, expected)
 
   result = convert_builtin_functions_julia(type, name, "rnorm(10, 1, 3)", var_names, debug = F)$eqn
-  expected = "rand(Distributions.Normal(1, 3), 10)"
+  expected = "rand(Distributions.Normal(1.0, 3.0), 10)"
   expect_equal(result, expected)
 
   result = convert_builtin_functions_julia(type, name, "rexp(10, 3)", var_names, debug = F)$eqn
-  expected = "rand(Distributions.Exponential(3), 10)"
+  expected = "rand(Distributions.Exponential(3.0), 10)"
   expect_equal(result, expected)
 
   result = convert_builtin_functions_julia(type, name, "rexp(1, rate=30)", var_names, debug = F)$eqn
-  expected = "rand(Distributions.Exponential(30))"
+  expected = "rand(Distributions.Exponential(30.0))"
   expect_equal(result, expected)
 
 
   # cdf, pdf, quantile
   result = convert_builtin_functions_julia(type, name, "pexp(1, rate=30)", var_names, debug = F)$eqn
-  expected = "Distributions.cdf.(Distributions.Exponential(30), 1)"
+  expected = "Distributions.cdf.(Distributions.Exponential(30.0), 1)"
   expect_equal(result, expected)
 
   result = convert_builtin_functions_julia(type, name, "qexp(1, rate=30)", var_names, debug = F)$eqn
-  expected = "Distributions.quantile.(Distributions.Exponential(30), 1)"
+  expected = "Distributions.quantile.(Distributions.Exponential(30.0), 1)"
   expect_equal(result, expected)
 
   result = convert_builtin_functions_julia(type, name, "dexp(1, rate=30)", var_names, debug = F)$eqn
-  expected = "Distributions.pdf.(Distributions.Exponential(30), 1)"
+  expected = "Distributions.pdf.(Distributions.Exponential(30.0), 1)"
   expect_equal(result, expected)
 
   result = convert_builtin_functions_julia(type, name, "pgamma(1, 2, rate=30)", var_names, debug = F)$eqn
-  expected = "Distributions.cdf.(Distributions.Gamma(2, 30, 1/30), 1)"
+  expected = "Distributions.cdf.(Distributions.Gamma(2.0, 30.0, 1.0/30.0), 1)"
   expect_equal(result, expected)
 
   result = convert_builtin_functions_julia(type, name, "qgamma(1, 2, rate=30)", var_names, debug = F)$eqn
-  expected = "Distributions.quantile.(Distributions.Gamma(2, 30, 1/30), 1)"
+  expected = "Distributions.quantile.(Distributions.Gamma(2.0, 30.0, 1.0/30.0), 1)"
   expect_equal(result, expected)
 
   result = convert_builtin_functions_julia(type, name, "dgamma(1, 2, rate=30)", var_names, debug = F)$eqn
-  expected = "Distributions.pdf.(Distributions.Gamma(2, 30, 1/30), 1)"
+  expected = "Distributions.pdf.(Distributions.Gamma(2.0, 30.0, 1.0/30.0), 1)"
   expect_equal(result, expected)
 
+
+})
+
+
+test_that("vector_to_square_brackets works", {
+
+  var_names = NULL
+  result = vector_to_square_brackets("c(1, 2, 3)", var_names)
+  expected = "[1, 2, 3]"
+  expect_equal(result, expected)
+
+  # Ensure that when c() is preceded by a letter, it is not converted
+  result = vector_to_square_brackets("ac(1, 2, 3)", var_names)
+  expected = "ac(1, 2, 3)"
+  expect_equal(result, expected)
+
+  result = vector_to_square_brackets("c(1, 2, 3) + ac(4, 5, 6)", var_names)
+  expected = "[1, 2, 3] + ac(4, 5, 6)"
+  expect_equal(result, expected)
 
 })
 

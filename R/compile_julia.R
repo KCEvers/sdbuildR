@@ -249,7 +249,6 @@ compile_julia = function(sfm, filepath_df,
   # Compile ODE script
   ode = compile_ode_julia(sfm, ordering,
                           prep_script, static_eqn,
-                          # constraints,
                           keep_nonnegative_stock,
                           keep_unit,
                           only_stocks = only_stocks)
@@ -297,12 +296,16 @@ prep_delayN_smoothN = function(sfm, delayN_smoothN){
                                          # In rare cases, the delayed variable is a graphical function, and in that case the unit of that variable cannot be found
                                          bare_var = sub("\\(.*", "", x[["var"]])
 
+                                         # Check whether the variable is in the model
+                                         if (!bare_var %in% names_df$name){
+                                           stop(paste0("The variable '", bare_var, "' used in delayN() or smoothN() is not defined in the model."))
+                                         }
+
                                          # Unit is the same as the delayed variable
                                          y$units = names_df[names_df$name == bare_var, ]$units
-                                         y$name = names(delayN_smoothN)[i]
-                                         y$label = names(delayN_smoothN)[i]
+                                         y$name = y$label =  names(delayN_smoothN)[i]
                                          # y$initial = x[["initial"]]
-                                         y$type = "delayN"
+                                         y$type = "delayN_smoothN"
 
                                          y$eqn_julia = x[["setup"]]
                                          y$inflow = y[["update"]]
@@ -320,9 +323,8 @@ prep_delayN_smoothN = function(sfm, delayN_smoothN){
 
                                        # Unit is the same as the delayed variable
                                        y$units = names_df[names_df$name == bare_var, ]$units
-                                       y$name = names(delayN_smoothN)[i]
-                                       y$label = names(delayN_smoothN)[i]
-                                       y$type = "delayN"
+                                       y$name = y$label = names(delayN_smoothN)[i]
+                                       y$type = "delayN_smoothN"
 
                                        y$eqn_julia = x[["compute"]]
                                        return(y)
@@ -420,7 +422,6 @@ compile_units_julia = function(sfm, keep_unit){
 
   script = ""
 
-  # if ((keep_unit & length(sfm$model_units) > 0) | sfm$sim_specs$time_units %in% c("common_yr", "common_quarter", "common_month")){
   if (length(sfm$model_units) > 0){
 
     # Topological sort of units
@@ -467,7 +468,7 @@ compile_units_julia = function(sfm, keep_unit){
 
 
 
-#' Compile julia script for global variables
+#' Compile Julia script for global variables
 #'
 #' @inheritParams compile_R
 #'
@@ -516,7 +517,7 @@ compile_macros_julia = function(sfm, debug){
 
 
 
-#' Compile julia script for creating time vector
+#' Compile Julia script for creating time vector
 #'
 #' @return List
 #' @importFrom rlang .data
@@ -777,7 +778,7 @@ compile_static_eqn_julia = function(sfm, ordering, keep_unit){
 
 
 
-#' Prepare for summing change in stocks in stock-and-flow model in julia script
+#' Prepare for summing change in stocks in stock-and-flow model in Julia script
 #'
 #' @inheritParams compile_julia
 #'
@@ -793,8 +794,9 @@ prep_stock_change_julia = function(sfm, keep_unit){
 
                                        inflow = outflow = ""
 
-                                       if (x$type == "delayN"){
-                                         regex_find_idx = paste0("findall(n -> occursin(r\"", x$name, P$delayN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")")
+                                       if (x$type == "delayN_smoothN"){
+                                         # regex_find_idx = paste0("findall(n -> occursin(r\"", x$name, P$delayN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")")
+                                         regex_find_idx = paste0("findall(n -> occursin(r\"", x$name, P$delayN_acc_suffix, "[0-9]+$|", x$name, P$smoothN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")")
                                          x$sum_name = paste0(P$change_state_name, "[", regex_find_idx, "]")
                                          x$unpack_state = paste0(P$state_name, "[", regex_find_idx, "]")
                                        } else {
@@ -862,11 +864,8 @@ prep_stock_change_julia = function(sfm, keep_unit){
 #' @noRd
 #'
 compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
-                             # constraints,
                              keep_nonnegative_stock, keep_unit,
                              only_stocks){
-
-  # @param constraints Intermediate output of compile_constraints_julia()
 
   # Auxiliary equations (dynamic auxiliaries)
   aux_eqn = lapply(sfm$model$variables$aux,`[[`, "eqn_str")
@@ -884,13 +883,13 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
   # Create separate vector for names of intermediate variables and values, because graphical functions need to be in the intermediate funciton as gf(t), but their name should be gf
   intermediary_var = intermediary_var_values = names(dynamic_eqn)
 
-  # Sum change in Stock equations
+  # Sum change in stock equations
   stock_change = lapply(sfm$model$variables$stock,
                         function(x){
 
                           sprintf("%s %s %s", x$sum_name,
                                   # Broadcast assignment for delayed variables
-                                  ifelse(x$type == "delayN", ".=", "="),
+                                  ifelse(x$type == "delayN_smoothN", ".=", "="),
                                   x$sum_eqn)
 
                         }) %>% purrr::compact()
@@ -988,7 +987,16 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
   delay_past = get_delay_past(sfm)
   extra_intermediary_var = list_extract(delay_past, "var")
 
+
   if (length(extra_intermediary_var) > 0){
+
+    # Check whether the intermediary variables are in the model
+    names_df = get_names(sfm)
+    idx = !(extra_intermediary_var %in% names_df$name)
+    if (any(idx)){
+      stop(paste0("The following variables used in delay() or past() are not defined in the model: ", paste0(extra_intermediary_var[idx], collapse = ", ")))
+    }
+
 
     # Get unique intermediary variables to add
     new_intermediary_var = setdiff(unique(unlist(extra_intermediary_var)), intermediary_var)
@@ -1012,7 +1020,9 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
     intermediary_var_values = setdiff(intermediary_var_values, delay_names)
 
     # Unpack non delayN stocks
-    unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P$state_name, "[findall(n -> !occursin(r\"", P$delayN_suffix, "[0-9]+", P$delayN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")]")
+    # unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P$state_name, "[findall(n -> !occursin(r\"", P$delayN_suffix, "[0-9]+", P$delayN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")]")
+    unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P$state_name, "[findall(n -> !occursin(r\"", P$delayN_suffix, "[0-9]+", P$delayN_acc_suffix, "[0-9]+$|",
+                              P$smoothN_suffix, "[0-9]+", P$smoothN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")]")
 
     # Unpack each delayN or smoothN stock separately
     unpack_delayN = lapply(sfm$model$variables$stock,
@@ -1029,8 +1039,8 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
   }
 
 
-  # Sometimes, step/pulse/ramp functions are in auxiliaries. Exclude these from intermediary_var
-  idx = grepl("_step$|_pulse$|_ramp$", intermediary_var)
+  # Sometimes, step/pulse/ramp/seasonal functions are in auxiliaries. Exclude these from intermediary_var
+  idx = grepl("_step$|_pulse$|_ramp$|_seasonal$", intermediary_var)
   intermediary_var = intermediary_var[!idx]
   intermediary_var_values = intermediary_var_values[!idx]
 
@@ -1043,6 +1053,10 @@ function %s!(%s, %s%s, %s)",
             P$ode_func_name,
             P$change_state_name, P$state_name,
             paste0(", ", P$parameter_name), P$time_name),
+
+    "\n\n\t# Round t to deal with inaccuracies in floating point arithmetic\n\t",
+    P$time_name, " = round_(", P$time_name, ", digits = 12)", # ", nchar(sfm$sim_specs$dt) - 1, "
+
     "\n\n\t# Unpack state variables\n\t",
     unpack_state_str,
     ifelse(length(sfm$model$variables$constant) > 0,
@@ -1050,7 +1064,6 @@ function %s!(%s, %s%s, %s)",
                   paste0(paste0(static_eqn$par_names, collapse = ", "), ", = ", P$parameter_name)), ""),
     "\n\n\t# Update auxiliaries\n\t",
     dynamic_eqn_str,
-    # constraints$script,
     "\n\n\t# Collect inflows and outflows for each Stock\n\t",
     stock_change_str,
 
@@ -1065,6 +1078,10 @@ function %s!(%s, %s%s, %s)",
 function %s(%s, %s, integrator)",
               P$callback_func_name,
               P$state_name, P$time_name),
+
+      "\n\n\t# Round t to deal with inaccuracies in floating point arithmetic\n\t",
+      P$time_name, " = round_(", P$time_name, ", digits = 12)",
+
       "\n\n\t# Unpack state variables\n\t",
       unpack_state_str,
       ifelse(length(sfm$model$variables$constant) > 0, paste0("\n\n\t# Get parameters from integrator\n\t",
@@ -1346,4 +1363,8 @@ decode_unicode <- function(text) {
 }
 
 
+
+# ensemble = function(sfm){
+#
+# }
 

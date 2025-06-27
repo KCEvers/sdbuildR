@@ -52,12 +52,27 @@ Base.max(x::Float64, y::Unitful.Quantity) = max(x * Unitful.unit(y), y)
 Base.min(v::AbstractVector) = minimum(v)
 Base.max(v::AbstractVector) = maximum(v)
 
-Base.round(x::Unitful.Quantity) = round(Unitful.ustrip.(x)) * Unitful.unit(x)
 Base.floor(x::Unitful.Quantity) = floor(Unitful.ustrip.(x)) * Unitful.unit(x)
 Base.ceil(x::Unitful.Quantity) = ceil(Unitful.ustrip.(x)) * Unitful.unit(x)
 Base.trunc(x::Unitful.Quantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)
-Base.round(x::Unitful.Quantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
-Base.round(x::Unitful.Quantity, digits::Float64) = round(Unitful.ustrip.(x), digits=round(digits)) * Unitful.unit(x)
+
+#round_(x::Unitful.Quantity) = round(Unitful.ustrip.(x)) * Unitful.unit(x)
+#round_(x::Unitful.Quantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
+#round_(x::Unitful.Quantity; digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
+#round_(x::Unitful.Quantity, digits::Float64) = round(Unitful.ustrip.(x), digits=round(digits)) * Unitful.unit(x)
+#round_(x::Unitful.Quantity; digits::Float64) = round(Unitful.ustrip.(x), digits=round(digits)) * Unitful.unit(x)
+
+round_(x) = round(x)
+
+round_(x, digits::Real) = round(x, digits=round(Int, digits))
+
+round_(x; digits::Real=0) = round(x, digits=round(Int, digits))
+
+round_(x::Unitful.Quantity) = round(Unitful.ustrip(x)) * Unitful.unit(x)
+
+round_(x::Unitful.Quantity, digits::Real) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)
+
+round_(x::Unitful.Quantity; digits::Real=0) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)
 
 # Extrapolation function
 function itp(x, y; method = "linear", extrapolation = "nearest")
@@ -80,42 +95,46 @@ function itp(x, y; method = "linear", extrapolation = "nearest")
   return(func)
 end
 
-function ramp(; start_t_ramp, end_t_ramp, start_h_ramp = 0.0, end_h_ramp = 1.0)
+function ramp(start, finish, height = 1.0)
+
+    @assert start < finish "The finish time of the ramp cannot be before the start time. To specify a decreasing ramp, set the height to a negative value."
+
     # If times has units, but the ramp times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
-        if !(eltype(start_t_ramp) <: Unitful.Quantity)
-            start_t_ramp = convert_u(start_t_ramp, time_units)
+        if !(eltype(start) <: Unitful.Quantity)
+            start = convert_u(start, time_units)
         end
-        if !(eltype(end_t_ramp) <: Unitful.Quantity)
-            end_t_ramp = convert_u(end_t_ramp, time_units)
+        if !(eltype(finish) <: Unitful.Quantity)
+            finish = convert_u(finish, time_units)
         end
     else
-        # If times does not have units, but start_t_ramp does, convert the ramp times to the same units as time_units
-        if eltype(start_t_ramp) <: Unitful.Quantity
-            start_t_ramp = Unitful.ustrip(convert_u(start_t_ramp, time_units))
+        # If times does not have units, but start does, convert the ramp times to the same units as time_units
+        if eltype(start) <: Unitful.Quantity
+            start = Unitful.ustrip(convert_u(start, time_units))
         end
-        if eltype(end_t_ramp) <: Unitful.Quantity
-            end_t_ramp = Unitful.ustrip(convert_u(end_t_ramp, time_units))
+        if eltype(finish) <: Unitful.Quantity
+            finish = Unitful.ustrip(convert_u(finish, time_units))
         end
     end
 
 
-    # Ensure start_h_ramp and end_h_ramp are both of the same type
-    if eltype(start_h_ramp) <: Unitful.Quantity && !(eltype(end_h_ramp) <: Unitful.Quantity)
-        end_h_ramp = convert_u(end_h_ramp, Unitful.unit(start_h_ramp))
+    # Ensure start_h_ramp and height are both of the same type
+    start_h_ramp = 0.0
+    if !(eltype(height) <: Unitful.Quantity)
+        height = convert_u(height, Unitful.unit(start_h_ramp))
         add_y = convert_u(0.0, Unitful.unit(start_h_ramp))
-    elseif !(eltype(start_h_ramp) <: Unitful.Quantity) && eltype(end_h_ramp) <: Unitful.Quantity
-        start_h_ramp = convert_u(start_h_ramp, Unitful.unit(end_h_ramp))
-        add_y = convert_u(0.0, Unitful.unit(end_h_ramp))
+    elseif eltype(height) <: Unitful.Quantity
+        start_h_ramp = convert_u(start_h_ramp, Unitful.unit(height))
+        add_y = convert_u(0.0, Unitful.unit(height))
     else
         add_y = 0.0
     end
 
-    x = [start_t_ramp, end_t_ramp]
-    y = [start_h_ramp, end_h_ramp]
+    x = [start, finish]
+    y = [start_h_ramp, height]
 
     # If the ramp is after the start time, add a zero at the start
-    if start_t_ramp > first(times)
+    if start > first(times)
         x = [first(times); x]
         y = [add_y; y]
     end
@@ -126,31 +145,31 @@ function ramp(; start_t_ramp, end_t_ramp, start_h_ramp = 0.0, end_h_ramp = 1.0)
 end 
 
 # Make step signal
-function step(; start_t_step, h_step = 1.0)
+function make_step(start, height = 1.0)
 
     # If times has units, but the ramp times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
-        if !(eltype(start_t_step) <: Unitful.Quantity)
-            start_t_step = convert_u(start_t_step, time_units)
+        if !(eltype(start) <: Unitful.Quantity)
+            start = convert_u(start, time_units)
         end
     else
-        # If times does not have units, but start_t_step does, convert the ramp times to the same units as time_units
-        if eltype(start_t_step) <: Unitful.Quantity
-            start_t_step = Unitful.ustrip(convert_u(start_t_step, time_units))
+        # If times does not have units, but start does, convert the ramp times to the same units as time_units
+        if eltype(start) <: Unitful.Quantity
+            start = Unitful.ustrip(convert_u(start, time_units))
         end
     end
 
-    if eltype(h_step) <: Unitful.Quantity
-      add_y = convert_u(0.0, Unitful.unit(h_step))
+    if eltype(height) <: Unitful.Quantity
+      add_y = convert_u(0.0, Unitful.unit(height))
     else
       add_y = 0.0
     end
 
-    x = [start_t_step, times[2]]
-    y = [h_step, h_step]
+    x = [start, times[2]]
+    y = [height, height]
 
     # If the step is after the start time, add a zero at the start
-    if start_t_step > first(times)
+    if start > first(times)
         x = [first(times); x]
         y = [add_y; y]
     end
@@ -160,38 +179,28 @@ function step(; start_t_step, h_step = 1.0)
     return(func)
 end
 
-# Constraints macro
-macro constraints(exprs...)
-    pairs = map(exprs) do ex
-        quote
-            ($(string(ex)), $(esc(ex)))
-        end
-    end
-    quote
-        [$(pairs...)]
-    end
-end
+    
 
 # Make pulse signal
-function pulse(; start_t_pulse, h_pulse = 1.0, w_pulse = 1.0 * time_units, repeat_interval = nothing)
+function pulse(start, height = 1.0, width = 1.0 * time_units, repeat_interval = nothing)
     # If times has units, but the pulse times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
-        if !(eltype(start_t_pulse) <: Unitful.Quantity)
-            start_t_pulse = convert_u(start_t_pulse, time_units)
+        if !(eltype(start) <: Unitful.Quantity)
+            start = convert_u(start, time_units)
         end
-        if !(eltype(w_pulse) <: Unitful.Quantity)
-            w_pulse = convert_u(w_pulse, time_units)
+        if !(eltype(width) <: Unitful.Quantity)
+            width = convert_u(width, time_units)
         end
         if (!isnothing(repeat_interval) && !(eltype(repeat_interval) <: Unitful.Quantity))
             repeat_interval = convert_u(repeat_interval, time_units)
         end
     else
-        # If times does not have units, but start_t_pulse does, convert the pulse times to the same units as time_units
-        if eltype(start_t_pulse) <: Unitful.Quantity
-            start_t_pulse = Unitful.ustrip(convert_u(start_t_pulse, time_units))
+        # If times does not have units, but start does, convert the pulse times to the same units as time_units
+        if eltype(start) <: Unitful.Quantity
+            start = Unitful.ustrip(convert_u(start, time_units))
         end
-        if eltype(w_pulse) <: Unitful.Quantity
-            w_pulse = Unitful.ustrip(convert_u(w_pulse, time_units))
+        if eltype(width) <: Unitful.Quantity
+            width = Unitful.ustrip(convert_u(width, time_units))
         end
         if (!isnothing(repeat_interval) && eltype(repeat_interval) <: Unitful.Quantity)
             repeat_interval = Unitful.ustrip(convert_u(repeat_interval, time_units))
@@ -202,15 +211,15 @@ function pulse(; start_t_pulse, h_pulse = 1.0, w_pulse = 1.0 * time_units, repea
     last_time = last(times)
     # If no repeats, set end of pulse to after end time
     step_size = isnothing(repeat_interval) ? last_time * 2 : repeat_interval
-    start_ts = collect(start_t_pulse:step_size:last_time)
-    end_ts = start_ts .+ w_pulse
+    start_ts = collect(start:step_size:last_time)
+    end_ts = start_ts .+ width
 
     # Build signal as vectors of times and y-values
     signal_times = [start_ts; end_ts]
-    signal_y = [fill(h_pulse, length(start_ts)); fill(0, length(end_ts))]
+    signal_y = [fill(height, length(start_ts)); fill(0, length(end_ts))]
 
-    if eltype(h_pulse) <: Unitful.Quantity
-      add_y = convert_u(0.0, Unitful.unit(h_pulse))
+    if eltype(height) <: Unitful.Quantity
+      add_y = convert_u(0.0, Unitful.unit(height))
     else
       add_y = 0.0
     end
@@ -247,7 +256,7 @@ function IM_round(x::Real, digits::Int=0)
     if abs(frac) == 0.5
         return ceil(scaled_x) / 10.0^digits
     else
-        return round(scaled_x, digits=0) / 10.0^digits
+        return round_(scaled_x, digits=0) / 10.0^digits
     end
 end
 
@@ -261,15 +270,9 @@ function expit(x)
     return 1 / (1+exp(-x))
 end
 
-function sigmoid(x; slope=1, midpoint=0)
-    @assert isfinite(slope) && isfinite(midpoint) "slope and midpoint must be numeric"
-    1 / (1 + exp(-slope * (x - midpoint)))
-end
-
-# Also define without keyword arguments
-function sigmoid(x, slope, midpoint)
-    @assert isfinite(slope) && isfinite(midpoint) "slope and midpoint must be numeric"
-    1 / (1 + exp(-slope * (x - midpoint)))
+function logistic(x, slope=1.0, midpoint=0.0, upper = 1.0)
+    @assert isfinite(slope) && isfinite(midpoint) && isfinite(upper) "slope, midpoint, and upper must be numeric"
+    upper / (1 + exp(-slope * (x - midpoint)))
 end
 
 
@@ -390,10 +393,17 @@ function convert_u(x::Float64, unit_def::String)
     end
 end
 
-# Create seasonal wave
-function seasonal(t, period = u"1yr", shift = u"0yr")
-    phase = 2 * pi * (t - shift) / period  # π radians
-    return(cos(phase))
+# Create seasonal wave 
+function seasonal(period = u"1yr", shift = u"0yr")
+
+    @assert period > 0 "The period of the seasonal wave must be greater than 0."
+
+    time_vec = times[1]:dt:times[2]
+    phase = 2 * pi .* (time_vec .- shift) ./ period  # π radians
+    y = cos.(phase)
+    func = itp(time_vec, y, method = "linear", extrapolation = "nearest")
+
+    return(func)
 end
 
 # Define the operator ⊕ for the modulus
@@ -401,9 +411,7 @@ function ⊕(x, y)
     return mod(x, y)
 end
 
-# Function to retrieve past values
-
-function retrieve_past(var_value, delay_time, default_value, t, var_name, single_or_interval, intermediaries, intermediary_names)
+function retrieve_delay(var_value, delay_time, default_value, t, var_name, intermediaries, intermediary_names)
     # Handle empty intermediaries
     if isempty(intermediaries.saveval)
         return isnothing(default_value) ? var_value : default_value
@@ -411,65 +419,86 @@ function retrieve_past(var_value, delay_time, default_value, t, var_name, single
 
     # Ensure t and delay_time have compatible units
     if !(eltype(delay_time) <: Unitful.Quantity) && (eltype(t) <: Unitful.Quantity)
-        # delay_time = delay_time * unit(t)
         delay_time = convert_u(delay_time, t)
     end
 
     # Extract variable index
     var_index = findfirst(==(var_name), intermediary_names)
-    # if isnothing(var_index)
-    #     error("Variable '$var_name' not found in intermediary_names: $intermediary_names")
-    # end
 
     # Extract times and values
     ts = intermediaries.t
     ys = [val[var_index] for val in intermediaries.saveval]
 
-    # Handle current time t
-    if !(t in ts)
-        ts = [ts; t]
+    if !isapprox(t, ts[end]; atol=1e-10)
+        ts = [ts; t]  # Append current time if not present
     end
 
     ys = [ys; var_value][1:length(ts)]  # Ensure ys is the same length as ts
 
     # Single value extraction
-    if single_or_interval == "single"
-        extract_t = t - delay_time
-        if extract_t < ts[1]
-            return isnothing(default_value) ? ys[1] : default_value
-        elseif extract_t == t
-            return var_value
-        end
-
-        # Interpolate
-        # interp = LinearInterpolation(ys, ts, extrapolation_bc = Flat())
-        # Define interpolation function
+    extract_t = t - delay_time
+    if extract_t < ts[1]
+        return isnothing(default_value) ? ys[1] : default_value
+    elseif extract_t == t
+        return var_value
+    else
         return itp(ts, ys, method = "linear")(extract_t)
-
-    end
-
-    # Interval extraction
-    if single_or_interval == "interval"
-        if isnothing(delay_time)
-            return ys  # Return entire history
-        end
-
-        first_time = t - delay_time
-        if first_time < ts[1]
-            first_time = ts[1]
-        end
-
-        # Find indices for interval
-        idx = findfirst(t -> t >= first_time, ts)
-        if isnothing(idx) || idx == length(ts)
-            return [var_value]
-        end
-
-        return ys[idx:end]
     end
 
 end
 
+function retrieve_past(var_value, delay_time, default_value, t, var_name, intermediaries, intermediary_names)
+    # Handle empty intermediaries
+    if isempty(intermediaries.saveval)
+        return isnothing(default_value) ? var_value : default_value
+    end
+
+    # Ensure t and delay_time have compatible units
+    if !(eltype(delay_time) <: Unitful.Quantity) && (eltype(t) <: Unitful.Quantity)
+        delay_time = convert_u(delay_time, t)
+    end
+
+    # Extract variable index
+    var_index = findfirst(==(var_name), intermediary_names)
+
+    # Extract times and values
+    ts = intermediaries.t
+    ys = [val[var_index] for val in intermediaries.saveval]
+
+    if isnothing(delay_time)
+        return ys  # Return entire history
+    end
+
+    # # Handle current time t
+    # if !(t in ts)
+    #     ts = [ts; t]
+    # end
+
+    if !isapprox(t, ts[end]; atol=1e-10)
+        ts = [ts; t]  # Append current time if not present
+    end
+
+    ys = [ys; var_value][1:length(ts)]  # Ensure ys is the same length as ts
+
+    # Interval extraction
+    first_time = t - delay_time
+
+    # Ensure first_time is not before the first recorded time
+    if first_time < ts[1]
+        first_time = ts[1]
+    end
+
+    # Find indices for interval
+    idx = findfirst(t -> t >= first_time, ts)
+
+    # If no index found or if the index is the last element, return the current value
+    if isnothing(idx) || idx == length(ts)
+        return [var_value]
+    else
+        return ys[idx:end]
+    end
+
+end
 
 # Function to save dataframe at specific times
 function saveat_func(t, y, new_times)
@@ -487,15 +516,40 @@ function compute_delayN(inflow, accumulator::AbstractVector{Float64}, length_del
             d_accumulator[ord] = exit_rate_stage[ord-1] - exit_rate_stage[ord]
         end
     end
-    outflow = exit_rate_stage[order_delay]
+    outflow = exit_rate_stage[order_delay] # in delayN, the outflow is the last stage
     return (outflow=outflow, update=d_accumulator)
+end
+
+function compute_smoothN(input, state::AbstractVector{Float64}, length_delay, order::Float64)
+    order = round(Int, order)
+    d_state = zeros(eltype(state), order)
+    adjustment_rate = (input - state[1]) / (length_delay / order)
+    d_state[1] = adjustment_rate
+    if order > 1
+        @inbounds for ord in 2:order
+            d_state[ord] = (state[ord - 1] - state[ord]) / (length_delay / order)
+        end
+    end
+    outflow = state[end] # in smoothN, the outflow is the last state
+    return (outflow=outflow, update=d_state)
 end
 
 function setup_delayN(initial_value, length_delay, order_delay::Float64, name::Symbol)
     # Compute the initial value for each accumulator
-    # from https://www.simulistics.com/help/equations/functions/delay.html
+    # from https://www.simulistics.com/help/equations/functions/delay.htm
     order_delay = round(Int, order_delay) # Turn order into integer
     value = initial_value * length_delay / order_delay
+
+    # Create a dictionary with names like "name_acc1", "name_acc2", ...
+    #return Dict(string(name, "_acc", i) => value for i in 1:order_delay)
+    return Dict(Symbol(name, "_acc", i) => value for i in 1:order_delay)
+end
+
+function setup_smoothN(initial_value, length_delay, order_delay::Float64, name::Symbol)
+    # Compute the initial value for each accumulator
+    # from https://www.simulistics.com/help/equations/functions/delay.htm
+    order_delay = round(Int, order_delay) # Turn order into integer
+    value = initial_value * length_delay / order_delay # same initialization for smoothN() as delayN() as verified by Insight Maker
 
     # Create a dictionary with names like "name_acc1", "name_acc2", ...
     #return Dict(string(name, "_acc", i) => value for i in 1:order_delay)

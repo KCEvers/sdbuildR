@@ -86,12 +86,27 @@ Base.max(x::Float64, y::Unitful.Quantity) = max(x * Unitful.unit(y), y)
 Base.min(v::AbstractVector) = minimum(v)
 Base.max(v::AbstractVector) = maximum(v)
 
-Base.round(x::Unitful.Quantity) = round(Unitful.ustrip.(x)) * Unitful.unit(x)
 Base.floor(x::Unitful.Quantity) = floor(Unitful.ustrip.(x)) * Unitful.unit(x)
 Base.ceil(x::Unitful.Quantity) = ceil(Unitful.ustrip.(x)) * Unitful.unit(x)
 Base.trunc(x::Unitful.Quantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)
-Base.round(x::Unitful.Quantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
-Base.round(x::Unitful.Quantity, digits::Float64) = round(Unitful.ustrip.(x), digits=round(digits)) * Unitful.unit(x)
+
+#round_(x::Unitful.Quantity) = round(Unitful.ustrip.(x)) * Unitful.unit(x)
+#round_(x::Unitful.Quantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
+#round_(x::Unitful.Quantity; digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
+#round_(x::Unitful.Quantity, digits::Float64) = round(Unitful.ustrip.(x), digits=round(digits)) * Unitful.unit(x)
+#round_(x::Unitful.Quantity; digits::Float64) = round(Unitful.ustrip.(x), digits=round(digits)) * Unitful.unit(x)
+
+round_(x) = round(x)
+
+round_(x, digits::Real) = round(x, digits=round(Int, digits))
+
+round_(x; digits::Real=0) = round(x, digits=round(Int, digits))
+
+round_(x::Unitful.Quantity) = round(Unitful.ustrip(x)) * Unitful.unit(x)
+
+round_(x::Unitful.Quantity, digits::Real) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)
+
+round_(x::Unitful.Quantity; digits::Real=0) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)
 
 ",
                   paste0(get_func_julia() %>% unname(), collapse = "\n\n"),

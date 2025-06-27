@@ -96,7 +96,7 @@ sfm = xmile() %>% header(name = "Predator-Prey Model")
 summary(sfm)
 ```
 
-We add two stocks, predators and prey. `build()` takes the variable name, building block type (`stock`, `flow`, `constant`, `aux`, or `gf`), and type-specific properties (e.g., `eqn` for equation, `label` for plotting). Here, we start the simulation with 10 predators and 50 prey. We use the `%>%` pipe to pass the result of an expression to the next expression as a first argument.
+We add two stocks, predators and prey. `build()` takes the variable name, building block type (`stock`, `flow`, `constant`, `aux`, or `gf`), and type-specific properties (e.g., `eqn` for equation, `label` for plotting). Here, we start the simulation with 10 predators and 50 prey. We use the pipe operator `%>%` to pass the result of an expression to the next expression as a first argument.
 
 ```{r, fig.width=8, fig.height=4}
 sfm = sfm %>%
@@ -269,15 +269,16 @@ sim = simulate(sfm)
 plot(sim)
 ```
 
-We've now created burnout in our model: Maya's work hours increase far beyond what is sustainable, to the point where she stops working completely. This is a classic example of overshoot and collapse, in which tasks beyond an individual's resources deplete their resources, making the behaviour unsustainable in the long-term.
+We've now created burnout in our model: Maya's work hours increase far beyond what is sustainable, to the point where she stops working completely. This is a classic example of overshoot and collapse, in which tasks beyond an individual's capacity deplete their resources, making the behaviour unsustainable in the long-term.
 
 But what if rather than only decreasing, Maya's daily sleep can also recover? To do so, we change the outflow from sleep to not always increase with the hours worked per day, but to only increase when the hours worked per day exceed a normal work day. When the hours worked per day are less than a normal work day, Maya's sleep will improve. What will this look like?
 
+ <!-- eqn = "(workload - normal_workday) * worry_factor * necessary_sleep / sleep") %>% -->
+
+
 ```{r, fig.width=8, fig.height=4}
 sfm = sfm %>% 
-  # sim_specs(stop = 15) %>%
   build("worry_about_work", 
-        # eqn = "(workload - normal_workday) * worry_factor * necessary_sleep / sleep") %>%
         eqn = "(workload - normal_workday) * worry_factor") %>%
   build("worry_factor", eqn = .5) 
 

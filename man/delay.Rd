@@ -17,5 +17,5 @@ delay(variable, length, default_value = NULL)
 Past value
 }
 \description{
-This function is coming soon, but is now unusable.
+Also known as a pipeline or fixed delay. Note that this function is only usable for simulations run with Julia.
 }
