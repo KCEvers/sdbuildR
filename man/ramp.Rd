@@ -4,16 +4,14 @@
 \alias{ramp}
 \title{Create ramp function}
 \usage{
-ramp(start_t_ramp, end_t_ramp, start_h_ramp = 0, end_h_ramp = 1)
+ramp(start, finish, height = 1)
 }
 \arguments{
-\item{start_t_ramp}{Start time of ramp}
+\item{start}{Start time of ramp}
 
-\item{end_t_ramp}{End time of ramp}
+\item{finish}{End time of ramp}
 
-\item{start_h_ramp}{Start height of ramp, defaults to 0}
-
-\item{end_h_ramp}{End height of ramp, defaults to 1}
+\item{height}{End height of ramp, defaults to 1}
 }
 \value{
 Interpolation function

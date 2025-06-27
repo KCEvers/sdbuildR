@@ -52,13 +52,14 @@ $$
 \frac{kcal}{\frac{7700kcal}{kg}}
 $$
 
-Conversely, variables do not need to have matching units for division and multiplication, as these transform the unit. For example, labour cost can be computed by multiplying the number of employees with income per month:
+Conversely, variables do not need to have matching units for division and multiplication, as these operations transform the unit. For example, labour cost can be computed by multiplying the number of employees with income per month:
 
 $$
 \text{employees} \cdot \frac{€}{month} = \frac{\text{employees} \cdot €}{month}
 $$
 
 Exponentiation changes the unit itself, such as when squaring the amount of meters in a space, $m^2$. 
+
 Not all variables need to have units, though. Some are unitless (i.e. dimensionless), such as fractions or ratios. For example, the interest rate on a bank account is unitless, as $€ \cdot \text{interest} = €$. Similarly, variables can be rendered unitless by division and multiplication. For instance, dividing the number of infected individuals by the total population yields a dimensionless ratio:
 
 $$
@@ -66,7 +67,7 @@ $$
 \frac{\text{people}}{\text{people}} = 1
 $$
 
-In summary, units help ensure equations are correctly formulated. If equations are dimensionally inconsistent, this reveals an error in the model. Variables may be missing or ill-conceptualized. For instance, a variable such as sleep does not have the unit of hours, but hours over a certain period of time, such as hours per day. Savings in your bank account do not have the unit euros per month, but simply euros, as they can be counted at a single moment in time. As such, units additionally help to distinguish between stocks and flows and understand how variables relate to one another.
+In summary, units help ensure equations are correctly formulated. If equations are not dimensionally consistent, this exposes an error in the model. Variables may be missing or ill-conceptualized. For instance, a variable such as sleep does not have the unit of hours, but hours over a certain period of time, such as hours per day. Savings in your bank account do not have the unit euros per month, but simply euros, as they can be counted at a single moment in time. As such, units additionally help to distinguish between stocks and flows and understand how variables relate to one another.
 
 <!-- Equations need to be dimensionally consistent without the use of ``fudge'' factors that are uninterpretable.  -->
 
@@ -107,14 +108,14 @@ The following example is taken from Meadows' *Thinking in Systems*. We model the
 
 ### Simulation time unit
 
-We first specify the simulation time unit. Think of the time axis of your simulation plot - if it spans from 0 to 100, are these a hundred hours, days, years? The simulation time unit can be modified using `sim_specs()`. We also change the simulation engine to Julia.
+We first specify the simulation time unit. Think of the time axis of your simulation plot - if it spans from 0 to 100, are these a hundred hours, days, years? The simulation time unit can be modified using `sim_specs()`. 
 
 ```{r}
 # Simulation time unit of a day
-sfm = xmile() %>% sim_specs(time_units = "day")
+sfm = sfm %>% sim_specs(time_units = "day")
 
 # Simulation time unit of a year
-sfm = xmile() %>% sim_specs(time_units = "year")
+sfm = sfm %>% sim_specs(time_units = "year")
 ```
 
 The simulation specifications can be viewed using `summary()`:

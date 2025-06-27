@@ -14,13 +14,13 @@ knitr::opts_chunk$set(
 )
 ```
 
-### Quick start
+### Get started with a template
 
 ```{r libraries, include=FALSE}
 library(sdbuildR) 
 ```
 
-Stock-and-flow models can be created in three ways. Firstly, dozens of example models can be loaded using `xmile()`. Plot the stock-and-flow diagram to get an overview of the model:
+Stock-and-flow models can be created in three ways in sdbuildR. Firstly, dozens of example models can be loaded using `xmile()`. Plot the stock-and-flow diagram to get an overview of the model:
 
 ```{r SIR_diagram, fig.width=8, fig.height=2}
 sfm = xmile("SIR")
@@ -34,6 +34,8 @@ sim = simulate(sfm)
 plot(sim)
 ```
 
+### Import models from Insight Maker
+
 Secondly, an [Insight Maker](https://insightmaker.com/) model can be imported to R using its URL: 
 
 ```{r message=FALSE, warning=FALSE}
@@ -41,17 +43,17 @@ URL = "https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-2022"
 sfm = insightmaker_to_sfm(URL = URL)
 ```
 
-
 ```{r}
 sim = simulate(sfm)
 ```
-
 
 ```{r Crielaard2022_plot, fig.height=4, fig.width=8, message=FALSE, warning=FALSE}
 plot(sim)
 ```
 
-And lastly, a stock-and-flow model can be created from scratch. We first initialize an empty stock and flow model with `xmile()`, and then use `build()` to create a logistic model of population growth. The simulation specifications, such as the start time, stop time, and simulation time step (`dt`), are set with `sim_specs()`. Custom units such as people can be added with `model_units()`. Below, we make use of the convenient pipe operator `%\>%`, which simply passes the result of an expression to the next expression as a first argument. 
+### Build a model from scratch
+
+Lastly, a stock-and-flow model can be created from scratch. We first initialize an empty stock and flow model with `xmile()`, and then use `build()` to create a logistic model of population growth. The simulation specifications, such as the start time, stop time, and simulation time step (`dt`), are set with `sim_specs()`. Custom units such as people can be added with `model_units()`. Below, we make use of the convenient pipe operator `%\>%`, which simply passes the result of an expression to the next expression as a first argument. 
 
 ```{r logistic_plot, fig.width=8, fig.height=4}
 sfm = xmile() %>%
@@ -79,7 +81,7 @@ as.data.frame(sfm)
 
 ## Start building your own models!
 
-See the vignettes to help you get started:
+See the vignettes to learn more about all features of sdbuildR:
 
 * `vignette("build")` Learn how to build, modify, and debug stock-and-flow models.
 * `vignette("units")` Learn why and how to use (custom) units.

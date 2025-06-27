@@ -243,7 +243,6 @@ get_flow_df = function(sfm){
 #' @param add_constants If TRUE, include constants in plot. Defaults to FALSE.
 #' @param palette Colour palette. Must be one of hcl.pals().
 #' @param colors Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
-#' @param title Plot title. Character. Defaults to the name in the header of the model.
 #' @param font_family Font family. Defaults to "Times New Roman".
 #' @param font_size Font size. Defaults to 16.
 #' @param ... Optional parameters
@@ -257,11 +256,14 @@ get_flow_df = function(sfm){
 #' sfm = xmile("SIR")
 #' sim = simulate(sfm)
 #' plot(sim)
+#'
+#' # The default plot title and axis labels can be changed like so:
+#' plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
+#'
 plot.sdbuildR_sim = function(x,
                              add_constants = FALSE,
                              palette = "Dark 2",
                              colors = NULL,
-                             title=x[["sfm"]][["header"]][["name"]],
                              font_family = "Times New Roman",
                              font_size = 16,
                              ...){
@@ -270,7 +272,7 @@ plot.sdbuildR_sim = function(x,
   #@param pkg Plotting package. Defaults to "plotly".
 
   if (missing(x)){
-    stop("No simulation data provided! Use simulate() to create a simulation.")
+    stop("No simulation data provided! Use simulate() to run a simulation.")
   }
 
   # Check whether it is an xmile object
@@ -282,6 +284,29 @@ plot.sdbuildR_sim = function(x,
     stop("Simulation failed!")
   }
 
+  # @param main Plot title. Character. Defaults to the name in the header of the model.
+
+  dots <- list(...)
+  main <- if (!"main" %in% names(dots)) {
+    x[["sfm"]][["header"]][["name"]]
+  } else {
+    dots$main
+  }
+
+  xlab <- if (!"xlab" %in% names(dots)) {
+    matched_time_unit <- find_matching_regex(x$sfm$sim_specs$time_units, get_regex_time_units())
+    paste0("Time (", matched_time_unit, ")")
+  } else {
+    dots$xlab
+  }
+
+  ylab <- if (!"ylab" %in% names(dots)) {
+    ""
+  } else {
+    dots$ylab
+  }
+
+  # Get names of stocks and non-stock variables
   names_df = get_names(x$sfm)
   stock_names = names_df[names_df$type == "stock", ]
   stock_names = stats::setNames(stock_names$name, stock_names$label)
@@ -380,14 +405,12 @@ plot.sdbuildR_sim = function(x,
         )
     }
 
-    matched_time_unit = find_matching_regex(x$sfm$sim_specs$time_units, get_regex_time_units())
-
     # Customize layout
     pl <- pl %>% plotly::layout(
       showlegend = TRUE,
-      title = title,
-      xaxis = list(title = paste0("Time (", matched_time_unit, ")")),
-      yaxis = list(title = ""),
+      title = main,
+      xaxis = list(title = xlab),
+      yaxis = list(title = ylab),
       font=list(
         family = font_family, size = font_size),
       margin = list(t = 50, b = 50, l = 50, r = 50)  # Increase top margin to 100 pixels
@@ -399,8 +422,8 @@ plot.sdbuildR_sim = function(x,
 
     # Fallback to base R plotting
     plot(x$df$time, x$df[[stock_names[1]]], type = "l", col = "blue", lwd = 2,
-         xlab = paste0("Time (", x$sfm$sim_specs$time_units, ")"), ylab = "",
-         main = title)
+         xlab = xlab, ylab = ylab,
+         main = main)
 
     for (var in stock_names[-1]) {
       graphics::lines(x$df$time, x$df[[var]], lwd = 2)
@@ -757,6 +780,12 @@ validate_xmile = function(sfm){
           }
         }
 
+      # Ensure that to and from are not the same
+      if (is_defined(x$to) && is_defined(x$from) && x$to == x$from){
+        message(paste0(x$name, " is flowing to and from the same variable (", x$to, ")! Removing `from`..." ))
+        x$from = ""
+      }
+
         return(x)
       })
 
@@ -1097,9 +1126,9 @@ model_units = function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_nam
 #' @export
 #'
 #' @examples
-#' # If the sigmoid() function did not exist, you could create it yourself:
+#' # If the logistic() function did not exist, you could create it yourself:
 #' sfm = xmile() %>%
-#' macro("sig", eqn = "function(x, slope = 1, midpoint = .5) 1 / (1 + exp(-slope*(x-midpoint)))")
+#' macro("logistic", eqn = "function(x, slope = 1, midpoint = .5) 1 / (1 + exp(-slope*(x-midpoint)))")
 #'
 macro = function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = FALSE){
 
@@ -1473,8 +1502,12 @@ sim_specs = function(sfm,
     if (any(grepl("[^a-zA-Z _]", time_units))){
       stop("time_units can only contain letters, spaces, or underscores!")
     }
-    time_units = clean_unit(time_units, get_regex_time_units()) # Units are not used in R, so translate to julia directly
+    regex_time_units = get_regex_time_units()
+    time_units = clean_unit(time_units, regex_time_units) # Units are not used in R, so translate to julia directly
 
+    if (!any(time_units == unname(regex_time_units) )){
+      stop(sprintf("The time unit %s is not one of the time units available in sdbuildR. The available time units are: %s", time_units, paste0(unique(unname(regex_time_units)), collapse = ", ")))
+    }
   }
 
   # Check whether method is a valid deSolve method
@@ -1870,7 +1903,7 @@ build = function(sfm, name, type,
 
   } else if (!missing(type)){
 
-    type = tolower(type)
+    type = trimws(tolower(type))
     if (!all(type %in% c("stock", "flow", "constant", "aux", "gf"))){
       stop("type needs to be one of 'stock', 'flow', 'constant', 'aux', or 'gf'!")
     }
@@ -1987,8 +2020,12 @@ build = function(sfm, name, type,
     from = ensure_length(from, name)
   }
 
-
-
+  # Ensure to and from are not the same
+  if (!is.null(to) & !is.null(from)){
+    if (any(to == from)){
+      stop("A flow cannot flow to and from the same stock!")
+    }
+  }
 
   # Graphical functions
   if (any(type == "gf")){
@@ -2498,7 +2535,8 @@ create_R_names = function(create_names, names_df, protected = c()){
     # Add julia custom functions
     names(get_func_julia()),
     # These are variables in the ode and cannot be model element names
-    unname(unlist(P[!names(P) %in% c("sim_df_name", "change_prefix", "conveyor_suffix", "delayN_suffix", "delay_suffix", "delay_order_suffix", "delay_length_suffix", "past_suffix", "past_length_suffix", "fix_suffix", "fix_length_suffix")])), protected,
+    unname(unlist(P[!names(P) %in% c("sim_df_name", "change_prefix", "conveyor_suffix", "delayN_suffix",
+                                     "smoothN_suffix", "delay_suffix", "delay_order_suffix", "delay_length_suffix", "past_suffix", "past_length_suffix", "fix_suffix", "fix_length_suffix")])), protected,
     as.character(stats::na.omit(names_df$name))
   ) %>% unique()
 
@@ -2525,7 +2563,8 @@ create_R_names = function(create_names, names_df, protected = c()){
   pattern = paste0(P$conveyor_suffix, "$|", P$delay_suffix, "[0-9]+$|", P$past_suffix, "[0-9]+$|",
                    P$fix_suffix, "$|",
                    P$fix_length_suffix, "$|",
-                   P$conveyor_suffix, "$|", P$delayN_suffix, "[0-9]+", P$delayN_acc_suffix, "[0-9]+$|", P$smoothN_suffix, "[0-9]+", P$delayN_acc_suffix, "[0-9]+$")
+                   P$conveyor_suffix, "$|", P$delayN_suffix, "[0-9]+", P$delayN_acc_suffix, "[0-9]+$|",
+                   P$smoothN_suffix, "[0-9]+", P$smoothN_acc_suffix, "[0-9]+$")
 
   idx = grepl(new_names, pattern = pattern)
   new_names[idx] = paste0(new_names[idx], "_")

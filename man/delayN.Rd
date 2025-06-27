@@ -4,7 +4,7 @@
 \alias{delayN}
 \title{Delay of order N}
 \usage{
-delayN(variable, length, order, default_value = NULL)
+delayN(variable, length, order, initial = NULL)
 }
 \arguments{
 \item{variable}{Variable to delay.}
@@ -13,11 +13,11 @@ delayN(variable, length, order, default_value = NULL)
 
 \item{order}{Order of the delay.}
 
-\item{default_value}{Value to initialize the accumulator with. If NULL, the first value of the variable to delay is used. Defaults to NULL.}
+\item{initial}{Value to initialize the accumulator with. If NULL, the first value of the variable to delay is used. Defaults to NULL.}
 }
 \value{
 Delayed variable
 }
 \description{
-This function is coming soon, but is now unusable.
+Delay of order N
 }

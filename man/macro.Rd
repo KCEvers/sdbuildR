@@ -26,8 +26,8 @@ Updated stock-and-flow model
 Macros are global variables or functions that can be used throughout your stock-and-flow model. \code{macro()} adds, changes, or erases a macro.
 }
 \examples{
-# If the sigmoid() function did not exist, you could create it yourself:
+# If the logistic() function did not exist, you could create it yourself:
 sfm = xmile() \%>\%
-macro("sig", eqn = "function(x, slope = 1, midpoint = .5) 1 / (1 + exp(-slope*(x-midpoint)))")
+macro("logistic", eqn = "function(x, slope = 1, midpoint = .5) 1 / (1 + exp(-slope*(x-midpoint)))")
 
 }

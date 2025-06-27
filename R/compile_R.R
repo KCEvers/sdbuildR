@@ -411,7 +411,7 @@ compile_times = function(sfm){
   script = sprintf("
 # Define time sequence
 %s = %s
-%s = seq(from=%s, to=%s, by=%s)
+%s <<- seq(from=%s, to=%s, by=%s) # needs to be global to be used in step, pulse, ramp, seasonal functions
 %s = %s[1]
 
 # Simulation time unit (smallest time scale in your model)

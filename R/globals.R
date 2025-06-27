@@ -48,10 +48,12 @@ P = list(initial_value_name = "xstart",
                           conveyor_suffix = "_conv",
          delayN_suffix = "_delayN",
          smoothN_suffix = "_smoothN",
+         # old: Don't add this as delayN and smoothN work the same, and we're using delayN_suffix in compile_ode_julia
          delay_suffix = "_delay",
          # delay_order_suffix = "_order",
          # delay_length_suffix = "_length",
          delayN_acc_suffix = "_acc",
+         smoothN_acc_suffix = "_acc",
          past_suffix = "_past",
          # past_length_suffix = "_length",
          fix_suffix = "_fix",
@@ -88,7 +90,8 @@ P = list(initial_value_name = "xstart",
 # Suppress warnings for these global variables
 # utils::globalVariables(c(".", "func_nr", "P", "regex_units", "regex_units_Julia"))
 # utils::globalVariables(c(".", "func_nr", "P", "times", "time_units"))
-utils::globalVariables(c(".", "P"))
+utils::globalVariables(c(".", "P", P$times_name))
+# times needs to be global as it is used in step, pulse, ramp, and seasonal
 
 # Set the styler.colored_print.vertical option to FALSE
 options(styler.colored_print.vertical = FALSE)

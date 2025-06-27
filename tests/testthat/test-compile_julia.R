@@ -15,13 +15,11 @@ test_that("templates work", {
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
 
-
   # Check whether coffee cup reaches room temperature
   sfm = xmile("coffee_cup") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
-  expect_no_error(simulate(sfm))
-  sim = simulate(sfm)
+  sim = expect_no_error(simulate(sfm))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
   expect_equal(dplyr::last(sim$df$coffee_temperature), sim$pars$room_temperature, tolerance = .01)
@@ -84,16 +82,14 @@ test_that("simulate with different components works", {
   # With one stock and no flows and no parameters
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build("A", "stock", eqn = "100")
-  expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
-  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
   expect_equal(sort(names(sim$df)), c("A", "time"))
 
   # One stock with flows, other stock without flows
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build(c("A", "B"), "stock", eqn = "100") %>%
     build("C", "flow", eqn = "1", to = "A")
-  expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
-  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
   expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
 
   # With one intermediary -> error in constructing Dataframe before
@@ -101,16 +97,14 @@ test_that("simulate with different components works", {
     build("A", "stock", eqn = "100") %>%
     build("B", "flow", eqn = "1", to = "A") %>%
     build("C", "aux", eqn = "B + 1")
-  expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
-  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
   expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
 
   # One intermediary variable that is also a stock, so it is removed -> does merging of df and intermediary_df still work?
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build("A", "stock", eqn = "100") %>%
     build("B", "flow", eqn = "delay(A, 5)", to = "A")
-  expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
-  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
   expect_equal(sort(names(sim$df)), c("A", "B", "time"))
 
   # Stocks without flows
@@ -118,8 +112,7 @@ test_that("simulate with different components works", {
     build("A", "stock", eqn = "100") %>%
     build("B", "stock", eqn = "1") %>%
     build("C", "aux", eqn = "B + 1")
-  expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
-  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
   expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
 
   # # With macros
@@ -219,7 +212,6 @@ test_that("delay() works", {
   # **Check whether first argument to delay() is in variables
 
 
-  #
 
 })
 

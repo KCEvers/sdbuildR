@@ -4,14 +4,14 @@
 \alias{pulse}
 \title{Create pulse function}
 \usage{
-pulse(start_t_pulse, h_pulse = 1, w_pulse = 1, repeat_interval = NULL)
+pulse(start, height = 1, width = 1, repeat_interval = NULL)
 }
 \arguments{
-\item{start_t_pulse}{Start time of pulse}
+\item{start}{Start time of pulse}
 
-\item{h_pulse}{Height of pulse, defaults to 1}
+\item{height}{Height of pulse, defaults to 1}
 
-\item{w_pulse}{Width of pulse in duration (i.e. time). This cannot be equal to or less than 0; to indicate an instantaneous pulse, specify the simulation step size}
+\item{width}{Width of pulse in duration (i.e. time). This cannot be equal to or less than 0; to indicate an instantaneous pulse, specify the simulation step size}
 
 \item{repeat_interval}{Interval at which to repeat pulse, defaults to NULL to indicate no repetition}
 }

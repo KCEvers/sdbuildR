@@ -83,6 +83,41 @@ test_that("sim_specs() works", {
 })
 
 
+test_that("flow cannot have same stock as to and from", {
+  sfm = xmile() %>% build("a", "stock")
+  expect_error(sfm %>% build("b", "flow", to = "a", from = "a", eqn = "1"),
+               "A flow cannot flow to and from the same stock")
+
+  # Check that this works with multiple variables
+  expect_error(sfm %>% build(c("b", "c"), c("flow", "flow"),
+                             to = c("a", "d"), from = c("a", "a")),
+               "A flow cannot flow to and from the same stock")
+  expect_error(sfm %>% build(c("b", "c"), c("flow", "flow"),
+                             to = c("a", "d"), from = c("a", "d")),
+               "A flow cannot flow to and from the same stock")
+
+  # Check that this works when adding to or from later
+  sfm = xmile() %>% build("b", "flow", to = "a")
+  expect_message(sfm %>% build("b", from = "a"),
+               "b is flowing to and from the same variable \\(a\\)")
+
+  sfm = xmile() %>% build("b", "flow", from = "a")
+  expect_message(sfm %>% build("b", to = "a"),
+                 "b is flowing to and from the same variable \\(a\\)")
+
+})
+
+
+test_that("overwriting to and from of a flow works", {
+
+  sfm = xmile() %>% build("a", "stock") %>%
+    build("b", "flow", to = "a") %>%
+    build("b", to = "c", from = "d")
+  expect_equal(sfm$model$variables$flow$b$to, "c")
+  expect_equal(sfm$model$variables$flow$b$from, "d")
+})
+
+
 test_that("incorrect equations throw error", {
 
   expect_error({xmile() %>% build("a", "aux", eqn = "a + (1,")}, "Parsing equation of a failed")

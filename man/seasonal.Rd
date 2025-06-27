@@ -4,11 +4,9 @@
 \alias{seasonal}
 \title{Annual sine wave with an amplitude of 1}
 \usage{
-seasonal(t, period = 1, shift = 0)
+seasonal(period = 1, shift = 0)
 }
 \arguments{
-\item{t}{Current time}
-
 \item{period}{Duration of wave in years}
 
 \item{shift}{Timing of wave peak in years, defaults to 0}
@@ -21,11 +19,4 @@ This function is coming soon, but is now unusable.
 }
 \details{
 Equivalent of Seasonal() in Insight Maker
-}
-\examples{
-times = seq(0, 48, by = .1)
-season = seasonal(times)
-plot(season, type = "l")
-season = seasonal(times, shift = 6)
-plot(season, type = "l")
 }

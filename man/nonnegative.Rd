@@ -2,7 +2,7 @@
 % Please edit documentation in R/custom_func.R
 \name{nonnegative}
 \alias{nonnegative}
-\title{Safely check whether x is less than zero, preserving units}
+\title{Safely check whether x is less than zero}
 \usage{
 nonnegative(x)
 }
@@ -13,7 +13,7 @@ nonnegative(x)
 x if x is greater than 0, 0 otherwise
 }
 \description{
-Safely check whether x is less than zero, preserving units
+If using Julia, units are preserved
 }
 \examples{
 nonnegative(NA)

@@ -1357,11 +1357,7 @@ remove_brackets_from_names = function(sfm){
 split_aux_wrapper = function(sfm){
 
   # Get names
-  # names_df = get_names(sfm)
   var_names = get_model_var(sfm)
-
-  # # DelayN variables
-  # delay_var = sfm$model$variables$aux %>% purrr::map("delayN") %>% purrr::compact() %>% names()
 
   # Separate auxiliary variables into static parameters and dynamically updated auxiliaries
   dependencies = lapply(sfm$model$variables$aux, `[[`, "eqn") %>%
@@ -1372,7 +1368,7 @@ split_aux_wrapper = function(sfm){
   constants = names(dependencies %>%
                       purrr::keep(function(x){
                         (!P$time_name %in% x) & (length(intersect(x, var_names)) == 0)
-                        }))  #%>% setdiff(delay_var)
+                        }))
   # dependencies %>% purrr::map(\(x) intersect(x, names_df$name))
 
   # Iteratively find constants
@@ -1391,7 +1387,7 @@ split_aux_wrapper = function(sfm){
         purrr::keep(function(x){
           (!P$time_name %in% x) & all(intersect(x, var_names) %in% constants)
           })
-      constants = c(constants, names(new_constants)) #%>% setdiff(delay_var)
+      constants = c(constants, names(new_constants))
 
       # While-loop ends if there is no change
       if (setequal(old_constants, constants)){ done = TRUE }

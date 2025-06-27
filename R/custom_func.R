@@ -210,47 +210,35 @@ IM_filter = function(y, condition_func){
 #'
 #' Equivalent of Ramp() in Insight Maker
 #'
-#' @param start_t_ramp Start time of ramp
-#' @param end_t_ramp End time of ramp
-#' @param start_h_ramp Start height of ramp, defaults to 0
-#' @param end_h_ramp End height of ramp, defaults to 1
+#' @param start Start time of ramp
+#' @param finish End time of ramp
+#' @param height End height of ramp, defaults to 1
 #'
 #' @export
 #' @return Interpolation function
+#' @examples
 #'
-ramp <- function(start_t_ramp, end_t_ramp, start_h_ramp = 0, end_h_ramp = 1){
+ramp <- function(start, finish, height = 1){
 
-  # if (!is.null(time_units)){
-  #   if (inherits(start_t_ramp, "units")){
-  #     start_t_ramp = drop_if_units(units::set_units(start_t_ramp, time_units))
-  #   }
-  #   if (inherits(end_t_ramp, "units")){
-  #     end_t_ramp = drop_if_units(units::set_units(end_t_ramp, time_units))
-  #   }
-  #   start_h_ramp = drop_if_units(start_h_ramp)
-  #   end_h_ramp = drop_if_units(end_h_ramp)
-  # }
-  #
-  # # Check whether start ramp is in times
-  # if (start_t_ramp < times[1] | start_t_ramp > times[length(times)]){
-  #   warning(paste0("start_t_ramp (", start_t_ramp, ") is not in times [", times[1], ", ", times[length(times)], "]"))
-  # }
+  if (finish < start){
+    stop("The finish time of the ramp cannot be before the start time. To specify a decreasing ramp, set the height to a negative value.")
+  }
 
   # Create dataframe with signal
-  signal = data.frame(times = c(start_t_ramp, end_t_ramp),
-                      y = c(start_h_ramp, end_h_ramp))
+  signal = data.frame(times = c(start, finish),
+                      y = c(0, height))
 
   # If the ramp is after the start of signal, add a zero at the start
-  if (min(start_t_ramp) > times[1]){
+  if (min(start) > times[1]){
     signal = rbind(data.frame(times = times[1], y = 0), signal)
   }
 
   # # If the ramp ends before the end of the signal, add height of ramp at the end
-  # if (max(end_t_ramp) < dplyr::last(times)){
-  #   signal = rbind(signal, data.frame(times = dplyr::last(times), y = end_h_ramp))
+  # if (max(finish) < dplyr::last(times)){
+  #   signal = rbind(signal, data.frame(times = dplyr::last(times), y = height))
   # }
 
-  # In Insight Maker, at start_t_ramp, the signal is still 0, but here it starts at start_h_ramp
+  # In Insight Maker, at start, the signal is still 0, but here it starts at start_h_ramp
   # No need to append the end value as the signal stays at the end value of ramp
 
   # Create linear approximation function
@@ -266,48 +254,30 @@ ramp <- function(start_t_ramp, end_t_ramp, start_h_ramp = 0, end_h_ramp = 1){
 #'
 #' Equivalent of Pulse() in Insight Maker
 #'
-#' @param start_t_pulse Start time of pulse
-#' @param h_pulse Height of pulse, defaults to 1
-#' @param w_pulse Width of pulse in duration (i.e. time). This cannot be equal to or less than 0; to indicate an instantaneous pulse, specify the simulation step size
+#' @param start Start time of pulse
+#' @param height Height of pulse, defaults to 1
+#' @param width Width of pulse in duration (i.e. time). This cannot be equal to or less than 0; to indicate an instantaneous pulse, specify the simulation step size
 #' @param repeat_interval Interval at which to repeat pulse, defaults to NULL to indicate no repetition
 #'
 #' @export
 #' @return Interpolation function
+#' @examples
 #'
-pulse <- function(start_t_pulse, h_pulse = 1, w_pulse = 1, repeat_interval = NULL){
+pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 
-  if (w_pulse <= 0){
-    stop(paste0("The width of the pulse (w_pulse) cannot be equal to or less than 0; to indicate an 'instantaneous pulse', specify the simulation step size (", P$timestep_name, ")"))
+  if (width <= 0){
+    stop(paste0("The width of the pulse cannot be equal to or less than 0; to indicate an 'instantaneous' pulse, specify the simulation step size (", P$timestep_name, ")"))
   }
 
-  # # Remove any units if set
-  # if (!is.null(time_units)){
-  #   if (inherits(start_t_pulse, "units")){
-  #     start_t_pulse = drop_if_units(units::set_units(start_t_pulse, time_units))
-  #   }
-  #   if (inherits(w_pulse, "units")){
-  #     w_pulse = drop_if_units(units::set_units(w_pulse, time_units))
-  #   }
-  #   if (inherits(repeat_interval, "units")){
-  #     repeat_interval = drop_if_units(units::set_units(repeat_interval, time_units))
-  #   }
-  #   h_pulse = drop_if_units(h_pulse)
-  # }
-#
-#   # Check whether start pulse is in times
-#   if (start_t_pulse < times[1] | start_t_pulse > times[length(times)]){
-#     warning(paste0("start_t_pulse (", start_t_pulse, ") is not in times [", times[1], ", ", times[length(times)], "]"))
-#   }
-
   # Define time and indices of pulses
-  start_ts = seq(start_t_pulse, times[length(times)],
+  start_ts = seq(start, times[length(times)],
                  # If the number of repeat is NULL, ensure no repeats
                  by = ifelse(is.null(repeat_interval), times[length(times)] + 1,
                              repeat_interval))
-  end_ts = start_ts + w_pulse
+  end_ts = start_ts + width
 
   signal = rbind(
-        data.frame(times = start_ts, y = h_pulse),
+        data.frame(times = start_ts, y = height),
         data.frame(times = end_ts, y = 0))
 
   # If pulse is after the start of signal, add a zero at the start
@@ -321,8 +291,6 @@ pulse <- function(start_t_pulse, h_pulse = 1, w_pulse = 1, repeat_interval = NUL
     signal = rbind(signal, data.frame(times = times[length(times)], y = 0))
   }
 
-  # signal = signal %>%
-  #   dplyr::arrange(times)
   signal = signal[order(signal$times), ]
 
   # Create linear approximation function, use constant interpolation to get a block shape even at finer sampling times
@@ -339,30 +307,19 @@ pulse <- function(start_t_pulse, h_pulse = 1, w_pulse = 1, repeat_interval = NUL
 #'
 #' Equivalent of Step() in Insight Maker
 #'
-#' @param start_t_step Start time of step
-#' @param h_step Height of step, defaults to 1
+#' @param start Start time of step
+#' @param height Height of step, defaults to 1
 #'
 #' @export
 #' @return Interpolation function
+#' @examples
 #'
-step <- function(start_t_step, h_step = 1){
-
-  # if (!is.null(time_units)){
-  #   if (inherits(start_t_step, "units")){
-  #     start_t_step = drop_if_units(units::set_units(start_t_step, time_units))
-  #   }
-  #   h_step = drop_if_units(h_step)
-  # }
-  #
-  # # Check whether step is in times
-  # if (start_t_step < times[1] | start_t_step > times[length(times)]){
-  #   warning(paste0("start_t_step (", start_t_step, ") is not in times [", times[1], ", ", times[length(times)], "]"))
-  # }
+step <- function(start, height = 1){
 
   # Create dataframe with signal
-  signal = data.frame(times = c(start_t_step, times[length(times)]), y = c(h_step, h_step))
+  signal = data.frame(times = c(start, times[length(times)]), y = c(height, height))
 
-  if (start_t_step > times[1]){
+  if (start > times[1]){
     signal = rbind(data.frame(times = times[1], y = 0), signal)
   }
 
@@ -378,7 +335,6 @@ step <- function(start_t_step, h_step = 1){
 #'
 #' Equivalent of Seasonal() in Insight Maker
 #'
-#' @param t Current time
 #' @param period Duration of wave in years
 #' @param shift Timing of wave peak in years, defaults to 0
 #'
@@ -386,20 +342,28 @@ step <- function(start_t_step, h_step = 1){
 #' @export
 #'
 #' @examples
-#' times = seq(0, 48, by = .1)
-#' season = seasonal(times)
-#' plot(season, type = "l")
-#' season = seasonal(times, shift = 6)
-#' plot(season, type = "l")
-seasonal = function(t, period = 1, shift = 0){
+#'
+seasonal = function(period = 1, shift = 0){
 
-  return(cos(2 * pi * (t - shift) / period))
+  if (period <= 0){
+    stop("The period of the seasonal wave must be greater than 0.")
+  }
+
+  # Create linear approximation function - define wave in advance so that the period and shift argument do not need to be kept
+  signal = cos(2 * pi * (times - shift) / period)
+  input = stats::approxfun(x = times, y = signal, rule = 2, method = "linear")
+  return(input)
 
 }
 
 
 
-#' Safely check whether x is less than zero, preserving units
+
+
+
+#' Safely check whether x is less than zero
+#'
+#' If using Julia, units are preserved
 #'
 #' @param x Value
 #'
@@ -510,22 +474,24 @@ shuffle = function(x){
 
 
 
-#' Sigmoid function (i.e. logistic function)
+#' Logistic function
 #'
-#' @param x Value to compute sigmoid of
-#' @param slope Slope of sigmoid function, defaults to 1
-#' @param midpoint Midpoint of sigmoid function where the output is .5, defaults to 0
+#' @param x Value
+#' @param slope Slope of logistic function. Defaults to 1.
+#' @param midpoint Midpoint of logistic function where the output is .5. Defaults to 0.
+#' @param upper Maximal value returned by logistic function. Defaults to 1.
 #'
-#' @returns Sigmoid of x
+#' @returns f(x), where f is the logistic function
 #' @export
 #'
-#' @examples sigmoid(0)
-#' sigmoid(1, slope = 5, midpoint = 0.5)
-sigmoid <- function(x, slope = 1, midpoint = 0) {
+#' @examples logistic(0)
+#' logistic(1, slope = 5, midpoint = 0.5)
+logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
   stopifnot("slope must be numeric!" = is.numeric(slope))
   stopifnot("midpoint must be numeric!" = is.numeric(midpoint))
+  stopifnot("upper must be numeric!" = is.numeric(upper))
 
-  return(1 / (1 + exp(-slope*(x-midpoint))))
+  return(upper / (1 + exp(-slope*(x-midpoint))))
 }
 
 

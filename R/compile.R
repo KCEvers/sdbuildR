@@ -314,7 +314,7 @@ find_dependencies = function(sfm, eqns = NULL, only_var = TRUE, only_model_var =
 
   # Macros and graphical functions can be functions
   possible_func_in_model = c(names(sfm$macro), names(sfm$model$variables$gf),
-                             var_names) # Some aux are also functions, such as pulse/step/ramp
+                             var_names) # Some aux are also functions, such as pulse/step/ramp/seasonal
 
   if (is.null(eqns)){
     eqns = unlist(unname(lapply(sfm$model$variables, function(x){lapply(x, `[[`, "eqn")})), recursive = FALSE)

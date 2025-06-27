@@ -12,7 +12,6 @@
 convert_equations_julia_wrapper = function(sfm, regex_units, debug = TRUE){
 
   # Get variable names
-  # names_df = get_names(sfm)
   var_names = get_model_var(sfm)
 
   sfm$model$variables = lapply(sfm$model$variables,
@@ -47,12 +46,6 @@ convert_equations_julia_wrapper = function(sfm, regex_units, debug = TRUE){
 
     return(x)
   })
-
-
-  # if (is_defined(sfm$global$eqn)){
-  #   sfm$global$eqn_julia = convert_equations_julia(sfm, "global", "global", sfm$global$eqn, var_names,
-  #                                           regex_units = regex_units, debug = debug)$eqn_julia
-  # }
 
   return(sfm)
 
@@ -187,10 +180,7 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units,
 
     # if (debug){print(eqn)}
 
-    out = list(eqn_julia = eqn
-               # translated_func = translated_func
-               ) %>%
-      append(add_Rcode)
+    out =  append(list(eqn_julia = eqn), add_Rcode)
 
     return(out)
   }
@@ -895,7 +885,7 @@ add_keyword_arg = function(eqn, var_names, func_name, default_arg){
         arg = parse_args(paired_idxs[i, ]$bracket_arg)
 
         # Sort arguments
-        arg_sorted = sort_args(arg, func_name, default_arg = default_arg)
+        arg_sorted = sort_args(arg, func_name, default_arg = default_arg, var_names = var_names)
 
         # Replace in eqn with names
         arg_str = paste0(paste0(names(arg_sorted), " = ", unname(arg_sorted)), collapse = ", ")
@@ -977,7 +967,7 @@ get_syntax_julia = function(){
     "cor", "cor", "syntax1", "", "", F,
     "floor", "floor", "syntax1", "", "", T,
     "ceiling", "ceil", "syntax1", "", "", T,
-    "round", "round", "syntax1", "", "", T,
+    "round", "round_", "syntax1", "", "", T,
     "trunc", "trunc", "syntax1", "", "", T,
 
     # Find
@@ -1085,16 +1075,21 @@ get_syntax_julia = function(){
     # imag, reim, complex, isreal, Real.
 
     # Custom functions
-    "sigmoid", "sigmoid", "syntax1", "", "", T,
+    "logistic", "logistic", "syntax1", "", "", T,
     "logit", "logit", "syntax1", "", "", T,
     "expit", "expit", "syntax1", "", "", T,
     "convert_u", "convert_u", "syntax1", "", "", T,
     "drop_u", "Unitful.ustrip", "syntax1", "", "", T,
-    # ** to do: check units go well
+
+    # step() is already an existing function in Julia, so we use make_step() instead
+    "step", "make_step", "syntax1", "", "", F,
+    "pulse", "pulse", "syntax1", "", "", F,
+    "ramp", "ramp", "syntax1", "", "", F,
     "seasonal", "seasonal", "syntax1", "", "", F,
+
     "IM_length", "length", "syntax1", "", "", F,
 
-    "delay", "retrieve_past", "delay", "", "", F,
+    "delay", "retrieve_delay", "delay", "", "", F,
     "past", "retrieve_past", "past", "", "", F,
     "delayN", "compute_delayN", "delayN", "", "", F,
     "smoothN", "compute_smoothN", "smoothN", "", "", F,
@@ -1495,7 +1490,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
         # print(bracket_arg)
 
         arg = parse_args(bracket_arg)
-        arg = sort_args(arg, idx_func$R_first_iter)
+        arg = sort_args(arg, idx_func$R_first_iter, var_names = var_names)
         arg = unname(unlist(arg))
 
         # print("arg")
@@ -1544,9 +1539,12 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
                                P$time_name,
                                # ", \"", arg[1], "\", \"single\", ",
                                # Symbols are faster
-                               ", :", arg[1], ", \"single\", ",
+                               ", :", arg[1],
+                               # ", \"single\", ",
+                               ", ",
 
                                P$intermediaries, ", ", P$intermediary_names, ")")
+
           # add_Rcode[["intermediary"]] = c(add_Rcode[["intermediary"]], arg[1])
           add_Rcode[["func"]][[idx_func$syntax]][[func_name]] = list(var = arg[1],
                                                                      length = arg[2],
@@ -1573,9 +1571,10 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
                                P$time_name,
                                # ", \"", arg[1], "\", \"interval\", ",
                                # Symbols are faster
-                               ", :", arg[1], ", \"interval\", ",
+                               ", :", arg[1],
+                               # ", \"interval\", ",
+                               ", ",
                                P$intermediaries, ", ", P$intermediary_names, ")")
-          # add_Rcode[["intermediary"]] = c(add_Rcode[["intermediary"]], arg[1])
           add_Rcode[["func"]][[idx_func$syntax]][[func_name]] = list(var = arg[1],
                                                                      length = arg2)
 
@@ -1722,11 +1721,12 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
 #' @param arg Vector with arguments in strings
 #' @param func_name String with name of R function
 #' @param default_arg Either NULL or named list of default arguments
+#' @inheritParams convert_builtin_functions_julia
 #'
 #' @noRd
 #' @returns List with named and sorted arguments
 #'
-sort_args = function(arg, func_name, default_arg = NULL){
+sort_args = function(arg, func_name, default_arg = NULL, var_names = NULL){
 
   # If default arguments are not provided, assume func_name is an R function
   if (is.null(default_arg)){
@@ -1753,7 +1753,7 @@ sort_args = function(arg, func_name, default_arg = NULL){
 
   } else {
 
-    # Check whether all argument names are in the allowed argument names in case of no ...
+    # Check whether all argument names are in the allowed argument names in case of no dots argument (...)
     idx = !names_arg %in% names(default_arg) & !is.na(names_arg)
     if (!varargs & any(idx)){
       stop(paste0("Argument",
@@ -1773,8 +1773,10 @@ sort_args = function(arg, func_name, default_arg = NULL){
     # Add names to unnamed arguments; note that R can mix named and default arguments, e.g. runif(max = 10, 20, min = 1) - Julia cannot if they're not keyword arguments!
     idx = which(!contains_name & nzchar(values_arg)) # Find unnamed arguments which have values
     standard_order = names(default_arg)
-    new_names = setdiff(standard_order, stats::na.omit(names_arg))
-    names_arg[idx] = new_names[idx]
+    if (length(idx) > 0 && length(standard_order) > 0){
+      new_names = setdiff(standard_order, stats::na.omit(names_arg)) # names which are missing from the passed argument names
+      names_arg[idx] = new_names[1:length(idx)] # Assign new names to unnamed arguments; only select as many as there are unnamed arguments
+    }
 
 
     # Check for missing obligatory arguments
@@ -1792,13 +1794,11 @@ sort_args = function(arg, func_name, default_arg = NULL){
 
     # Overwrite default arguments with specified arguments & remove NULL arguments
     default_arg_list = default_arg[!obligatory_args | unlist(lapply(default_arg, is.null))]
-    arg_R = default_arg_list %>%
-      utils::modifyList(as.list(stats::setNames(values_arg, names_arg)))
+    arg_R = utils::modifyList(default_arg_list, as.list(stats::setNames(values_arg, names_arg)))
 
     # Sort order of arguments according to default order
     order_arg = c(names(default_arg), setdiff(names(arg_R), names(default_arg)))
     arg_R = arg_R[order_arg]
-
 
     # print("arg_R")
     # print(arg_R)
@@ -1828,8 +1828,15 @@ sort_args = function(arg, func_name, default_arg = NULL){
       }
 
     }
-  }
 
+    # Ensure digits become floats for Julia
+    for (name in names(arg_R)) {
+      if (!is.null(arg_R[[name]])){
+        arg_R[[name]] <- replace_digits_with_floats(arg_R[[name]], var_names)
+      }
+    }
+
+  }
 
   arg_R = lapply(arg_R, as.character)
 
@@ -1924,23 +1931,30 @@ conv_distribution = function(arg, julia_func, distribution){
 #' @noRd
 #'
 vector_to_square_brackets = function(eqn, var_names) {
-  # print(eqn)
 
-  done = FALSE
-  while (!done) {
+  # Get indices of all enclosures
+  paired_idxs = get_range_all_pairs(eqn, var_names, type = "vector",
+                                    names_with_brackets = FALSE)
 
-    # Get indices of all enclosures
-    paired_idxs = get_range_all_pairs(eqn, var_names, type = "vector", names_with_brackets = FALSE)
+  # Remove those that are preceded by a letter
+  if (nrow(paired_idxs) > 0) paired_idxs = paired_idxs[!stringr::str_detect(stringr::str_sub(eqn, paired_idxs$start - 1, paired_idxs$start - 1), "[[:alpha:]]"), ]
 
-    if (nrow(paired_idxs) > 0) {
+  if (nrow(paired_idxs) > 0) {
 
-      # Take first vector, replace with square brackets
-      chosen_pair = paired_idxs[1, ]
-      stringr::str_sub(eqn, chosen_pair$start, chosen_pair$end) = stringr::str_c("[", stringr::str_sub(eqn, chosen_pair$start+2, chosen_pair$end-1), "]")
+    # First replace all closing brackets with ]
+    chars <- strsplit(eqn, "", fixed = TRUE)[[1]]
+    chars[paired_idxs$end] <- "]"
+    eqn = paste0(chars, collapse = "")
 
-    } else {
-      done = TRUE
+    # Order paired_idxs by start position
+    paired_idxs = paired_idxs[order(paired_idxs$start), ]
+
+    # Replace opening brackets c( with [
+    for (j in rev(1:nrow(paired_idxs))) {
+      # Replace c( with [
+      stringr::str_sub(eqn, paired_idxs[j, "start"], paired_idxs[j, "start"] + 1) = "["
     }
+
   }
 
   return(eqn)

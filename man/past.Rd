@@ -15,5 +15,5 @@ past(variable, length = NULL)
 Past values
 }
 \description{
-This function is coming soon, but is now unusable.
+Note that this function is only usable for simulations run with Julia.
 }
