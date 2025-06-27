@@ -81,9 +81,10 @@
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># If the sigmoid() function did not exist, you could create it yourself:</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># If the logistic() function did not exist, you could create it yourself:</span></span></span>
 <span class="r-in"><span><span class="va">sfm</span> <span class="op">=</span> <span class="fu"><a href="xmile.html">xmile</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
-<span class="r-in"><span><span class="fu">macro</span><span class="op">(</span><span class="st">"sig"</span>, eqn <span class="op">=</span> <span class="st">"function(x, slope = 1, midpoint = .5) 1 / (1 + exp(-slope*(x-midpoint)))"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">macro</span><span class="op">(</span><span class="st">"logistic"</span>, eqn <span class="op">=</span> <span class="st">"function(x, slope = 1, midpoint = .5) 1 / (1 + exp(-slope*(x-midpoint)))"</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Names were changed to be syntactically valid and/or avoid overlap: logistic -&gt; logistic_1</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
@@ -96,7 +97,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.2.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>
