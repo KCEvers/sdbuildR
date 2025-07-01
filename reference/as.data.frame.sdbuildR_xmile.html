@@ -136,19 +136,30 @@
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 stock    Infected     1     1    Infected        FALSE    FALSE       1.0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3 stock   Recovered   0.0     1   Recovered        FALSE    FALSE       0.0</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Only show name and equation</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="xmile.html">xmile</a></span><span class="op">(</span><span class="st">"SIR"</span><span class="op">)</span>, properties <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"name"</span>, <span class="st">"eqn"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                      name                                       eqn</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1             Susceptible                                     99999</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                Infected                                         1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3               Recovered                                       0.0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4        Total_Population                                    100000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  Effective_Contact_Rate                                         2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6                   Delay                                         2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7                    Beta Effective_Contact_Rate / Total_Population</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8                  Lambda                           Beta * Infected</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9          Infection_Rate                      Susceptible * Lambda</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10          Recovery_Rate                          Infected / Delay</span>
+<span class="r-in"><span><span class="co"># Only show equation and label</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="xmile.html">xmile</a></span><span class="op">(</span><span class="st">"SIR"</span><span class="op">)</span>, properties <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"eqn"</span>, <span class="st">"label"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        type                   name                                       eqn</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1     stock            Susceptible                                     99999</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2     stock               Infected                                         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3     stock              Recovered                                       0.0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  constant       Total_Population                                    100000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  constant Effective_Contact_Rate                                         2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  constant                  Delay                                         2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7       aux                   Beta Effective_Contact_Rate / Total_Population</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8       aux                 Lambda                           Beta * Infected</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9      flow         Infection_Rate                      Susceptible * Lambda</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10     flow          Recovery_Rate                          Infected / Delay</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     label</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1             Susceptible</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                Infected</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3               Recovered</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4        Total_Population</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  Effective_Contact_Rate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                   Delay</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7                    Beta</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8                  Lambda</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9          Infection_Rate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10          Recovery_Rate</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
