@@ -15,7 +15,7 @@ step(start, height = 1)
 Interpolation function
 }
 \description{
-This function is coming soon, but is now unusable.
+Create a step function that jumps from zero to a specified height at a specified time, and remains at that height until the end of the simulation time.
 }
 \details{
 Equivalent of Step() in Insight Maker

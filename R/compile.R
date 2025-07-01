@@ -17,7 +17,7 @@
 #' @return Object of class sdbuildR_sim, which is a list containing:
 #' \describe{
 #'   \item{df}{Dataframe, timeseries of computed variables in the ODE}
-#'   \item{pars}{Constant parameters}
+#'   \item{constants}{Constant parameters}
 #'   \item{xstart}{Initial value of stocks}
 #'   \item{script}{Simulation script}
 #'   \item{duration}{Duration of simulation}
@@ -61,6 +61,7 @@ simulate = function(sfm,
                           keep_nonnegative_stock = keep_nonnegative_stock,
                           keep_unit = keep_unit, only_stocks = only_stocks,
                           verbose = verbose, debug = debug))
+
   } else if (tolower(sfm$sim_specs$language) == "r"){
 
     # Remove - deSolve is now a required installation
@@ -97,7 +98,7 @@ detect_undefined_var = function(sfm){
   var_names = get_model_var(sfm)
 
   # Macros and graphical functions can be functions
-  possible_func_in_model = c(names(sfm$macro), names(sfm$model$variables$gf))
+  possible_func_in_model = c(names(sfm[["macro"]]), names(sfm[["model"]][["variables"]]$gf))
 
   # ** Many more possible functions, e.g. * / + etc.
   possible_func = c(possible_func_in_model,
@@ -110,28 +111,39 @@ detect_undefined_var = function(sfm){
   # ** to do: check whether gf or macro functions are used without brackets
 
   # Find references to variables which are not in names_df$name
-  missing_ref = unlist(sfm$model$variables, recursive = FALSE, use.names = FALSE) %>%
+  missing_ref = unlist(sfm[["model"]][["variables"]], recursive = FALSE, use.names = FALSE) %>%
     lapply(., function(x){
-    # Find dependencies, and find which ones are not in names_df$name
+
+      # Find dependencies, and find which ones are not in names_df$name
       y = x[names(x) %in% c("eqn", "to", "from")]
       y = y[sapply(y, is_defined)]
 
-    A = sapply(y, function(z){
+      A = sapply(y, function(z){
 
-      dependencies = find_dependencies(sfm, z, only_var = TRUE, only_model_var = FALSE)
+        dependencies = find_dependencies(sfm, z, only_var = TRUE, only_model_var = FALSE)
 
-      # Find all undefined variables and functions
-      setdiff(unlist(dependencies),
-              c(possible_func, var_names))
+        # # Check whether the function exists
+        # set only_var = FALSE
+        # is_existing_function = sapply(dependencies,
+        #        function(name){
+        #          exists(name, mode = "function", inherits = TRUE) &&
+        #            is.function(get(name, mode = "function", inherits = TRUE))
+        #        })
+        #
+        # dependencies = dependencies[!is_existing_function]
+
+        # Find all undefined variables and functions
+        setdiff(unlist(dependencies),
+                c(possible_func, var_names))
+      })
+      A = A[lengths(A) > 0]
+      if (length(A) == 0){
+        return(NULL)
+      } else {
+        return(stats::setNames(list(A), x$name))
+      }
     })
-    A = A[lengths(A) > 0]
-    if (length(A) == 0){
-      return(NULL)
-    } else {
-      return(list(A) %>% stats::setNames(., x$name))
-    }
-})
-  # missing_ref = missing_ref[!unlist(lapply(missing_ref, is.null))]
+
   missing_ref = unlist(missing_ref, recursive = FALSE)
 
   if (length(missing_ref) > 0){
@@ -144,7 +156,7 @@ detect_undefined_var = function(sfm){
 
     return(list(issue = TRUE,
                 msg = paste0(c("The properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes.",
-                              paste0(missing_ref_format, collapse = "\n")), collapse = "\n")))
+                               paste0(missing_ref_format, collapse = "\n")), collapse = "\n")))
   } else {
     return(list(issue = FALSE))
   }
@@ -310,16 +322,25 @@ find_newly_defined_var = function(eqn){
 #'
 find_dependencies = function(sfm, eqns = NULL, only_var = TRUE, only_model_var = TRUE){
 
-  var_names = get_model_var(sfm)
+  var_names = unique(get_model_var(sfm))
+
+  # # Add .outflow to also detect delayed variables
+  # var_names = c(var_names, paste0(var_names[grepl(paste0(P$delayN_suffix, "[0-9]+$|",
+  # P$smoothN_suffix, "[0-9]+$"), var_names)], P$outflow_suffix))
 
   # Macros and graphical functions can be functions
-  possible_func_in_model = c(names(sfm$macro), names(sfm$model$variables$gf),
+  possible_func_in_model = c(names(sfm$macro),
+                             names(sfm[["model"]][["variables"]]$gf),
                              var_names) # Some aux are also functions, such as pulse/step/ramp/seasonal
 
+  # If no equations are provided, use all equations in the model
   if (is.null(eqns)){
-    eqns = unlist(unname(lapply(sfm$model$variables, function(x){lapply(x, `[[`, "eqn")})), recursive = FALSE)
+    eqns = unlist(unname(lapply(sfm[["model"]][["variables"]],
+                                function(x){lapply(x, `[[`, "eqn")})),
+                  recursive = FALSE)
   }
 
+  # Find dependencies in each equation
   dependencies = lapply(eqns, function(eqn){
 
     # Parse the line as an expression
@@ -348,6 +369,7 @@ find_dependencies = function(sfm, eqns = NULL, only_var = TRUE, only_model_var =
 
     return(d)
   })
+
   return(dependencies)
 }
 
@@ -364,21 +386,39 @@ find_dependencies = function(sfm, eqns = NULL, only_var = TRUE, only_model_var =
 #'
 order_equations <- function(sfm, print_msg = TRUE){
 
+  # Add .outflow to detect delayed variables
+  var_names = unique(get_model_var(sfm))
+  idx_delay = grepl(paste0(P$delayN_suffix, "[0-9]+$|",
+                           P$smoothN_suffix, "[0-9]+$"), var_names)
+  delay_var = var_names[idx_delay]
+  delay_pattern = paste0(var_names[idx_delay], stringr::str_escape(P$outflow_suffix))
+
   # Separate auxiliary variables into static parameters and dynamically updated auxiliaries
-  dependencies = lapply(sfm$model$variables, function(y){
+  dependencies = lapply(sfm[["model"]][["variables"]], function(y){
     lapply(y, function(x){
 
-      if (is_defined(x$eqn)){
-        d = unlist(find_dependencies(sfm, x$eqn, only_var = TRUE, only_model_var = TRUE))
+      if (is_defined(x[["eqn"]])){
+
+        d = unlist(find_dependencies(sfm, x[["eqn"]],
+                                     only_var = TRUE, only_model_var = TRUE))
+
+        # For delay family variables, find .outflow in eqn_julia
+        if (length(delay_var) > 0){
+
+          idx = stringr::str_detect(x[["eqn_julia"]], delay_pattern)
+          d = c(d, delay_var[idx])
+        }
+
       } else {
         d = c()
       }
+
       return(d)
     })
   })
 
-
-  # Try to sort static and dynamic equations together in case a static variable depends on a dynamic variable
+  # Try to sort static and dynamic equations together
+  # in case a static variable depends on a dynamic variable
   dependencies_dict = unlist(unname(dependencies), recursive = FALSE)
   static_and_dynamic = topological_sort(dependencies_dict)
 

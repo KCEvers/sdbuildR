@@ -2,21 +2,31 @@
 % Please edit documentation in R/custom_func.R
 \name{seasonal}
 \alias{seasonal}
-\title{Annual sine wave with an amplitude of 1}
+\title{Create a seasonal wave function}
 \usage{
 seasonal(period = 1, shift = 0)
 }
 \arguments{
-\item{period}{Duration of wave in years}
+\item{period}{Duration of wave in simulation time units. Defaults to 1.}
 
-\item{shift}{Timing of wave peak in years, defaults to 0}
+\item{shift}{Timing of wave peak in simulation time units. Defaults to 0.}
 }
 \value{
 Seasonal wave
 }
 \description{
-This function is coming soon, but is now unusable.
+Create a seasonal wave function that oscillates between -1 and 1, with a specified period and shift. The wave peaks at the specified shift time.
 }
 \details{
 Equivalent of Seasonal() in Insight Maker
+}
+\examples{
+# Create a simple model with a seasonal wave
+sfm = xmile() \%>\%
+build("a", "stock") \%>\%
+build("input", "constant", eqn = "seasonal(1, 0)") \%>\%
+build("inflow", "flow", eqn = "input(t)", to = "a")
+
+sim = simulate(sfm)
+plot(sim)
 }

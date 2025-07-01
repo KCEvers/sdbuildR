@@ -1,6 +1,6 @@
 
 
-#' Simulate stock-and-flow model in julia
+#' Simulate stock-and-flow model in Julia
 #'
 #' @inheritParams simulate
 #'
@@ -9,8 +9,8 @@
 #'   \item{dt}{Numeric, the timestep}
 #'   \item{times}{Numeric, sequence of time values}
 #'   \item{ode_func}{Function, the ODE function}
-#'   \item{pars}{List, constant parameters (i.e. static Auxiliaries)}
-#'   \item{xstart}{Numeric, initial value of Stocks}
+#'   \item{constants}{List, constant parameters (i.e. static Auxiliaries)}
+#'   \item{init}{Numeric, initial value of Stocks}
 #'   \item{df}{Dataframe, timeseries of computed variables in the ODE}
 #'   \item{...}{Other variables created in the simulation script.}
 #' }
@@ -52,8 +52,6 @@ simulate_julia = function(sfm,
   sim = tryCatch({
 
     # Evaluate script
-    # JuliaCall::julia_setup()
-
     use_julia()
 
     start_t = Sys.time()
@@ -68,11 +66,11 @@ simulate_julia = function(sfm,
     }
 
     # df = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(P[["sim_df_name"]]))
-    pars_julia = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(P[["parameter_name"]]))
+    pars_julia = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(paste0("clean_constants(", P[["model_setup_name"]], ".", P[["parameter_name"]], ")")))
 
     # pars_julia = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(paste0("values(", P[["parameter_name"]], ")")))
 
-    xstart_julia = JuliaConnectoR::juliaEval(P[["initial_value_name"]])
+    init_julia = JuliaConnectoR::juliaEval(paste0("clean_init(", P[["model_setup_name"]], ".", P[["initial_value_name"]], ", ", P[["model_setup_name"]], ".", P[["initial_value_names"]], ")"))
 
     # df <- utils::read.csv(filepath_df) # reads numbers as strings
     df = as.data.frame(data.table::fread(filepath_df, na.strings = c("", "NA")))
@@ -84,8 +82,8 @@ simulate_julia = function(sfm,
     # units_julia = JuliaCall::julia_eval(P$units_dict)
 
     list(success = TRUE,
-         df = df, pars = pars_julia,
-         xstart = xstart_julia,
+         df = df, constants = pars_julia,
+         init = init_julia,
          # units = units_julia,
          script = script,
          # filepath = filepath,
@@ -125,11 +123,11 @@ compile_julia = function(sfm, filepath_df,
   # Add "inflow" and "outflow" entries to stocks to match flow "to" and "from" entries
   flow_df = get_flow_df(sfm)
 
-  sfm$model$variables$stock = lapply(sfm$model$variables$stock,
+  sfm[["model"]][["variables"]]$stock = lapply(sfm[["model"]][["variables"]]$stock,
                                      function(x){
 
-                                       x$inflow = flow_df[flow_df$to == x$name, "name"]
-                                       x$outflow = flow_df[flow_df$from == x$name, "name"]
+                                       x$inflow = flow_df[flow_df$to == x[["name"]], "name"]
+                                       x$outflow = flow_df[flow_df$from == x[["name"]], "name"]
 
                                        if (length(x$inflow) == 0){
                                          x$inflow = ""
@@ -141,11 +139,6 @@ compile_julia = function(sfm, filepath_df,
                                        return(x)
                                      })
 
-
-  # if (length(sfm$model$variables$flow) == 0){
-  #   stop("Your model contains no Flows!")
-  # }
-
   # Adjust keep_unit to FALSE if there are no units defined
   names_df = get_names(sfm)
   var_names = get_model_var(sfm)
@@ -156,8 +149,7 @@ compile_julia = function(sfm, filepath_df,
   names_df_no_flow = names_df_no_flow[names_df_no_flow$type != "flow", ]
   # keep_unit = ifelse(!any(nzchar(names_df_no_flow$units) & names_df_no_flow$units != "1"), FALSE, keep_unit)
 
-  all_eqns = c(sfm$model$variables %>% lapply(function(x){lapply(x, `[[`, "eqn")}) %>% unlist(),
-               # sfm$global$eqn_julia,
+  all_eqns = c(sfm[["model"]][["variables"]] %>% lapply(function(x){lapply(x, `[[`, "eqn")}) %>% unlist(),
                unlist(lapply(sfm$macro, `[[`, "eqn")))
   units_used = unlist(stringr::str_extract_all(all_eqns, "\\bu\\([\"|'](.*?)[\"|']\\)"))
 
@@ -166,10 +158,10 @@ compile_julia = function(sfm, filepath_df,
   # if (keep_unit){
   #   # Ensure all units are defined
   #   add_model_units = detect_undefined_units(sfm,
-  #                                      new_eqns = c(sfm$model$variables %>% lapply(function(x){lapply(x, `[[`, "eqn_julia")}) %>% unlist(),
+  #                                      new_eqns = c(sfm[["model"]][["variables"]] %>% lapply(function(x){lapply(x, `[[`, "eqn_julia")}) %>% unlist(),
   #                                                   sfm$global$eqn_julia,
   #                                                   unlist(lapply(sfm$macro, `[[`, "eqn_julia"))),
-  #                                      new_units = sfm$model$variables %>% lapply(function(x){lapply(x, `[[`, "units")}) %>% unlist())
+  #                                      new_units = sfm[["model"]][["variables"]] %>% lapply(function(x){lapply(x, `[[`, "units")}) %>% unlist())
   #   sfm$model_units = add_model_units %>% utils::modifyList(sfm$model_units)
   # }
 
@@ -178,8 +170,8 @@ compile_julia = function(sfm, filepath_df,
   # sfm = convert_conveyor(sfm)
   #
 
-  # Order Stocks alphabetically for order in xstart_names and xstart
-  sfm$model$variables$stock = sfm$model$variables$stock[sort(names(sfm$model$variables$stock))]
+  # Order stocks alphabetically for order in init_names and init
+  sfm[["model"]][["variables"]]$stock = sfm[["model"]][["variables"]]$stock[sort(names(sfm[["model"]][["variables"]]$stock))]
 
   # # Add keyword arguments to all functions - do this at compilation in case a function is redefined
   # sfm = add_keyword_arg_wrapper(sfm, var_names)
@@ -207,10 +199,11 @@ compile_julia = function(sfm, filepath_df,
 
   only_stocks = ifelse(is.null(ordering$dynamic$order) & length(delay_past) == 0, TRUE, only_stocks)
 
-  # Don't allow for mixing static and dynamic equations if any delay family functions are specified
-  if (length(delay_past) > 0 | length(delayN_smoothN) > 0){
-    ordering$static_and_dynamic$issue = TRUE
-  }
+  # # Don't allow for mixing static and dynamic equations if any delay family functions are specified
+  # Use because setup_delay doesn't give a dictionary with a .outflow entry
+  # if (length(delay_past) > 0 | length(delayN_smoothN) > 0){
+  #   ordering[["static_and_dynamic"]]$issue = TRUE
+  # }
 
   # # Translate Julia equations
   # sfm = convert_equations_julia_wrapper(sfm, debug = debug)
@@ -286,9 +279,10 @@ prep_delayN_smoothN = function(sfm, delayN_smoothN){
   if (length(delayN_smoothN) > 0){
 
     names_df = get_names(sfm)
+    allowed_delay_var = names_df[names_df$type %in% c("stock", "flow", "aux"), "name"]
     delayN_smoothN = unlist(unname(delayN_smoothN), recursive = FALSE)
 
-    sfm$model$variables$stock = append(sfm$model$variables$stock,
+    sfm[["model"]][["variables"]]$stock = append(sfm[["model"]][["variables"]]$stock,
                                        lapply(seq_along(delayN_smoothN), function(i){
                                          x = delayN_smoothN[[i]]
                                          y = list()
@@ -301,19 +295,26 @@ prep_delayN_smoothN = function(sfm, delayN_smoothN){
                                            stop(paste0("The variable '", bare_var, "' used in delayN() or smoothN() is not defined in the model."))
                                          }
 
-                                         # Unit is the same as the delayed variable
-                                         y$units = names_df[names_df$name == bare_var, ]$units
-                                         y$name = y$label =  names(delayN_smoothN)[i]
-                                         # y$initial = x[["initial"]]
-                                         y$type = "delayN_smoothN"
+                                         # Check whether variable is either a stock, flow, or aux
+                                         if (!bare_var %in% allowed_delay_var){
+                                           stop(paste0("The variable '", bare_var, "' used in delayN() or smoothN() is not a stock, flow, or auxiliary variable."))
+                                         }
 
-                                         y$eqn_julia = x[["setup"]]
-                                         y$inflow = y[["update"]]
+                                         # Unit is the same as the delayed variable
+                                         y[["units"]] = names_df[names_df[["name"]] == bare_var, ][["units"]]
+                                         y[["name"]] = y[["label"]] = names(delayN_smoothN)[i]
+                                         # y$initial = x[["initial"]]
+                                         y[["type"]] = "delayN_smoothN"
+
+                                         # To get the dependencies right, we need the initial value, length and order in eqn
+                                         y[["eqn"]] = paste0(x[["initial"]], " / ", x[["length"]], " * ", x[["order"]])
+                                         y[["eqn_julia"]] = x[["setup"]]
+                                         y[["inflow"]] = x[["update"]]
                                          return(y)
                                        }) %>% stats::setNames(., names(delayN_smoothN))
     )
 
-    sfm$model$variables$aux = append(sfm$model$variables$aux,
+    sfm[["model"]][["variables"]][["aux"]] = append(sfm[["model"]][["variables"]][["aux"]],
                                      lapply(seq_along(delayN_smoothN), function(i){
                                        x = delayN_smoothN[[i]]
                                        y = list()
@@ -322,11 +323,13 @@ prep_delayN_smoothN = function(sfm, delayN_smoothN){
                                        bare_var = sub("\\(.*", "", x[["var"]])
 
                                        # Unit is the same as the delayed variable
-                                       y$units = names_df[names_df$name == bare_var, ]$units
-                                       y$name = y$label = names(delayN_smoothN)[i]
-                                       y$type = "delayN_smoothN"
+                                       y[["units"]] = names_df[names_df[["name"]] == bare_var, ][["units"]]
+                                       y[["name"]] = y[["label"]] = names(delayN_smoothN)[i]
+                                       y[["type"]] = "delayN_smoothN"
 
-                                       y$eqn_julia = x[["compute"]]
+                                       # To get the dependencies right, we need the delayed variable, length and order in eqn
+                                       y[["eqn"]] = paste0(bare_var, " / ", x[["length"]], " * ", x[["order"]])
+                                       y[["eqn_julia"]] = x[["compute"]]
                                        return(y)
                                      }) %>% stats::setNames(., names(delayN_smoothN))
     )
@@ -354,7 +357,7 @@ compile_constraints_julia_old = function(sfm){
   # # eval(Meta.parse()) has issues with environment in ODE, doesn't recognize variables...
   #
   # # Compile string of minimum and maximum constraints
-  # constraint_def = sfm$model$variables %>% purrr::map(function(x){
+  # constraint_def = sfm[["model"]][["variables"]] %>% purrr::map(function(x){
   #   purrr::imap(x, function(y, name){
   #     if (any(c("min_julia", "max_julia") %in% names(y))){
   #       min_str = ifelse(is_defined(y$min_julia), paste0("min = ", y$min_julia), "")
@@ -372,7 +375,7 @@ compile_constraints_julia_old = function(sfm){
   #
   # script = ifelse(nzchar(constraint_def), sprintf("\n\n# Constraints of minimum and maximum value\n%s = get_logical_constraints(Dict(%s))\n", P$constraint_def, constraint_def ), "")
   #
-  # update_ode = ifelse(nzchar(constraint_def), sprintf("\n\n\t\t# Check constraints\n\t\tcheck_constraints(%s, environment(), %s)\n", P$constraint_def, P$time_name), "")
+  # update_ode = ifelse(nzchar(constraint_def), sprintf("\n\n\t\t# Check constraints\n\t\tcheck_constraints(%s, environment(), %s)\n", P$constraint_def, P[["time_name"]]), "")
 
 
   # constraint_pairs = @constraints(Healthy < 0, Healthy > 10, Flow < 0u"1/common_yr")
@@ -387,7 +390,7 @@ compile_constraints_julia_old = function(sfm){
 
 
   # Compile string of minimum and maximum constraints
-  constraint_def = lapply(sfm$model$variables, function(x){
+  constraint_def = lapply(sfm[["model"]][["variables"]], function(x){
     lapply(x, function(y){
       if (any(c("min_julia", "max_julia") %in% names(y))){
         unit_str = ifelse(is_defined(y$units) & y$units != "1", paste0("u\"", y$units, "\""), "")
@@ -450,7 +453,7 @@ compile_units_julia = function(sfm, keep_unit){
         unit_def = "1"
       }
 
-      paste0("@unit ", x$name, " \"", x$name, "\" ", x$name, " u\"", unit_def, "\" ", ifelse(x$prefix, "true", "false"))
+      paste0("@unit ", x[["name"]], " \"", x[["name"]], "\" ", x[["name"]], " u\"", unit_def, "\" ", ifelse(x$prefix, "true", "false"))
 
     }) %>% paste0(collapse = sprintf("\n\tUnitful.register(%s)\n\t", P$MyCustomUnits))
 
@@ -495,10 +498,10 @@ compile_macros_julia = function(sfm, debug){
                     lapply(sfm$macro, function(x){
 
                       # # If a name is defined, assign macro to that name
-                      # if (nzchar(x$name)){
-                      #   paste0(x$name, " = ", x$eqn_julia) %>% return()
+                      # if (nzchar(x[["name"]])){
+                      #   paste0(x[["name"]], " = ", x[["eqn_julia"]]) %>% return()
                       # } else {
-                      x$eqn_julia %>% return()
+                      x[["eqn_julia"]] %>% return()
                       # }
 
                     }) %>% unlist() %>% paste0(collapse = "\n"))
@@ -528,15 +531,17 @@ compile_macros_julia = function(sfm, debug){
 compile_times_julia = function(sfm, keep_unit){
 
   script = sprintf("\n\n# Simulation time unit (smallest time scale in your model)
-%s = u\"%s\"\n# Define time sequence\n%s = (%s, %s)%s\n# Initialize time (only necessary if constants use t)\n%s = %s[1];\n# Time step\n%s = %s%s\n",
-                   P$time_units_name, sfm$sim_specs$time_units,
-                   P$times_name, sfm$sim_specs$start, sfm$sim_specs$stop,
-                   ifelse(keep_unit, paste0(" .* ", P$time_units_name), ""),
-                   # paste0(" .* ", P$time_units_name),
-                   P$time_name, P$times_name,
-                   P$timestep_name, sfm$sim_specs$dt,
-                   ifelse(keep_unit, paste0(" * ", P$time_units_name), "")
-                   # paste0(" * ", P$time_units_name)
+%s = u\"%s\"\n# Define time sequence\n%s = (%s, %s)%s\n# Initialize time (only necessary if constants use t)\n%s = %s[1];\n# Time step\n%s = %s%s\n# Save at value\n%s = %s%s\n",
+                   P[["time_units_name"]], sfm$sim_specs$time_units,
+                   P[["times_name"]], sfm$sim_specs$start, sfm$sim_specs$stop,
+                   ifelse(keep_unit, paste0(" .* ", P[["time_units_name"]]), ""),
+                   # paste0(" .* ", P[["time_units_name"]]),
+                   P[["time_name"]], P[["times_name"]],
+                   P[["timestep_name"]], sfm$sim_specs$dt,
+                   ifelse(keep_unit, paste0(" * ", P[["time_units_name"]]), ""),
+                   P[["saveat_name"]], sfm$sim_specs$saveat,
+                   ifelse(keep_unit, paste0(" * ", P[["time_units_name"]]), "")
+                   # paste0(" * ", P[["time_units_name"]])
 
   )
 
@@ -558,26 +563,29 @@ prep_equations_variables_julia = function(sfm, keep_unit, keep_nonnegative_flow)
   names_df = get_names(sfm)
 
   # Graphical functions
-  sfm$model$variables$gf = lapply(sfm$model$variables$gf,
+  sfm[["model"]][["variables"]][["gf"]] = lapply(sfm[["model"]][["variables"]][["gf"]],
                   function(x){
 
-                    if (is_defined(x$xpts) & is_defined(x$ypts)){
+                    if (is_defined(x[["xpts"]]) & is_defined(x[["ypts"]])){
 
                       # Check whether xpts is defined as numeric or string
-                      if (inherits(x$xpts, "numeric")){
-                        xpts_str = paste0(as.character(x$xpts), collapse= ", ") %>% paste0("[", ., "]")
+                      if (inherits(x[["xpts"]], "numeric")){
+                        xpts_str = paste0(as.character(x[["xpts"]]), collapse = ", ") %>%
+                          paste0("[", ., "]")
                       } else {
-                        xpts_str = x$xpts %>% stringr::str_replace_all("^c\\(", "[")%>% stringr::str_replace_all("\\)$", "]")
+                        xpts_str = stringr::str_replace_all(x[["xpts"]],
+                                                            "^c\\(", "[") %>%
+                          stringr::str_replace_all("\\)$", "]")
                       }
 
                       # Add units of source if defined
                       if (keep_unit){
 
-                        if (is_defined(x$source)){
-                          if (x$source == "t"){
-                            xpts_str = paste0(xpts_str, " .* ", P$time_units_name)
+                        if (is_defined(x[["source"]])){
+                          if (x[["source"]] == "t"){
+                            xpts_str = paste0(xpts_str, " .* ", P[["time_units_name"]])
                           } else {
-                            unit_source = names_df[names_df$name == x$source, "units"]
+                            unit_source = names_df[names_df[["name"]] == x[["source"]], "units"]
                             if (unit_source != "1"){
                               xpts_str = paste0(xpts_str, " .* u\"", unit_source, "\"")
                             }
@@ -587,43 +595,48 @@ prep_equations_variables_julia = function(sfm, keep_unit, keep_nonnegative_flow)
                       }
 
                       # Check whether ypts is defined as numeric or string
-                      if (inherits(x$ypts, "numeric")){
-                        ypts_str = paste0(as.character(x$ypts), collapse= ", ") %>% paste0("[", ., "]")
+                      if (inherits(x[["ypts"]], "numeric")){
+                        ypts_str = paste0(as.character(x[["ypts"]]), collapse= ", ") %>%
+                          paste0("[", ., "]")
                       } else {
-                        ypts_str = x$ypts %>% stringr::str_replace_all("^c\\(", "[")%>% stringr::str_replace_all("\\)$", "]")
+                        ypts_str = stringr::str_replace_all(x[["ypts"]], "^c\\(", "[") %>%
+                          stringr::str_replace_all("\\)$", "]")
                       }
 
-                      if (keep_unit & is_defined(x$units) & x$units != "1"){
-                        ypts_str = paste0(ypts_str, " .* u\"", x$units, "\"")
+                      if (keep_unit & is_defined(x[["units"]]) & x[["units"]] != "1"){
+                        ypts_str = paste0(ypts_str, " .* u\"", x[["units"]], "\"")
                       }
 
-                      x$eqn_str = sprintf("%s = itp(%s, %s, method = \"%s\", extrapolation = \"%s\")",
-                              x$name, xpts_str, ypts_str, x$interpolation, x$extrapolation)
+                      x[["eqn_str"]] = sprintf("%s = itp(%s,\n\t%s, method = \"%s\", extrapolation = \"%s\")",
+                              x[["name"]], xpts_str, ypts_str,
+                              x[["interpolation"]], x[["extrapolation"]])
 
                     }
                     return(x)
   })
 
   # Constant equations
-  sfm$model$variables$constant = lapply(sfm$model$variables$constant,
+  sfm[["model"]][["variables"]][["constant"]] = lapply(sfm[["model"]][["variables"]][["constant"]],
                         function(x){
 
-                          if (keep_unit & is_defined(x$units) & x$units != "1"){
-                            x$eqn_str = paste0(x$name, " = ", P$convert_u, "(", x$eqn_julia, ", u\"", x$units, "\")")
+                          if (keep_unit & is_defined(x[["units"]]) & x[["units"]] != "1"){
+                            x[["eqn_str"]] = paste0(x[["name"]], " = ",
+                                                    P[["convert_u_func"]], "(",
+                                                    x[["eqn_julia"]], ", u\"", x[["units"]], "\")")
                           } else {
-                            x$eqn_str = paste0(x$name, " = ", x$eqn_julia)
+                            x[["eqn_str"]] = paste0(x[["name"]], " = ", x[["eqn_julia"]])
                           }
                           return(x)
                         })
 
-  # Initial states of Stocks
-  sfm$model$variables$stock = lapply(sfm$model$variables$stock,
+  # Initial states of stocks
+  sfm[["model"]][["variables"]][["stock"]] = lapply(sfm[["model"]][["variables"]][["stock"]],
                      function(x){
 
-                       if (keep_unit & is_defined(x$units) & x$units != "1"){
-                         x$eqn_str = paste0(x$name, " = ", P$convert_u, "(", x$eqn_julia, ", u\"", x$units, "\")") %>% return()
+                       if (keep_unit & is_defined(x[["units"]]) & x[["units"]] != "1"){
+                         x[["eqn_str"]] = paste0(x[["name"]], " = ", P[["convert_u_func"]], "(", x[["eqn_julia"]], ", u\"", x[["units"]], "\")") %>% return()
                        } else {
-                         x$eqn_str = paste0(x$name, " = ", x$eqn_julia) %>% return()
+                         x[["eqn_str"]] = paste0(x[["name"]], " = ", x[["eqn_julia"]]) %>% return()
                        }
                        return(x)
 
@@ -631,42 +644,42 @@ prep_equations_variables_julia = function(sfm, keep_unit, keep_nonnegative_flow)
 
 
   # Auxiliary equations (dynamic auxiliaries)
-  sfm$model$variables$aux = lapply(sfm$model$variables$aux,
+  sfm[["model"]][["variables"]][["aux"]] = lapply(sfm[["model"]][["variables"]][["aux"]],
                    function(x){
 
-                     if (keep_unit & is_defined(x$units) & x$units != "1"){
-                       x$eqn_str = paste0(x$name, " = ", P$convert_u, "(", x$eqn_julia, ", u\"", x$units, "\")") %>% return()
+                     if (keep_unit & is_defined(x[["units"]]) & x[["units"]] != "1"){
+                       x[["eqn_str"]] = paste0(x[["name"]], " = ", P[["convert_u_func"]], "(", x[["eqn_julia"]], ", u\"", x[["units"]], "\")") %>% return()
                      } else {
-                       x$eqn_str = paste0(x$name, " = ", x$eqn_julia)
+                       x[["eqn_str"]] = paste0(x[["name"]], " = ", x[["eqn_julia"]])
                      }
                      # }
 
-                     if (!is.null(x$preceding_eqn)){
-                       x$eqn_str = c(x$preceding_eqn, x$eqn_str)
+                     if (!is.null(x[["preceding_eqn"]])){
+                       x[["eqn_str"]] = c(x[["preceding_eqn"]], x[["eqn_str"]])
                      }
                      return(x)
                    })
 
   # Flow equations
   flow_df = get_flow_df(sfm)
-  sfm$model$variables$flow = lapply(sfm$model$variables$flow,
+  sfm[["model"]][["variables"]][["flow"]] = lapply(sfm[["model"]][["variables"]][["flow"]],
                     function(x){
 
-                      x$eqn_str = sprintf("\n\t# Flow%s%s\n\t%s = %s%s%s%s%s",
+                      x[["eqn_str"]] = sprintf("\n\t# Flow%s%s\n\t%s = %s%s%s%s%s",
                                     # Add comment
-                                    ifelse(is_defined(x$from), paste0(" from ", x$from), ""),
-                                    ifelse(is_defined(x$to), paste0(" to ", x$to), ""),
-                                    x$name,
-                                    ifelse(keep_unit & x$units != "1", paste0(P$convert_u, "("), ""),
+                                    ifelse(is_defined(x[["from"]]), paste0(" from ", x[["from"]]), ""),
+                                    ifelse(is_defined(x[["to"]]), paste0(" to ", x[["to"]]), ""),
+                                    x[["name"]],
+                                    ifelse(keep_unit & x[["units"]] != "1", paste0(P[["convert_u_func"]], "("), ""),
                                     ifelse(x$non_negative & keep_nonnegative_flow, "nonnegative(", ""),
-                                    x$eqn_julia,
+                                    x[["eqn_julia"]],
                                     ifelse(x$non_negative & keep_nonnegative_flow, ")", ""),
-                                    ifelse(keep_unit & x$units != "1", paste0(", u\"", x$units, "\")"), "")
+                                    ifelse(keep_unit & x[["units"]] != "1", paste0(", u\"", x[["units"]], "\")"), "")
 
                       )
 
-                      if (!is.null(x$preceding_eqn)){
-                        x$eqn_str = c(x$preceding_eqn, x$eqn_str)
+                      if (!is.null(x[["preceding_eqn"]])){
+                        x[["eqn_str"]] = c(x[["preceding_eqn"]], x[["eqn_str"]])
                       }
                       return(x)
                     })
@@ -690,18 +703,19 @@ compile_static_eqn_julia = function(sfm, ordering, keep_unit){
   names_df = get_names(sfm)
 
   # Graphical functions
-  gf_eqn = lapply(sfm$model$variables$gf, `[[`, "eqn_str")
+  gf_eqn = lapply(sfm[["model"]][["variables"]][["gf"]], `[[`, "eqn_str")
 
   # Constant equations
-  constant_eqn = lapply(sfm$model$variables$constant,`[[`, "eqn_str")
+  constant_eqn = lapply(sfm[["model"]][["variables"]][["constant"]],`[[`, "eqn_str")
 
-  # Initial states of Stocks
-  stock_eqn = lapply(sfm$model$variables$stock,`[[`, "eqn_str")
+  # Initial states of stocks
+  stock_eqn = lapply(sfm[["model"]][["variables"]][["stock"]],`[[`, "eqn_str")
 
-  if (ordering$static_and_dynamic$issue){
+  # If there was an issue with the ordering of static and dynamic equations, only compile static equations
+  if (ordering[["static_and_dynamic"]][["issue"]]){
 
     # Compile and order static equations
-    static_eqn_str = c(gf_eqn, constant_eqn, stock_eqn)[ordering$static$order] %>%
+    static_eqn_str = c(gf_eqn, constant_eqn, stock_eqn)[ordering[["static"]][["order"]]] %>%
       unlist() %>%
       paste0(collapse = "\n")
     static_eqn_str
@@ -709,24 +723,27 @@ compile_static_eqn_julia = function(sfm, ordering, keep_unit){
   } else {
 
     # Auxiliary equations (dynamic auxiliaries)
-    aux_eqn = lapply(sfm$model$variables$aux,`[[`, "eqn_str")
+    aux_eqn = lapply(sfm[["model"]][["variables"]][["aux"]],`[[`, "eqn_str")
 
     # Flow equations
-    flow_eqn = lapply(sfm$model$variables$flow,`[[`, "eqn_str")
+    flow_eqn = lapply(sfm[["model"]][["variables"]][["flow"]],`[[`, "eqn_str")
 
     # Compile and order static and dynamic equations
     static_eqn_str = c(gf_eqn, constant_eqn, stock_eqn,
-                       aux_eqn, flow_eqn)[ordering$static_and_dynamic$order] %>%
+                       aux_eqn, flow_eqn)[ordering[["static_and_dynamic"]][["order"]]] %>%
       unlist() %>%
       paste0(collapse = "\n")
-    static_eqn_str
+
   }
 
-  # Put parameters together in named tuple
-  if (length(sfm$model$variables$constant) > 0){
-    pars_def = paste0("\n\n# Define parameters in named tuple\n", P$parameter_name, " = (", paste0(names(constant_eqn), " = ", names(constant_eqn), collapse = ", "), ",)\n")
+  # Put parameters together in named tuple; include graphical functions as otherwise these are not defined outside of the let block
+  if (length(sfm[["model"]][["variables"]][["constant"]]) > 0 | length(sfm[["model"]][["variables"]][["gf"]]) > 0){
+    pars_def = paste0("\n\n# Define parameters in named tuple\n",
+                      P[["parameter_name"]], " = (",
+                      paste0(c(names(constant_eqn), names(gf_eqn)), " = ",
+                             c(names(constant_eqn), names(gf_eqn)), collapse = ", "), ",)\n")
   } else {
-    pars_def = paste0("\n\n# Define empty parameters\n", P$parameter_name, " = ()\n")
+    pars_def = paste0("\n\n# Define empty parameters\n", P[["parameter_name"]], " = ()\n")
   }
 
   # Check for delayN() and smoothN() functions
@@ -735,44 +752,60 @@ compile_static_eqn_julia = function(sfm, ordering, keep_unit){
   if (length(delayN_smoothN) > 0){
     delay_names = names(unlist(unname(delayN_smoothN), recursive = FALSE))
 
-    xstart_def_stocks = paste0(
+    init_def_stocks = paste0(
       paste0(setdiff(names(stock_eqn), delay_names), collapse = ", "), ", ",
       paste0(paste0("values(", delay_names, ")"), collapse = ", "))
-    xstart_names = paste0(
+    init_names = paste0(
       # paste0(paste0("\"", setdiff(names(stock_eqn), delay_names), "\""), collapse = ", "), ", ",
       paste0(paste0(":", setdiff(names(stock_eqn), delay_names)), collapse = ", "), ", ",
       paste0(paste0("keys(", delay_names, ")..."), collapse = ", ")
     )
 
+    # Make sure that any .outflow references are replaced with first(values(variable))
+    dict = stringr::fixed(stats::setNames(paste0("first(values(", delay_names, "))"),
+                           paste0(delay_names, P[["outflow_suffix"]])))
+    static_eqn_str = stringr::str_replace_all(static_eqn_str, dict)
+
   } else {
-    xstart_def_stocks = paste0(names(stock_eqn), collapse = ", ")
-    # xstart_names = paste0(paste0("\"", names(stock_eqn), "\""), collapse = ", ")
+    init_def_stocks = paste0(names(stock_eqn), collapse = ", ")
+    # init_names = paste0(paste0("\"", names(stock_eqn), "\""), collapse = ", ")
     # Symbols are faster than characters
-    xstart_names = paste0(paste0(":", names(stock_eqn)), collapse = ", ")
+    init_names = paste0(paste0(":", names(stock_eqn)), collapse = ", ")
   }
 
   # Put initial states together in (unnamed) vector
-  xstart_def = paste0("\n# Define initial condition in vector\n", P$initial_value_name,
+  init_def = paste0("\n# Define initial condition in vector\n",
+                    P[["initial_value_name"]],
                       # " = reduce(vcat, (",
                       " = [Base.Iterators.flatten([",
-                      xstart_def_stocks,
+                      init_def_stocks,
 
                       # Add extra comma in case there is only one Stock
                       # ",))\n"
                       ",])...]\n"
   )
 
-  xstart_names = paste0(P$initial_value_names, " = [",
-                        xstart_names,
+  init_names = paste0(P[["initial_value_names"]], " = [",
+                        init_names,
                         "]\n")
 
   return(list(
     stock_names = names(stock_eqn),
-    par_names = names(constant_eqn),
-              script = paste0(
+    par_names = c(names(constant_eqn), names(gf_eqn)),
+    script = paste0(
                 "\n\n# Define parameters, initial conditions, and functions in correct order\n",
+                P[["model_setup_name"]],
+                " = let\n",
                 static_eqn_str,
-                pars_def, xstart_def, xstart_names
+                pars_def,
+                init_def,
+                init_names,
+                "\n\t(", P[["parameter_name"]], " = ", P[["parameter_name"]], ", ",
+                P[["initial_value_name"]], " = ", P[["initial_value_name"]], ", ",
+                P[["initial_value_names"]], " = ", P[["initial_value_names"]],
+                ")\n",
+                "end\n"
+
               )))
 }
 
@@ -788,19 +821,20 @@ compile_static_eqn_julia = function(sfm, ordering, keep_unit){
 prep_stock_change_julia = function(sfm, keep_unit){
 
   # Add temporary property to sum change in Stocks
-  stock_names = names(sfm$model$variables$stock)
-  sfm$model$variables$stock = lapply(sfm$model$variables$stock,
+  stock_names = names(sfm[["model"]][["variables"]]$stock)
+  sfm[["model"]][["variables"]]$stock = lapply(sfm[["model"]][["variables"]]$stock,
                                      function(x){
 
                                        inflow = outflow = ""
 
                                        if (x$type == "delayN_smoothN"){
-                                         # regex_find_idx = paste0("findall(n -> occursin(r\"", x$name, P$delayN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")")
-                                         regex_find_idx = paste0("findall(n -> occursin(r\"", x$name, P$delayN_acc_suffix, "[0-9]+$|", x$name, P$smoothN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")")
-                                         x$sum_name = paste0(P$change_state_name, "[", regex_find_idx, "]")
-                                         x$unpack_state = paste0(P$state_name, "[", regex_find_idx, "]")
+                                         # regex_find_idx = paste0("findall(n -> occursin(r\"", x[["name"]], P[["delayN_acc_suffix"]], "[0-9]+$\", string(n)), ", P[["initial_value_names"]], ")")
+                                         regex_find_idx = paste0("findall(n -> occursin(r\"", x[["name"]], P[["delayN_acc_suffix"]], "[0-9]+$|", x[["name"]], P[["smoothN_acc_suffix"]], "[0-9]+$\", string(n)), ",
+                                                                 P[["model_setup_name"]], ".", P[["initial_value_names"]], ")")
+                                         x[["sum_name"]] = paste0(P[["change_state_name"]], "[", regex_find_idx, "]")
+                                         x$unpack_state = paste0(P[["state_name"]], "[", regex_find_idx, "]")
                                        } else {
-                                         x$sum_name = paste0(P$change_state_name, "[", match(x$name, stock_names), "]")
+                                         x[["sum_name"]] = paste0(P[["change_state_name"]], "[", match(x[["name"]], stock_names), "]")
                                        }
 
 
@@ -811,10 +845,10 @@ prep_stock_change_julia = function(sfm, keep_unit){
 
                                          # If keep_unit = TRUE, flows always need to have units as the times variable has units
                                          if (keep_unit){
-                                           # x$sum_eqn = paste0(P$convert_u, "(0.0, u\"", x$units, "/", sfm$sim_specs$time_units, "\")")
+                                           # x$sum_eqn = paste0(P[["convert_u_func"]], "(0.0, u\"", x[["units"]], "/", sfm$sim_specs$time_units, "\")")
 
                                            # Safer: in case x evaluates to a unit but no units were set
-                                           x$sum_eqn = paste0(P$convert_u, "(0.0, Unitful.unit.(", x$name, ")/", P$time_units_name, ")")
+                                           x$sum_eqn = paste0(P[["convert_u_func"]], "(0.0, Unitful.unit.(", x[["name"]], ")/", P[["time_units_name"]], ")")
 
                                          } else {
                                            x$sum_eqn = "0.0"
@@ -832,16 +866,16 @@ prep_stock_change_julia = function(sfm, keep_unit){
                                        }
 
                                        # Add units if defined
-                                       if (keep_unit & is_defined(x$units)){
-                                         # x$sum_eqn = paste0(P$convert_u, "(", x$sum_eqn, ", u\"", x$units, "/", sfm$sim_specs$time_units, "\")")
-                                         x$sum_eqn = paste0(P$convert_u, "(", x$sum_eqn, ", Unitful.unit.(", x$name, ")/", P$time_units_name, ")")
+                                       if (keep_unit & is_defined(x[["units"]])){
+                                         # x$sum_eqn = paste0(P[["convert_u_func"]], "(", x$sum_eqn, ", u\"", x[["units"]], "/", sfm$sim_specs$time_units, "\")")
+                                         x$sum_eqn = paste0(P[["convert_u_func"]], "(", x$sum_eqn, ", Unitful.unit.(", x[["name"]], ")/", P[["time_units_name"]], ")")
 
                                        }
                                        # }
                                        return(x)
 
                                      })
-  sfm$model$variables$stock = sfm$model$variables$stock[lengths(sfm$model$variables$stock) > 0]
+  sfm[["model"]][["variables"]]$stock = sfm[["model"]][["variables"]]$stock[lengths(sfm[["model"]][["variables"]]$stock) > 0]
 
   return(sfm)
 }
@@ -868,10 +902,10 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
                              only_stocks){
 
   # Auxiliary equations (dynamic auxiliaries)
-  aux_eqn = lapply(sfm$model$variables$aux,`[[`, "eqn_str")
+  aux_eqn = lapply(sfm[["model"]][["variables"]][["aux"]],`[[`, "eqn_str")
 
   # Flow equations
-  flow_eqn = lapply(sfm$model$variables$flow,`[[`, "eqn_str")
+  flow_eqn = lapply(sfm[["model"]][["variables"]][["flow"]],`[[`, "eqn_str")
 
   # Compile and order all dynamic equations
   dynamic_eqn = unlist(c(aux_eqn, flow_eqn)[ordering$dynamic$order])
@@ -884,10 +918,10 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
   intermediary_var = intermediary_var_values = names(dynamic_eqn)
 
   # Sum change in stock equations
-  stock_change = lapply(sfm$model$variables$stock,
+  stock_change = lapply(sfm[["model"]][["variables"]]$stock,
                         function(x){
 
-                          sprintf("%s %s %s", x$sum_name,
+                          sprintf("%s %s %s", x[["sum_name"]],
                                   # Broadcast assignment for delayed variables
                                   ifelse(x$type == "delayN_smoothN", ".=", "="),
                                   x$sum_eqn)
@@ -897,20 +931,20 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
   stock_change_str = paste0(stock_change, collapse = "\n\t")
 
   # Non-negative Stocks
-  nonneg_stocks = sfm$model$variables$stock %>% purrr::map("non_negative") %>% unlist()
+  nonneg_stocks = sfm[["model"]][["variables"]]$stock %>% purrr::map("non_negative") %>% unlist()
   add_nonneg = any(nonneg_stocks) & keep_nonnegative_stock
 
   if (add_nonneg){
 
     # Create if-statement to keep selected Stocks non-negative
-    nonneg_str = lapply(sfm$model$variables$stock,
+    nonneg_str = lapply(sfm[["model"]][["variables"]][["stock"]],
                         function(x){
-                          if (x$non_negative){
+                          if (x[["non_negative"]]){
                             # sprintf("if (%s%s * %s + %s < 0) %s%s = %s/%s end",
-                            #         P$change_prefix, y, P$timestep_name, y, P$change_prefix, y, y, P$timestep_name
+                            #         P$change_prefix, y, P[["timestep_name"]], y, P$change_prefix, y, y, P[["timestep_name"]]
                             # )
                             sprintf("if (%s * %s + %s < 0) %s = %s/%s end",
-                                    x$sum_name, P$timestep_name, x$name, x$sum_name, x$name, P$timestep_name
+                                    x[["sum_name"]], P[["timestep_name"]], x[["name"]], x[["sum_name"]], x[["name"]], P[["timestep_name"]]
                             )
                           } else {
                             return(NULL)
@@ -925,11 +959,11 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
   }
 
   # Names of changing Stocks, e.g. dR for stock R
-  stock_changes_names = unname(unlist(lapply(sfm$model$variables$stock, `[[`, "sum_name")))
+  stock_changes_names = unname(unlist(lapply(sfm[["model"]][["variables"]][["stock"]], `[[`, "sum_name")))
 
   # Final update to derivative
   # state_change_str = sprintf("d%sdt[[%s]] .= %s",
-  #                            P$state_name,
+  #                            P[["state_name"]],
   #                            # ifelse(length(stock_changes_names) > 1,
   #                                   # paste0("1:", length(stock_changes_names)), "1"),
   #                            paste0(as.character(seq_along(stock_changes_names)), collapse = ", "),
@@ -937,14 +971,14 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
   #                            )
 
   # state_change_str = sprintf("d%sdt[collect(%s)] .= %s",
-  #                            P$state_name,
+  #                            P[["state_name"]],
   #                            ifelse(length(stock_changes_names) > 1,
   #                                   paste0("1:", length(stock_changes_names)), "1"),
   #                            paste0(stock_changes_names, collapse = ", ")
   # )
 
   # state_change_str = sprintf("d%sdt[%s] .= collect(Base.Iterators.Flatten([%s,]))",
-  #                            P$state_name,
+  #                            P[["state_name"]],
   #                            ifelse(length(stock_changes_names) > 1,
   #                                   paste0("1:", length(stock_changes_names)), "1"),
   #                            # paste0(as.character(seq_along(stock_changes_names)), collapse = ", "),
@@ -953,10 +987,10 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
 
   # Graphical functions (gf)
   gf_str = ""
-  if (length(sfm$model$variables$gf) > 0){
+  if (length(sfm[["model"]][["variables"]][["gf"]]) > 0){
 
     # Some gf have other gf as source; recursively replace
-    gf_sources = lapply(sfm$model$variables$gf, `[[`, "source") %>% purrr::compact() %>% unlist()
+    gf_sources = lapply(sfm[["model"]][["variables"]][["gf"]], `[[`, "source") %>% purrr::compact() %>% unlist()
 
     if (length(gf_sources) > 0){
 
@@ -979,9 +1013,9 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
 
 
   # Add fixed delayed and past variables to intermediary_var
-  # extra_intermediary_var = unname(sfm$model$variables) %>% purrr::list_flatten() %>%
+  # extra_intermediary_var = unname(sfm[["model"]][["variables"]]) %>% purrr::list_flatten() %>%
   #   purrr::map("intermediary") %>% purrr::compact()
-  # extra_intermediary_var = lapply(sfm$model$variables, function(x){
+  # extra_intermediary_var = lapply(sfm[["model"]][["variables"]], function(x){
   #   lapply(x, `[[`, "intermediary")
   # }) %>% unlist() %>% unname()
   delay_past = get_delay_past(sfm)
@@ -992,11 +1026,17 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
 
     # Check whether the intermediary variables are in the model
     names_df = get_names(sfm)
+    allowed_intermediary_var = names_df[names_df[["type"]] %in% c("stock", "flow", "aux"), "name"]
+
     idx = !(extra_intermediary_var %in% names_df$name)
     if (any(idx)){
       stop(paste0("The following variables used in delay() or past() are not defined in the model: ", paste0(extra_intermediary_var[idx], collapse = ", ")))
     }
 
+    idx = !(extra_intermediary_var %in% allowed_intermediary_var)
+    if (any(idx)){
+      stop(paste0("The following variables used in delay() or past() are not stocks, flows, or auxiliaries: ", paste0(extra_intermediary_var[idx], collapse = ", ")))
+    }
 
     # Get unique intermediary variables to add
     new_intermediary_var = setdiff(unique(unlist(extra_intermediary_var)), intermediary_var)
@@ -1020,22 +1060,22 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
     intermediary_var_values = setdiff(intermediary_var_values, delay_names)
 
     # Unpack non delayN stocks
-    # unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P$state_name, "[findall(n -> !occursin(r\"", P$delayN_suffix, "[0-9]+", P$delayN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")]")
-    unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P$state_name, "[findall(n -> !occursin(r\"", P$delayN_suffix, "[0-9]+", P$delayN_acc_suffix, "[0-9]+$|",
-                              P$smoothN_suffix, "[0-9]+", P$smoothN_acc_suffix, "[0-9]+$\", string(n)), ", P$initial_value_names, ")]")
+    # unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P[["state_name"]], "[findall(n -> !occursin(r\"", P[["delayN_suffix"]], "[0-9]+", P[["delayN_acc_suffix"]], "[0-9]+$\", string(n)), ", P[["initial_value_names"]], ")]")
+    unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P[["state_name"]], "[findall(n -> !occursin(r\"", P[["delayN_suffix"]], "[0-9]+", P[["delayN_acc_suffix"]], "[0-9]+$|",
+                              P[["smoothN_suffix"]], "[0-9]+", P[["smoothN_acc_suffix"]], "[0-9]+$\", string(n)), ", P[["model_setup_name"]], ".", P[["initial_value_names"]], ")]")
 
     # Unpack each delayN or smoothN stock separately
-    unpack_delayN = lapply(sfm$model$variables$stock,
+    unpack_delayN = lapply(sfm[["model"]][["variables"]][["stock"]],
                            function(x){
-                             if (is_defined(x$unpack_state)){
-                               paste0(x$name, " = ", x$unpack_state) %>% return()
+                             if (is_defined(x[["unpack_state"]])){
+                               paste0(x[["name"]], " = ", x[["unpack_state"]]) %>% return()
                              }
                            }) %>% purrr::compact()
 
     unpack_state_str = paste0(unpack_nondelayN, "\n\t", paste0(unpack_delayN, collapse = "\n\t"))
 
   } else {
-    unpack_state_str = paste0(paste0(names(stock_change), collapse = ", "), ", = ", P$state_name)
+    unpack_state_str = paste0(paste0(names(stock_change), collapse = ", "), ", = ", P[["state_name"]])
   }
 
 
@@ -1050,18 +1090,19 @@ compile_ode_julia = function(sfm, ordering, prep_script, static_eqn,
   script_ode = paste0(
     sprintf("\n\n# Define ODE
 function %s!(%s, %s%s, %s)",
-            P$ode_func_name,
-            P$change_state_name, P$state_name,
-            paste0(", ", P$parameter_name), P$time_name),
+            P[["ode_func_name"]],
+            P[["change_state_name"]], P[["state_name"]],
+            paste0(", ", P[["parameter_name"]]), P[["time_name"]]),
 
     "\n\n\t# Round t to deal with inaccuracies in floating point arithmetic\n\t",
-    P$time_name, " = round_(", P$time_name, ", digits = 12)", # ", nchar(sfm$sim_specs$dt) - 1, "
+    P[["time_name"]], " = round_(", P[["time_name"]], ", digits = 12)", # ", nchar(sfm$sim_specs$dt) - 1, "
 
     "\n\n\t# Unpack state variables\n\t",
     unpack_state_str,
-    ifelse(length(sfm$model$variables$constant) > 0,
+    ifelse(length(sfm[["model"]][["variables"]][["constant"]]) > 0,
            paste0("\n\n\t# Unpack parameters\n\t",
-                  paste0(paste0(static_eqn$par_names, collapse = ", "), ", = ", P$parameter_name)), ""),
+                  paste0(paste0(static_eqn[["par_names"]], collapse = ", "),
+                         ", = ", P[["parameter_name"]])), ""),
     "\n\n\t# Update auxiliaries\n\t",
     dynamic_eqn_str,
     "\n\n\t# Collect inflows and outflows for each Stock\n\t",
@@ -1072,23 +1113,34 @@ function %s!(%s, %s%s, %s)",
     "\n\tnothing\nend\n")
 
   # Compile callback function
-  if (!only_stocks){
+  if (only_stocks){
+
+    script_callback = paste0("\n\n# Define empty callback function\n",
+      P[["intermediary_names"]], " = nothing\n",
+      P[["intermediaries"]], " = nothing\n",
+      P[["callback_name"]], " = nothing\n\n")
+
+  } else {
+
     script_callback = paste0(
       sprintf("\n\n# Define callback function
 function %s(%s, %s, integrator)",
-              P$callback_func_name,
-              P$state_name, P$time_name),
+              P[["callback_func_name"]],
+              P[["state_name"]], P[["time_name"]]),
 
       "\n\n\t# Round t to deal with inaccuracies in floating point arithmetic\n\t",
-      P$time_name, " = round_(", P$time_name, ", digits = 12)",
+      P[["time_name"]], " = round_(", P[["time_name"]], ", digits = 12)",
 
       "\n\n\t# Unpack state variables\n\t",
       unpack_state_str,
-      ifelse(length(sfm$model$variables$constant) > 0, paste0("\n\n\t# Get parameters from integrator\n\t",
-                                                              paste0(P$parameter_name, " = integrator.p"), # Check whether you're overwriting it
+      ifelse(length(sfm[["model"]][["variables"]][["constant"]]) > 0,
 
-                                                              "\n\n\t# Unpack parameters\n\t",
-                                                              paste0(paste0(static_eqn$par_names, collapse = ", "), ", = ", P$parameter_name)), ""),
+             paste0("\n\n\t# Get parameters from integrator\n\t",
+                    paste0(P[["parameter_name"]], " = integrator.p"),
+                    # Check whether you're overwriting it
+                    "\n\n\t# Unpack parameters\n\t",
+                    paste0(paste0(static_eqn[["par_names"]], collapse = ", "),
+                           ", = ", P[["parameter_name"]])), ""),
 
       "\n\n\t# Update auxiliaries\n\t",
       dynamic_eqn_str,
@@ -1097,21 +1149,20 @@ function %s(%s, %s, integrator)",
       "return(", paste0(intermediary_var_values, collapse = ", "), ")\n",
 
       "\n\nend\n\n# Callback setup\n",
-      # P$intermediary_names, " = [", paste0("\"", intermediary_var, "\"", collapse = ", "), "]\n",
+      # P[["intermediary_names"]], " = [", paste0("\"", intermediary_var, "\"", collapse = ", "), "]\n",
       # Symbols are faster than characters
-      P$intermediary_names, " = [", paste0(paste0(":", intermediary_var), collapse = ", "), "]\n",
-      P$intermediaries, " = SavedValues(",
+      P[["intermediary_names"]], " = [", paste0(paste0(":", intermediary_var), collapse = ", "), "]\n",
+      P[["intermediaries"]], " = SavedValues(",
       # Make time a Unitful.Quantity if keeping units, otherwise a float
       # ifelse(keep_unit, "Unitful.Quantity", "Float64"),
-      "eltype(", P$time_name, "), Any)\n",
+      "eltype(", P[["time_name"]], "), Any)\n",
 
-      P$callback_name, " = SavingCallback(", P$callback_func_name, ", ", P$intermediaries,
+      P[["callback_name"]], " = SavingCallback(", P[["callback_func_name"]], ", ", P[["intermediaries"]],
       # ", saveat = ", sfm$sim_specs$saveat,
-      # ifelse(keep_unit, paste0(" * ", P$time_units_name), ""),
+      # ifelse(keep_unit, paste0(" * ", P[["time_units_name"]]), ""),
       ")\n")
-  } else {
-    script_callback = ""
   }
+
   return(list(script_ode = script_ode,
               script_callback = script_callback,
               intermediary_var = intermediary_var))
@@ -1143,114 +1194,137 @@ compile_run_ode_julia = function(sfm, filepath_df,
 
 
   script = paste0("\n\n# Run ODE\n",
-                  P$prob_name, " = ODEProblem(", P$ode_func_name, "!, ", P$initial_value_name, ", ", P$times_name, ", ", P$parameter_name, ")\n", P$solution_name, " = solve(", P$prob_name, ", ",
+                  P[["prob_name"]], " = ODEProblem(", P[["ode_func_name"]], "!, ",
+                  P[["model_setup_name"]], ".", P[["initial_value_name"]],
+                  ", ", P[["times_name"]], ", ",
+                  P[["model_setup_name"]], ".", P[["parameter_name"]],
+                  ")\n", P[["solution_name"]], " = solve(", P[["prob_name"]], ", ",
                   ifelse(
-                    sfm$sim_specs$method == "euler", "Euler()",
+                    sfm[["sim_specs"]][["method"]] == "euler", "Euler()",
                     ifelse(
-                      sfm$sim_specs$method == "rk4", "RK4()", NA_character_
+                      sfm[["sim_specs"]][["method"]] == "rk4", "RK4()", NA_character_
                     )
                   ),
-                  ifelse(sfm$sim_specs$method %in% c("euler", "rk4"),
-                         paste0(", dt = ", P$timestep_name, ", adaptive=", ifelse(sfm$sim_specs$adaptive, "true", "false")), ""),
-                  ifelse(!only_stocks, paste0(", ", P$callback_name, " = ", P$callback_name
+                  ifelse(sfm[["sim_specs"]][["method"]] %in% c("euler", "rk4"),
+                         paste0(", dt = ", P[["timestep_name"]], ", adaptive = ", ifelse(sfm$sim_specs$adaptive, "true", "false")), ""),
+                  ifelse(!only_stocks, paste0(", ", P[["callback_name"]], " = ", P[["callback_name"]]
                                               # ", saveat = ", sfm$sim_specs$saveat,
-                                              # ifelse(keep_unit, paste0(" * ", P$time_units_name), "")
+                                              # ifelse(keep_unit, paste0(" * ", P[["time_units_name"]]), "")
 
                   ), ""), ")\n",
-                  P$sim_df_name, " = ", ifelse(keep_unit, "Unitful.ustrip.(", ""), "DataFrame(", P$solution_name, ", [:time; ", P$initial_value_names, "]", ifelse(keep_unit, ")", ""), ")\n")
+
+                  P[["sim_df_name"]], " = clean_df(",
+                  P[["solution_name"]], ", ",
+                  P[["model_setup_name"]], ".", P[["initial_value_name"]], ", ",
+                  P[["model_setup_name"]], ".", P[["initial_value_names"]], ", ",
+                  P[["times_name"]], ", ",
+                  P[["timestep_name"]], ", ",
+                  P[["saveat_name"]], ", ",
+                  P[["intermediaries"]], " = ", P[["intermediaries"]], ", ",
+                  P[["intermediary_names"]], " = ", P[["intermediary_names"]], ")\n"
+
+                  # P[["sim_df_name"]], " = ", ifelse(keep_unit, "Unitful.ustrip.(", ""), "DataFrame(", P[["solution_name"]], ", [:time; ", P[["model_setup_name"]], ".", P[["initial_value_names"]], "]", ifelse(keep_unit, ")", ""), ")\n"
+                  )
 
 
+#
+#   if (!only_stocks){
+#     script = paste0(script,
+#                     "\n\n# Create DataFrame for intermediary variables\n",
+#                     P$intermediary_df, " = ", ifelse(keep_unit, "Unitful.ustrip.(", ""), "DataFrame(",
+#
+#                     ifelse(length(intermediary_var) > 1,
+#                            paste0(P[["intermediaries"]], ".saveval, ", P[["intermediary_names"]]),
+#                            # Error is thrown for dataframe creation of there is only one variable
+#                            # Necessary to add first.() because otherwise the column is a list in R, causing issues in plot(sim)
+#                            paste0(intermediary_var, " = first.(", P[["intermediaries"]], ".saveval)")),
+#
+#                     ")", ifelse(keep_unit, ")", ""), "\n",
+#
+#                     # Don't select overlapping variables
+#                     ifelse(any(stock_names %in% intermediary_var), paste0("select!(", P$intermediary_df, ", setdiff(", P[["intermediary_names"]], ", ", P[["model_setup_name"]], ".", P[["initial_value_names"]], "))\n" ), ""),
+#
+#
+#                     # "n_vars = length(", P[["intermediary_names"]], ")\n\tvals = n_vars == 1 ? hcat([val[1] for val in ", P[["intermediaries"]], ".saveval]) : hcat(", P[["intermediaries"]], ".saveval...)\n\t", P$intermediary_df, " = DataFrame(vals, Symbol.(", P[["intermediary_names"]], "))\n\t", P$intermediary_df, "[!, :time] = ", P[["intermediaries"]], ".t",
+# #                     "\n\n\n# Select intermediary columns not in df (except time)
+# # cols_to_keep = [Symbol(name) for name in ", P[["intermediary_names"]], " if !(name in ", P[["initial_value_names"]], ")]\npush!(cols_to_keep, :time)\n",
+# #                     P$intermediary_df, " = select(", P$intermediary_df, ", cols_to_keep)",
+#
+# "\n# Combine DataFrames\n", P[["sim_df_name"]], " = hcat(", P[["sim_df_name"]], ", ", P$intermediary_df, ")\n")
+#   }
 
-  if (!only_stocks){
-    script = paste0(script,
-                    "\n\n# Create DataFrame for intermediary variables\n", P$intermediary_df, " = ", ifelse(keep_unit, "Unitful.ustrip.(", ""), "DataFrame(",
-
-                    ifelse(length(intermediary_var) > 1, paste0(P$intermediaries, ".saveval, ", P$intermediary_names),
-                           # Error is thrown for dataframe creation of there is only one variable
-                           # Necessary to add first.() because otherwise the column is a list in R, causing issues in plot(sim)
-                           paste0(intermediary_var, " = first.(", P$intermediaries, ".saveval)")),
-
-                    ")", ifelse(keep_unit, ")", ""), "\n",
-
-                    # Don't select overlapping variables
-                    ifelse(any(stock_names %in% intermediary_var), paste0("select!(", P$intermediary_df, ", setdiff(", P$intermediary_names, ", ", P$initial_value_names, "))\n" ), ""),
-
-
-                    # "n_vars = length(", P$intermediary_names, ")\n\tvals = n_vars == 1 ? hcat([val[1] for val in ", P$intermediaries, ".saveval]) : hcat(", P$intermediaries, ".saveval...)\n\t", P$intermediary_df, " = DataFrame(vals, Symbol.(", P$intermediary_names, "))\n\t", P$intermediary_df, "[!, :time] = ", P$intermediaries, ".t",
-#                     "\n\n\n# Select intermediary columns not in df (except time)
-# cols_to_keep = [Symbol(name) for name in ", P$intermediary_names, " if !(name in ", P$initial_value_names, ")]\npush!(cols_to_keep, :time)\n",
-#                     P$intermediary_df, " = select(", P$intermediary_df, ", cols_to_keep)",
-
-"\n# Combine DataFrames\n", P$sim_df_name, " = hcat(", P$sim_df_name, ", ", P$intermediary_df, ")\n")
-  }
-
-  # script = paste0(script, sprintf("\n\n# Overwrite initial values to named dictionary and strip units\n%s = Dict(%s .=> Unitful.ustrip.(%s))\n", P$initial_value_name, P$initial_value_names, P$initial_value_name),
-  #                 sprintf("\n# Strip units from parameters\n%s = (; (name => isa(val, Unitful.Quantity) ? ustrip(val) : val for (name, val) in pairs(%s))...)", P$parameter_name, P$parameter_name), "\n")
-
-
-
-  # If different times need to be saved, linearly interpolate
-  if (sfm$sim_specs$dt != sfm$sim_specs$saveat){
-    script = paste0(script, "\n# Linearly interpolate to reduce stored values to saveat\n",
-                    ifelse(keep_unit, paste0(P$times_name, " = Unitful.ustrip.(", P$times_name, ")\n"),""),
-                    "new_times = collect(", P$times_name, "[1]:",
-                    # ifelse(keep_unit, paste0("u\"", sfm$sim_specs$saveat, sfm$sim_specs$time_units, "\""),
-                    #        sfm$sim_specs$saveat),
-                    sfm$sim_specs$saveat,
-                    ":", P$times_name, "[2]) # Create new time vector\n",
-
-                    P$sim_df_name, " = DataFrame(Dict(\n",
-                    ":time => new_times,
-    [Symbol(col) => ", P$saveat_func, "(", P$sim_df_name, ".time, ", P$sim_df_name, "[!, col], new_times) for col in names(", P$sim_df_name, ") if col != \"time\"]...
-))\n")
-
-  } else {
-    # In some cases, not setting saveat results in a dataframe that is too long.
-    #  For some models, setting saveat throws an error when xstart has units. This happens when the solver t is not exactly t %% dt == 0.
-    # e.g. "https://insightmaker.com/insight/77C9XTvvb66nQnGepYAn5m/Wind-Resistance-Model"
-    #  We thus cannot use saveat but need to ensure the solution is saved at correct times.
+  # script = paste0(script, sprintf("\n\n# Overwrite initial values to named dictionary and strip units\n%s = Dict(%s .=> Unitful.ustrip.(%s))\n", P[["initial_value_name"]], P[["initial_value_names"]], P[["initial_value_name"]]),
+  #                 sprintf("\n# Strip units from parameters\n%s = (; (name => isa(val, Unitful.Quantity) ? ustrip(val) : val for (name, val) in pairs(%s))...)", P[["parameter_name"]], P[["parameter_name"]]), "\n")
 
 
-    script = paste0(script, "\nif nrow(", P$sim_df_name, ") != length(", P$times_name, "[1]:", P$timestep_name, ":", P$times_name, "[2])", "\n# Linearly interpolate to reduce stored values to saveat\n",
-                    ifelse(keep_unit, paste0(P$times_name, " = Unitful.ustrip.(", P$times_name, ")\n"),""),
-                    "new_times = collect(", P$times_name, "[1]:",
-                    # ifelse(keep_unit, paste0("u\"", sfm$sim_specs$saveat, sfm$sim_specs$time_units, "\""),
-                    #        sfm$sim_specs$saveat),
-                    sfm$sim_specs$saveat,
-                    ":", P$times_name, "[2]) # Create new time vector\n",
+#
+#   # If different times need to be saved, linearly interpolate
+#   if (sfm$sim_specs$dt != sfm$sim_specs$saveat){
+#     script = paste0(script, "\n# Linearly interpolate to reduce stored values to saveat\n",
+#                     ifelse(keep_unit, paste0(P[["times_name"]], " = Unitful.ustrip.(", P[["times_name"]], ")\n"),""),
+#                     "new_times = collect(", P[["times_name"]], "[1]:",
+#                     # ifelse(keep_unit, paste0("u\"", sfm$sim_specs$saveat, sfm$sim_specs$time_units, "\""),
+#                     #        sfm$sim_specs$saveat),
+#                     sfm$sim_specs$saveat,
+#                     ":", P[["times_name"]], "[2]) # Create new time vector\n",
+#
+#                     P[["sim_df_name"]], " = DataFrame(Dict(\n",
+#                     ":time => new_times,
+#     [Symbol(col) => ", P$saveat_func, "(", P[["sim_df_name"]], ".time, ", P[["sim_df_name"]], "[!, col], new_times) for col in names(", P[["sim_df_name"]], ") if col != \"time\"]...
+# ))\n")
+#
+#   } else {
+#
+#     # In some cases, not setting saveat results in a dataframe that is too long.
+#     #  For some models, setting saveat throws an error when init has units. This happens when the solver t is not exactly t %% dt == 0.
+#     # e.g. "https://insightmaker.com/insight/77C9XTvvb66nQnGepYAn5m/Wind-Resistance-Model"
+#     #  We thus cannot use saveat but need to ensure the solution is saved at correct times.
+#
+#
+#     script = paste0(script, "\nif nrow(", P[["sim_df_name"]], ") != length(", P[["times_name"]], "[1]:", P[["timestep_name"]], ":", P[["times_name"]], "[2])", "\n# Linearly interpolate to reduce stored values to saveat\n",
+#                     ifelse(keep_unit, paste0(P[["times_name"]], " = Unitful.ustrip.(", P[["times_name"]], ")\n"),""),
+#                     "new_times = collect(", P[["times_name"]], "[1]:",
+#                     # ifelse(keep_unit, paste0("u\"", sfm$sim_specs$saveat, sfm$sim_specs$time_units, "\""),
+#                     #        sfm$sim_specs$saveat),
+#                     sfm$sim_specs$saveat,
+#                     ":", P[["times_name"]], "[2]) # Create new time vector\n",
+#
+#                     P[["sim_df_name"]], " = DataFrame(Dict(\n",
+#                     ":time => new_times,
+#     [Symbol(col) => ", P$saveat_func, "(", P[["sim_df_name"]], ".time, ", P[["sim_df_name"]], "[!, col], new_times) for col in names(", P[["sim_df_name"]], ") if col != \"time\"]...
+# ))\nend\n")
+#   }
 
-                    P$sim_df_name, " = DataFrame(Dict(\n",
-                    ":time => new_times,
-    [Symbol(col) => ", P$saveat_func, "(", P$sim_df_name, ".time, ", P$sim_df_name, "[!, col], new_times) for col in names(", P$sim_df_name, ") if col != \"time\"]...
-))\nend\n")
-  }
+
+  # if (keep_unit){
+  #   script = paste0(script,
+  #                   # "\n\n# Extract and store units\n",
+  #                   # P$units_dict, " = Dict(name => string(unit(val)) for (name, val) in pairs(first(", P[["sim_df_name"]],
+  #                   # ")) if isa(val, Unitful.Quantity))\n",
+  #                   # "\n\n# Strip units from DataFrame\n", P[["sim_df_name"]], " = Unitful.ustrip.(", P[["sim_df_name"]], ")\n",
+  #                   "\n\n# Strip units from initial conditions and parameters\n",
+  #                   P[["model_setup_name"]], ".", P[["initial_value_name"]], " = Dict(", P[["initial_value_names"]], " .=> Unitful.ustrip.(", P[["model_setup_name"]], ".", P[["initial_value_name"]], "))\n",
+  #                   P[["model_setup_name"]], ".", P[["parameter_name"]], " = (; (name => isa(val, Unitful.Quantity) ? Unitful.ustrip(val) : val for (name, val) in pairs(",
+  #                   P[["model_setup_name"]], ".", P[["parameter_name"]], "))...)")
+  #
+  # }
 
 
-  if (keep_unit){
-    script = paste0(script,
-                    # "\n\n# Extract and store units\n",
-                    # P$units_dict, " = Dict(name => string(unit(val)) for (name, val) in pairs(first(", P$sim_df_name,
-                    # ")) if isa(val, Unitful.Quantity))\n",
-                    # "\n\n# Strip units from DataFrame\n", P$sim_df_name, " = Unitful.ustrip.(", P$sim_df_name, ")\n",
-                    "\n\n# Strip units from initial conditions and parameters\n",
-                    P$initial_value_name, " = Dict(xstart_names .=> Unitful.ustrip.(xstart))\n",
-                    P$parameter_name, " = (; (name => isa(val, Unitful.Quantity) ? Unitful.ustrip(val) : val for (name, val) in pairs(pars))...)")
-
-  }
-
-
-  # Remove pars that are not floats or vectors
-  script = paste0(script,
-
-
-  "\n\n# Find keys where values are Float64 or Vector
-  valid_keys = [k for k in keys(", P$parameter_name, ") if isa(", P$parameter_name, "[k], Float64) || isa(", P$parameter_name, "[k], Vector)]
-
-  # Convert valid_keys to a tuple for NamedTuple construction
-  valid_keys_tuple = Tuple(valid_keys)
-
-  # Reconstruct filtered named tuple\n", P$parameter_name, " = NamedTuple{valid_keys_tuple}(",
-  P$parameter_name, "[k] for k in valid_keys)\n")
+  # # Remove constants that are not floats or vectors
+  # script = paste0(script,
+  #
+  #
+  # "\n\n# Find keys where values are Float64 or Vector\nvalid_keys = [k for k in keys(",
+  # P[["model_setup_name"]], ".", P[["parameter_name"]],
+  # ") if isa(",
+  # P[["model_setup_name"]], ".", P[["parameter_name"]],
+  # "[k], Float64) || isa(",
+  # P[["model_setup_name"]], ".", P[["parameter_name"]],
+  # "[k], Vector)]\n\n# Convert valid_keys to a tuple for NamedTuple construction\nvalid_keys_tuple = Tuple(valid_keys)\n\n# Reconstruct filtered named tuple\n",
+  # P[["model_setup_name"]], ".", P[["parameter_name"]],
+  # " = NamedTuple{valid_keys_tuple}(",
+  # P[["model_setup_name"]], ".", P[["parameter_name"]],
+  # "[k] for k in valid_keys)\n")
 
 
   # Save to CSV
@@ -1364,7 +1438,47 @@ decode_unicode <- function(text) {
 
 
 
-# ensemble = function(sfm){
+# ensemble = function(sfm, n = 10, range = NULL, expr = NULL, save_all){
+#
+#  # If range is specified, n will be the length of that range. All ranges have to be of the same length
+#   # Multiply or add rand()
+#
+#   # sampling function or list
+#
+#   ".1"
+#   list(a = "")
+#   # If you already have random elements in the model, no need to specify what to vary
+#   sfm = xmile("Crielaard2022")
+#
+#   sim = ensemble(sfm, n = 10)
+#   sim = ensemble(sfm, init = list("a0" = c(1.3, 1.4, 1.5)))
+#   sim = ensemble(sfm, init = "init * runif(length(init))")
+#  sim = ensemble(sfm, init = "init * runif(1)")
+#  sim = ensemble(sfm, constants = "constants * runif(1)")
+#  sim = ensemble(sfm, constants = list("a1" = "a1 * runif(1)"))
+#
+#
+#  paste0("function prob_func(prob, i, repeat)
+#     # remake(prob, u0 = rand() .* prob.u0)
+#     # remake(prob, u0 = rand(3) )
+#     # remake(prob, p = rand() .* prob.p )
+#     # remake(prob, p = merge(prob.p, (a0 = a0s[i],)))
+#     # remake(prob, p = merge(prob.p, (a0 = prob.p.a0 * rand(),))) # largely same behaviour
+#     # remake(prob, p = merge(prob.p, (a1 = prob.p.a1 * rand(),))) # very different behaviour! oscillations largely disappear, immediate fixed point and some even die to zero
+#     remake(prob, p = merge(prob.p, (a2 = prob.p.a2 * rand(),))) # same behaviour, oscillations are sharper with greater amplitude
+#
+#
+# end
+#
+#
+# ensemble_prob = EnsembleProblem(prob, prob_func = ", P$ensemble_func_name, ")
+# sim = solve(ensemble_prob, Euler(), dt = dt,
+# # EnsembleThreads(),
+#  trajectories = 20)")
+#
+#
+#  # Length of what you're varying has to match or be length 1
+#   # Number of trajectories has to match
 #
 # }
 

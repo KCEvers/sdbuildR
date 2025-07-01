@@ -170,7 +170,7 @@ use_julia <- function(
 #' @noRd
 run_init = function(){
 
-  message("Setting up Julia environment for sdbuildR...")
+  message("Setting up Julia environment for sdbuildR...\n")
 
   # Find set-up location for sdbuildR in Julia
   env_path <- system.file(package = "sdbuildR")

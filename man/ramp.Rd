@@ -17,5 +17,26 @@ ramp(start, finish, height = 1)
 Interpolation function
 }
 \description{
+Create a ramp function that increases linearly from 0 to a specified height at a specified start time, and stays at this height after the specified end time.
+}
+\details{
 Equivalent of Ramp() in Insight Maker
+}
+\examples{
+# Create a simple model with a ramp function
+sfm = xmile() \%>\%
+build("a", "stock") \%>\%
+build("input", "constant", eqn = "ramp(2, 5, 3)") \%>\%
+build("inflow", "flow", eqn = "input(t)", to = "a")
+
+sim = simulate(sfm)
+plot(sim)
+
+# To create a decreasing ramp, set the height to a negative value
+sfm = sfm \%>\%
+build("input", eqn = "ramp(2, 5, -3)")
+
+sim = simulate(sfm)
+plot(sim)
+
 }

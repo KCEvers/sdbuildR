@@ -3,7 +3,7 @@
 #'
 #' Create a stock-and-flow model from a template in the model library. The function will return a stock-and-flow model ready to be simulated and plotted, or modified in any way you like.
 #'
-#' @param name Name of model; one of "logistic_model", "SIR", "predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua"
+#' @param name Name of model; one of "logistic_model", "SIR", "predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua", "spruce_budworm"
 #'
 #' @noRd
 #' @return Stock-and-flow model of class sdbuildR_xmile.
@@ -16,7 +16,8 @@ template = function(name){
   model_names = c("logistic_model", "SIR", "predator-prey", "Crielaard2022",
                   # Meadows
                   "coffee_cup", "bank_account",
-                  "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua")
+                  "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua",
+                  "spruce_budworm")
 
   if (missing(name)){
     message(sprintf("Choose one of the available templates:\n\n%s", paste0(model_names, collapse = "\n")))
@@ -90,6 +91,7 @@ template = function(name){
 
     sfm = xmile() %>% header(name = "Eating Behaviour (Crielaard et al., 2022)",
                 doi = "10.1037/met0000484") %>%
+      sim_specs(time_units = "days", stop = 100) %>%
       build("Food_intake", "stock", eqn = "runif(1)",
             label = "Food intake") %>%
       build("Hunger", "stock", eqn = "runif(1)") %>%
@@ -236,6 +238,14 @@ template = function(name){
       build("beta", "constant", eqn = "28", label = "Parameter beta") %>%
       build("m0", "constant", eqn = "-1.143", label = "Nonlinear slope m0") %>%
       build("m1", "constant", eqn = "-0.714", label = "Nonlinear slope m1")
+
+  } else if (name == "spruce_budworm"){
+
+    sfm = xmile() %>%
+      build("N", "stock", eqn = .5) %>%
+      build("inflow", "flow", eqn = "r * N * (1 - N/K)", to = "N") %>%
+      build("outflow", "flow", eqn = "(B * N^2) / (A^2 + N^2)", from = "N") %>%
+      build(c("r", "K", "B", "A"), "constant", eqn = c(.5, 1000, 10000, 1))
 
   }
 

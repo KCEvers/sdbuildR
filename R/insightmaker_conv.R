@@ -491,7 +491,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
   sfm$header = sfm$header %>% utils::modifyList(header_list)
 
   # Variables
-  sfm$model$variables = sfm$model$variables %>%
+  sfm[["model"]][["variables"]] = sfm[["model"]][["variables"]] %>%
     utils::modifyList(list(stock = model_elements["Stock" == model_element_names],
                                                  aux = model_elements["Variable" == model_element_names],
                                                  flow = model_elements["Flow" == model_element_names],
@@ -514,14 +514,14 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
 
   if (debug){
     print(sprintf("Detected %d Stock%s, %d Flow%s, %d Auxiliar%s, and %d Graphical Function%s",
-                  length(sfm$model$variables$stock),
-                  ifelse(length(sfm$model$variables$stock) == 1, "", "s"),
-                  length(sfm$model$variables$flow),
-                  ifelse(length(sfm$model$variables$flow) == 1, "", "s"),
-                  length(sfm$model$variables$aux),
-                  ifelse(length(sfm$model$variables$aux) == 1, "y", "ies"),
-                  length(sfm$model$variables$gf),
-                  ifelse(length(sfm$model$variables$gf) == 1, "", "s")))
+                  length(sfm[["model"]][["variables"]]$stock),
+                  ifelse(length(sfm[["model"]][["variables"]]$stock) == 1, "", "s"),
+                  length(sfm[["model"]][["variables"]]$flow),
+                  ifelse(length(sfm[["model"]][["variables"]]$flow) == 1, "", "s"),
+                  length(sfm[["model"]][["variables"]]$aux),
+                  ifelse(length(sfm[["model"]][["variables"]]$aux) == 1, "y", "ies"),
+                  length(sfm[["model"]][["variables"]]$gf),
+                  ifelse(length(sfm[["model"]][["variables"]]$gf) == 1, "", "s")))
 
     if (nzchar(out_global$eqn)){
       print("User-defined macros and globals detected")
@@ -538,14 +538,14 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
   # for a stock A which is a conveyor,
   # [A] refers to A_conveyor
   # [[A]] refers to A
-  conveyor_stocks = names(unlist(lapply(sfm$model$variables$stock, `[[`, "conveyor")))
+  conveyor_stocks = names(unlist(lapply(sfm[["model"]][["variables"]]$stock, `[[`, "conveyor")))
   if (length(conveyor_stocks) > 0){
 
     # Ensure correct referencing of conveyors
     dict = paste0("[", conveyor_stocks, P$conveyor_suffix, "]") %>%
       stats::setNames(paste0("[[", conveyor_stocks, "]]"))
 
-    sfm$model$variables = lapply(sfm$model$variables, function(x){
+    sfm[["model"]][["variables"]] = lapply(sfm[["model"]][["variables"]], function(x){
       lapply(x, function(y){
         if ("eqn_insightmaker" %in% names(y)){
           y$eqn_insightmaker = stringr::str_replace_all(y$eqn_insightmaker, stringr::fixed(dict, ignore_case = T))
@@ -559,8 +559,8 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
     })
   }
 
-  converters = names(sfm$model$variables$gf)
-  converters_sources = unlist(lapply(sfm$model$variables$gf, `[[`, "source"))
+  converters = names(sfm[["model"]][["variables"]]$gf)
+  converters_sources = unlist(lapply(sfm[["model"]][["variables"]]$gf, `[[`, "source"))
   if (length(converters) > 0){
 
     # Ensure correct referencing of converters
@@ -570,7 +570,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
       stringr::str_replace_all(stringr::fixed(dict_t)) %>%
       stats::setNames(paste0("[", converters, "]"))
 
-    sfm$model$variables = lapply(sfm$model$variables, function(x){
+    sfm[["model"]][["variables"]] = lapply(sfm[["model"]][["variables"]], function(x){
         lapply(x, function(y){
           if ("eqn_insightmaker" %in% names(y)){
             y$eqn_insightmaker = stringr::str_replace_all(y$eqn_insightmaker, stringr::fixed(dict))
@@ -582,7 +582,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
   }
 
   # Already add eqn and units
-  sfm$model$variables = lapply(sfm$model$variables, function(y){
+  sfm[["model"]][["variables"]] = lapply(sfm[["model"]][["variables"]], function(y){
     lapply(y, function(x){
 
       if ("eqn_insightmaker" %in% names(x)){
@@ -822,7 +822,7 @@ clean_units_IM = function(sfm, regex_units) {
   sfm$global$eqn = clean_units_curly(sfm$global$eqn, regex_units)
 
   # Replace units in equations and unit definition
-  sfm$model$variables = lapply(sfm$model$variables, function(y){
+  sfm[["model"]][["variables"]] = lapply(sfm[["model"]][["variables"]], function(y){
     lapply(y, function(x){
       if (is_defined(x$eqn)){
         x$eqn = clean_units_curly(x$eqn, regex_units)
@@ -837,11 +837,11 @@ clean_units_IM = function(sfm, regex_units) {
 
   # Ensure all units are defined
   add_model_units = detect_undefined_units(sfm,
-                                     new_eqns = c(sfm$model$variables %>%
+                                     new_eqns = c(sfm[["model"]][["variables"]] %>%
                                                     lapply(function(x){lapply(x, `[[`, "eqn")}) %>% unlist(),
                                                   sfm$global$eqn,
                                                   unlist(lapply(sfm$macro, `[[`, "eqn"))),
-                                     new_units = sfm$model$variables %>%
+                                     new_units = sfm[["model"]][["variables"]] %>%
                                        lapply(function(x){lapply(x, `[[`, "units")}) %>% unlist(),
                                      regex_units = regex_units, R_or_Julia = "R")
   sfm$model_units = add_model_units %>% utils::modifyList(sfm$model_units)
@@ -867,9 +867,9 @@ clean_units_IM = function(sfm, regex_units) {
 check_nonnegativity = function(sfm, keep_nonnegative_flow, keep_nonnegative_stock, keep_solver){
 
   # Non-negative Stocks and Flows
-  # nonneg_stock = sfm$model$variables$stock %>% purrr::map("non_negative") %>% unlist() %>% which()
-  nonneg_stock = which(unlist(lapply(sfm$model$variables$stock, `[[`, "non_negative")))
-  # nonneg_flow = sfm$model$variables$flow %>% purrr::map("non_negative") %>% unlist() %>% which()
+  # nonneg_stock = sfm[["model"]][["variables"]]$stock %>% purrr::map("non_negative") %>% unlist() %>% which()
+  nonneg_stock = which(unlist(lapply(sfm[["model"]][["variables"]]$stock, `[[`, "non_negative")))
+  # nonneg_flow = sfm[["model"]][["variables"]]$flow %>% purrr::map("non_negative") %>% unlist() %>% which()
 
   if (keep_nonnegative_stock & length(nonneg_stock) > 0){
     # sfm$behavior$stock = names(nonneg_stock)
@@ -1098,7 +1098,7 @@ replace_macro_names_IM = function(sfm){
 
     # Use same dictionary to replace macro names in other equations
     # Replace units in equations and unit definition
-    sfm$model$variables = lapply(sfm$model$variables, function(y){
+    sfm[["model"]][["variables"]] = lapply(sfm[["model"]][["variables"]], function(y){
       lapply(y, function(x){
         if (is_defined(x$eqn)){
 
@@ -1235,7 +1235,7 @@ convert_equations_IM_wrapper = function(sfm, regex_units, debug){
   # Convert each equation and create list of model elements to add
   var_names = get_model_var(sfm)
 
-  add_model_elements = unlist(unname(sfm$model$variables[c("stock", "aux", "flow")]), recursive = FALSE) %>%
+  add_model_elements = unlist(unname(sfm[["model"]][["variables"]][c("stock", "aux", "flow")]), recursive = FALSE) %>%
     # purrr::list_flatten() %>% unname() %>%
     lapply(., function(x){
 
@@ -1283,7 +1283,7 @@ convert_equations_IM_wrapper = function(sfm, regex_units, debug){
 
   # Add to sfm
   for (i in 1:length(add_model_elements)){
-    sfm$model$variables = sfm$model$variables %>% utils::modifyList(add_model_elements[i])
+    sfm[["model"]][["variables"]] = sfm[["model"]][["variables"]] %>% utils::modifyList(add_model_elements[i])
   }
 
 
@@ -1321,11 +1321,11 @@ convert_equations_IM_wrapper = function(sfm, regex_units, debug){
 remove_brackets_from_names = function(sfm){
 
   # # Add source to graphical function
-  # gf_names = sfm$model$variables$gf %>%
+  # gf_names = sfm[["model"]][["variables"]]$gf %>%
   #   purrr::map(\(x) paste0(x$name, "(", x$source, ")")) %>% unlist()
   #
   # # Remove source property from graphical functions
-  # sfm$model$variables$gf = sfm$model$variables$gf %>%
+  # sfm[["model"]][["variables"]]$gf = sfm[["model"]][["variables"]]$gf %>%
   #   purrr::discard_at("source")
 
   # Remove brackets
@@ -1333,7 +1333,7 @@ remove_brackets_from_names = function(sfm){
   var_names = get_model_var(sfm)
   dict = stringr::fixed(stats::setNames(var_names, paste0("[", var_names, "]")))
 
-  sfm$model$variables = lapply(sfm$model$variables, function(y){
+  sfm[["model"]][["variables"]] = lapply(sfm[["model"]][["variables"]], function(y){
     lapply(y, function(x){
 
       x$eqn = stringr::str_replace_all(x$eqn, dict)
@@ -1360,7 +1360,7 @@ split_aux_wrapper = function(sfm){
   var_names = get_model_var(sfm)
 
   # Separate auxiliary variables into static parameters and dynamically updated auxiliaries
-  dependencies = lapply(sfm$model$variables$aux, `[[`, "eqn") %>%
+  dependencies = lapply(sfm[["model"]][["variables"]]$aux, `[[`, "eqn") %>%
     find_dependencies(sfm, ., only_model_var = FALSE)
 
   # Constants are not dependent on time, have no dependencies in names, or are only dependent on constants
@@ -1378,7 +1378,7 @@ split_aux_wrapper = function(sfm){
     old_constants = constants
 
     # Are there any remaining auxiliary variables to be split into constants or aux?
-    remaining_aux = setdiff(names(sfm$model$variables$aux), constants)
+    remaining_aux = setdiff(names(sfm[["model"]][["variables"]]$aux), constants)
     if (length(remaining_aux) == 0){
       done = TRUE
     } else {
@@ -1394,9 +1394,9 @@ split_aux_wrapper = function(sfm){
     }
   }
 
-  sfm$model$variables$constant = sfm$model$variables$aux[constants]
-  sfm$model$variables$aux[constants] = NULL
-  sfm$model$variables$constant = lapply(sfm$model$variables$constant, function(x){
+  sfm[["model"]][["variables"]]$constant = sfm[["model"]][["variables"]]$aux[constants]
+  sfm[["model"]][["variables"]]$aux[constants] = NULL
+  sfm[["model"]][["variables"]]$constant = lapply(sfm[["model"]][["variables"]]$constant, function(x){
       x$type = "constant"
       return(x)
     })

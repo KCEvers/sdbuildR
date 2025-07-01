@@ -41,6 +41,6 @@ as.data.frame(xmile("SIR"))
 # Only show stocks
 as.data.frame(xmile("SIR"), type = "stock")
 
-# Only show name and equation
-as.data.frame(xmile("SIR"), properties = c("name", "eqn"))
+# Only show equation and label
+as.data.frame(xmile("SIR"), properties = c("eqn", "label"))
 }

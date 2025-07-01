@@ -308,6 +308,31 @@ kableExtra::kbl(functions_table, format = "markdown",
 ```
 
 
+```{r echo=FALSE}
+functions_table <- data.frame(
+  Variable = c("`t`", "`dt`"
+               # "`constants`", "`init`"
+               ),
+  Decription = c("Current time in the ODE",
+                 "Time step of the simulation"
+                 # "Constant parameters of the model",
+                 # "Initial values of stocks"
+                 ),
+  Use.case = c("Use in equations, e.g. input(t)",
+               "Use in equations, e.g. pulse(5, width = dt)"
+               # "Use in `ensemble()`",
+               # "Use in `ensemble()`"
+               )
+)
+
+kableExtra::kbl(functions_table, format = "markdown", 
+                col.names = c("Variable", "Description", 
+                              "Use case"),
+      caption = "Global variables in *sdbuildR*") %>%
+   kableExtra::kable_styling()
+```
+
+
 
 ### Simulation specifications
 

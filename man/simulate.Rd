@@ -39,7 +39,7 @@ simulate(
 Object of class sdbuildR_sim, which is a list containing:
 \describe{
 \item{df}{Dataframe, timeseries of computed variables in the ODE}
-\item{pars}{Constant parameters}
+\item{constants}{Constant parameters}
 \item{xstart}{Initial value of stocks}
 \item{script}{Simulation script}
 \item{duration}{Duration of simulation}

@@ -778,7 +778,90 @@ end",P$delayN_acc_suffix),
     # Create a dictionary with names like \"name_acc1\", \"name_acc2\", ...
     #return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
     return Dict(Symbol(name, \"%s\", i) => value for i in 1:order_delay)
-end",P$smoothN_acc_suffix)
+end",P$smoothN_acc_suffix),
+
+"clean_df" = sprintf("function clean_df(%s, %s, %s, %s, %s, %s;
+                  %s=nothing, %s=nothing)
+    # Always create df from solve_out and init_names
+    %s = Unitful.ustrip.(DataFrame(%s, [:time; %s]))
+
+    # If intermediary data was passed, process and append
+    if %s !== nothing && %s !== nothing
+      # Error is thrown for dataframe creation of there is only one variable
+      # Necessary to add first.() because otherwise the column is a list in R, causing issues in plot(sim)
+      if length(%s) == 1
+        intermediary_df = Unitful.ustrip.(DataFrame(:temp => first.(%s.saveval)))
+        rename!(intermediary_df, :temp => %s...)
+      else
+        intermediary_df = Unitful.ustrip.(DataFrame(%s.saveval, %s))
+      end
+
+      # Remove variables in intermediary_var that are in initial_value_names
+      if any(name -> name in %s, %s)
+        select!(intermediary_df, setdiff(%s, %s))
+      end
+
+      # Merge df with intermediary values
+      %s = hcat(%s, intermediary_df)
+    end
+
+    # Ensure correct number of rows, resample if needed
+    if %s != %s
+        # Linearly interpolate to reduce stored values to saveat
+    new_times = collect(%s[1]:%s:%s[2]) # Create new time vector
+    %s = DataFrame(Dict(
+    :time => new_times,
+        [Symbol(col) => saveat_func(%s.time, %s[!, col], new_times) for col in names(%s) if col != \"time\"]...
+    ))
+    elseif nrow(%s) != length(%s[1]:%s:%s[2])
+        %s = Unitful.ustrip.(%s)
+        new_times = collect(%s[1]:%s:%s[2])  # use passed dt
+        %s = DataFrame(Dict(
+            :time => new_times,
+            [Symbol(col) => saveat_func(%s.time, %s[!, col], new_times)
+             for col in names(%s) if col != \"time\"]...
+        ))
+    end
+
+    return %s
+end",
+                     P$solution_name, P$initial_value_name, P$initial_value_names,
+                     P$times_name, P$timestep_name, P$saveat_name,
+                     P$intermediaries, P$intermediary_names,
+                     P$sim_df_name, P$solution_name, P$initial_value_names,
+                     P$intermediaries, P$intermediary_names,
+                     P$intermediary_names,
+                     P$intermediaries,
+                     P$intermediary_names,
+                     P$intermediaries, P$intermediary_names,
+
+                     P$intermediary_names, P$initial_value_names,
+                     P$intermediary_names, P$initial_value_names,
+
+                     P$sim_df_name, P$sim_df_name,
+                     P$timestep_name, P$saveat_name, P$times_name, P$saveat_name, P$times_name, P$sim_df_name, P$sim_df_name,P$sim_df_name, P$sim_df_name,
+
+                     P$sim_df_name, P$times_name, P$timestep_name, P$times_name,
+                     P$times_name, P$times_name, P$times_name, P$timestep_name, P$times_name,
+                     P$sim_df_name, P$sim_df_name, P$sim_df_name, P$sim_df_name, P$sim_df_name ),
+
+"clean_constants" = sprintf("function clean_constants(%s)
+    %s = (; (name => isa(val, Unitful.Quantity) ? Unitful.ustrip(val) : val for (name, val) in pairs(%s))...)
+
+    # Find keys where values are Float64 or Vector
+    valid_keys = [k for k in keys(%s) if isa(constants[k], Float64) || isa(constants[k], Vector)]
+
+    # Convert valid_keys to a tuple for NamedTuple construction
+    valid_keys_tuple = Tuple(valid_keys)
+
+    # Reconstruct filtered named tuple
+    %s = NamedTuple{valid_keys_tuple}(%s[k] for k in valid_keys)
+
+end
+", P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]]),
+"clean_init" = sprintf("function clean_init(%s, %s)
+    Dict(%s .=> Unitful.ustrip.(%s))
+end", P[["initial_value_name"]], P[["initial_value_names"]], P[["initial_value_names"]], P[["initial_value_name"]])
 
   )
 

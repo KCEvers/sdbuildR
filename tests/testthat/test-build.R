@@ -466,7 +466,6 @@ test_that("build() works", {
   # Ensure equation with missing brackets throws useful error
   expect_error(xmile() %>% build("c", "aux", eqn = "a + (1, "), "Parsing equation of c failed")
 
-
   # # Multiple equations but only one name should throw error
   # expect_error({xmile() %>% build("a", eqn = c("1", "2"))},
   # "The length of eqn =  must be either 1 or equal to the length of name = 'a'.")
@@ -852,7 +851,7 @@ test_that("as.data.frame(sfm) works", {
   expect_error(as.data.frame(sfm, properties = c("a", "eqn")), "a is not an existing property")
   expect_error(as.data.frame(sfm, properties = ""), "At least one property must be specified")
   expect_no_error(as.data.frame(sfm, properties = c("eqn", "units")))
-  expect_equal(names(as.data.frame(sfm, properties = c("eqn", "units"))), c("eqn", "units"))
+  expect_equal(names(as.data.frame(sfm, properties = c("eqn", "units"))), c("type", "name", "eqn", "units"))
 
   # Works with model units
   sfm = xmile() %>% model_units("BMI", eqn = "kilograms/meters^2", doc = "Body Mass Index") %>%
@@ -865,7 +864,7 @@ test_that("as.data.frame(sfm) works", {
   expect_equal(all(df$type == "model_units"), TRUE)
   expect_equal(all(c("BMI", "BAC", "bottle", "meal") %in% df$name), TRUE)
   expect_equal(as.data.frame(sfm, name = "BMI")$name, "BMI")
-  expect_equal(names(as.data.frame(sfm, properties = "eqn")), "eqn")
+  expect_equal(names(as.data.frame(sfm, properties = "eqn")), c("type", "name", "eqn"))
   expect_equal(nrow(as.data.frame(sfm, type = c("gf"))), 0)
   expect_no_error(as.data.frame(sfm, type = c("model_units")))
 
@@ -882,7 +881,7 @@ test_that("as.data.frame(sfm) works", {
   expect_equal(all(df$type == "macro"), TRUE)
   expect_equal(all(c("a", "b", "c") %in% df$name), TRUE)
   expect_equal(as.data.frame(sfm, name = "a")$name, "a")
-  expect_equal(names(as.data.frame(sfm, properties = "eqn")), "eqn")
+  expect_equal(names(as.data.frame(sfm, properties = "eqn")), c("type", "name", "eqn"))
   expect_equal(nrow(as.data.frame(sfm, type = c("aux"))), 0)
 
   # Combine type, name, properties
@@ -891,13 +890,13 @@ test_that("as.data.frame(sfm) works", {
   expect_no_error(as.data.frame(sfm, name = c("x", "y", "z"), type = c("stock", "flow", "aux"), properties = c("eqn", "units", "label", "doc", "from")))
 
   df = as.data.frame(sfm, name = c("x", "y", "z"), type = c("stock", "flow", "aux"), properties = c("eqn", "units", "label", "doc", "from"))
-  expect_equal(names(df), c("eqn", "units", "label")) # "doc", "from" are not recorded for these variables
+  expect_equal(names(df), c("type", "name", "eqn", "units", "label")) # "doc", "from" are not recorded for these variables
   expect_equal(nrow(df), 3)
 
   # Check with Julia properties
-  expect_no_error(as.data.frame(xmile("SIR"), properties = c("eqn_julia")))
-  expect_equal(colnames(as.data.frame(xmile("SIR"), properties = c("eqn_julia"))), "eqn_julia")
-  expect_equal(sort(colnames(as.data.frame(xmile("SIR"), properties = c("eqn_julia", "eqn")))), c("eqn", "eqn_julia"))
+  expect_no_error(as.data.frame(xmile("SIR"), properties = c("type", "name", "eqn_julia")))
+  expect_equal(colnames(as.data.frame(xmile("SIR"), properties = c("eqn_julia"))), c("type", "name", "eqn_julia"))
+  expect_equal(sort(colnames(as.data.frame(xmile("SIR"), properties = c("eqn_julia", "eqn")))), c("eqn", "eqn_julia", "name", "type"))
 
 })
 

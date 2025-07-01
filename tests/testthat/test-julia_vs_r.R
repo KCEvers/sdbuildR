@@ -1,4 +1,6 @@
-test_that("compare output julia and r for templates", {
+
+
+test_that("compare output Julia and R for templates", {
 
   sfm = xmile("SIR")
   sim1 = simulate(sfm %>% sim_specs(language = "R"))
@@ -49,8 +51,8 @@ test_that("compare output julia and r for templates", {
   expect_equal(nrow(sim2$df) > 0, TRUE)
 
   # Check whether the population converges to the carrying capacity
-  expect_equal(dplyr::last(sim1$df$X), sim1$pars$K, tolerance = .01)
-  expect_equal(dplyr::last(sim2$df$X), sim2$pars$K, tolerance = .01)
+  expect_equal(dplyr::last(sim1$df$X), sim1$constants$K, tolerance = .01)
+  expect_equal(dplyr::last(sim2$df$X), sim2$constants$K, tolerance = .01)
 
 
   sim1 = simulate(sfm %>% sim_specs(language = "R"), only_stocks = TRUE)
@@ -128,7 +130,7 @@ test_that("compare output julia and r for templates", {
   sim1 = simulate(sfm)
   expect_equal(sim1$success, TRUE)
   expect_equal(nrow(sim1$df) > 0, TRUE)
-  expect_equal(dplyr::last(sim1$df$coffee_temperature), sim1$pars$room_temperature, tolerance = .01)
+  expect_equal(dplyr::last(sim1$df$coffee_temperature), sim1$constants$room_temperature, tolerance = .01)
 
   # Can't be simulated in R, already tested in compile_r
 

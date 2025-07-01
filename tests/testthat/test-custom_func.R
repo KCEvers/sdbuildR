@@ -105,8 +105,14 @@ test_that("step works", {
 
   expect_no_error(sfm0 %>% build("input", "constant", eqn = "step(start = 5, height = 8)"))
   sfm = sfm0 %>% build("input", "constant", eqn = "step(start = 5, height = 8)")
-  expect_no_error(simulate(sfm))
-  expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = expect_no_error(simulate(sfm))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+
+  # Ensure plotting works with add_constants as these are functions
+  sim = expect_no_error(simulate(sfm))
+  expect_no_error(plot(sim, add_constants = TRUE))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  expect_no_error(plot(sim, add_constants = TRUE))
 
   # Also works with units
   expect_no_error(sfm0 %>% build("input", "constant", eqn = "step(start = u('5seconds'))"))
@@ -116,6 +122,9 @@ test_that("step works", {
   expect_equal(df$a[which(df$time < 5)[1]], 0)
   expect_equal(df$a[which(dplyr::near(df$time, 5))[1]], 0)
   expect_equal(df$a[which(df$time > 5)[1]], 0.1 * 1) # dt * height step
+
+
+
 
   # expect_no_error(sfm0 %>% build("input", "constant", eqn = "step(start = u('5seconds'))") %>%
   #                   build("a", units = "kcal"))
@@ -180,6 +189,11 @@ test_that("pulse works", {
   expect_equal(df$a[which(df$time > 10)[1]], 0.1 * 1) # dt * height pulse
   expect_equal(df$a[which(df$time > 15)[1]], 1 + 0.1 * 1) # dt * height pulse
 
+  # Ensure plotting works with add_constants as these are functions
+  sim = expect_no_error(simulate(sfm))
+  expect_no_error(plot(sim, add_constants = TRUE))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  expect_no_error(plot(sim, add_constants = TRUE))
 
 })
 
@@ -211,6 +225,12 @@ test_that("ramp works", {
   expect_equal(df$a[which(dplyr::near(df$time, 2))[1]], 0)
   expect_equal(df$a[which(df$time > 2)[1]], 0) # first value is still zero
   expect_equal(df$a[which(dplyr::near(df$time, 2.2))[1]] > 0, TRUE)
+
+  # Ensure plotting works with add_constants as these are functions
+  sim = expect_no_error(simulate(sfm))
+  expect_no_error(plot(sim, add_constants = TRUE))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  expect_no_error(plot(sim, add_constants = TRUE))
 
 })
 
@@ -247,6 +267,12 @@ test_that("seasonal works", {
   df = as.data.frame(sim)
   expect_equal(df$a[1], 0)
   expect_equal(df$a[2] > 0, TRUE)
+
+  # Ensure plotting works with add_constants as these are functions
+  sim = expect_no_error(simulate(sfm))
+  expect_no_error(plot(sim, add_constants = TRUE))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  expect_no_error(plot(sim, add_constants = TRUE))
 
 })
 

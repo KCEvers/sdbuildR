@@ -9,8 +9,8 @@
 #'   \item{dt}{Numeric, the timestep}
 #'   \item{times}{Numeric, sequence of time values}
 #'   \item{ode_func}{Function, the ODE function}
-#'   \item{pars}{List, constant parameters (i.e. static Auxiliaries)}
-#'   \item{xstart}{Numeric, initial value of Stocks}
+#'   \item{constants}{List, constant parameters (i.e. static Auxiliaries)}
+#'   \item{init}{Numeric, initial value of Stocks}
 #'   \item{df}{Dataframe, timeseries of computed variables in the ODE}
 #'   \item{...}{Other variables created in the simulation script.}
 #' }
@@ -72,8 +72,8 @@ simulate_R = function(sfm,
     # list(
     #      success = TRUE,
     #      df = envir[[P$sim_df_name]],
-    #      xstart = envir[[P$initial_value_name]],
-    #      pars = envir[[P$parameter_name]],
+    #      init = envir[[P$initial_value_name]],
+    #      constants = envir[[P$parameter_name]],
     #      ode_func = envir[[P$ode_func_name]]
     #      )
     out = list()
@@ -122,7 +122,7 @@ compile_R = function(sfm,
   # Get flows and connections
   flow_df = get_flow_df(sfm)
 
-  sfm$model$variables$stock = lapply(sfm$model$variables$stock,
+  sfm[["model"]][["variables"]]$stock = lapply(sfm[["model"]][["variables"]]$stock,
                                          function(x){
 
                                            x$inflow = flow_df[flow_df$to == x$name, "name"]
@@ -176,13 +176,13 @@ compile_R = function(sfm,
   # Only need to save stocks if there are no dynamic variables
   only_stocks = ifelse(is.null(ordering$dynamic$order), TRUE, only_stocks)
 
-  # Order Stocks alphabetically to match ordering in xstart
-  sfm$model$variables$stock = sfm$model$variables$stock[sort(names(sfm$model$variables$stock))]
+  # Order Stocks alphabetically to match ordering in init
+  sfm[["model"]][["variables"]]$stock = sfm[["model"]][["variables"]]$stock[sort(names(sfm[["model"]][["variables"]]$stock))]
 
   # Macros
   macros = compile_macros(sfm)
 
-  # # Add prefixes (pars$ and xstart$) to static equations
+  # # Add prefixes (constants$ and init$) to static equations
   # sfm = substitute_var(sfm)
 
   # Prepare equations
@@ -258,7 +258,7 @@ library(sdbuildR)
 find_unit_strings = function(sfm){
 
   # Extract all unit strings from equations
-  var_units = lapply(sfm$model$variables, function(y){
+  var_units = lapply(sfm[["model"]][["variables"]], function(y){
     lapply(y, function(x){
       if (is_defined(x$eqn)){
         return(stringr::str_extract_all(x$eqn, "\\bu\\([\"|'](.*?)[\"|']\\)"))
@@ -291,7 +291,7 @@ find_unit_strings = function(sfm){
 compile_destructuring_assign = function(sfm, static_eqn){
 
   # Add package for destructuring assignment in case it was used
-  eqns = c(static_eqn$script, unlist(sfm$model$variables %>% purrr::map_depth(2, "eqn")))
+  eqns = c(static_eqn$script, unlist(sfm[["model"]][["variables"]] %>% purrr::map_depth(2, "eqn")))
 
   # if ( any(stringr::str_detect(c(static_eqn$script, ode$script), stringr::fixed("%<-%"))) ){
 
@@ -317,20 +317,20 @@ compile_destructuring_assign = function(sfm, static_eqn){
 substitute_var_old = function(sfm){
 
   # Replace variable references in static equations
-  static_var = c(names(sfm$model$variables$stock), names(sfm$model$variables$constant))
-  dynamic_var = c(names(sfm$model$variables$flow),
-                  setdiff(names(sfm$model$variables$aux), names(sfm$model$variables$constant)))
+  static_var = c(names(sfm[["model"]][["variables"]]$stock), names(sfm[["model"]][["variables"]]$constant))
+  dynamic_var = c(names(sfm[["model"]][["variables"]]$flow),
+                  setdiff(names(sfm[["model"]][["variables"]]$aux), names(sfm[["model"]][["variables"]]$constant)))
 
   static_replacements =
-    c(paste0(P$initial_value_name, "$", names(sfm$model$variables$stock)),
-      paste0(P$parameter_name, "$", names(sfm$model$variables$constant))
+    c(paste0(P$initial_value_name, "$", names(sfm[["model"]][["variables"]]$stock)),
+      paste0(P$parameter_name, "$", names(sfm[["model"]][["variables"]]$constant))
       ) %>% as.list() %>%
     stats::setNames(static_var) %>%
     # Convert to expressions for substitutions
     lapply(function(x){parse(text = x)[[1]]})
 
   # Implement replacements
-  sfm$model$variables = lapply(sfm$model$variables, function(y){
+  sfm[["model"]][["variables"]] = lapply(sfm[["model"]][["variables"]], function(y){
     lapply(y, function(x){
 
       if (x$name %in% static_var){
@@ -399,7 +399,7 @@ compile_macros = function(sfm){
 compile_times = function(sfm){
 
   # # Only track variables in "past"
-  # obligatory_var = sfm$model$variables %>% purrr::map_depth(2, "archive_var") %>% unname() %>%
+  # obligatory_var = sfm[["model"]][["variables"]] %>% purrr::map_depth(2, "archive_var") %>% unname() %>%
   #   purrr::list_flatten() %>% unlist() %>% unname() %>% unique()
   #
   # if (length(obligatory_var) > 0){
@@ -443,7 +443,7 @@ compile_times = function(sfm){
 compile_constraints_old = function(sfm){
 
   # Compile string of minimum and maximum constraints
-  constraint_def = lapply(sfm$model$variables, function(x){
+  constraint_def = lapply(sfm[["model"]][["variables"]], function(x){
     lapply(x, function(y){
       if ("min" %in% names(y)){
         min_str = ifelse(is_defined(y$min), paste0("min = ", y$min), "")
@@ -484,13 +484,13 @@ compile_static_eqn = function(sfm, ordering){
                                  paste0(sfm$macro$eqn, collapse = "\n")), "")
 
   # Graphical functions
-  gf_eqn = lapply(sfm$model$variables$gf, `[[`, "eqn_str")
+  gf_eqn = lapply(sfm[["model"]][["variables"]]$gf, `[[`, "eqn_str")
 
   # Constant equations
-  constant_eqn = lapply(sfm$model$variables$constant,`[[`, "eqn_str")
+  constant_eqn = lapply(sfm[["model"]][["variables"]]$constant,`[[`, "eqn_str")
 
   # Initial states of Stocks
-  stock_eqn = lapply(sfm$model$variables$stock,`[[`, "eqn_str")
+  stock_eqn = lapply(sfm[["model"]][["variables"]]$stock,`[[`, "eqn_str")
 
   if (ordering$static_and_dynamic$issue){
 
@@ -503,10 +503,10 @@ compile_static_eqn = function(sfm, ordering){
   } else {
 
     # Auxiliary equations (dynamic auxiliaries)
-    aux_eqn = lapply(sfm$model$variables$aux,`[[`, "eqn_str")
+    aux_eqn = lapply(sfm[["model"]][["variables"]]$aux,`[[`, "eqn_str")
 
     # Flow equations
-    flow_eqn = lapply(sfm$model$variables$flow,`[[`, "eqn_str")
+    flow_eqn = lapply(sfm[["model"]][["variables"]]$flow,`[[`, "eqn_str")
 
     # Compile and order static and dynamic equations
     static_eqn_str = c(gf_eqn, constant_eqn, stock_eqn,
@@ -517,16 +517,16 @@ compile_static_eqn = function(sfm, ordering){
   }
 
   # Put parameters together
-  if (length(sfm$model$variables$constant) > 0){
-    pars_def = paste0("\n\n# Define parameters in named list\n", P$parameter_name, " = list(", paste0(paste0(names(constant_eqn), " = ", names(constant_eqn)), collapse = ", "), ")\n")
+  if (length(sfm[["model"]][["variables"]]$constant) > 0){
+    constants_def = paste0("\n\n# Define parameters in named list\n", P$parameter_name, " = list(", paste0(paste0(names(constant_eqn), " = ", names(constant_eqn)), collapse = ", "), ")\n")
 
   } else {
-    pars_def = paste0("\n\n# Define empty parameters\n", P$parameter_name, " = list()\n")
+    constants_def = paste0("\n\n# Define empty parameters\n", P$parameter_name, " = list()\n")
   }
 
 
-  # Define xstart
-  xstart_def = paste0("\n\n# Define initial condition\n", P$initial_value_name, " = c(",
+  # Define init
+  init_def = paste0("\n\n# Define initial condition\n", P$initial_value_name, " = c(",
                       paste0(paste0(names(stock_eqn), " = ", names(stock_eqn)), collapse = ", "), ")")
 
 
@@ -537,7 +537,7 @@ compile_static_eqn = function(sfm, ordering){
                               "\n\n# Define parameters, initial conditions, and functions in correct order\n",
                               static_eqn_str,
                               # sprintf("\n\n# Turn initial condition into alphabetically ordered named vector\n%s = unlist(%s)[order(names(%s))]", P$initial_value_name, P$initial_value_name, P$initial_value_name)
-                              pars_def, xstart_def
+                              constants_def, init_def
   )))
 
 
@@ -554,7 +554,7 @@ compile_static_eqn = function(sfm, ordering){
 prep_equations_variables = function(sfm, keep_nonnegative_flow){
 
   # Graphical functions
-  sfm$model$variables$gf = lapply(sfm$model$variables$gf, function(x){
+  sfm[["model"]][["variables"]]$gf = lapply(sfm[["model"]][["variables"]]$gf, function(x){
 
     if (is_defined(x$xpts)){
 
@@ -585,14 +585,14 @@ prep_equations_variables = function(sfm, keep_nonnegative_flow){
   })
 
   # Constant equations
-  sfm$model$variables$constant = lapply(sfm$model$variables$constant, function(x){
+  sfm[["model"]][["variables"]]$constant = lapply(sfm[["model"]][["variables"]]$constant, function(x){
     # paste0(P$parameter_name, "$", x$name, " = ", x$eqn)
     x$eqn_str = paste0(x$name, " = ", x$eqn)
     return(x)
   })
 
   # Initial states of Stocks
-  sfm$model$variables$stock = lapply(sfm$model$variables$stock, function(x){
+  sfm[["model"]][["variables"]]$stock = lapply(sfm[["model"]][["variables"]]$stock, function(x){
     if (!is.null(x$delayN)){
       # sprintf("# Initialize delay accumulator for %s\n%s = c(%s, %s)",
       #         x$name,
@@ -606,7 +606,7 @@ prep_equations_variables = function(sfm, keep_nonnegative_flow){
   })
 
   # Auxiliary equations (dynamic auxiliaries)
-  sfm$model$variables$aux = lapply(sfm$model$variables$aux, function(x){
+  sfm[["model"]][["variables"]]$aux = lapply(sfm[["model"]][["variables"]]$aux, function(x){
 
     x$eqn_str = sprintf("%s <- %s", x$name, x$eqn)
 
@@ -617,7 +617,7 @@ prep_equations_variables = function(sfm, keep_nonnegative_flow){
   })
 
   # Flow equations
-  sfm$model$variables$flow = lapply(sfm$model$variables$flow, function(x){
+  sfm[["model"]][["variables"]]$flow = lapply(sfm[["model"]][["variables"]]$flow, function(x){
 
     x$eqn_str = sprintf("%s <- %s%s%s # Flow%s%s",
                   x$name,
@@ -653,7 +653,7 @@ prep_equations_variables = function(sfm, keep_nonnegative_flow){
 prep_stock_change = function(sfm){
 
   # Add temporary property to sum change in Stocks
-  sfm$model$variables$stock = lapply(sfm$model$variables$stock, function(x){
+  sfm[["model"]][["variables"]]$stock = lapply(sfm[["model"]][["variables"]]$stock, function(x){
 
       if (!is.null(x$delayN)){
         # return(NULL)
@@ -705,7 +705,7 @@ prep_stock_change = function(sfm){
 compile_nonneg_stocks = function(sfm, keep_nonnegative_stock){
 
   # Non-negative Stocks
-  nonneg_stock = which(unlist(lapply(sfm$model$variables$stock, `[[`, "non_negative")))
+  nonneg_stock = which(unlist(lapply(sfm[["model"]][["variables"]]$stock, `[[`, "non_negative")))
 
   if (keep_nonnegative_stock & length(nonneg_stock) > 0){
 
@@ -783,10 +783,10 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn,
   # @param constraints Output of compile_constraints()
 
   # Auxiliary equations (dynamic auxiliaries)
-  aux_eqn = lapply(sfm$model$variables$aux,`[[`, "eqn_str")
+  aux_eqn = lapply(sfm[["model"]][["variables"]]$aux,`[[`, "eqn_str")
 
   # Flow equations
-  flow_eqn = lapply(sfm$model$variables$flow,`[[`, "eqn_str")
+  flow_eqn = lapply(sfm[["model"]][["variables"]]$flow,`[[`, "eqn_str")
 
   # Compile and order all dynamic equations
   dynamic_eqn = unlist(c(aux_eqn, flow_eqn)[ordering$dynamic$order])
@@ -796,7 +796,7 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn,
   dynamic_eqn_str = paste0(dynamic_eqn, collapse = "\n\t\t")
 
   # Sum change in stock equations
-  stock_change = lapply(sfm$model$variables$stock, function(x){
+  stock_change = lapply(sfm[["model"]][["variables"]]$stock, function(x){
       if (!is.null(x$delayN)){
         return(NULL)
       } else {
@@ -809,17 +809,17 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn,
   stock_change_str = paste0(stock_change, collapse = "\n\t\t")
 
   # Get names of summed change in stocks
-  stock_changes_names = unlist(lapply(sfm$model$variables$stock, `[[`, "sum_name"))
+  stock_changes_names = unlist(lapply(sfm[["model"]][["variables"]]$stock, `[[`, "sum_name"))
 
   state_change_str = paste0(P$change_state_name, " = c(",
                              paste0(unname(stock_changes_names), collapse = ", "), ")" )
 
   # Graphical functions (gf)
-  if (length(sfm$model$variables$gf) > 0){
+  if (length(sfm[["model"]][["variables"]]$gf) > 0){
 
     # Some gf have other gf as source; recursively replace
-    # gf_sources = sfm$model$variables$gf %>% purrr::map("source") %>% purrr::compact() %>% unlist()
-    gf_sources = unlist(lapply(sfm$model$variables$gf, `[[`, "source"))
+    # gf_sources = sfm[["model"]][["variables"]]$gf %>% purrr::map("source") %>% purrr::compact() %>% unlist()
+    gf_sources = unlist(lapply(sfm[["model"]][["variables"]]$gf, `[[`, "source"))
 
     if (length(gf_sources) > 0){
       dict = paste0(names(gf_sources), "(", unname(gf_sources), ")") %>% stats::setNames(names(gf_sources))
@@ -828,7 +828,7 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn,
 
       gf_str = stringr::str_replace_all(unname(dict), dict2)
 
-      # gf_str = sfm$model$variables$gf %>%
+      # gf_str = sfm[["model"]][["variables"]]$gf %>%
       #   purrr::map(\(x) paste0(x$name, "(", x$source, ")")) %>%
       #   unlist() %>% paste0(collapse = ", ")
       gf_str = paste0(", ", paste0(paste0("'", gf_str, "' = "), gf_str, collapse = ", "))

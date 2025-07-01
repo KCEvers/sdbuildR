@@ -1,55 +1,67 @@
+# Global variables for the sdbuildR package
 
-# Create a new environment for the package
-# pkg.env <- new.env(parent = emptyenv())
-
-
-# Store variable names
-# pkg.env$
-
-
-# #' @param P List of names for variables in the output R script, e.g. P = list(time_name = "t", parameter_mame = "pars")
-
-
-
-#' @param initial_value_name String; name of the initial value variable; defaults to "xstart"
-#' @param parameter_name String; name of the parameters variable; defaults to "pars"
-#' @param state_name String; name of the initial value variable; defaults to "S"
-#' @param change_prefix String; prefix of the state change variable; defaults to "d"
-#' @param time_name String; name of the current value of time in the ODE; defaults to "t"
-#' @param times_name String; name of the time sequence variable; defaults to "times"
-#' @param timestep_name String; name of the timestep variable; defaults to "dt"
-#' @param sim_time_unit_name String; name of the simulation time unit variable; defaults to "time_units"
-#' @param time_unit_pars_name String; name of the time unit parameters variable; defaults to "TU"
-#' @param past_name String; name of the past variable; defaults to "past"
-#' @param archive_var_name String; name of the variable which lists which variables in the model to store the history of in past; defaults to "archive_var"
-#' @param conveyor_suffix String; suffix of conveyor variables; defaults to "_conveyor"
-#' @param delayN_acc_suffix String; suffix of delay variables; defaults to "_acc"
-#' @param ode_func_name String; name of ODE function; defaults to "ode_func"
-#' @param open_script Boolean; whether to open the created R script
-#' @param check_script Boolean; whether to run the created R script
-#' @param format_code Boolean; whether to format the created R script with the styler package
-#' @param overwrite Boolean; whether to overwrite filepath_script if it already exists
-#' @param filepath_script File path to output R script, optional
-#'
-P = list(initial_value_name = "xstart",
-         initial_value_names = "xstart_names",
-                          parameter_name = "pars",
-                          state_name = "CURRENT_STATE",
-                          change_prefix = "d",
-                          time_name = "t",
+#' @param model_setup_name String; name of the model setup variable
+#' @param initial_value_name String; name of the initial value variable
+#' @param initial_value_names String; name of the variable with stock names
+#' @param parameter_name String; name of the parameters variable
+#' @param state_name String; name of the initial value variable
+#' @param change_prefix String; prefix of the state change variable
+#' @param time_name String; name of the current value of time in the ODE
+#' @param change_state_name String; name of the state change variable
+#' @param times_name String; name of the time sequence variable
+#' @param timestep_name String; name of the timestep variable
+#' @param time_units_name String; name of the simulation time unit variable
+#' @param conveyor_suffix String; suffix of conveyor variables
+#' @param delayN_suffix String; suffix of delayN variables
+#' @param smoothN_suffix String; suffix of smoothN variables
+#' @param delay_suffix String; suffix of delay variables
+#' @param outflow_suffix String; suffix of outflow entry in delay variables
+#' @param delayN_acc_suffix String; suffix of delayN accumulator variables
+#' @param smoothN_acc_suffix String; suffix of smoothN accumulator variables
+#' @param past_suffix String; suffix of past variables
+#' @param fix_suffix String; suffix of fix variables
+#' @param fix_length_suffix String; suffix of fix length variables
+#' @param ensemble_suffix String; suffix of specified ensemble conditions
+#' @param sim_df_name String; name of the simulation data frame
+#' @param prob_name String; name of the problem variable
+#' @param solution_name String; name of the solution variable
+#' @param ode_func_name String; name of the ODE function
+#' @param callback_func_name String; name of the callback function
+#' @param callback_name String; name of the callback variable
+#' @param intermediaries String; name of the intermediaries variable
+#' @param intermediary_df String; name of the intermediary data frame
+#' @param intermediary_names String; name of the intermediary names variable
+#' @param rootfun_name String; name of the root function
+#' @param eventfun_name String; name of the event function
+#' @param nonneg_stock_name String; name of the non-negativity stock variable
+#' @param convert_u_func String; name of the function to convert units
+#' @param units_dict String; name of the units dictionary variable
+#' @param unit_context String; name of the unit context variable
+#' @param sdbuildR_units String; name of the sdbuildR units module
+#' @param MyCustomUnits String; name of the MyCustomUnits module
+#' @param constraint_def String; name of the constraint definition variable
+#' @param saveat_func String; name of the saveat function
+#' @param init_sdbuildR String; name of the initialization function for sdbuildR
+P = list(model_setup_name = "model_setup",
+         initial_value_name = "init",
+         initial_value_names = "init_names",
+         parameter_name = "constants",
+         state_name = "current_state",
+         change_prefix = "d",
+         time_name = "t",
          change_state_name = "dSdt",
-
-                          times_name = "times",
-                          timestep_name = "dt",
-                          time_units_name = "time_units",
-                          # time_unit_pars_name = time_unit_pars_name,
-                          # archive_name = "archive",
-                          # archive_var_name = "archive_var",
-                          conveyor_suffix = "_conv",
+         times_name = "times",
+         timestep_name = "dt",
+         saveat_name = "saveat",
+         time_units_name = "time_units",
+         # time_unit_pars_name = time_unit_pars_name,
+         # archive_name = "archive",
+         # archive_var_name = "archive_var",
+         conveyor_suffix = "_conv",
          delayN_suffix = "_delayN",
          smoothN_suffix = "_smoothN",
-         # old: Don't add this as delayN and smoothN work the same, and we're using delayN_suffix in compile_ode_julia
          delay_suffix = "_delay",
+         outflow_suffix = ".outflow",
          # delay_order_suffix = "_order",
          # delay_length_suffix = "_length",
          delayN_acc_suffix = "_acc",
@@ -58,6 +70,8 @@ P = list(initial_value_name = "xstart",
          # past_length_suffix = "_length",
          fix_suffix = "_fix",
          fix_length_suffix = "_fixlength",
+         ensemble_suffix = "_ensemble",
+         ensemble_func_name = "prob_func",
          sim_df_name = "df",
          prob_name = "prob",
          solution_name = "solve_out",
@@ -67,17 +81,10 @@ P = list(initial_value_name = "xstart",
          intermediaries = "intermediaries",
          intermediary_df = "intermediary_df",
          intermediary_names = "intermediary_names",
-         env_var_name = "env_var",
-         env_update_name = "env_update",
-         # stock_units_name = "stock_units",
          rootfun_name = "rootfun",
          eventfun_name = "eventfun",
          nonneg_stock_name = "nonneg_stock",
-         # ODE_var_name = "ODE_var",
-         # ODE_unit_name= "ODE_unit",
-         # macro_script_name = "MACRO",
          convert_u_func = "convert_u",
-         # setunit_flow = "setunit_flow",
          units_dict = "units_dict",
          unit_context = "unit_context",
          sdbuildR_units ="sdbuildR_units",
@@ -88,8 +95,6 @@ P = list(initial_value_name = "xstart",
 )
 
 # Suppress warnings for these global variables
-# utils::globalVariables(c(".", "func_nr", "P", "regex_units", "regex_units_Julia"))
-# utils::globalVariables(c(".", "func_nr", "P", "times", "time_units"))
 utils::globalVariables(c(".", "P", P$times_name))
 # times needs to be global as it is used in step, pulse, ramp, and seasonal
 

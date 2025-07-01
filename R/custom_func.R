@@ -208,6 +208,8 @@ IM_filter = function(y, condition_func){
 
 #' Create ramp function
 #'
+#' Create a ramp function that increases linearly from 0 to a specified height at a specified start time, and stays at this height after the specified end time.
+#'
 #' Equivalent of Ramp() in Insight Maker
 #'
 #' @param start Start time of ramp
@@ -217,6 +219,21 @@ IM_filter = function(y, condition_func){
 #' @export
 #' @return Interpolation function
 #' @examples
+#' # Create a simple model with a ramp function
+#' sfm = xmile() %>%
+#' build("a", "stock") %>%
+#' build("input", "constant", eqn = "ramp(2, 5, 3)") %>%
+#' build("inflow", "flow", eqn = "input(t)", to = "a")
+#'
+#' sim = simulate(sfm)
+#' plot(sim)
+#'
+#' # To create a decreasing ramp, set the height to a negative value
+#' sfm = sfm %>%
+#' build("input", eqn = "ramp(2, 5, -3)")
+#'
+#' sim = simulate(sfm)
+#' plot(sim)
 #'
 ramp <- function(start, finish, height = 1){
 
@@ -238,9 +255,6 @@ ramp <- function(start, finish, height = 1){
   #   signal = rbind(signal, data.frame(times = dplyr::last(times), y = height))
   # }
 
-  # In Insight Maker, at start, the signal is still 0, but here it starts at start_h_ramp
-  # No need to append the end value as the signal stays at the end value of ramp
-
   # Create linear approximation function
   input = stats::approxfun(signal, rule = 2, method = "linear")
   return(input)
@@ -250,19 +264,35 @@ ramp <- function(start, finish, height = 1){
 
 #' Create pulse function
 #'
-#' This function is coming soon, but is now unusable.
+#' Create a pulse function that jumps from zero to a specified height at a specified time, and returns to zero after a specified width. The pulse can be repeated at regular intervals.
 #'
 #' Equivalent of Pulse() in Insight Maker
 #'
-#' @param start Start time of pulse
-#' @param height Height of pulse, defaults to 1
-#' @param width Width of pulse in duration (i.e. time). This cannot be equal to or less than 0; to indicate an instantaneous pulse, specify the simulation step size
-#' @param repeat_interval Interval at which to repeat pulse, defaults to NULL to indicate no repetition
+#' @param start Start time of pulse in simulation time units.
+#' @param height Height of pulse. Defaults to 1.
+#' @param width Width of pulse in simulation time units. This cannot be equal to or less than 0. To indicate an instantaneous pulse, specify the simulation step size.
+#' @param repeat_interval Interval at which to repeat pulse. Defaults to NULL to indicate no repetition.
 #'
 #' @export
 #' @return Interpolation function
 #' @examples
+#' # Create a simple model with a pulse function
+#' # that starts at time 5, jumps to a height of 2
+#' # with a width of 1, and does not repeat
+#' sfm = xmile() %>%
+#' build("a", "stock") %>%
+#' build("input", "constant", eqn = "pulse(5, 2, 1)") %>%
+#' build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
+#' sim = simulate(sfm)
+#' plot(sim)
+#'
+#' # Create a pulse that repeats every 5 time units
+#' sfm = sfm %>%
+#' build("input", eqn = "pulse(5, 2, 1, 5)")
+#'
+#' sim = simulate(sfm)
+#' plot(sim)
 pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 
   if (width <= 0){
@@ -272,7 +302,8 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
   # Define time and indices of pulses
   start_ts = seq(start, times[length(times)],
                  # If the number of repeat is NULL, ensure no repeats
-                 by = ifelse(is.null(repeat_interval), times[length(times)] + 1,
+                 by = ifelse(is.null(repeat_interval),
+                             times[length(times)] + 1,
                              repeat_interval))
   end_ts = start_ts + width
 
@@ -303,7 +334,7 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 
 #' Create step function
 #'
-#' This function is coming soon, but is now unusable.
+#' Create a step function that jumps from zero to a specified height at a specified time, and remains at that height until the end of the simulation time.
 #'
 #' Equivalent of Step() in Insight Maker
 #'
@@ -313,7 +344,21 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 #' @export
 #' @return Interpolation function
 #' @examples
+#' # Create a simple model with a step function
+#' # that jumps at time 2 to a height of 5
+#' sfm = xmile() %>%
+#' build("a", "stock") %>%
+#' build("input", "constant", eqn = "step(2, 5)") %>%
+#' build("inflow, "flow", eqn = "input(t)", to = "a")
 #'
+#' sim = simulate(sfm)
+#' plot(sim)
+#'
+#' # Negative heights are also possible
+#' sfm = sfm %>% build("input", eqn = "step(2, -10)")
+#'
+#' sim = simulate(sfm)
+#' plot(sim)
 step <- function(start, height = 1){
 
   # Create dataframe with signal
@@ -329,20 +374,27 @@ step <- function(start, height = 1){
 }
 
 
-#' Annual sine wave with an amplitude of 1
+#' Create a seasonal wave function
 #'
-#' This function is coming soon, but is now unusable.
+#' Create a seasonal wave function that oscillates between -1 and 1, with a specified period and shift. The wave peaks at the specified shift time.
 #'
 #' Equivalent of Seasonal() in Insight Maker
 #'
-#' @param period Duration of wave in years
-#' @param shift Timing of wave peak in years, defaults to 0
+#' @param period Duration of wave in simulation time units. Defaults to 1.
+#' @param shift Timing of wave peak in simulation time units. Defaults to 0.
 #'
 #' @return Seasonal wave
 #' @export
 #'
 #' @examples
+#' # Create a simple model with a seasonal wave
+#' sfm = xmile() %>%
+#' build("a", "stock") %>%
+#' build("input", "constant", eqn = "seasonal(1, 0)") %>%
+#' build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
+#' sim = simulate(sfm)
+#' plot(sim)
 seasonal = function(period = 1, shift = 0){
 
   if (period <= 0){
@@ -355,6 +407,7 @@ seasonal = function(period = 1, shift = 0){
   return(input)
 
 }
+
 
 
 

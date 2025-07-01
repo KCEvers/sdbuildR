@@ -7,20 +7,39 @@
 pulse(start, height = 1, width = 1, repeat_interval = NULL)
 }
 \arguments{
-\item{start}{Start time of pulse}
+\item{start}{Start time of pulse in simulation time units.}
 
-\item{height}{Height of pulse, defaults to 1}
+\item{height}{Height of pulse. Defaults to 1.}
 
-\item{width}{Width of pulse in duration (i.e. time). This cannot be equal to or less than 0; to indicate an instantaneous pulse, specify the simulation step size}
+\item{width}{Width of pulse in simulation time units. This cannot be equal to or less than 0. To indicate an instantaneous pulse, specify the simulation step size.}
 
-\item{repeat_interval}{Interval at which to repeat pulse, defaults to NULL to indicate no repetition}
+\item{repeat_interval}{Interval at which to repeat pulse. Defaults to NULL to indicate no repetition.}
 }
 \value{
 Interpolation function
 }
 \description{
-This function is coming soon, but is now unusable.
+Create a pulse function that jumps from zero to a specified height at a specified time, and returns to zero after a specified width. The pulse can be repeated at regular intervals.
 }
 \details{
 Equivalent of Pulse() in Insight Maker
+}
+\examples{
+# Create a simple model with a pulse function
+# that starts at time 5, jumps to a height of 2
+# with a width of 1, and does not repeat
+sfm = xmile() \%>\%
+build("a", "stock") \%>\%
+build("input", "constant", eqn = "pulse(5, 2, 1)") \%>\%
+build("inflow", "flow", eqn = "input(t)", to = "a")
+
+sim = simulate(sfm)
+plot(sim)
+
+# Create a pulse that repeats every 5 time units
+sfm = sfm \%>\%
+build("input", eqn = "pulse(5, 2, 1, 5)")
+
+sim = simulate(sfm)
+plot(sim)
 }
