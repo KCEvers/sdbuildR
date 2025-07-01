@@ -21,7 +21,10 @@
 #' @param past_suffix String; suffix of past variables
 #' @param fix_suffix String; suffix of fix variables
 #' @param fix_length_suffix String; suffix of fix length variables
+#' @param ensemble_prob_name String; name of the ensemble problem
 #' @param ensemble_suffix String; suffix of specified ensemble conditions
+#' @param ensemble_iter String; name of the ensemble iteration variable
+#' @param ensemble_func_name String; name of the ensemble function
 #' @param sim_df_name String; name of the simulation data frame
 #' @param prob_name String; name of the problem variable
 #' @param solution_name String; name of the solution variable
@@ -70,7 +73,9 @@ P = list(model_setup_name = "model_setup",
          # past_length_suffix = "_length",
          fix_suffix = "_fix",
          fix_length_suffix = "_fixlength",
+         ensemble_prob_name = "ensemble_prob",
          ensemble_suffix = "_ensemble",
+         ensemble_iter = "i",
          ensemble_func_name = "prob_func",
          sim_df_name = "df",
          prob_name = "prob",

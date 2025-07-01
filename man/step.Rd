@@ -20,3 +20,20 @@ Create a step function that jumps from zero to a specified height at a specified
 \details{
 Equivalent of Step() in Insight Maker
 }
+\examples{
+# Create a simple model with a step function
+# that jumps at time 2 to a height of 5
+sfm = xmile() \%>\%
+build("a", "stock") \%>\%
+build("input", "constant", eqn = "step(2, 5)") \%>\%
+build("inflow", "flow", eqn = "input(t)", to = "a")
+
+sim = simulate(sfm)
+plot(sim)
+
+# Negative heights are also possible
+sfm = sfm \%>\% build("input", eqn = "step(2, -10)")
+
+sim = simulate(sfm)
+plot(sim)
+}

@@ -11,7 +11,6 @@ sim_specs(
   stop = "100.0",
   dt = "0.01",
   saveat = dt,
-  adaptive = FALSE,
   seed = NULL,
   time_units = "s",
   language = "R",
@@ -30,8 +29,6 @@ sim_specs(
 \item{dt}{Timestep of solver. Defaults to 0.01.}
 
 \item{saveat}{Timestep at which to save computed values. Defaults to dt.}
-
-\item{adaptive}{If TRUE, an adaptive (instead of a fixed) time step is used. Defaults to FALSE.}
 
 \item{seed}{Seed number to ensure reproducibility across runs in case of random elements. Must be an integer. Defaults to NULL (no seed).}
 

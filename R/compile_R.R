@@ -64,20 +64,20 @@ simulate_R = function(sfm,
 
     # if (include_plot){
     #   # Plot stocks
-    #   pl = plot_sim(sfm, envir[[P$sim_df_name]])
+    #   pl = plot_sim(sfm, envir[[P[["sim_df_name"]]]])
     #   envir$pl = pl
     # }
 
     # message("The R script ran successfully without errors.")
     # list(
     #      success = TRUE,
-    #      df = envir[[P$sim_df_name]],
+    #      df = envir[[P[["sim_df_name"]]]],
     #      init = envir[[P$initial_value_name]],
     #      constants = envir[[P$parameter_name]],
     #      ode_func = envir[[P$ode_func_name]]
     #      )
     out = list()
-    out[[P$sim_df_name]] = envir[[P$sim_df_name]]
+    out[[P[["sim_df_name"]]]] = envir[[P[["sim_df_name"]]]]
     out[[P$initial_value_name]] = envir[[P$initial_value_name]]
     out[[P$parameter_name]] = envir[[P$parameter_name]]
     out$keep_unit = FALSE
@@ -403,7 +403,7 @@ compile_times = function(sfm){
   #   purrr::list_flatten() %>% unlist() %>% unname() %>% unique()
   #
   # if (length(obligatory_var) > 0){
-  #   add_extra_dt = sprintf("+ %s", P$timestep_name)
+  #   add_extra_dt = sprintf("+ %s", P[["timestep_name"]])
   # } else {
   #   add_extra_dt = ""
   # }
@@ -417,14 +417,14 @@ compile_times = function(sfm){
 # Simulation time unit (smallest time scale in your model)
 %s = '%s'
 ",
-                   P$timestep_name, as.character(sfm$sim_specs$dt),
-                   P$times_name,
+                   P[["timestep_name"]], as.character(sfm[["sim_specs"]][["dt"]]),
+                   P[["times_name"]],
                    as.character(sfm$sim_specs$start),
                    as.character(sfm$sim_specs$stop),
-                   # add_extra_dt, # P$timestep_name,
-                   P$timestep_name,
-                   P$time_name, P$times_name,
-                   P$time_units_name,
+                   # add_extra_dt, # P[["timestep_name"]],
+                   P[["timestep_name"]],
+                   P$time_name, P[["times_name"]],
+                   P[["time_units_name"]],
                    sfm$sim_specs$time_units)
 
   return(list(script = script))
@@ -748,7 +748,7 @@ attributes(%s)$valroot
                 check_root = check_root))
     # nonneg_stock_str = lapply(sort(names(nonneg_stock)), # Order alphabetically for aesthetic reasons
     #                           function(x){
-    #                             sprintf("if (%s + d%sdt[names(%s) == '%s']*%s < 0){\n\t\t\t\td%sdt[names(%s) == '%s'] = - %s # Subtract what's left of %s before it turns negative\n\t\t}", x, P$state_name, P$initial_value_name, x, P$timestep_name, P$state_name, P$initial_value_name, x, x, x)}) %>%
+    #                             sprintf("if (%s + d%sdt[names(%s) == '%s']*%s < 0){\n\t\t\t\td%sdt[names(%s) == '%s'] = - %s # Subtract what's left of %s before it turns negative\n\t\t}", x, P$state_name, P$initial_value_name, x, P[["timestep_name"]], P$state_name, P$initial_value_name, x, x, x)}) %>%
     #   paste0(collapse = "\n\t\t")
     # nonneg_stock_str = sprintf("\n\t\t# Ensure non-negativity of (selected) Stocks\n\t\t%s\n", nonneg_stock_str)
 
@@ -920,8 +920,8 @@ compile_run_ode = function(sfm, nonneg_stocks){
   # sim = %s %%>%%
   #   # Add parameters (of length 1)
   #   dplyr::bind_cols(%s %%>%% purrr::keep(\\(x) length(x) == 1 & !inherits(x, 'function'))) %s
-  # ", P$sim_df_name, "ode", P$ode_func_name, P$initial_value_name, P$times_name, P$parameter_name, sfm$sim_specs$method,
-  #                    P$sim_df_name,   P$parameter_name, globalpast$add_archive_var)
+  # ", P[["sim_df_name"]], "ode", P$ode_func_name, P$initial_value_name, P[["times_name"]], P$parameter_name, sfm[["sim_specs"]][["method"]],
+  #                    P[["sim_df_name"]],   P$parameter_name, globalpast$add_archive_var)
 
   script = sprintf("\n\n# Run ODE
 %s = as.data.frame(deSolve::%s(
@@ -931,18 +931,22 @@ compile_run_ode = function(sfm, nonneg_stocks){
   parms=%s,
   method = '%s'%s
 )) %s
-", P$sim_df_name, "ode", P$ode_func_name, P$initial_value_name, P$times_name, P$parameter_name, sfm$sim_specs$method,
+", P[["sim_df_name"]], "ode",
+                   P[["ode_func_name"]],
+                   P[["initial_value_name"]],
+                   P[["times_name"]], P[["parameter_name"]],
+                   sfm[["sim_specs"]][["method"]],
   nonneg_stocks$root_arg,
   nonneg_stocks$check_root)
 
 
   # If different times need to be saved, linearly interpolate
-  if (sfm$sim_specs$dt != sfm$sim_specs$saveat){
+  if (sfm[["sim_specs"]][["dt"]] != sfm[["sim_specs"]][["saveat"]]){
     script = paste0(script, "\n# Linearly interpolate to reduce stored values to saveat\n",
-                    "new_times = seq(", P$times_name, "[1], ",
-                    P$times_name, "[length(", P$times_name, ")], by = ", sfm$sim_specs$saveat, ")\n", # Create new time vector\n",
+                    "new_times = seq(", P[["times_name"]], "[1], ",
+                    P[["times_name"]], "[length(", P[["times_name"]], ")], by = ", sfm[["sim_specs"]][["saveat"]], ")\n", # Create new time vector\n",
 
-                    P$sim_df_name, " = ", P$saveat_func, "(", P$sim_df_name, ", 'time', new_times)\n")
+                    P[["sim_df_name"]], " = ", P[["saveat_func"]], "(", P[["sim_df_name"]], ", 'time', new_times)\n")
 
   }
 
@@ -967,7 +971,7 @@ compile_plot_ode = function(sfm){
 
   script = sprintf("
 # Plot ODE
-plot_sim(sfm, %s)", P$sim_df_name)
+plot_sim(sfm, %s)", P[["sim_df_name"]])
 
   return(list(script=script))
 }
