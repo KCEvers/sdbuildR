@@ -349,7 +349,7 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 #' sfm = xmile() %>%
 #' build("a", "stock") %>%
 #' build("input", "constant", eqn = "step(2, 5)") %>%
-#' build("inflow, "flow", eqn = "input(t)", to = "a")
+#' build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
 #' sim = simulate(sfm)
 #' plot(sim)

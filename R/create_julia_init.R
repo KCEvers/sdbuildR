@@ -34,6 +34,7 @@ create_julia_init = function(){
 
   script = paste0("# Load packages
 #using DifferentialEquations#: ODEProblem, solve, Euler, RK4, Tsit5
+using SciMLBase.EnsembleAnalysis
 using OrdinaryDiffEq
 using DiffEqCallbacks#: SavingCallback, SavedValues
 using DataFrames#: DataFrame, select, innerjoin, rename!
@@ -43,6 +44,7 @@ using Unitful
 using DataInterpolations
 using Random
 using CSV
+using Serialization
 
 # julia initialization for sdbuildR package
 # Required when extending a module’s function

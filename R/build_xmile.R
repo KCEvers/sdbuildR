@@ -699,6 +699,25 @@ validate_xmile = function(sfm){
 
   check_xmile(sfm)
 
+  # Ensure simulation method matches language
+  if (sfm[["sim_specs"]][["language"]] == "Julia"){
+    if (grepl("euler", sfm[["sim_specs"]][["method"]], ignore.case = TRUE)){
+      sfm[["sim_specs"]][["method"]] = "Euler()"
+    } else if (grepl("rk4", sfm[["sim_specs"]][["method"]], ignore.case = TRUE)){
+      sfm[["sim_specs"]][["method"]] = "RK4()"
+    } else {
+      stop("Simulation method must be either 'euler' or 'rk4' for Julia simulations!")
+    }
+  } else if (sfm[["sim_specs"]][["language"]] == "R"){
+    if (grepl("euler", sfm[["sim_specs"]][["method"]], ignore.case = TRUE)){
+      sfm[["sim_specs"]][["method"]] = "euler"
+    } else if (grepl("rk4", sfm[["sim_specs"]][["method"]], ignore.case = TRUE)){
+      sfm[["sim_specs"]][["method"]] = "rk4"
+    } else {
+      stop("Simulation method must be either 'euler' or 'rk4' for R simulations!")
+    }
+  }
+
   # No need to validate model variables if there are no variables
   nr_var = sum(lengths(sfm[["model"]][["variables"]]))
   if (nr_var > 0){
@@ -823,7 +842,7 @@ validate_xmile = function(sfm){
   defaults <- defaults[!names(defaults) %in% c("sfm", "name", "erase", "change_name")]
   sfm$model_units = lapply(sfm$model_units, function(x){
 
-    x$prefix = FALSE
+    x[["prefix"]] = FALSE
 
     # Merge with defaults
     utils::modifyList(defaults, x)
@@ -1407,7 +1426,6 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 #' @param stop End time of simulation. Defaults to 100.
 #' @param dt Timestep of solver. Defaults to 0.01.
 #' @param saveat Timestep at which to save computed values. Defaults to dt.
-#' @param adaptive If TRUE, an adaptive (instead of a fixed) time step is used. Defaults to FALSE.
 #' @param seed Seed number to ensure reproducibility across runs in case of random elements. Must be an integer. Defaults to NULL (no seed).
 #' @param time_units Simulation time unit, e.g. 's' (second). Defaults to "s".
 #' @param language Coding language in which to simulate model. Either "R" or "Julia". Julia is necessary for using units or delay functions. Defaults to "R".
@@ -1457,7 +1475,7 @@ sim_specs = function(sfm,
                      stop = "100.0",
                      dt = "0.01",
                      saveat = dt,
-                     adaptive = FALSE,
+                     # adaptive = FALSE,
                      seed = NULL,
                      time_units = "s",
                      language = "R", ...){
@@ -1658,10 +1676,12 @@ sim_specs = function(sfm,
 
   # Check coding language
   if (!missing(language)){
-    if (!tolower(language) %in% c("r", "julia")){
+    if (!tolower(language) %in% c("r", "julia", "jl")){
       stop(sprintf("The language %s is not one of the languages available in sdbuildR. The available languages are 'Julia' (recommended) or 'R'.", language))
     } else {
+
       language = stringr::str_to_title(language)
+      language = ifelse(language == "Jl", "Julia", language)
     }
   }
 

@@ -98,7 +98,7 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units,
   )
 
   if ("error" %in% class(out)){
-    stop(paste0("Parsing equation of ", name, " failed:\n", out$message))
+    stop(paste0("Parsing equation of ", name, " failed:\n", out[["message"]]))
   }
 
   if (any(grepl("%%", eqn))){
@@ -151,8 +151,8 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units,
 
     # Step 5. Replace R functions to Julia functions
     conv_list = convert_builtin_functions_julia(type, name, eqn, var_names, debug = debug)
-    eqn = conv_list$eqn
-    add_Rcode = conv_list$add_Rcode
+    eqn = conv_list[["eqn"]]
+    add_Rcode = conv_list[["add_Rcode"]]
     # translated_func = conv_list$translated_func
 
 
@@ -210,7 +210,7 @@ get_range_digits = function(eqn, var_names){
   if (nrow(idx_df) > 0){
 
     # Remove matches within variable names or quotations
-    idx_df = idx_df[!(idx_df$start %in% idxs_exclude | idx_df$end %in% idxs_exclude), ]
+    idx_df = idx_df[!(idx_df[["start"]] %in% idxs_exclude | idx_df[["end"]] %in% idxs_exclude), ]
 
     if (nrow(idx_df) > 0){
 
@@ -370,7 +370,7 @@ replace_op_julia <- function(eqn, var_names) {
     # Remove those that are in quotation marks or names
     idxs_exclude = get_seq_exclude(eqn, var_names)
 
-    if (nrow(df_logical_op) > 0) df_logical_op = df_logical_op[!(df_logical_op$start %in% idxs_exclude | df_logical_op$end %in% idxs_exclude), ]
+    if (nrow(df_logical_op) > 0) df_logical_op = df_logical_op[!(df_logical_op[["start"]] %in% idxs_exclude | df_logical_op[["end"]] %in% idxs_exclude), ]
     # Remove matches that are the same as the logical operator
     if (nrow(df_logical_op) > 0) df_logical_op = df_logical_op[df_logical_op[["replacement"]] != df_logical_op[["match"]], ]
 
@@ -417,7 +417,7 @@ find_round = function(df, round_brackets, eqn, var_names){
    if (df$statement %in% c("function", "FUNCTION")){
 
     # Get words before statement
-    words = get_words(stringr::str_sub(eqn, 1, df$start - 1))
+    words = get_words(stringr::str_sub(eqn, 1, df[["start"]] - 1))
     if (nrow(words) > 0){
       # Pick last word
       word = words[nrow(words), ]
@@ -665,7 +665,7 @@ convert_all_statements_julia = function(eqn, var_names, debug){
                        data.frame(start = nchar(eqn) + 1, end = nchar(eqn) + 1))
 
   # For each new line, find first two words
-  x = idxs_newline$end
+  x = idxs_newline[["end"]]
   pairs = lapply(seq(length(x) - 1), function(i){
 
     # Get surrounding words
@@ -771,9 +771,10 @@ create_default_arg = function(arg){
 order_arg_in_func_wrapper = function(sfm, var_names){
 
   # Collect all custom defined functions and their arguments
-  all_eqns = c(lapply(sfm$macro, `[[`, "eqn_julia"),
+  all_eqns = c(lapply(sfm[["macro"]], `[[`, "eqn_julia"),
                # sfm$global$eqn_julia,
-               sfm[["model"]][["variables"]] %>% purrr::map_depth(2, "eqn_julia")) %>% unlist() %>%
+               sfm[["model"]][["variables"]] %>%
+                 purrr::map_depth(2, "eqn_julia")) %>% unlist() %>%
     unname() %>% paste0(collapse = "\n")
   idxs_exclude = get_seq_exclude(all_eqns, var_names)
 
@@ -782,9 +783,9 @@ order_arg_in_func_wrapper = function(sfm, var_names){
 
 
   # Get function name
-  paired_idxs$func_name = trimws(stringr::str_match(stringr::str_sub(all_eqns, 1, paired_idxs$start-1) , "function (.*?)$")[,2])
+  paired_idxs[["func_name"]] = trimws(stringr::str_match(stringr::str_sub(all_eqns, 1, paired_idxs[["start"]]-1) , "function (.*?)$")[,2])
   # Pull arguments from match
-  paired_idxs$bracket_arg = stringr::str_replace_all(paired_idxs$match, c("\\(;" = "", "\\)$" = ""))
+  paired_idxs[["bracket_arg"]] = stringr::str_replace_all(paired_idxs[["match"]], c("\\(;" = "", "\\)$" = ""))
 
 
 }
@@ -802,10 +803,9 @@ order_arg_in_func_wrapper = function(sfm, var_names){
 add_keyword_arg_wrapper = function(sfm, var_names){
 
   # Replace all function calls with named arguments
-  # names_df = get_names(sfm)
-  all_eqns = c(lapply(sfm$macro, `[[`, "eqn_julia"),
-               # sfm$global$eqn_julia,
-               sfm[["model"]][["variables"]] %>% purrr::map_depth(2, "eqn_julia")) %>% unlist() %>%
+  all_eqns = c(lapply(sfm[["macro"]], `[[`, "eqn_julia"),
+               sfm[["model"]][["variables"]] %>%
+                 purrr::map_depth(2, "eqn_julia")) %>% unlist() %>%
     unname() %>% paste0(collapse = "\n")
   idxs_exclude = get_seq_exclude(all_eqns, var_names)
 
@@ -815,14 +815,14 @@ add_keyword_arg_wrapper = function(sfm, var_names){
   if (nrow(paired_idxs) > 0){
 
     # Select only function definitions
-    paired_idxs = paired_idxs[grepl("\\(;", paired_idxs$match), ]
+    paired_idxs = paired_idxs[grepl("\\(;", paired_idxs[["match"]]), ]
 
     if (nrow(paired_idxs) > 0){
 
       # Get function name
       paired_idxs$func_name = trimws(stringr::str_match(stringr::str_sub(all_eqns, 1, paired_idxs$start-1) , "function (.*?)$")[,2])
       # Pull arguments from match
-      paired_idxs$bracket_arg = stringr::str_replace_all(paired_idxs$match, c("\\(;" = "", "\\)$" = ""))
+      paired_idxs[["bracket_arg"]] = stringr::str_replace_all(paired_idxs[["match"]], c("\\(;" = "", "\\)$" = ""))
 
       # Create default arguments
       default_arg_list = lapply(1:nrow(paired_idxs), function(i){
@@ -832,19 +832,16 @@ add_keyword_arg_wrapper = function(sfm, var_names){
 
       for (i in 1:nrow(paired_idxs)){
         sfm[["model"]][["variables"]] =  sfm[["model"]][["variables"]] %>% purrr::map_depth(2, function(x){
-          if (is_defined(x$eqn_julia)){
-            x$eqn_julia = add_keyword_arg(x$eqn_julia, var_names, paired_idxs[i, "func_name"], default_arg_list[[i]])
+          if (is_defined(x[["eqn_julia"]])){
+            x[["eqn_julia"]] = add_keyword_arg(x[["eqn_julia"]], var_names, paired_idxs[i, "func_name"], default_arg_list[[i]])
           }
           return(x)
         })
 
-        sfm$macro = lapply(sfm$macro, function(x){
-          x$eqn_julia = add_keyword_arg(x$eqn_julia, var_names, paired_idxs[i, "func_name"], default_arg_list[[i]])
+        sfm[["macro"]] = lapply(sfm[["macro"]], function(x){
+          x[["eqn_julia"]] = add_keyword_arg(x[["eqn_julia"]], var_names, paired_idxs[i, "func_name"], default_arg_list[[i]])
           return(x)
         })
-
-        # sfm$global$eqn_julia = add_keyword_arg(sfm$global$eqn_julia, var_names, paired_idxs[i, "func_name"], default_arg_list[[i]])
-
 
       }
 
@@ -872,17 +869,17 @@ add_keyword_arg = function(eqn, var_names, func_name, default_arg){
 
   if (nrow(paired_idxs) > 0){
 
-    paired_idxs$bracket_arg = stringr::str_replace_all(paired_idxs$match, paste0("^", func_name, "\\("), "") %>%
+    paired_idxs[["bracket_arg"]] = stringr::str_replace_all(paired_idxs[["match"]], paste0("^", func_name, "\\("), "") %>%
                       stringr::str_replace_all(paste0("\\)$"), "")
     # Ensure it doesn't start with ; - this is the function definition
-    paired_idxs = paired_idxs[!grepl("^;", paired_idxs$bracket_arg), ]
+    paired_idxs = paired_idxs[!grepl("^;", paired_idxs[["bracket_arg"]]), ]
 
     if (nrow(paired_idxs) > 0){
 
       # For each match, extract and sort arguments, and place back with named arguments; reverse order to not mess up the indices
       for (i in rev(seq.int(nrow(paired_idxs)))){
         # Parse arguments
-        arg = parse_args(paired_idxs[i, ]$bracket_arg)
+        arg = parse_args(paired_idxs[i, ][["bracket_arg"]])
 
         # Sort arguments
         arg_sorted = sort_args(arg, func_name, default_arg = default_arg, var_names = var_names)
@@ -1391,8 +1388,8 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
         }
       }) %>% do.call(rbind, .) %>% as.data.frame()
 
-      # idx_df <- idx_df[!((idx_df$start %in% idxs_exclude) | (idx_df$end %in% idxs_exclude)), ]
-      if (nrow(idx_df) > 0) idx_df = idx_df[!(idx_df$start %in% idxs_exclude | idx_df$end %in% idxs_exclude), ]
+      # idx_df <- idx_df[!((idx_df[["start"]] %in% idxs_exclude) | (idx_df[["end"]] %in% idxs_exclude)), ]
+      if (nrow(idx_df) > 0) idx_df = idx_df[!(idx_df[["start"]] %in% idxs_exclude | idx_df[["end"]] %in% idxs_exclude), ]
       if (nrow(idx_df) == 0){
         done = TRUE
         next
@@ -1402,18 +1399,18 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
       # For the first iteration, add _replace to all detected functions, so we don't end in an infinite loop (some Julia and R functions have the same name)
       if (i == 1 & nrow(idx_df) > 0){
 
-        idx_df <- idx_df[order(idx_df$start), ]
-        idx_df$R_regex <- stringr::str_replace_all(idx_df$R_regex,
+        idx_df <- idx_df[order(idx_df[["start"]]), ]
+        idx_df$R_regex <- stringr::str_replace_all(idx_df[["R_regex"]],
                                             stringr::fixed(c("(?<!\\.)\\b" = "", "\\(" = "(", "\\)" = ")")))
 
         for (j in rev(1:nrow(idx_df))){
-          stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) = idx_df[j, ]$R_regex #%>%
+          stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) = idx_df[j, ][["R_regex"]] #%>%
         }
       }
 
       if (i == 1){
         # print(eqn)
-        R_regex = syntax_df$R_regex
+        R_regex = syntax_df[["R_regex"]]
         i = i + 1
         # Stop first iteration
         next
@@ -1432,7 +1429,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
         if (nrow(paired_idxs) > 0){
           # Match the opening bracket of each function to round brackets in paired_idxs
           idx_funcs = merge(
-            paired_idxs[paired_idxs$type == "round", ],
+            paired_idxs[paired_idxs[["type"]] == "round", ],
             idx_df,
             by.x = "start",
             by.y = "end"
@@ -1441,12 +1438,12 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
           idx_funcs[["start"]] = idx_funcs[["start.y"]]
 
 
-          df2 = idx_df[idx_df$syntax == "syntax1b", ]
+          df2 = idx_df[idx_df[["syntax"]] == "syntax1b", ]
           # Add start_bracket column to prevent errors
-          df2$start_bracket = df2$start
+          df2[["start_bracket"]] = df2[["start"]]
           # Add back syntax1b which does not need brackets
           idx_funcs = dplyr::bind_rows(idx_funcs, df2)
-          idx_funcs = idx_funcs[order(idx_funcs$end), ]
+          idx_funcs = idx_funcs[order(idx_funcs[["end"]]), ]
           idx_funcs
 
 
@@ -1473,9 +1470,9 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
 
         # Start with most nested function
         idx_funcs_ordered = idx_funcs
-        idx_funcs_ordered$is_nested_around = any(idx_funcs_ordered$start < idx_funcs$start &
-                                                   idx_funcs_ordered$end > idx_funcs$end)
-        idx_funcs_ordered = idx_funcs_ordered[order(idx_funcs_ordered$is_nested_around), ]
+        idx_funcs_ordered[["is_nested_around"]] = any(idx_funcs_ordered[["start"]] < idx_funcs[["start"]] &
+                                                   idx_funcs_ordered[["end"]] > idx_funcs[["end"]])
+        idx_funcs_ordered = idx_funcs_ordered[order(idx_funcs_ordered[["is_nested_around"]]), ]
         idx_func = idx_funcs_ordered[1, ] # Select first match
 
         if (debug){
@@ -1484,43 +1481,43 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
         }
 
         # Extract argument between brackets (excluding brackets)
-        bracket_arg = stringr::str_sub(eqn, idx_func$start_bracket + 1, idx_func$end - 1)
+        bracket_arg = stringr::str_sub(eqn, idx_func[["start_bracket"]] + 1, idx_func[["end"]] - 1)
 
         # print("bracket_arg")
         # print(bracket_arg)
 
         arg = parse_args(bracket_arg)
-        arg = sort_args(arg, idx_func$R_first_iter, var_names = var_names)
+        arg = sort_args(arg, idx_func[["R_first_iter"]], var_names = var_names)
         arg = unname(unlist(arg))
 
         # print("arg")
         # print(arg)
 
         # Indices of replacement in eqn
-        start_idx = idx_func$start
-        end_idx = idx_func$end
+        start_idx = idx_func[["start"]]
+        end_idx = idx_func[["end"]]
 
-        if (idx_func$syntax == "syntax0") {
+        if (idx_func[["syntax"]] == "syntax0") {
 
           # arg = paste0(arg, collapse = ", ")
-          replacement = idx_func$julia
+          replacement = idx_func[["julia"]]
 
-        } else if (idx_func$syntax == "syntax1") {
+        } else if (idx_func[["syntax"]] == "syntax1") {
 
           arg = paste0(arg, collapse = ", ")
 
           replacement = sprintf(
             "%s%s(%s%s%s%s%s)",
-            idx_func$julia,
-            ifelse(idx_func$add_broadcast, ".", ""),
-            idx_func$add_first_arg,
-            ifelse(nzchar(idx_func$add_first_arg) & nzchar(arg), ", ", ""),
+            idx_func[["julia"]],
+            ifelse(idx_func[["add_broadcast"]], ".", ""),
+            idx_func[["add_first_arg"]],
+            ifelse(nzchar(idx_func[["add_first_arg"]]) & nzchar(arg), ", ", ""),
             arg,
-            idx_func$add_second_arg,
-            ifelse(nzchar(idx_func$add_second_arg) & nzchar(arg), ", ", "")
+            idx_func[["add_second_arg"]],
+            ifelse(nzchar(idx_func[["add_second_arg"]]) & nzchar(arg), ", ", "")
           )
 
-        } else if (idx_func$syntax == "delay"){
+        } else if (idx_func[["syntax"]] == "delay"){
 
           if (type %in% c("stock", "gf", "constant", "macro")){
             stop(paste0("Adjust equation of ", name, ": delay() cannot be used for a ", type, "."))
@@ -1532,28 +1529,28 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
             stop(paste0("Adjust equation of ", name, ": the delay length in delay() must be greater than 0."))
           }
 
-          func_name = paste0(name, P$delay_suffix, length(add_Rcode[["func"]][[idx_func$syntax]]) + 1)
+          func_name = paste0(name, P$delay_suffix, length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
           arg3 = ifelse(length(arg) > 2, arg[3], "nothing")
 
-          replacement = paste0(idx_func$julia, "(",
+          replacement = paste0(idx_func[["julia"]], "(",
                                arg[1], ", ",
                                arg[2], ", ",
                                arg3, ", ",
-                               P$time_name,
+                               P[["time_name"]],
                                # ", \"", arg[1], "\", \"single\", ",
                                # Symbols are faster
                                ", :", arg[1],
                                # ", \"single\", ",
                                ", ",
 
-                               P$intermediaries, ", ", P$intermediary_names, ")")
+                               P[["intermediaries"]], ", ", P[["intermediary_names"]], ")")
 
-          add_Rcode[["func"]][[idx_func$syntax]][[func_name]] = list(var = arg[1],
+          add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(var = arg[1],
                                                                      length = arg[2],
                                                                      initial = arg3
           )
 
-        } else if (idx_func$syntax == "past"){
+        } else if (idx_func[["syntax"]] == "past"){
 
 
           if (type %in% c("stock", "gf", "constant", "macro")){
@@ -1567,22 +1564,22 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
           }
 
           arg2 = ifelse(length(arg) > 1, arg[2], "nothing")
-          func_name = paste0(name, P$past_suffix, length(add_Rcode[["func"]][[idx_func$syntax]]) + 1)
-          replacement = paste0(idx_func$julia, "(",
+          func_name = paste0(name, P[["past_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
+          replacement = paste0(idx_func[["julia"]], "(",
                                arg[1], ", ",
                                arg2, ", nothing, ",
-                               P$time_name,
+                               P[["time_name"]],
                                # ", \"", arg[1], "\", \"interval\", ",
                                # Symbols are faster
                                ", :", arg[1],
                                # ", \"interval\", ",
                                ", ",
-                               P$intermediaries, ", ", P$intermediary_names, ")")
-          add_Rcode[["func"]][[idx_func$syntax]][[func_name]] = list(var = arg[1],
+                               P[["intermediaries"]], ", ", P[["intermediary_names"]], ")")
+          add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(var = arg[1],
                                                                      length = arg2)
 
 
-        } else if (idx_func$syntax == "delayN"){
+        } else if (idx_func[["syntax"]] == "delayN"){
 
 
           if (type %in% c("stock", "gf", "constant", "macro")){
@@ -1602,14 +1599,14 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
           arg4 = ifelse(length(arg) > 3, arg[4], arg[1])
 
           # Number delayN() as there may be multiple
-          func_name = paste0(name, P$delayN_suffix, length(add_Rcode[["func"]][[idx_func$syntax]]) + 1)
+          func_name = paste0(name, P[["delayN_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
 
-          replacement = paste0(func_name, P$outflow_suffix)
+          replacement = paste0(func_name, P[["outflow_suffix"]])
           setup = paste0("setup_delayN(", arg4, ", ", arg[2], ", ", arg[3],
                          # ", \"", func_name, "\")")
                          # Symbols are faster
                          ", :", func_name, ")")
-          compute = paste0(idx_func$julia, "(",
+          compute = paste0(idx_func[["julia"]], "(",
                                     arg[1], ", ",
                            func_name, ", ",
                                     arg[2], ", ",
@@ -1617,10 +1614,10 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
 
           update = paste0(func_name, ".update")
 
-          add_Rcode[["func"]][[idx_func$syntax]][[func_name]] = list(setup = setup,
+          add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(setup = setup,
                                                                      compute = compute,
                                                                      update = update,
-                                                                     type = idx_func$julia,
+                                                                     type = idx_func[["julia"]],
                                                                      var = arg[1],
                                                                      length = arg[2],
                                                                      order = arg[3],
@@ -1628,7 +1625,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
 
 
 
-        } else if (idx_func$syntax == "smoothN"){
+        } else if (idx_func[["syntax"]] == "smoothN"){
 
 
           if (type %in% c("stock", "gf", "constant", "macro")){
@@ -1649,14 +1646,14 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
           arg4 = ifelse(length(arg) > 3, arg[4], arg[1])
 
           # Number smoothN() as there may be multiple
-          func_name = paste0(name, P$smoothN_suffix, length(add_Rcode[["func"]][[idx_func$syntax]]) + 1)
+          func_name = paste0(name, P[["smoothN_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
 
-          replacement = paste0(func_name, P$outflow_suffix)
+          replacement = paste0(func_name, P[["outflow_suffix"]])
           setup = paste0("setup_smoothN(", arg4, ", ", arg[2], ", ", arg[3],
                          # ", \"", func_name, "\")")
                          # Symbols are faster
                          ", :", func_name, ")")
-          compute = paste0(idx_func$julia, "(",
+          compute = paste0(idx_func[["julia"]], "(",
                            arg[1], ", ",
                            func_name, ", ",
                            arg[2], ", ",
@@ -1668,30 +1665,30 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
           #                                   list(list(setup = setup,
           #                                             compute = compute,
           #                                             update = update,
-          #                                             type = idx_func$julia,
+          #                                             type = idx_func[["julia"]],
           #                                             var = arg[1],
           #                                             length = arg[2],
           #                                             order = arg[3],
           #                                             initial = arg4
           #                                             )) %>% stats::setNames(func_name))
 
-          add_Rcode[["func"]][[idx_func$syntax]][[func_name]] = list(setup = setup,
+          add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(setup = setup,
                                                                      compute = compute,
                                                                      update = update,
-                                                                     type = idx_func$julia,
+                                                                     type = idx_func[["julia"]],
                                                                      var = arg[1],
                                                                      length = arg[2],
                                                                      order = arg[3],
                                                                      initial = arg4
           )
 
-        } else if (idx_func$syntax == "syntaxD"){
+        } else if (idx_func[["syntax"]] == "syntaxD"){
 
           # Convert random number generation
           replacement = conv_distribution(arg,
                                           # idx_func$R_first_iter,
-                                          idx_func$julia,
-                                          idx_func$add_first_arg)
+                                          idx_func[["julia"]],
+                                          idx_func[["add_first_arg"]])
         }
 
         if (debug){
