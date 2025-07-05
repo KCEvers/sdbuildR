@@ -777,13 +777,16 @@ custom_units = function(){
        # "electric_constant" = list(name = "electric_constant", eqn = "1.0\\u03F50", prefix = FALSE)
 
        "deg" = list(name = "deg", eqn = "pi/180", prefix = FALSE),
-       "Ohm" = list(name = "Ohm", eqn = "1V/A", prefix = FALSE),
+
+       #    # Use lowercase ohm because Ohm is already taken as an abbreviation and throws an error upon compiling the package
+
+       "ohm" = list(name = "ohm", eqn = "1V/A", prefix = FALSE),
        "reduced_Planck_constant" = list(name = "reduced_Planck_constant", eqn = "h/2pi", prefix = FALSE),
        "superconducting_magnetic_flux_quantum" = list(name = "superconducting_magnetic_flux_quantum", eqn = "h/(2q)", prefix = FALSE),
        "degF" = list(name = "degF", eqn = "(45967//100)Ra", prefix = FALSE),
        "degC" = list(name = "degC", eqn = "(27315//100)K", prefix = FALSE),
        "Stefan_Boltzmann_constant" = list(name = "Stefan_Boltzmann_constant", eqn = "pi^2*k^4/(60*reduced_Planck_constant^3*c^2)", prefix = FALSE),
-       "AngHertz" = list(name = "AngHertz", eqn = "2pi/s", prefix = FALSE),
+       "anghertz" = list(name = "anghertz", eqn = "2pi/s", prefix = FALSE),
        "magnetic_constant" = list(name = "magnetic_constant", eqn = "4pi*(1//10)^7*H/m", prefix = FALSE),
        "electric_constant" = list(name = "electric_constant", eqn = "1/(\\u03BC0*c^2)", prefix = FALSE),
        "Bohr_magneton" = list(name = "Bohr_magneton", eqn = "q*reduced_Planck_constant/(2*me)", prefix = FALSE),

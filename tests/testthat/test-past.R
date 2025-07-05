@@ -36,12 +36,11 @@ test_that("delay() works", {
     build("Outflow", "flow", eqn = "delay(Inflow, AverageDelay, 100)", from = "MaterialinTransit") %>%
     build("AverageDelay", "constant", eqn = 4)
   expect_no_error(plot(sfm))
-  expect_no_error(simulate(sfm))
-  sim = simulate(sfm)
-  expect_equal(sim$df$Inflow[which(sim$df$time < 8)[1]], 100)
-  expect_equal(sim$df$Inflow[which(sim$df$time > 8)[1]], 200)
-  expect_equal(sim$df$Outflow[which(sim$df$time < 8 + 4)[1]], 100)
-  expect_equal(sim$df$Outflow[which(sim$df$time >= 8 + 4)[1]], 200)
+  sim = expect_no_error(simulate(sfm))
+  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time < 8)[1]], 100)
+  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time > 8)[1]], 200)
+  expect_equal(sim$df[sim$df$variable == "Outflow", "value"][which(sim$df$time < 8 + 4)[1]], 100)
+  expect_equal(sim$df[sim$df$variable == "Outflow", "value"][which(sim$df$time >= 8 + 4)[1]], 200)
 
   # **Check whether first argument to delay() is in variables
 
@@ -67,12 +66,11 @@ test_that("past() works", {
     build("Outflow", "flow", eqn = "max(past(Inflow, AverageDelay))", from = "MaterialinTransit") %>%
     build("AverageDelay", "constant", eqn = 4)
   expect_no_error(plot(sfm))
-  expect_no_error(simulate(sfm))
-  sim = simulate(sfm)
-  expect_equal(sim$df$Inflow[which(sim$df$time < 8)[1]], 100)
-  expect_equal(sim$df$Inflow[which(sim$df$time > 8)[1]], 200)
-  expect_equal(sim$df$Outflow[which(sim$df$time < 8 + 4)[1]], 100)
-  expect_equal(sim$df$Outflow[which(sim$df$time >= 8 + 4)[1]], 200)
+  sim = expect_no_error(simulate(sfm))
+  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time < 8)[1]], 100)
+  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time > 8)[1]], 200)
+  expect_equal(sim$df[sim$df$variable == "Outflow", "value"][which(sim$df$time < 8 + 4)[1]], 100)
+  expect_equal(sim$df[sim$df$variable == "Outflow", "value"][which(sim$df$time >= 8 + 4)[1]], 200)
 
 
 })
@@ -99,8 +97,8 @@ test_that("delayN() works", {
     build("AverageDelay", "constant", eqn = 4))
   expect_no_error(plot(sfm))
   sim = expect_no_error(simulate(sfm))
-  expect_equal(sim$df$Inflow[which(sim$df$time < 8)[1]], 100)
-  expect_equal(sim$df$Inflow[which(sim$df$time > 8)[1]], 200)
+  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time < 8)[1]], 100)
+  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time > 8)[1]], 200)
 
 
   sfm = expect_no_error(xmile() %>%

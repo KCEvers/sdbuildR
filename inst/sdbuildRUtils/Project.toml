@@ -1,15 +1,21 @@
+name = "sdbuildRUtils"
+uuid = "558783a2-18a6-44dc-8953-3641eeb55936"
+authors = ["Kyra Evers <kyra.c.evers@gmail.com>"]
+version = "0.1.0"
+
 [deps]
-CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataInterpolations = "82cc6244-b520-54b8-b5a6-8a565e85f1d0"
-DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
-sdbuildRUtils = "558783a2-18a6-44dc-8953-3641eeb55936"
 
 [compat]
+DataFrames = "1.7.0"
+DataInterpolations = "8.1.0"
+Distributions = "0.25.120"
+Random = "1.11.0"
+Statistics = "1.11.1"
+Unitful = "1.23.1"
 julia = "1.11"

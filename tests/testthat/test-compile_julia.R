@@ -1,11 +1,10 @@
+# Already simulate templates in julia_vs_r, no need to do that here too
 
 test_that("templates work", {
 
   sfm = xmile("SIR") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
-
-  # Already simulate templates in julia_vs_r
 
   sfm = xmile("predator-prey") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
@@ -22,7 +21,8 @@ test_that("templates work", {
   sim = expect_no_error(simulate(sfm))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
-  expect_equal(dplyr::last(sim$df$coffee_temperature), sim$constants$room_temperature, tolerance = .01)
+  expect_equal(dplyr::last(sim$df[sim$df$variable == "coffee_temperature", "value"]),
+               sim$constants$room_temperature, tolerance = .01)
 
   sfm = xmile("Crielaard2022") %>% sim_specs(language = "Julia")
   expect_no_error(plot(sfm))
@@ -73,24 +73,29 @@ test_that("simulate with different components works", {
 
   # Without stocks throws error
   sfm = xmile()
-  expect_error(simulate(sfm %>% sim_specs(language = "Julia")), "Your model has no stocks.")
+  expect_error(simulate(sfm %>% sim_specs(language = "Julia")),
+               "Your model has no stocks.")
 
   sfm = xmile() %>% build("a", "stock") %>%
     build("b", "flow")
-  expect_error(simulate(sfm %>% sim_specs(language = "Julia")), "These flows are not connected to any stock:\\n- b")
+  expect_error(simulate(sfm %>% sim_specs(language = "Julia")),
+               "These flows are not connected to any stock:\\n- b")
 
   # With one stock and no flows and no parameters
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build("A", "stock", eqn = "100")
   sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
-  expect_equal(sort(names(sim$df)), c("A", "time"))
+  expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
+  expect_equal(unique(sim$df$variable), c("A"))
 
   # One stock with flows, other stock without flows
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build(c("A", "B"), "stock", eqn = "100") %>%
     build("C", "flow", eqn = "1", to = "A")
   sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
-  expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
+  expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
+  expect_equal(unique(sim$df$variable), c("A", "B", "C"))
+
 
   # With one intermediary -> error in constructing Dataframe before
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
@@ -98,14 +103,16 @@ test_that("simulate with different components works", {
     build("B", "flow", eqn = "1", to = "A") %>%
     build("C", "aux", eqn = "B + 1")
   sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
-  expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
+  expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
+  expect_equal(unique(sim$df$variable), c("A", "B", "C"))
 
   # One intermediary variable that is also a stock, so it is removed -> does merging of df and intermediary_df still work?
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build("A", "stock", eqn = "100") %>%
     build("B", "flow", eqn = "delay(A, 5)", to = "A")
   sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
-  expect_equal(sort(names(sim$df)), c("A", "B", "time"))
+  expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
+  expect_equal(unique(sim$df$variable), c("A", "B"))
 
   # Stocks without flows
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
@@ -113,7 +120,8 @@ test_that("simulate with different components works", {
     build("B", "stock", eqn = "1") %>%
     build("C", "aux", eqn = "B + 1")
   sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
-  expect_equal(sort(names(sim$df)), c("A", "B", "C", "time"))
+  expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
+  expect_equal(unique(sim$df$variable), c("A", "B", "C"))
 
   # # With macros
   # sfm = xmile(start = 0, stop = 10, dt = 0.1) %>%
@@ -129,14 +137,14 @@ test_that("simulate with different components works", {
   # Only keep stocks
   sfm = xmile("SIR")
   sim = simulate(sfm %>% sim_specs(language = "Julia"), only_stocks = TRUE)
-  expect_equal(ncol(as.data.frame(sim)), 1 + length(names(sfm$model$variables$stock)))
+  expect_equal(length(unique(as.data.frame(sim)$variable)), length(names(sfm$model$variables$stock)))
 
   # All variables should be kept if only_stocks = FALSE
   sfm = xmile("SIR")
   sim = simulate(sfm %>% sim_specs(language = "Julia"), only_stocks = FALSE)
   df = as.data.frame(sfm)
   df = df[df$type != "constant", ]
-  expect_equal(ncol(as.data.frame(sim)), 1 + length(df$name))
+  expect_equal(length(unique(as.data.frame(sim)$variable)), length(df$name))
 
 
   # ** some have units
@@ -153,14 +161,14 @@ test_that("seed works", {
     build(c("predator", "prey"), eqn = "runif(1, 20, 50)") %>% sim_specs(language = "Julia")
   sim1 = simulate(sfm)
   sim2 = simulate(sfm)
-  expect_equal(sim1$df$predator[1] == sim2$df$predator[1], FALSE)
-  expect_equal(dplyr::last(sim1$df$predator) == dplyr::last(sim2$df$predator), FALSE)
+  expect_equal(sim1$df$value[1] == sim2$df$value[1], FALSE)
+  expect_equal(dplyr::last(sim1$df$value) == dplyr::last(sim2$df$value), FALSE)
 
   # With a seed, simulations should be the same
   sfm = sfm %>% sim_specs(seed = 1)
   sim1 = simulate(sfm)
   sim2 = simulate(sfm)
-  expect_equal(dplyr::last(sim1$df$predator), dplyr::last(sim2$df$predator))
+  expect_equal(dplyr::last(sim1$df$value), dplyr::last(sim2$df$value))
 
 })
 

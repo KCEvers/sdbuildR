@@ -205,7 +205,7 @@ get_range_digits = function(eqn, var_names){
 
   # Locate all integers
   # idx_df = stringr::str_locate_all(eqn, "[\\.]*[0-9]+[\\.[0-9]+]*")[[1]] %>% as.data.frame()
-  idx_df = stringr::str_locate_all(eqn, "(?<![a-zA-Z0-9\\.:punct:])[0-9]+(?![a-zA-Z0-9\\.:punct:])")[[1]] %>% as.data.frame()
+  idx_df = as.data.frame(stringr::str_locate_all(eqn, "(?<![a-zA-Z0-9\\.:punct:])[0-9]+(?![a-zA-Z0-9\\.:punct:])")[[1]])
 
   if (nrow(idx_df) > 0){
 
@@ -414,7 +414,7 @@ find_round = function(df, round_brackets, eqn, var_names){
 
   start_word = end_word = func_name = NA
 
-   if (df$statement %in% c("function", "FUNCTION")){
+   if (df[["statement"]] %in% c("function", "FUNCTION")){
 
     # Get words before statement
     words = get_words(stringr::str_sub(eqn, 1, df[["start"]] - 1))
@@ -542,24 +542,67 @@ convert_all_statements_julia = function(eqn, var_names, debug){
 #
 #       df_statements
 
-      #
-            # Add round brackets and curly brackets to df_statements
+      # #
+      #       # Add round brackets and curly brackets to df_statements
+      #       df_statements = df_statements[order(df_statements[["start"]]), ]
+      #       df_statements = df_statements %>%
+      #         # else if and if will have matching ending characters, choose one with longest statement
+      #         dplyr::group_by(.data$end) %>%
+      #         dplyr::slice_min(.data$start, n = 1) %>%
+      #         dplyr::ungroup() %>%
+      #         dplyr::mutate(id = 1:nrow(.)) %>% dplyr::group_by(.data$id) %>%
+      #         # Find matching round brackets
+      #         dplyr::group_modify(~ find_round(.x, round_brackets, eqn, var_names)) %>%
+      #         # Find matching curly brackets, pass df_statements to check if there is another statement after the curly bracket
+      #         dplyr::group_modify(~ find_curly(.x, paired_idxs)) %>%
+      #         dplyr::ungroup()
+      #       df_statements[["lead_start"]] = dplyr::lead(df_statements$start, default = 0) - 1
+      #       # Check if there is another statement after the curly bracket
+      #       df_statements[["next_statement"]] = dplyr::if_else(df_statements[["end_curly"]] == df_statements[["lead_start"]], dplyr::lead(df_statements[["statement"]]), NA)
+
             df_statements = df_statements[order(df_statements[["start"]]), ]
-            df_statements = df_statements %>%
-              # else if and if will have matching ending characters, choose one with longest statement
-              dplyr::group_by(.data$end) %>%
-              dplyr::slice_min(.data$start, n = 1) %>%
-              dplyr::ungroup() %>%
-              dplyr::mutate(id = 1:nrow(.)) %>% dplyr::group_by(.data$id) %>%
-              # Find matching round brackets
-              dplyr::group_modify(~ find_round(.x, round_brackets, eqn, var_names)) %>%
-              # Find matching curly brackets, pass df_statements to check if there is another statement after the curly bracket
-              dplyr::group_modify(~ find_curly(.x, paired_idxs)) %>%
-              dplyr::ungroup()
-            df_statements[["lead_start"]] = dplyr::lead(df_statements$start, default = 0) - 1
-                            # Check if there is another statement after the curly bracket
-            df_statements[["next_statement"]] = dplyr::if_else(df_statements[["end_curly"]] == df_statements[["lead_start"]],
-                                                            dplyr::lead(df_statements[["statement"]]), NA)
+
+            # Step 1: Group by 'end' and keep row with minimum 'start' value for each group
+            df_grouped <- split(df_statements, df_statements[["end"]])
+            df_min_rows <- do.call(rbind, lapply(df_grouped, function(group) {
+              min_start_idx <- which.min(group[["start"]])
+              group[min_start_idx, ]
+            }))
+
+            # Step 2: Add row numbers as 'id' column
+            df_min_rows[["id"]] <- seq_len(nrow(df_min_rows))
+
+            # Step 3: Apply find_round function to each row
+            df_with_round <- do.call(rbind, lapply(seq_len(nrow(df_min_rows)), function(i) {
+              row_data <- df_min_rows[i, ]
+              result <- find_round(row_data, round_brackets, eqn, var_names)
+              result[["id"]] <- i  # Preserve the id
+              result
+            }))
+
+            # Step 4: Apply find_curly function to each row
+            df_statements <- do.call(rbind, lapply(seq_len(nrow(df_with_round)), function(i) {
+              row_data <- df_with_round[i, ]
+              result <- find_curly(row_data, paired_idxs)
+              result[["id"]] <- i  # Preserve the id
+              result
+            }))
+
+            # Remove row names that might have been created by rbind
+            rownames(df_statements) <- NULL
+
+            # Add lead_start column (equivalent to dplyr::lead with default = 0)
+            lead_start <- c(df_statements[["start"]][-1], 0) - 1
+            df_statements[["lead_start"]] <- lead_start
+
+            # Add next_statement column (equivalent to dplyr::if_else with dplyr::lead)
+            lead_statement <- c(df_statements[["statement"]][-1], NA)
+            df_statements[["next_statement"]] <- ifelse(
+              df_statements[["end_curly"]] == df_statements[["lead_start"]],
+              lead_statement,
+              NA
+            )
+
 
             df_statements
 
@@ -728,7 +771,6 @@ convert_all_statements_julia = function(eqn, var_names, debug){
 
   })
 
-  # eqn = pairs %>% purrr::map_vec("match") %>% paste0(collapse = "")
   eqn = unlist(lapply(pairs, `[[`, "match")) %>% paste0(collapse = "")
 
   return(eqn)
@@ -747,13 +789,12 @@ convert_all_statements_julia = function(eqn, var_names, debug){
 #' @noRd
 #'
 create_default_arg = function(arg){
+
   # Find names and values of arguments
   contains_value = stringr::str_detect(arg, "=")
   arg_split = stringr::str_split_fixed(arg, "=", n = 2)
   values_arg = ifelse(contains_value, arg_split[, 1], NA) %>% trimws()
   names_arg = ifelse(contains_value, arg_split[, 2], arg_split[, 1]) %>% trimws()
-
-
   default_arg = lapply(as.list(stats::setNames(values_arg, names_arg)), as.character)
 
   return(default_arg)
@@ -772,9 +813,12 @@ order_arg_in_func_wrapper = function(sfm, var_names){
 
   # Collect all custom defined functions and their arguments
   all_eqns = c(lapply(sfm[["macro"]], `[[`, "eqn_julia"),
-               # sfm$global$eqn_julia,
-               sfm[["model"]][["variables"]] %>%
-                 purrr::map_depth(2, "eqn_julia")) %>% unlist() %>%
+
+               lapply(sfm[["model"]][["variables"]], function(x){
+                 lapply(x, `[[`, "eqn_julia")
+               })
+               ) %>%
+    unlist() %>%
     unname() %>% paste0(collapse = "\n")
   idxs_exclude = get_seq_exclude(all_eqns, var_names)
 
@@ -804,8 +848,9 @@ add_keyword_arg_wrapper = function(sfm, var_names){
 
   # Replace all function calls with named arguments
   all_eqns = c(lapply(sfm[["macro"]], `[[`, "eqn_julia"),
-               sfm[["model"]][["variables"]] %>%
-                 purrr::map_depth(2, "eqn_julia")) %>% unlist() %>%
+               lapply(sfm[["model"]][["variables"]],
+                      function(x){lapply(x, `[[`, "eqn_julia")})
+                 ) %>% unlist() %>%
     unname() %>% paste0(collapse = "\n")
   idxs_exclude = get_seq_exclude(all_eqns, var_names)
 
@@ -820,7 +865,7 @@ add_keyword_arg_wrapper = function(sfm, var_names){
     if (nrow(paired_idxs) > 0){
 
       # Get function name
-      paired_idxs$func_name = trimws(stringr::str_match(stringr::str_sub(all_eqns, 1, paired_idxs$start-1) , "function (.*?)$")[,2])
+      paired_idxs$func_name = trimws(stringr::str_match(stringr::str_sub(all_eqns, 1, paired_idxs[["start"]]-1) , "function (.*?)$")[,2])
       # Pull arguments from match
       paired_idxs[["bracket_arg"]] = stringr::str_replace_all(paired_idxs[["match"]], c("\\(;" = "", "\\)$" = ""))
 
@@ -831,12 +876,18 @@ add_keyword_arg_wrapper = function(sfm, var_names){
           create_default_arg(.)}) %>% stats::setNames(paired_idxs$func_name)
 
       for (i in 1:nrow(paired_idxs)){
-        sfm[["model"]][["variables"]] =  sfm[["model"]][["variables"]] %>% purrr::map_depth(2, function(x){
+        sfm[["model"]][["variables"]] = lapply(sfm[["model"]][["variables"]],
+                                               function(y){
+                                                 lapply(y, function(x){
           if (is_defined(x[["eqn_julia"]])){
-            x[["eqn_julia"]] = add_keyword_arg(x[["eqn_julia"]], var_names, paired_idxs[i, "func_name"], default_arg_list[[i]])
+            x[["eqn_julia"]] = add_keyword_arg(x[["eqn_julia"]],
+                                               var_names,
+                                               paired_idxs[i, "func_name"],
+                                               default_arg_list[[i]])
           }
           return(x)
         })
+                                               })
 
         sfm[["macro"]] = lapply(sfm[["macro"]], function(x){
           x[["eqn_julia"]] = add_keyword_arg(x[["eqn_julia"]], var_names, paired_idxs[i, "func_name"], default_arg_list[[i]])
@@ -1079,10 +1130,10 @@ get_syntax_julia = function(){
     "drop_u", "Unitful.ustrip", "syntax1", "", "", T,
 
     # step() is already an existing function in Julia, so we use make_step() instead
-    "step", "make_step", "syntax1", "", "", F,
-    "pulse", "pulse", "syntax1", "", "", F,
-    "ramp", "ramp", "syntax1", "", "", F,
-    "seasonal", "seasonal", "syntax1", "", "", F,
+    "step", "make_step", "syntax1", paste0(P[["times_name"]], ", ", P[["time_units_name"]]), "", F,
+    "pulse", "pulse", "syntax1", paste0(P[["times_name"]], ", ", P[["time_units_name"]]), "", F,
+    "ramp", "ramp", "syntax1", paste0(P[["times_name"]], ", ", P[["time_units_name"]]), "", F,
+    "seasonal", "seasonal", "syntax1", paste0(P[["times_name"]], ", ", P[["timestep_name"]]), "", F,
 
     "IM_length", "length", "syntax1", "", "", F,
 
@@ -1307,7 +1358,8 @@ get_syntax_julia = function(){
     #           rcond
     #           solve
 
-    ncol = 6, byrow = TRUE, dimnames = list(NULL, c("R", "julia", "syntax", "add_first_arg", "add_second_arg", "add_broadcast"))
+    ncol = 6, byrow = TRUE,
+    dimnames = list(NULL, c("R", "julia", "syntax", "add_first_arg", "add_second_arg", "add_broadcast"))
   )
 
   # Convert to dataframe
@@ -1686,7 +1738,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
 
           # Convert random number generation
           replacement = conv_distribution(arg,
-                                          # idx_func$R_first_iter,
                                           idx_func[["julia"]],
                                           idx_func[["add_first_arg"]])
         }
@@ -1771,7 +1822,7 @@ sort_args = function(arg, func_name, default_arg = NULL, var_names = NULL){
                   paste0(names(default_arg), collapse = ", "), "."))
     }
 
-    # Add names to unnamed arguments; note that R can mix named and default arguments, e.g. runif(max = 10, 20, min = 1) - Julia cannot if they're not keyword arguments!
+    # Add names to unnamed arguments; note that R can mix named and default arguments, e.g. runif(max = 10, 20, min = 1). Julia cannot if they're not keyword arguments!
     idx = which(!contains_name & nzchar(values_arg)) # Find unnamed arguments which have values
     standard_order = names(default_arg)
     if (length(idx) > 0 && length(standard_order) > 0){
@@ -1938,17 +1989,17 @@ vector_to_square_brackets = function(eqn, var_names) {
                                     names_with_brackets = FALSE)
 
   # Remove those that are preceded by a letter
-  if (nrow(paired_idxs) > 0) paired_idxs = paired_idxs[!stringr::str_detect(stringr::str_sub(eqn, paired_idxs$start - 1, paired_idxs$start - 1), "[[:alpha:]]"), ]
+  if (nrow(paired_idxs) > 0) paired_idxs = paired_idxs[!stringr::str_detect(stringr::str_sub(eqn, paired_idxs[["start"]] - 1, paired_idxs[["start"]] - 1), "[[:alpha:]]"), ]
 
   if (nrow(paired_idxs) > 0) {
 
     # First replace all closing brackets with ]
     chars <- strsplit(eqn, "", fixed = TRUE)[[1]]
-    chars[paired_idxs$end] <- "]"
+    chars[paired_idxs[["end"]]] <- "]"
     eqn = paste0(chars, collapse = "")
 
     # Order paired_idxs by start position
-    paired_idxs = paired_idxs[order(paired_idxs$start), ]
+    paired_idxs = paired_idxs[order(paired_idxs[["start"]]), ]
 
     # Replace opening brackets c( with [
     for (j in rev(1:nrow(paired_idxs))) {

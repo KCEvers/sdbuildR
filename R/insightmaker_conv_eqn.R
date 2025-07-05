@@ -35,7 +35,7 @@ convert_equations_IM = function(
   }
 
   # Don't translate interpolation functions, have already been converted to R code
-  # if (stringr::str_detect(name, stringr::fixed(sprintf("(%s)", P$time_name)))){
+  # if (stringr::str_detect(name, stringr::fixed(sprintf("(%s)", P[["time_name"]])))){
   # if (stringr::str_detect(eqn, stringr::fixed("stats::approxfun"))){
   # if (type == "Converter"){
   #     return(data.frame(conv_property = "convert_equations_IM", value = eqn, name = name, type = type) )
@@ -202,7 +202,6 @@ remove_comments = function(eqn){
     comment_df = get_range_comments(eqn)
 
     # Get indices of comments
-    # seq_idxs_range = unlist(purrr::map2(comment_df[,"start"], comment_df[,"end"], seq))
     seq_idxs_range <- unlist(mapply(seq, comment_df[,"start"], comment_df[,"end"], SIMPLIFY = FALSE))
 
     split_formula = strsplit(eqn, "")[[1]]
@@ -318,7 +317,6 @@ replace_colon = function(eqn, var_names) {
 
   # Don't keep those that are bordered by numbers
   idxs_range = stringr::str_locate_all(eqn, "([0-9.-]+):([0-9.-]+)")[[1]]
-  # seq_idxs_range = unlist(purrr::map2(idxs_range[,"start"], idxs_range[,"end"], seq))
   seq_idxs_range <- unlist(mapply(seq, idxs_range[,"start"], idxs_range[,"end"], SIMPLIFY = FALSE))
 
   # Only keep those between vector brackets
@@ -326,8 +324,7 @@ replace_colon = function(eqn, var_names) {
   # for (i in 1:nrow(paired_idxs)){
   #   print(stringr::str_sub(eqn, paired_idxs[i,"start"],paired_idxs[i,"end"]))
   # }
-  # seq_paired_idxs = unlist(purrr::map2(paired_idxs$start, paired_idxs$end, seq))
-  seq_paired_idxs <- unlist(mapply(seq, paired_idxs$start, paired_idxs$end, SIMPLIFY = FALSE))
+  seq_paired_idxs <- unlist(mapply(seq, paired_idxs[["start"]], paired_idxs[["end"]], SIMPLIFY = FALSE))
 
   # Replace colons that are not used to define a range with "="
   replace_idxs = idxs_colon[(idxs_colon %in% seq_paired_idxs) & !(idxs_colon %in% seq_idxs_range)]
@@ -371,75 +368,52 @@ curly_to_vector_brackets = function(eqn, var_names) {
 
       # Create dataframe with properties per pair
       paired_idxs_prop = paired_idxs
-      paired_idxs_prop$id = 1:nrow(paired_idxs_prop)
-
-      # paired_idxs_prop = paired_idxs_prop %>%  dplyr::rowwise() %>%
-      #   # Find which pairs this pair is nested within; this will be in order of highest to lowest level
-      #   dplyr::mutate(
-      #     nested_within = which(
-      #       paired_idxs$start < .data$start & paired_idxs$end > .data$end
-      #     ) %>% paste0(collapse = ","),
-      #     nr_nesting_levels = strsplit(nested_within, ",")[[1]] %>% length(),
-      #     nested_around = which(
-      #       paired_idxs$start > .data$start &  paired_idxs$end < .data$end
-      #     ) %>% paste0(collapse = ","),
-      #     # First character to the left
-      #     left_adjacent_char = stringr::str_sub(eqn, .data$start - 1, .data$start - 1),
-      #     # Preceding string
-      #     preceding_str = stringr::str_extract(
-      #       stringr::str_sub(eqn, 1, .data$start - 1),
-      #       "\\b[\\w\\.\\\\]+$"# All word characters, periods . and slashes \\
-      #     ),
-      #     is_start_of_string = .data$start == 1,
-      #     # string =  stringr::str_sub(eqn, .data$start - 10, .data$start + 10),
-      #     # right_adjacent_char = stringr::str_sub(eqn, .data$end - 1, .data$end - 1),
-      #     # is_end_of_string = .data$end == stringr::str_length(eqn)
-      #   ) %>%
-      #   dplyr::ungroup()
-      # paired_idxs_prop %>% as.data.frame()
+      paired_idxs_prop["id"] = 1:nrow(paired_idxs_prop)
 
         # Find which pairs this pair is nested within; this will be in order of highest to lowest level
-        paired_idxs_prop$nested_within = which(
-          paired_idxs$start < paired_idxs_prop$start & paired_idxs$end > paired_idxs_prop$end
+        paired_idxs_prop[["nested_within"]] = which(
+          paired_idxs[["start"]] < paired_idxs_prop[["start"]] & paired_idxs[["end"]] > paired_idxs_prop[["end"]]
         ) %>% paste0(collapse = ",")
-        paired_idxs_prop$nr_nesting_levels = length(strsplit(paired_idxs_prop$nested_within, ",")[[1]])
-        paired_idxs_prop$nested_around = which(
-          paired_idxs$start > paired_idxs_prop$start &  paired_idxs$end < paired_idxs_prop$end
+        paired_idxs_prop[["nr_nesting_levels"]] = length(strsplit(paired_idxs_prop[["nested_within"]], ",")[[1]])
+        paired_idxs_prop[["nested_around"]] = which(
+          paired_idxs[["start"]] > paired_idxs_prop[["start"]] &  paired_idxs[["end"]] < paired_idxs_prop[["end"]]
         ) %>% paste0(collapse = ",")
         # First character to the left
-        paired_idxs_prop$left_adjacent_char = stringr::str_sub(eqn, paired_idxs_prop$start - 1, paired_idxs_prop$start - 1)
+        paired_idxs_prop[["left_adjacent_char"]] = stringr::str_sub(eqn,
+                                                                    paired_idxs_prop[["start"]] - 1,
+                                                                    paired_idxs_prop[["start"]] - 1)
         # Preceding string
-        paired_idxs_prop$preceding_str = stringr::str_extract(
-          stringr::str_sub(eqn, 1, paired_idxs_prop$start - 1),
+        paired_idxs_prop[["preceding_str"]] = stringr::str_extract(
+          stringr::str_sub(eqn, 1, paired_idxs_prop[["start"]] - 1),
           "\\b[\\w\\.\\\\]+$"# All word characters, periods . and slashes \\
         )
-        paired_idxs_prop$is_start_of_string = paired_idxs_prop$start == 1
+        paired_idxs_prop[["is_start_of_string"]] = paired_idxs_prop[["start"]] == 1
         # string =  stringr::str_sub(eqn, .data$start - 10, .data$start + 10),
         # right_adjacent_char = stringr::str_sub(eqn, .data$end - 1, .data$end - 1),
         # is_end_of_string = .data$end == stringr::str_length(eqn)
 
 
 
-      if (any(paired_idxs_prop$type == "curly")) {
+      if (any(paired_idxs_prop[["type"]] == "curly")) {
         # Start with most nested string
-        chosen_pair = paired_idxs_prop[paired_idxs_prop$type == "curly", ]
-        chosen_pair = chosen_pair[order(chosen_pair$start, decreasing = TRUE), ][1, ]
+        chosen_pair = paired_idxs_prop[paired_idxs_prop[["type"]] == "curly", ]
+        chosen_pair = chosen_pair[order(chosen_pair[["start"]], decreasing = TRUE), ][1, ]
 
         # Find type of enclosure of the lowest order bracket it is nested within
-        if (nzchar(chosen_pair$nested_within)) {
-          num = strsplit(chosen_pair$nested_within, ",")[[1]]
+        if (nzchar(chosen_pair[["nested_within"]])) {
+          num = strsplit(chosen_pair[["nested_within"]], ",")[[1]]
           num = as.numeric(num[length(num)])
-          nested_within = paired_idxs_prop[paired_idxs_prop$id == num, "type"]
+          nested_within = paired_idxs_prop[paired_idxs_prop[["id"]] == num, "type"]
         } else {
           nested_within = ""
         }
 
         # Find type of enclosure of the highest order bracket it is nested around
-        if (nzchar(chosen_pair$nested_around)) {
+        if (nzchar(chosen_pair[["nested_around"]])) {
           num = as.numeric(strsplit(
-            chosen_pair$nested_around, ","
+            chosen_pair[["nested_around"]], ","
           )[[1]][[1]])
-          nested_around = paired_idxs_prop[paired_idxs_prop$id == num, "type"]
+          nested_around = paired_idxs_prop[paired_idxs_prop[["id"]] == num, "type"]
         } else {
           nested_around = ""
         }
@@ -454,13 +428,13 @@ curly_to_vector_brackets = function(eqn, var_names) {
         # It is a list if...
         x_is_list = nested_around %in% c("curly", "list", "vector")
         # It is an indexer if...
-        x_is_indexer = stringr::str_detect(chosen_pair$left_adjacent_char,
+        x_is_indexer = stringr::str_detect(chosen_pair[["left_adjacent_char"]],
                                            "[a-zA-Z0-9._\\}\\)]") &
           (!chosen_pair$is_start_of_string) &
-          !(grepl("\\n", chosen_pair$preceding_str, fixed = T))
+          !(grepl("\\n", chosen_pair[["preceding_str"]], fixed = TRUE))
 
-        start_idx = chosen_pair$start
-        end_idx = chosen_pair$end
+        start_idx = chosen_pair[["start"]]
+        end_idx = chosen_pair[["end"]]
         string = stringr::str_sub(eqn, start_idx + 1, end_idx - 1)
 
         # print(string)
@@ -928,7 +902,6 @@ get_range_quot <- function(eqn) {
 
     # Remove matches of quotations within comments
     if (nrow(comment_df) > 0){
-      # idxs_comments = unlist(purrr::map2(comment_df[,"start"], comment_df[,"end"], seq))
       idxs_comments <- unlist(mapply(seq, comment_df[,"start"], comment_df[,"end"], SIMPLIFY = FALSE))
 
       idx_quot = setdiff(idx_quot, idxs_comments)
@@ -1027,11 +1000,11 @@ get_range_all_pairs = function(eqn, var_names,
     paired_idxs <- paired_idxs[paired_idxs$type %in% type, ]
 
     # Arrange by start
-    paired_idxs <- paired_idxs[order(paired_idxs$start), ]
+    paired_idxs <- paired_idxs[order(paired_idxs[["start"]]), ]
 
     # 3. For each unique end, keep the row with the smallest start
     # Split by end
-    split_by_end <- split(paired_idxs, paired_idxs$end)
+    split_by_end <- split(paired_idxs, paired_idxs[["end"]])
 
     # Keep the row with the minimum start for each end
     paired_idxs <- do.call(rbind, lapply(split_by_end, function(group) {
@@ -1063,6 +1036,12 @@ get_seq_exclude = function(eqn,
                            var_names = NULL,
                            type = c("quot", "names"),
                            names_with_brackets = FALSE) {
+
+  # When var_names includes "", then everything is included in the sequence to exclude -> remove ""
+  if (!is.null(var_names)){
+    var_names = var_names[var_names != ""]
+    if (length(var_names) == 0) var_names = NULL
+  }
 
   pair_quotation_marks = data.frame()
   pair_names = data.frame()
@@ -1275,26 +1254,26 @@ get_syntax_IM = function(){
     "Step", "conv_step", "syntax3", F, T, "",
     "Pulse", "conv_pulse", "syntax3", F, T, "",
     "Ramp", "conv_ramp", "syntax3", F, T, "",
-    # "Seasonal", "conv_seasonal", "syntax3", F, F, sprintf("%s, %s", P$times_name, P$time_units_name),
+    # "Seasonal", "conv_seasonal", "syntax3", F, F, sprintf("%s, %s", P[["times_name"]], P[["time_units_name"]]),
     "Seasonal", "conv_seasonal", "syntax3", F, T, "",
     "Lookup", "conv_lookup", "syntax3", F, T, "",
     "Repeat", "conv_repeat", "syntax3", F, T, "",
 
-    "Seconds", sprintf("drop_u(convert_u(%s, \"s\"))", P$time_name), "syntax0", F, F, "",
-    "Minutes", sprintf("drop_u(convert_u(%s, \"minute\"))", P$time_name), "syntax0", F, F, "",
-    "Hours", sprintf("drop_u(convert_u(%s, \"hr\"))", P$time_name), "syntax0", F, F, "",
-    "Days", sprintf("drop_u(convert_u(%s, \"d\"))", P$time_name), "syntax0", F, F, "",
-    "Weeks", sprintf("drop_u(convert_u(%s, \"wk\"))", P$time_name), "syntax0", F, F, "",
-    "Months", sprintf("drop_u(convert_u(%s, \"common_month\"))", P$time_name), "syntax0", F, F,"",
-    "Quarters", sprintf("drop_u(convert_u(%s, \"common_quarter\"))", P$time_name), "syntax0", F, F, "",
-    "Years", sprintf("drop_u(convert_u(%s, \"common_yr\"))", P$time_name), "syntax0", F, F, "",
+    "Seconds", sprintf("drop_u(convert_u(%s, u(\"s\")))", P[["time_name"]]), "syntax0", F, F, "",
+    "Minutes", sprintf("drop_u(convert_u(%s, u(\"minute\")))", P[["time_name"]]), "syntax0", F, F, "",
+    "Hours", sprintf("drop_u(convert_u(%s, u(\"hr\")))", P[["time_name"]]), "syntax0", F, F, "",
+    "Days", sprintf("drop_u(convert_u(%s, u(\"d\")))", P[["time_name"]]), "syntax0", F, F, "",
+    "Weeks", sprintf("drop_u(convert_u(%s, u(\"wk\")))", P[["time_name"]]), "syntax0", F, F, "",
+    "Months", sprintf("drop_u(convert_u(%s, u(\"common_month\")))", P[["time_name"]]), "syntax0", F, F,"",
+    "Quarters", sprintf("drop_u(convert_u(%s, u(\"common_quarter\")))", P[["time_name"]]), "syntax0", F, F, "",
+    "Years", sprintf("drop_u(convert_u(%s, u(\"common_yr\")))", P[["time_name"]]), "syntax0", F, F, "",
 
 
-    "Time", P$time_name, "syntax0", F, F, "",
-    "TimeStart", paste0(P$times_name, "[1]"), "syntax0", F, F, "",
-    "TimeStep", P$timestep_name, "syntax0", F, F, "",
-    "TimeEnd", paste0(P$times_name, "[2]"), "syntax0", F, F, "",
-    "TimeLength", paste0("(", P$times_name, "[2] - ", P$times_name, "[1])"), "syntax0", F, F, "",
+    "Time", P[["time_name"]], "syntax0", F, F, "",
+    "TimeStart", paste0(P[["times_name"]], "[1]"), "syntax0", F, F, "",
+    "TimeStep", P[["timestep_name"]], "syntax0", F, F, "",
+    "TimeEnd", paste0(P[["times_name"]], "[2]"), "syntax0", F, F, "",
+    "TimeLength", paste0("(", P[["times_name"]], "[2] - ", P[["times_name"]], "[1])"), "syntax0", F, F, "",
     # For agent-based modelling functions, issue a warning that these will not be translated
     ".FindAll()", "", "syntax4", F, T, "",
     ".FindState(", "", "syntax4", F, T, "",
@@ -1330,7 +1309,7 @@ get_syntax_IM = function(){
   conv_df <- as.data.frame(conv_df, stringsAsFactors = FALSE)
 
   # Filter out syntax4
-  df <- conv_df[conv_df$syntax != "syntax4", ]
+  df <- conv_df[conv_df[["syntax"]] != "syntax4", ]
 
   # Initialize new columns
   df$insightmaker_first_iter <- df$insightmaker
@@ -1347,7 +1326,7 @@ get_syntax_IM = function(){
   )
 
   # Create additional rows for syntax0b and syntax1b
-  additional_rows <- conv_df[conv_df$syntax %in% c("syntax0", "syntax1") & !as.logical(conv_df$needs_brackets), ]
+  additional_rows <- conv_df[conv_df[["syntax"]] %in% c("syntax0", "syntax1") & !as.logical(conv_df$needs_brackets), ]
   if (nrow(additional_rows) > 0) {
     additional_rows$insightmaker_first_iter <- additional_rows$insightmaker
     additional_rows$insightmaker_regex_first_iter <- paste0("\\b", additional_rows$insightmaker, "\\b")
@@ -1463,23 +1442,39 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 
       # If there are brackets in the eqn:
       if (nrow(paired_idxs) > 0){
+        # # Match the opening bracket of each function to round brackets in paired_idxs
+        # idx_funcs = merge(
+        #   paired_idxs[paired_idxs$type == "round", ],
+        #   idx_df,
+        #   by.x = "start",
+        #   by.y = "end"
+        # ) %>% dplyr::rename(start_bracket = "start", start = "start.y") %>%
+        #   # Add back syntax1b which does not need brackets
+        #   dplyr::bind_rows(idx_df[idx_df$syntax %in% c("syntax0b", "syntax1b"), ] %>%
+        #                      # Add start_bracket column to prevent errors
+        #                      dplyr::mutate(start_bracket = .data$start)) %>%
+        #   dplyr::arrange(.data$end)
+
         # Match the opening bracket of each function to round brackets in paired_idxs
         idx_funcs = merge(
-          paired_idxs[paired_idxs$type == "round", ],
+          paired_idxs[paired_idxs[["type"]] == "round", ],
           idx_df,
           by.x = "start",
           by.y = "end"
-        ) %>% dplyr::rename(start_bracket = "start", start = "start.y") %>%
-          # Add back syntax1b which does not need brackets
-          dplyr::bind_rows(idx_df[idx_df$syntax %in% c("syntax0b", "syntax1b"), ] %>%
-                             # Add start_bracket column to prevent errors
-                             dplyr::mutate(start_bracket = .data$start)) %>%
-          dplyr::arrange(.data$end)
-        idx_funcs
+        )
+        idx_funcs["start_bracket"] = idx_funcs[["start"]]
+        idx_funcs["start"] = idx_funcs[["start.y"]]
+        temp = idx_df[idx_df[["syntax"]] %in% c("syntax0b", "syntax1b"), ]
+        # Add start_bracket column to prevent errors
+        temp["start_bracket"] = temp[["start"]]
+        idx_funcs = dplyr::bind_rows(idx_funcs, temp)
+        idx_funcs = idx_funcs[order(idx_funcs[["end"]]), ]
+
+
       } else {
         # If there are no brackets in the eqn, add start_bracket column to prevent errors
         idx_funcs = idx_df
-        idx_funcs$start_bracket = idx_funcs$start
+        idx_funcs["start_bracket"] = idx_funcs["start"]
       }
 
       # Start with most nested function
@@ -1500,7 +1495,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
       idx_func
 
       # Extract argument between brackets (excluding brackets)
-      bracket_arg = stringr::str_sub(eqn, idx_func$start_bracket + 1, idx_func$end - 1)
+      bracket_arg = stringr::str_sub(eqn, idx_func$start_bracket + 1, idx_func[["end"]] - 1)
       arg = parse_args(bracket_arg)
 
       # Replace entire string, no arguments
@@ -1508,8 +1503,8 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
         replacement = idx_func$R
 
         # Indices of replacement in eqn
-        start_idx = idx_func$start
-        end_idx = idx_func$end
+        start_idx = idx_func[["start"]]
+        end_idx = idx_func[["end"]]
 
       } else if (idx_func$syntax == "syntax1") {
 
@@ -1529,8 +1524,8 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
         )
 
         # Indices of replacement in eqn
-        start_idx = idx_func$start
-        end_idx = idx_func$end
+        start_idx = idx_func[["start"]]
+        end_idx = idx_func[["end"]]
 
       } else if (idx_func$syntax == "syntax1b"){
 
@@ -1540,14 +1535,14 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
           idx_func$add_first_arg)
 
         # Indices of replacement in eqn
-        start_idx = idx_func$start
-        end_idx = idx_func$end
+        start_idx = idx_func[["start"]]
+        end_idx = idx_func[["end"]]
 
       } else if (idx_func$syntax == "syntax2") {
 
         # Extract argument before function
-        prefunc_arg = extract_prefunc_args(eqn, var_names, start_func = idx_func$start, names_with_brackets = TRUE)
-        start_idx = idx_func$start - stringr::str_length(prefunc_arg)
+        prefunc_arg = extract_prefunc_args(eqn, var_names, start_func = idx_func[["start"]], names_with_brackets = TRUE)
+        start_idx = idx_func[["start"]] - stringr::str_length(prefunc_arg)
 
         replacement = sprintf(
           "%s(%s%s%s%s%s)",
@@ -1560,7 +1555,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
         )
 
         # End index of replacement in eqn
-        end_idx = idx_func$end
+        end_idx = idx_func[["end"]]
 
       } else if (idx_func$syntax == "syntax3") {
 
@@ -1570,32 +1565,43 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 
         # Get environment and create list of arguments needed by the function
         envir = environment()
-        call_args = eval(parse(text = idx_func$R)) %>%
+        call_args = eval(parse(text = idx_func[["R"]])) %>%
           # Get the formal arguments needed by the function
-          formals() %>% as.list %>%
+          formals() %>% as.list() %>%
           # Add own arguments
           utils::modifyList(list(
-            func = idx_func$insightmaker %>% tolower,
+            func = tolower(idx_func[["insightmaker"]]),
             arg = arg
-          )) %>%
-          # Add other arguments from environment
-          purrr::imap(function(x, y) {
-            if (is.name(x)) {
-              return(envir[[y]])
-            } else {
-              return(x)
-            }
-          })
+          ))
+        # %>%
+        #   # Add other arguments from environment
+        #   purrr::imap(function(x, y) {
+        #     if (is.name(x)) {
+        #       return(envir[[y]])
+        #     } else {
+        #       return(x)
+        #     }
+        #   })
+
+        call_args = lapply(seq_along(call_args), function(y) {
+          x = call_args[[y]]
+          if (is.name(x)) {
+            return(envir[[y]])
+          } else {
+            return(x)
+          }
+        })
+
         rm(envir)
         call_args
 
-        out = do.call(idx_func$R, call_args)
+        out = do.call(idx_func[["R"]], call_args)
 
         # Indices of replacement in eqn
-        start_idx = idx_func$start
-        end_idx = idx_func$end
-        replacement = out$replacement
-        add_Rcode = out$add_Rcode
+        start_idx = idx_func[["start"]]
+        end_idx = idx_func[["end"]]
+        replacement = out[["replacement"]]
+        add_Rcode = out[["add_Rcode"]]
         add_Rcode_list = append(add_Rcode_list, add_Rcode)
 
         # Add newly created variables to names_df so that they are safe from replacement, e.g. if a variable contains the word "Time"
@@ -1619,7 +1625,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
   add_Rcode = add_Rcode_list
 
   # Syntax 4: Agent-based functions, which are not translated but flagged
-  syntax4 = conv_df[conv_df$syntax == "syntax4", "insightmaker"]
+  syntax4 = conv_df[conv_df[["syntax"]] == "syntax4", "insightmaker"]
   idx_ABM = stringr::str_detect(eqn, stringr::fixed(syntax4))
 
   if (any(idx_ABM)) {
@@ -1656,7 +1662,7 @@ parse_args = function(bracket_arg){
 
     # Create sequence of indices between brackets/quotation marks, and check whether comma is between them
     paired_idxs = get_range_all_pairs(bracket_arg, var_names = NULL)
-    paired_idxs_seq <- unlist(mapply(seq,paired_idxs$start, paired_idxs$end, SIMPLIFY = FALSE))
+    paired_idxs_seq <- unlist(mapply(seq,paired_idxs[["start"]], paired_idxs[["end"]], SIMPLIFY = FALSE))
 
     idxs_commas = idxs_commas[!idxs_commas %in% paired_idxs_seq]
 
@@ -1861,7 +1867,7 @@ convert_addition_of_strings = function(eqn, var_names) {
   # First get rid of all spaces next to + in order to identify neighbours
   eqn = stringr::str_replace_all(eqn, " \\+", "+") %>% stringr::str_replace_all("\\+ ", "+")
 
-  done = F
+  done = FALSE
 
   # Use a while loop to iteratively convert + to paste0 if it neighbours quotation marks; if there's a variable [x] that is defined as a eqn, we unfortunately can't know here
   while (!done) {
@@ -1869,17 +1875,17 @@ convert_addition_of_strings = function(eqn, var_names) {
     idxs_plus = unname(stringr::str_locate_all(eqn, "\\+")[[1]][, 1])
 
     if (length(idxs_plus) == 0) {
-      done = T
+      done = TRUE
     } else {
       # Find all indices of all elements like [], c(), ''
       paired_idxs = get_range_all_pairs(eqn, var_names, add_custom = "paste0()", names_with_brackets = TRUE)
 
       # Are + left or right adjacent to any quotation dplyr::groups
       # Right adjacent to
-      right_adjacents = match(idxs_plus, paired_idxs$end + 1)
+      right_adjacents = match(idxs_plus, paired_idxs[["end"]] + 1)
 
       # Left adjacent to
-      left_adjacents = match(idxs_plus, paired_idxs$start - 1)
+      left_adjacents = match(idxs_plus, paired_idxs[["start"]] - 1)
 
       # Condition: It needs to be adjacent to some paired_idxs, and either right or left needs to be in quotation marks
       cond = which(!is.na(right_adjacents) &
@@ -2100,12 +2106,12 @@ conv_fix = function(func, arg, name, type) {
 
   replacement = sprintf(
     "ifelse(%s %%%% %s == 0, %s, get_past(environment(), '[%s]', %s, %s, '%s', '%s', 'fixed'))",
-    P$time_name,
+    P[["time_name"]],
     fix_length_name,
     arg[1],
     name,
-    P$timestep_name, P$time_units_name,
-    P$time_name, P$times_name
+    P[["timestep_name"]], P[["time_units_name"]],
+    P[["time_name"]], P[["times_name"]]
   )
 
     return(
@@ -2138,7 +2144,7 @@ conv_step = function(func, arg, match_idx, name,  # Default settings of Insight 
   # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
                           as.character(match_idx))
-  replacement = sprintf("[%s](%s)", func_name_str, P$time_name)
+  replacement = sprintf("[%s](%s)", func_name_str, P[["time_name"]])
   # Step(Start, Height=1), e.g. Step({2 Years}, 100)
 
   # Clean start time by converting to simulation time units
@@ -2150,10 +2156,10 @@ conv_step = function(func, arg, match_idx, name,  # Default settings of Insight 
   # Function definition to put at beginning of script
   func_def_str = sprintf(
     "step(start = %s, height = %s)",
-    # P$times_name,
+    # P[["times_name"]],
     start_t_step,
     h_step
-    # P$time_units_name, P$time_units_name
+    # P[["time_units_name"]], P[["time_units_name"]]
 
   )
   add_Rcode = list(aux = list(list(eqn = func_def_str
@@ -2189,7 +2195,7 @@ conv_pulse = function(func,
   # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
                           as.character(match_idx))
-  replacement = sprintf("[%s](%s)", func_name_str, P$time_name)
+  replacement = sprintf("[%s](%s)", func_name_str, P[["time_name"]])
 
   # Pulse(Time, Height, Width=0, Repeat=-1), e.g. Pulse({5 Years}, 10, 1, {10 Years})
 
@@ -2204,17 +2210,15 @@ conv_pulse = function(func,
   # Function definition to put at beginning of script
   func_def_str = sprintf(
     "pulse(start = %s(%s, %s), height = %s, width = %s(%s, %s), repeat_interval = %s)",
-    # P$times_name,
-    P$convert_u_func,
-    start_t_pulse, P$time_units_name,
+    P[["convert_u_func"]],
+    start_t_pulse, P[["time_units_name"]],
     h_pulse,
-    P$convert_u_func,
-    w_pulse, P$time_units_name,
+    P[["convert_u_func"]],
+    w_pulse, P[["time_units_name"]],
     repeat_interval
-    # P$time_units_name, P$time_units_name
   )
   add_Rcode = list(aux = list(list(eqn = func_def_str
-                                   # , source = P$time_name
+                                   # , source = P[["time_name"]]
                                    )) %>% stats::setNames(func_name_str))
 
   return(list(replacement = replacement,
@@ -2240,7 +2244,7 @@ conv_ramp = function(func, arg, match_idx, name, # Default settings of Insight M
   # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
                           as.character(match_idx))
-  replacement = sprintf("[%s](%s)", func_name_str, P$time_name)
+  replacement = sprintf("[%s](%s)", func_name_str, P[["time_name"]])
 
   # Ramp(Start, Finish, Height=1), e.g. Ramp({3 Years}, {8 Years}, -50)
 
@@ -2254,16 +2258,16 @@ conv_ramp = function(func, arg, match_idx, name, # Default settings of Insight M
   # Function definition to put at beginning of script
   func_def_str = sprintf(
     "ramp(start = %s(%s, %s), finish = %s(%s, %s), height = %s)",
-    # P$times_name,
-    P$convert_u_func,
-    start_t_ramp, P$time_units_name,
-    P$convert_u_func,
-    end_t_ramp, P$time_units_name,
+    # P[["times_name"]],
+    P[["convert_u_func"]],
+    start_t_ramp, P[["time_units_name"]],
+    P[["convert_u_func"]],
+    end_t_ramp, P[["time_units_name"]],
     h_ramp
-    # P$time_units_name, P$time_units_name
+    # P[["time_units_name"]], P[["time_units_name"]]
   )
   add_Rcode = list(aux = list(list(eqn = func_def_str
-                                   # , source = P$time_name
+                                   # , source = P[["time_name"]]
                                    )) %>% stats::setNames(func_name_str))
 
   return(list(replacement = replacement,
@@ -2290,7 +2294,7 @@ conv_seasonal = function(func, arg, match_idx, name,
   # # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   # func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
   #                         as.character(match_idx))
-  # replacement = sprintf("[%s](%s)", func_name_str, P$time_name)
+  # replacement = sprintf("[%s](%s)", func_name_str, P[["time_name"]])
 
   # Seasonal(Peak=0)
 
@@ -2303,13 +2307,13 @@ conv_seasonal = function(func, arg, match_idx, name,
   #     shift = arg[1]
   #   }
   # }
-  # replacement = paste0("seasonal(", P$time_name, ", period = ", period, ", shift = ", shift, ")")
+  # replacement = paste0("seasonal(", P[["time_name"]], ", period = ", period, ", shift = ", shift, ")")
   # add_Rcode = list()
 
   # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
                           as.character(match_idx))
-  replacement = sprintf("[%s](%s)", func_name_str, P$time_name)
+  replacement = sprintf("[%s](%s)", func_name_str, P[["time_name"]])
 
   # If an argument is specified, it's the peak time
   if (nzchar(arg)) {
@@ -2327,7 +2331,7 @@ conv_seasonal = function(func, arg, match_idx, name,
     period, shift
   )
   add_Rcode = list(aux = list(list(eqn = func_def_str
-                                   # , source = P$time_name
+                                   # , source = P[["time_name"]]
   )) %>% stats::setNames(func_name_str))
 
 
