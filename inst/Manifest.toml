@@ -1714,6 +1714,6 @@ version = "17.4.0+2"
 
 [[deps.sdbuildRUtils]]
 deps = ["DataFrames", "DataInterpolations", "Distributions", "Random", "Statistics", "Unitful"]
-path = "C:/Users/kevers1/Documents/PhD/sdbuildR/inst\\sdbuildRUtils"
+path = "C:/Users/kevers1/Documents/PhD/sdbuildR/inst/sdbuildRUtils"
 uuid = "558783a2-18a6-44dc-8953-3641eeb55936"
 version = "0.1.0"

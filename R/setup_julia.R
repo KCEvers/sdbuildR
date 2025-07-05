@@ -147,10 +147,30 @@ use_julia <- function(
   Sys.setenv(JULIA_BINDIR = JULIA_HOME)
 
   JuliaConnectoR::startJuliaServer()
-
-  # # Start Julia with simple statement
-  # ans = JuliaConnectoR::juliaEval("1+1")
   JuliaConnectoR::juliaSetupOk()
+
+  # Find set-up location for sdbuildR in Julia
+  env_path <- system.file(package = "sdbuildR")
+  julia_pkg_path <- file.path(env_path, P[["jl_pkg_name"]])
+
+  # Check if the package is already developed to avoid redundant operations
+  pkg_already_developed <- JuliaConnectoR::juliaEval(
+    paste0('using Pkg; "', P[["jl_pkg_name"]], '" in [pkg.name for pkg in values(Pkg.dependencies())]')
+  )
+
+  # Make sdbuildRUtils available to sdbuildR package environment
+  if (!pkg_already_developed){
+
+    # Navigate to Julia package directory
+    JuliaConnectoR::juliaEval(paste0('cd("', file.path(env_path, P[["jl_pkg_name"]]), '")'))
+
+    # Activate the sdbuildR package environment
+    JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, '")'))
+
+    # Develop the package in the current environment
+    JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, P[["jl_pkg_name"]]), '")'))
+  }
+
 
   # Run initialization
   run_init()
@@ -527,13 +547,13 @@ create_julia_pkg = function(){
   # Make sdbuildRUtils available to sdbuildR package environment
 
   # Navigate to Julia package directory
-  JuliaConnectoR::juliaEval(paste0('cd("', env_path, "\\\\", P[["jl_pkg_name"]], '")'))
+  JuliaConnectoR::juliaEval(paste0('cd("', file.path(env_path, P[["jl_pkg_name"]]), '")'))
 
   # Activate the sdbuildR package environment
   JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, '")'))
 
   # Develop the package in the current environment
-  JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', env_path, "\\\\", P[["jl_pkg_name"]], '")'))
+  JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, P[["jl_pkg_name"]]), '")'))
 
   use_julia(stop=TRUE)
 
