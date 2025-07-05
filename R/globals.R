@@ -1,5 +1,7 @@
 # Global variables for the sdbuildR package
 
+#' @param insightmaker_version Integer with Insight Maker version the package sdbuildR was built with
+#' @param jl_pkg_name String; name of the Julia package
 #' @param model_setup_name String; name of the model setup variable
 #' @param initial_value_name String; name of the initial value variable
 #' @param initial_value_names String; name of the variable with stock names
@@ -39,14 +41,17 @@
 #' @param nonneg_stock_name String; name of the non-negativity stock variable
 #' @param convert_u_func String; name of the function to convert units
 #' @param units_dict String; name of the units dictionary variable
-#' @param unit_context String; name of the unit context variable
 #' @param sdbuildR_units String; name of the sdbuildR units module
 #' @param MyCustomUnits String; name of the MyCustomUnits module
 #' @param constraint_def String; name of the constraint definition variable
 #' @param saveat_func String; name of the saveat function
 #' @param init_sdbuildR String; name of the initialization function for sdbuildR
-P = list(model_setup_name = "model_setup",
-         initial_value_name = "init",
+P = list(
+  insightmaker_version = 38,
+  jl_pkg_name = "sdbuildRUtils",
+  model_setup_name = "model_setup",
+  macro_name = "macro",
+  initial_value_name = "init",
          initial_value_names = "init_names",
          parameter_name = "constants",
          state_name = "current_state",
@@ -74,9 +79,10 @@ P = list(model_setup_name = "model_setup",
          fix_suffix = "_fix",
          fix_length_suffix = "_fixlength",
          ensemble_prob_name = "ensemble_prob",
-         ensemble_suffix = "_ensemble",
+         ensemble_pars = "ensemble_pars",
          ensemble_iter = "i",
          ensemble_func_name = "prob_func",
+         summary_df_name = "summary_df",
          sim_df_name = "df",
          prob_name = "prob",
          solution_name = "solve_out",
@@ -90,8 +96,8 @@ P = list(model_setup_name = "model_setup",
          eventfun_name = "eventfun",
          nonneg_stock_name = "nonneg_stock",
          convert_u_func = "convert_u",
-         units_dict = "units_dict",
-         unit_context = "unit_context",
+         # units_dict = "units_dict",
+         # unit_context = "unit_context",
          sdbuildR_units ="sdbuildR_units",
          MyCustomUnits ="MyCustomUnits",
          constraint_def = "constraint_def",

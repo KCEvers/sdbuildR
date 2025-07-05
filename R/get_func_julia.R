@@ -1,11 +1,11 @@
 
-#' Customary functions written in julia
+#' Customary functions written in Julia
 #'
-#' @return String with julia code
+#' @return List with Julia code
 #' @noRd
-#'
 get_func_julia = function(){
-  func_def = c(
+
+  func_def = list(
     #   "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = 2)
     #
     #     # Ensure y is sorted along x
@@ -27,6 +27,7 @@ get_func_julia = function(){
     # end",
     # extrapolation = 1: return NA when outside of bounds
     # extrapolation = 2: return nearest value when outside of bounds
+    "custom_func" = list(
     "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = \"nearest\")
 
   # Ensure y is sorted along x
@@ -63,7 +64,7 @@ end",
     #
     #     return(func)
     # end",
-    "ramp" = "function ramp(start, finish, height = 1.0)
+    "ramp" = "function ramp(times, time_units, start, finish, height = 1.0)
 
     @assert start < finish \"The finish time of the ramp cannot be before the start time. To specify a decreasing ramp, set the height to a negative value.\"
 
@@ -127,7 +128,7 @@ end ",
     #     return(func)
     # end",
     "make_step" = "# Make step signal
-function make_step(start, height = 1.0)
+function make_step(times, time_units, start, height = 1.0)
 
     # If times has units, but the ramp times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
@@ -208,7 +209,7 @@ end
     #     return(func)
     # end",
     "pulse" = "# Make pulse signal
-function pulse(start, height = 1.0, width = 1.0 * time_units, repeat_interval = nothing)
+function pulse(times, time_units, start, height = 1.0, width = 1.0 * time_units, repeat_interval = nothing)
     # If times has units, but the pulse times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
         if !(eltype(start) <: Unitful.Quantity)
@@ -272,6 +273,17 @@ function pulse(start, height = 1.0, width = 1.0 * time_units, repeat_interval = 
     return(func)
 end",
 
+"seasonal" = "# Create seasonal wave \nfunction seasonal(times, dt, period = u\"1yr\", shift = u\"0yr\")
+
+    @assert period > 0 \"The period of the seasonal wave must be greater than 0.\"
+
+    time_vec = times[1]:dt:times[2]
+    phase = 2 * pi .* (time_vec .- shift) ./ period  # π radians
+    y = cos.(phase)
+    func = itp(time_vec, y, method = \"linear\", extrapolation = \"nearest\")
+
+    return(func)
+end",
     # ** constant interpolation is not supported with units! linear is
 
     # ** other custom_func
@@ -375,6 +387,39 @@ end",
     return collect(values(result)), collect(keys(result))
 end",
 
+"round_" = "
+#round_(x::Unitful.Quantity) = round(Unitful.ustrip.(x)) * Unitful.unit(x)
+#round_(x::Unitful.Quantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
+#round_(x::Unitful.Quantity; digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
+#round_(x::Unitful.Quantity, digits::Float64) = round(Unitful.ustrip.(x), digits=round(digits)) * Unitful.unit(x)
+#round_(x::Unitful.Quantity; digits::Float64) = round(Unitful.ustrip.(x), digits=round(digits)) * Unitful.unit(x)
+
+#round_(x) = round(x)
+
+round_(x, digits::Real) = round(x, digits=round(Int, digits))
+
+round_(x; digits::Real=0) = round(x, digits=round(Int, digits))
+
+#round_(x::Unitful.Quantity) = round(Unitful.ustrip(x)) * Unitful.unit(x)
+
+round_(x::Unitful.Quantity, digits::Real) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)
+
+round_(x::Unitful.Quantity; digits::Real=0) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)",
+# "seasonal" = "# Create seasonal wave\nfunction seasonal(;wave_unit=u\"yr\", wave_peak=0u\"yr\")
+#     (t, u=wave_unit, p=wave_peak) -> cos.(Unitful.ustrip.(Unitful.uconvert.(u, t - p)))
+# end"
+#     "seasonal" = "# Create seasonal wave \nfunction seasonal(t, period = u\"1yr\", shift = u\"0yr\")
+#     phase = 2 * pi * (t - shift) / period  # π radians
+#     return(cos(phase))
+# end",
+
+"\\u2295" = "# Define the operator \\u2295 for the modulus
+function \\u2295(x, y)
+    return mod(x, y)
+end"),
+
+"unit_func" = list(
+
 "convert_u"= sprintf("# Set or convert unit wrappers per type
 function convert_u(x::Unitful.Quantity, unit_def::Unitful.Quantity)
     if Unitful.unit(x) == Unitful.unit(unit_def)
@@ -392,21 +437,6 @@ function convert_u(x::Unitful.Quantity, unit_def::Unitful.Units)
     end
 end
 
-
-function convert_u(x::Unitful.Quantity, unit_def::String)
-    try
-        unit_def = Unitful.uparse(unit_def, unit_context = %s)  # Parse string to unit (e.g., \"wk\" -> u\"wk\")
-
-        if Unitful.unit(x) == unit_def
-            return x  # No conversion needed
-        else
-            Unitful.uconvert.(unit_def, x)
-        end
-    catch e
-        error(\"Invalid unit string: $unit_def\")
-    end
-end
-
 # If x is not a Unitful.Quantity but Float64:
 function convert_u(x::Float64, unit_def::Unitful.Quantity)
     x * Unitful.unit(unit_def)
@@ -415,40 +445,35 @@ end
 function convert_u(x::Float64, unit_def::Unitful.Units)
     x * unit_def
 end
-
-function convert_u(x::Float64, unit_def::String)
-    try
-        unit_def = Unitful.uparse(unit_def, unit_context = unit_context)  # Parse string to unit (e.g., \"wk\" -> u\"wk\")
-        x * unit_def
-    catch e
-        error(\"Invalid unit string: $unit_def\")
-    end
-end", P$unit_context),
+")
+),
 
 
-    # "seasonal" = "# Create seasonal wave\nfunction seasonal(;wave_unit=u\"yr\", wave_peak=0u\"yr\")
-    #     (t, u=wave_unit, p=wave_peak) -> cos.(Unitful.ustrip.(Unitful.uconvert.(u, t - p)))
-    # end"
-#     "seasonal" = "# Create seasonal wave \nfunction seasonal(t, period = u\"1yr\", shift = u\"0yr\")
-#     phase = 2 * pi * (t - shift) / period  # π radians
-#     return(cos(phase))
-# end",
+# Previously: convert_u supported passing a string as unit_def, but this requires a global variable unit_context or to pass unit_context to many functions.
+#
+# function convert_u(x::Unitful.Quantity, unit_def::String)
+# try
+# unit_def = Unitful.uparse(unit_def, unit_context = unit_context)  # Parse string to unit (e.g., \"wk\" -> u\"wk\")
+#
+# if Unitful.unit(x) == unit_def
+# return x  # No conversion needed
+# else
+#   Unitful.uconvert.(unit_def, x)
+# end
+# catch e
+# error(\"Invalid unit string: $unit_def\")
+#     end
+# end
+#
+# function convert_u(x::Float64, unit_def::String)
+# try
+# unit_def = Unitful.uparse(unit_def, unit_context = unit_context)  # Parse string to unit (e.g., \"wk\" -> u\"wk\")
+# x * unit_def
+# catch e
+# error(\"Invalid unit string: $unit_def\")
+#     end
+# end
 
-"seasonal" = "# Create seasonal wave \nfunction seasonal(period = u\"1yr\", shift = u\"0yr\")
-
-    @assert period > 0 \"The period of the seasonal wave must be greater than 0.\"
-
-    time_vec = times[1]:dt:times[2]
-    phase = 2 * pi .* (time_vec .- shift) ./ period  # π radians
-    y = cos.(phase)
-    func = itp(time_vec, y, method = \"linear\", extrapolation = \"nearest\")
-
-    return(func)
-end",
-    "\\u2295" = "# Define the operator \\u2295 for the modulus
-function \\u2295(x, y)
-    return mod(x, y)
-end",
     # "retrieve_past"= "function retrieve_past(var_value, delay_time, default_value, t, var_name, single_or_interval, intermediaries, intermediary_names)
     #
     # 	# Ensure t and delay_time are of the same type
@@ -609,6 +634,7 @@ end",
 # end
 # ",
 
+"past" = list(
 "retrieve_delay" = "function retrieve_delay(var_value, delay_time, default_value, t, var_name, intermediaries, intermediary_names)
     # Handle empty intermediaries
     if isempty(intermediaries.saveval)
@@ -697,11 +723,7 @@ end",
     end
 
 end",
-    "saveat_func" = "# Function to save dataframe at specific times
-function saveat_func(t, y, new_times)
-    # Interpolate y at new_times
-    itp(t, y, method = \"linear\", extrapolation = \"nearest\")(new_times)
-end",
+
     # "setunit_flow" = "# Define function to set unit of flow; Alleviate users from dividing the flow in the equation by the time unit if they have specified the desired units in the units property of the flow
     # function setunit_flow(x, unit_def)
     #     # If trying to set the unit throws an error
@@ -778,9 +800,15 @@ end",P$delayN_acc_suffix),
     # Create a dictionary with names like \"name_acc1\", \"name_acc2\", ...
     #return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
     return Dict(Symbol(name, \"%s\", i) => value for i in 1:order_delay)
-end",P$smoothN_acc_suffix),
+end",P$smoothN_acc_suffix)),
 
-"clean_df" = sprintf("function clean_df(%s, %s, %s, %s, %s, %s;
+"clean" = list(
+  "saveat_func" = "# Function to save dataframe at specific times
+function saveat_func(t, y, new_times)
+    # Interpolate y at new_times
+    itp(t, y, method = \"linear\", extrapolation = \"nearest\")(new_times)
+end",
+"clean_df" = sprintf("function clean_df(%s, %s, %s, %s, %s;
                   %s=nothing, %s=nothing)
     # Always create df from solve_out and init_names
     %s = Unitful.ustrip.(DataFrame(%s, [:time; %s]))
@@ -823,9 +851,12 @@ end",P$smoothN_acc_suffix),
         ))
     end
 
-    return %s
+    # Convert to long
+    long = stack(%s, Not(:time), variable_name=:variable, value_name=:value)
+
+    return long
 end",
-                     P$solution_name, P$initial_value_name, P$initial_value_names,
+                     P$solution_name, P$initial_value_names,
                      P$times_name, P$timestep_name, P$saveat_name,
                      P$intermediaries, P$intermediary_names,
                      P$sim_df_name, P$solution_name, P$initial_value_names,
@@ -861,9 +892,205 @@ end
 ", P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]]),
 "clean_init" = sprintf("function clean_init(%s, %s)
     Dict(%s .=> Unitful.ustrip.(%s))
-end", P[["initial_value_name"]], P[["initial_value_names"]], P[["initial_value_names"]], P[["initial_value_name"]])
+end", P[["initial_value_name"]], P[["initial_value_names"]], P[["initial_value_names"]], P[["initial_value_name"]])),
 
-  )
+"ensemble" = list(
+
+
+  "all_timestep_stats" = "function all_timestep_stats(intermediaries, key = :saveval, qs = [0.05, 0.95])
+    n_steps = length(getfield(first(intermediaries), key))  # number of time steps
+    n_vars = length(first(getfield(first(intermediaries), key)))  # number of variables
+
+    # Preallocate storage
+    means   = zeros(n_vars, n_steps)
+    vars_   = zeros(n_vars, n_steps)
+    medians = zeros(n_vars, n_steps)
+    qlows   = zeros(n_vars, n_steps)
+    qhighs  = zeros(n_vars, n_steps)
+
+    for i in 1:n_steps
+        vals = [collect(getfield(sv, key)[i]) for sv in intermediaries]
+        mat = reduce(hcat, vals)  # rows: variables, cols: trajectories
+
+        means[:, i]   .= mapslices(mean, mat; dims=2)[:]
+        vars_[:, i]   .= mapslices(var, mat; dims=2)[:]
+        medians[:, i] .= mapslices(Statistics.median, mat; dims=2)[:]
+        qlows[:, i]   .= mapslices(x -> Statistics.quantile(x, qs[1]), mat; dims=2)[:]
+        qhighs[:, i]  .= mapslices(x -> Statistics.quantile(x, qs[2]), mat; dims=2)[:]
+    end
+
+    return (
+        mean = means,
+        var = vars_,
+        median = medians,
+        qlow = qlows,
+        qhigh = qhighs
+    )
+end",
+#'
+#'
+#' "all_timestep_stats" = "function all_timestep_stats(intermediaries, key = :saveval, qs = (0.05, 0.95))    n_steps = length(getfield(first(intermediaries), key))          # time steps
+#'     n_vars  = length(getfield(first(intermediaries), key)[1])       # variables
+#'     n_ens   = length(intermediaries)                                # ensemble size
+#'
+#'     # Preallocate storage
+#'     means   = zeros(n_vars, n_steps)
+#'     vars_   = zeros(n_vars, n_steps)
+#'     medians = zeros(n_vars, n_steps)
+#'     qlows   = zeros(n_vars, n_steps)
+#'     qhighs  = zeros(n_vars, n_steps)
+#'
+#'     # Reuse buffer to avoid repeated allocation
+#'     buffer = Vector{Float64}(undef, n_ens)
+#'
+#'     for t in 1:n_steps
+#'         for v in 1:n_vars
+#'             # Extract the v-th variable at time step t across all trajectories
+#'             @inbounds for i in 1:n_ens
+#'                 buffer[i] = getfield(intermediaries[i], key)[t][v]
+#'             end
+#'
+#'             # Summary statistics
+#'             @inbounds means[v, t]   = mean(buffer)
+#'             @inbounds vars_[v, t]   = var(buffer)
+#'             @inbounds medians[v, t] = median(buffer)
+#'             @inbounds qlows[v, t]   = quantile(buffer, qs[1])
+#'             @inbounds qhighs[v, t]  = quantile(buffer, qs[2])
+#'         end
+#'     end
+#'
+#'     return (
+#'         mean = means,
+#'         var = vars_,
+#'         median = medians,
+#'         qlow = qlows,
+#'         qhigh = qhighs
+#'     )
+#' end",
+#'
+#'
+
+#   "summary_to_long" = "function summary_to_long(stats, times, var_names)
+#     dfs = DataFrame[]
+#     # for (statname, matrix) in stats
+#     for statname in keys(stats)
+#
+#         df = permutedims(DataFrame(getfield(stats, statname), :auto))
+#         rename!(df, var_names)
+#         df.time = times
+#         long = stack(df, var_names; variable_name=:variable, value_name=:value)
+#         long.statistic .= statname
+#         push!(dfs, long)
+#     end
+#     vcat(dfs...)
+# end",
+
+"summary_to_long" = "function summary_to_long(stats, times, var_names)
+    dfs = DataFrame[]
+    # for (statname, matrix) in stats
+    for statname in keys(stats)
+
+        df = permutedims(DataFrame(getfield(stats, statname), :auto))
+        rename!(df, var_names)
+
+        if (statname == first(keys(stats)))
+            df.time = times
+        end
+
+        long = stack(df, var_names; variable_name=:variable, value_name=statname)
+
+        # Remove the variable column
+        if (statname != first(keys(stats)))
+            select!(long, Not(:variable))
+        end
+
+        # long.statistic .= statname
+        push!(dfs, long)
+    end
+
+    hcat(dfs...)
+end",
+
+  "create_ensemble_summ" = "function create_ensemble_summ(solve_out, init_names, intermediaries, intermediary_names, qs = [0.05, 0.95])
+
+    stats = all_timestep_stats(solve_out, :u, qs);
+    summ = summary_to_long(stats, solve_out[1].t, init_names)
+
+    if !isnothing(intermediaries)
+        stats = all_timestep_stats(intermediaries, :saveval, qs);
+        summ = vcat(summ, summary_to_long(stats, intermediaries[1].t, intermediary_names))
+    end
+
+    return summ
+end
+",
+
+# "ensemble_to_df" = "
+# function ensemble_to_df(solve_out, init_names, times, dt, saveat;
+#                   intermediaries=nothing, intermediary_names=nothing)
+#     dfs = DataFrame[]
+#
+#     for i in eachindex(solve_out)
+#
+#         df = clean_df(solve_out[i], init_names, times, dt, saveat;
+#           intermediaries=intermediaries[i], intermediary_names=intermediary_names)
+#
+#         insertcols!(df, 1, :simulation .=> i)
+#         push!(dfs, df)
+#     end
+#
+#     vcat(dfs...)
+# end"
+
+"ensemble_to_df" = "function ensemble_to_df(solve_out, init_names, times, dt, saveat;
+                   intermediaries=nothing, intermediary_names=nothing)
+    n = length(solve_out)
+    dfs = Vector{DataFrame}(undef, n)
+
+    for i in 1:n
+        df = clean_df(
+            solve_out[i], init_names, times, dt, saveat;
+            intermediaries = isnothing(intermediaries) ? nothing : intermediaries[i],
+            intermediary_names = intermediary_names
+        )
+        df.simulation = fill(i, nrow(df))
+        dfs[i] = df
+    end
+
+    return reduce(vcat, dfs)
+end"
+
+# "solve_out_to_df" = "function solve_out_to_df(solve_out, var_names)
+#     dfs = DataFrame[]
+#
+#     for (i, sol) in enumerate(solve_out)
+#         df = DataFrame(sol; copycols=true)
+#         rename!(df, [:time; var_names])
+#         insertcols!(df, 1, :simulation .=> i)
+#         long = stack(df, var_names; variable_name = :variable, value_name = :value)
+#         push!(dfs, long)
+#     end
+#
+#     vcat(dfs...)
+# end",
+#
+# "intermediaries_to_df" = "function intermediaries_to_df(intermediaries, var_names)
+#     dfs = DataFrame[]
+#
+#     for (i, sv) in enumerate(intermediaries)
+#         df = DataFrame(sv.saveval, var_names)
+#         rename!(df, var_names)
+#         # df.time = sv.t
+#         # Put simulation number as first column
+#         # insertcols!(df, 1, :simulation .=> i)
+#         long = stack(df, var_names; variable_name = :variable, value_name = :value)
+#         push!(dfs, long)
+#     end
+#
+#     vcat(dfs...)
+# end"
+
+))
 
   return(func_def)
 }

@@ -112,12 +112,11 @@ path_sanitize <- function(filename, replacement = "") {
 #'
 #' @inheritParams url_to_IM
 #' @inheritParams insightmaker_to_sfm
-#' @param insightmaker_version Integer with Insight Maker version the package sdbuildR was built with
 #'
 #' @return Nested list in XMILE style
 #' @noRd
 #'
-IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
+IM_to_xmile <- function(filepath_IM, debug) {
 
   # Read file
   xml_file = xml2::read_xml(filepath_IM)
@@ -187,18 +186,18 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
 
   # Check whether the model uses an early version of Insight Maker
   if (as.numeric(settings$Version) < 37){
-    message(sprintf("This model uses an earlier version of Insight Maker (%s), in which links were bi-directional by default. This may cause issues in translating the model. Please choose 'Clone Insight' in Insight Maker, and provide the URL to the updated model.", settings$Version))
+    message(sprintf("This model uses an earlier version of Insight Maker (%s), in which links were bi-directional by default. This may cause issues in translating the model. Please choose 'Clone Insight' in Insight Maker, and provide the URL to the updated model.", settings[["Version"]]))
   }
 
 
   # Check whether model is later version of Insight Maker than the package was made for
-  if (as.numeric(settings$Version) > insightmaker_version){
-    message(sprintf("This model uses Insight Maker version %s, whereas the package was based on Insight Maker version %d. Some features may not be available.", settings$Version,
-                    insightmaker_version))
+  if (as.numeric(settings$Version) > P[["insightmaker_version"]]){
+    message(sprintf("This model uses Insight Maker version %s, whereas sdbuildR was based on Insight Maker version %d. Some features may not be available.", settings$Version,
+                    P[["insightmaker_version"]]))
   }
 
   # Add version to header
-  header_list$insightmaker_version = settings$Version
+  header_list[["insightmaker_version"]] = settings$Version
 
   # Change links to access_ids
   keep_idx = node_names %in% c("Link", "Flow")
@@ -229,7 +228,7 @@ IM_to_xmile <- function(filepath_IM, insightmaker_version = 37, debug) {
   sources = c(sources, add_bi_sources, add_stock_sources)
 
   # Remove doubles
-  temp = data.frame(targets = targets, sources = sources) #%>% dplyr::distinct()
+  temp = data.frame(targets = targets, sources = sources)
   temp <- temp[!duplicated(temp), ]
   targets = temp$targets
   sources = temp$sources

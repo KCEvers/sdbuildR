@@ -37,26 +37,30 @@ test_that("logistic works", {
           eqn = "logistic(t, slope = -9, midpoint = 0.5, upper = 10)", to = "a")
   sim = expect_no_error(simulate(sfm0))
   df = as.data.frame(sim)
-  x = df$time
-  expect_equal(df$b, logistic(x, slope = -9, midpoint = 0.5, upper = 10))
+  x = df[df$variable == "b", "time"]
+  expect_equal(df[df$variable == "b", "value"],
+               logistic(x, slope = -9, midpoint = 0.5, upper = 10))
 
   sim = expect_no_error(simulate(sfm0 %>% sim_specs(language = "Julia")))
   df = as.data.frame(sim)
-  x = df$time
-  expect_equal(df$b, logistic(x, slope = -9, midpoint = 0.5, upper = 10))
+  x = df[df$variable == "b", "time"]
+  expect_equal(df[df$variable == "b", "value"],
+               logistic(x, slope = -9, midpoint = 0.5, upper = 10))
 
   sfm0 = xmile() %>%
     build("a", "stock") %>%
     build("b", "flow", eqn = "logistic(t, 9, upper = 10, midpoint = 0.5)", to = "a")
   sim = expect_no_error(simulate(sfm0))
   df = as.data.frame(sim)
-  x = df$time
-  expect_equal(df$b, logistic(x, slope = 9, midpoint = 0.5, upper = 10))
+  x = df[df$variable == "b", "time"]
+  expect_equal(df[df$variable == "b", "value"],
+               logistic(x, slope = 9, midpoint = 0.5, upper = 10))
 
   sim = expect_no_error(simulate(sfm0 %>% sim_specs(language = "Julia")))
   df = as.data.frame(sim)
-  x = df$time
-  expect_equal(df$b, logistic(x, slope = 9, midpoint = 0.5, upper = 10))
+  x = df[df$variable == "b", "time"]
+  expect_equal(df[df$variable == "b", "value"],
+               logistic(x, slope = 9, midpoint = 0.5, upper = 10))
 
 })
 
@@ -72,15 +76,17 @@ test_that("step works", {
   sfm = sfm0 %>% build("input", "constant", eqn = "step(5)")
   sim = expect_no_error(simulate(sfm))
   df = as.data.frame(sim)
-  expect_equal(df$a[which(df$time < 5)[1]], 0)
-  expect_equal(df$a[which(dplyr::near(df$time, 5))[1]], 0)
-  expect_equal(df$a[which(df$time > 5)[1]], 0.1 * 1) # dt * height step
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[which(df$time < 5)[1]], 0)
+  expect_equal(a[which(dplyr::near(df$time, 5))[1]], 0)
+  expect_equal(a[which(df$time > 5)[1]], 0.1 * 1) # dt * height step
 
   sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
   df = as.data.frame(sim)
-  expect_equal(df$a[which(df$time < 5)[1]], 0)
-  expect_equal(df$a[which(dplyr::near(df$time, 5))[1]], 0)
-  expect_equal(df$a[which(df$time > 5)[1]], 0.1 * 1) # dt * height step
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[which(df$time < 5)[1]], 0)
+  expect_equal(a[which(dplyr::near(df$time, 5))[1]], 0)
+  expect_equal(a[which(df$time > 5)[1]], 0.1 * 1) # dt * height step
 
   # Also works with keyword arguments
   expect_no_error(sfm0 %>% build("input", "constant", eqn = "step(start=5)"))
@@ -119,9 +125,10 @@ test_that("step works", {
   sfm = sfm0 %>% build("input", "constant", eqn = "step(start = u('5seconds'))") %>% sim_specs(language = "Julia", time_units = "seconds")
   sim = expect_no_error(simulate(sfm))
   df = as.data.frame(sim)
-  expect_equal(df$a[which(df$time < 5)[1]], 0)
-  expect_equal(df$a[which(dplyr::near(df$time, 5))[1]], 0)
-  expect_equal(df$a[which(df$time > 5)[1]], 0.1 * 1) # dt * height step
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[which(df$time < 5)[1]], 0)
+  expect_equal(a[which(dplyr::near(df$time, 5))[1]], 0)
+  expect_equal(a[which(df$time > 5)[1]], 0.1 * 1) # dt * height step
 
 
 
@@ -147,47 +154,53 @@ test_that("pulse works", {
   sfm = sfm0 %>% build("input", "constant", eqn = "pulse(5, 2)")
   sim = expect_no_error(simulate(sfm))
   df = as.data.frame(sim)
-  expect_equal(df$a[which(df$time < 5)[1]], 0)
-  expect_equal(df$a[which(dplyr::near(df$time, 5))[1]], 0)
-  expect_equal(df$a[which(df$time > 5)[1]], 0.1 * 2) # dt * height pulse
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[which(df$time < 5)[1]], 0)
+  expect_equal(a[which(dplyr::near(df$time, 5))[1]], 0)
+  expect_equal(a[which(df$time > 5)[1]], 0.1 * 2) # dt * height pulse
 
   sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
   df = as.data.frame(sim)
-  expect_equal(df$a[which(df$time < 5)[1]], 0)
-  expect_equal(df$a[which(dplyr::near(df$time, 5))[1]], 0)
-  expect_equal(df$a[which(df$time > 5)[1]], 0.1 * 2) # dt * height pulse
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[which(df$time < 5)[1]], 0)
+  expect_equal(a[which(dplyr::near(df$time, 5))[1]], 0)
+  expect_equal(a[which(df$time > 5)[1]], 0.1 * 2) # dt * height pulse
 
   # Passing a NULL argument
   sfm = expect_no_error(sfm0 %>% build("input", "constant",
                                        eqn = "pulse(10, height = 1, width = 1, repeat_interval = NULL)"))
   sim = expect_no_error(simulate(sfm))
   df = as.data.frame(sim)
-  expect_equal(df$a[which(df$time < 10)[1]], 0)
-  expect_equal(df$a[which(dplyr::near(df$time, 5))[1]], 0)
-  expect_equal(df$a[which(df$time > 10)[1]], 0.1 * 1) # dt * height pulse
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[which(df$time < 10)[1]], 0)
+  expect_equal(a[which(dplyr::near(df$time, 5))[1]], 0)
+  expect_equal(a[which(df$time > 10)[1]], 0.1 * 1) # dt * height pulse
 
   sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
   df = as.data.frame(sim)
-  expect_equal(df$a[which(df$time < 10)[1]], 0)
-  expect_equal(df$a[which(dplyr::near(df$time, 5))[1]], 0)
-  expect_equal(df$a[which(df$time > 10)[1]], 0.1 * 1) # dt * height pulse
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[which(df$time < 10)[1]], 0)
+  expect_equal(a[which(dplyr::near(df$time, 5))[1]], 0)
+  expect_equal(a[which(df$time > 10)[1]], 0.1 * 1) # dt * height pulse
 
   # Test repeating pulses
   sfm = expect_no_error(sfm0 %>% build("input", "constant",
                                        eqn = "pulse(10, height = 1, width = 1, repeat_interval = 5)"))
   sim = expect_no_error(simulate(sfm))
   df = as.data.frame(sim)
-  expect_equal(df$a[which(df$time < 10)[1]], 0)
-  expect_equal(df$a[which(dplyr::near(df$time, 5))[1]], 0)
-  expect_equal(df$a[which(df$time > 10)[1]], 0.1 * 1) # dt * height pulse
-  expect_equal(df$a[which(df$time > 15)[1]], 1 + 0.1 * 1) # dt * height pulse
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[which(df$time < 10)[1]], 0)
+  expect_equal(a[which(dplyr::near(df$time, 5))[1]], 0)
+  expect_equal(a[which(df$time > 10)[1]], 0.1 * 1) # dt * height pulse
+  expect_equal(a[which(df$time > 15)[1]], 1 + 0.1 * 1) # dt * height pulse
 
   sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
   df = as.data.frame(sim)
-  expect_equal(df$a[which(df$time < 10)[1]], 0)
-  expect_equal(df$a[which(dplyr::near(df$time, 5))[1]], 0)
-  expect_equal(df$a[which(df$time > 10)[1]], 0.1 * 1) # dt * height pulse
-  expect_equal(df$a[which(df$time > 15)[1]], 1 + 0.1 * 1) # dt * height pulse
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[which(df$time < 10)[1]], 0)
+  expect_equal(a[which(dplyr::near(df$time, 5))[1]], 0)
+  expect_equal(a[which(df$time > 10)[1]], 0.1 * 1) # dt * height pulse
+  expect_equal(a[which(df$time > 15)[1]], 1 + 0.1 * 1) # dt * height pulse
 
   # Ensure plotting works with add_constants as these are functions
   sim = expect_no_error(simulate(sfm))
@@ -214,17 +227,19 @@ test_that("ramp works", {
   sfm = sfm0 %>% build("input", "constant", eqn = "ramp(2, 5)")
   sim = expect_no_error(simulate(sfm))
   df = as.data.frame(sim)
-  expect_equal(df$a[which(df$time < 2)[1]], 0)
-  expect_equal(df$a[which(dplyr::near(df$time, 2))[1]], 0)
-  expect_equal(df$a[which(df$time > 2)[1]], 0) # first value is still zero
-  expect_equal(df$a[which(df$time > 2)[2]] > 0, TRUE)
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[which(df$time < 2)[1]], 0)
+  expect_equal(a[which(dplyr::near(df$time, 2))[1]], 0)
+  expect_equal(a[which(df$time > 2)[1]], 0) # first value is still zero
+  expect_equal(a[which(df$time > 2)[2]] > 0, TRUE)
 
   sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
   df = as.data.frame(sim)
-  expect_equal(df$a[which(df$time < 2)[1]], 0)
-  expect_equal(df$a[which(dplyr::near(df$time, 2))[1]], 0)
-  expect_equal(df$a[which(df$time > 2)[1]], 0) # first value is still zero
-  expect_equal(df$a[which(dplyr::near(df$time, 2.2))[1]] > 0, TRUE)
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[which(df$time < 2)[1]], 0)
+  expect_equal(a[which(dplyr::near(df$time, 2))[1]], 0)
+  expect_equal(a[which(df$time > 2)[1]], 0) # first value is still zero
+  expect_equal(a[which(dplyr::near(df$time, 2.2))[1]] > 0, TRUE)
 
   # Ensure plotting works with add_constants as these are functions
   sim = expect_no_error(simulate(sfm))
@@ -247,26 +262,30 @@ test_that("seasonal works", {
   sfm = sfm0 %>% build("input", "constant", eqn = "seasonal()")
   sim = expect_no_error(simulate(sfm))
   df = as.data.frame(sim)
-  expect_equal(df$a[1], 0)
-  expect_equal(df$a[2] > 0, TRUE)
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[1], 0)
+  expect_equal(a[2] > 0, TRUE)
 
   sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
   df = as.data.frame(sim)
-  expect_equal(df$a[1], 0)
-  expect_equal(df$a[2] > 0, TRUE)
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[1], 0)
+  expect_equal(a[2] > 0, TRUE)
 
   # With shift
   expect_no_error(sfm0 %>% build("input", "constant", eqn = "seasonal(shift = 1)"))
   sfm = sfm0 %>% build("input", "constant", eqn = "seasonal(shift = 1)")
   sim = expect_no_error(simulate(sfm))
   df = as.data.frame(sim)
-  expect_equal(df$a[1], 0)
-  expect_equal(df$a[2] > 0, TRUE)
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[1], 0)
+  expect_equal(a[2] > 0, TRUE)
 
   sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
   df = as.data.frame(sim)
-  expect_equal(df$a[1], 0)
-  expect_equal(df$a[2] > 0, TRUE)
+  a = df[df$variable == "a", "value"]
+  expect_equal(a[1], 0)
+  expect_equal(a[2] > 0, TRUE)
 
   # Ensure plotting works with add_constants as these are functions
   sim = expect_no_error(simulate(sfm))

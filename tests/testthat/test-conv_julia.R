@@ -334,14 +334,12 @@ test_that("clean_unit_in_u() works", {
 test_that("converting statements", {
 
   sfm = xmile("predator-prey")
-  # names_df = get_names(sfm)
   var_names = get_model_var(sfm)
 
   eqn = "if(a > b){\n\t a + b\n} # test () {}"
   result = convert_all_statements_julia(eqn, var_names, debug = FALSE)
   expected = "if a > b \n\t a + b\nend # test () {}"
   expect_equal(result, expected)
-
 
   eqn = "if (a + min(c(1, 2)) < 0){\n\t print(a)\n} else {\n\t  print(b)\n}"
   result = convert_all_statements_julia(eqn, var_names, debug = FALSE)
@@ -359,6 +357,21 @@ test_that("converting statements", {
   result = convert_all_statements_julia(eqn, var_names, debug = FALSE)
   expected = "# Description\nfunction a(c, b = 1) \n\t return(c + b)\nend"
   expect_equal(result, expected)
+
+#   # More complicated nested statements
+#   eqn = "a = function(c, b = 1){
+#   if (c > 0){
+#     return(c + b)
+#   } else if (c < 0){
+#     return(c - b)
+#   } else {
+#     return(0)
+#   }
+# }"
+#   result = convert_all_statements_julia(eqn, var_names, debug = FALSE)
+#   expected = ""
+#   expect_equal(result, expected)
+
 
 
   # # One-liner functions with brackets

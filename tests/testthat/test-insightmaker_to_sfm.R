@@ -8,8 +8,7 @@ test_that("translating Insight Maker models works", {
   # ** test arguments to insightmaker_to_sfm()
 
   URL = "https://insightmaker.com/insight/3xgsvC7QKgPktHWZuXyGAl/Clone-of-Global-Climate-Change"
-  expect_no_error(insightmaker_to_sfm(URL = URL))
-  sfm = insightmaker_to_sfm(URL = URL)
+  sfm = expect_no_error(insightmaker_to_sfm(URL = URL))
   expect_no_error(as.data.frame(sfm))
   df = as.data.frame(sfm)
   expect_equal(nrow(df) > 0, TRUE)
@@ -24,42 +23,38 @@ test_that("translating Insight Maker models works", {
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
-  expect_error(simulate(sfm %>% sim_specs(language = "R")), "The model contains unit strings u\\(''\\), which are not supported for simulations in R")
+  expect_error(simulate(sfm %>% sim_specs(language = "R")),
+               "The model contains unit strings u\\(''\\), which are not supported for simulations in R")
 
 
   URL = 'https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022'
-  expect_no_error(insightmaker_to_sfm(URL = URL))
-  sfm = insightmaker_to_sfm(URL = URL)
+  sfm = expect_no_error(insightmaker_to_sfm(URL = URL))
   expect_no_error(as.data.frame(sfm))
   df = as.data.frame(sfm)
   expect_equal(nrow(df) > 0, TRUE)
   expect_equal("macro" %in% df$type, TRUE)
 
-  expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
-  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
-  expect_no_error(simulate(sfm %>% sim_specs(language = "R")))
-  sim = simulate(sfm %>% sim_specs(language = "R"))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "R")))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
   URL = "https://insightmaker.com/insight/75PvtT7zp43wI7ofBOM9Sm/Clone-of-HYSTERESIS"
-  expect_no_error(insightmaker_to_sfm(URL = URL))
-  sfm = insightmaker_to_sfm(URL = URL)
+  sfm = expect_no_error(insightmaker_to_sfm(URL = URL))
   expect_no_error(as.data.frame(sfm))
   df = as.data.frame(sfm)
   expect_equal(nrow(df) > 0, TRUE)
   expect_equal("macro" %in% df$type, TRUE)
 
-  expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
-  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
-  expect_no_error(simulate(sfm %>% sim_specs(language = "R")))
-  sim = simulate(sfm %>% sim_specs(language = "R"))
-  expect_equal(sim$success, TRUE)
-  expect_equal(nrow(sim$df) > 0, TRUE)
+  # This model uses unit strings u(''), which are not supported in R
+  expect_error(simulate(sfm %>% sim_specs(language = "R")),
+               "The model contains unit strings u\\(''\\), which are not supported for simulations in R")
+
 })

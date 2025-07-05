@@ -50,19 +50,18 @@ simulate = function(sfm,
 
   # First assess whether the model is valid
   problems = debugger(sfm, quietly = TRUE)
-  if (nzchar(problems$problems)){
-    stop(problems$problems)
+  if (nzchar(problems[["problems"]])){
+    stop(problems[["problems"]])
   }
 
-  if (tolower(sfm$sim_specs$language) == "julia"){
+  if (tolower(sfm[["sim_specs"]][["language"]]) == "julia"){
     return(simulate_julia(sfm,
-                          format_code=format_code,
                           keep_nonnegative_flow = keep_nonnegative_flow,
                           keep_nonnegative_stock = keep_nonnegative_stock,
                           keep_unit = keep_unit, only_stocks = only_stocks,
                           verbose = verbose, debug = debug))
 
-  } else if (tolower(sfm$sim_specs$language) == "r"){
+  } else if (tolower(sfm[["sim_specs"]][["language"]]) == "r"){
 
     # Remove - deSolve is now a required installation
     # if (!requireNamespace("deSolve", quietly = TRUE)){
@@ -98,11 +97,11 @@ detect_undefined_var = function(sfm){
   var_names = get_model_var(sfm)
 
   # Macros and graphical functions can be functions
-  possible_func_in_model = c(names(sfm[["macro"]]), names(sfm[["model"]][["variables"]]$gf))
+  possible_func_in_model = c(names(sfm[["macro"]]), names(sfm[["model"]][["variables"]][["gf"]]))
 
   # ** Many more possible functions, e.g. * / + etc.
   possible_func = c(possible_func_in_model,
-                    get_syntax_julia()$syntax_df$R_first_iter,
+                    get_syntax_julia()[["syntax_df"]][["R_first_iter"]],
                     unlist(P),
                     # Remove base R names
                     "pi", "letters", "LETTERS",
@@ -148,7 +147,8 @@ detect_undefined_var = function(sfm){
 
   if (length(missing_ref) > 0){
 
-    missing_ref_format = missing_ref %>% purrr::imap(function(x, name){
+    missing_ref_format = missing_ref %>%
+      purrr::imap(function(x, name){
       purrr::imap(x, function(y, prop){
         paste0("- ", name, "$", prop, ": ", paste0(unname(y), collapse = ", "))
       })
@@ -209,7 +209,7 @@ topological_sort = function(dependencies_dict){
     return(edge)
   }) %>% do.call(rbind, .) %>% magrittr::set_rownames(NULL) %>%
     # Turn into vector by row
-    as.data.frame() # %>% dplyr::distinct() %>% as.matrix() %>% t() %>% c()
+    as.data.frame()
   edges = edges[!duplicated(edges), ] # Remove duplicates
   edges = as.matrix(edges) %>% t() %>% c()
 
@@ -463,30 +463,30 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 
   if (sim1$success & !sim2$success){
     return(c(equal = FALSE,
-                msg = "Simulation 1 was successful, but simulation 2 failed."))
+             msg = "Simulation 1 was successful, but simulation 2 failed."))
   }
 
   if (!sim1$success & sim2$success){
     return(c(equal = FALSE,
-                msg = "Simulation 2 was successful, but simulation 1 failed."))
+             msg = "Simulation 2 was successful, but simulation 1 failed."))
   }
 
   get_prop = function(sim){
     list(colnames = colnames(sim[[P$sim_df_name]]),
+         var_names = unique(sim[[P$sim_df_name]][["variable"]]),
          nrow = nrow(sim[[P$sim_df_name]]),
          ncol = ncol(sim[[P$sim_df_name]]),
-         n_xstart = length(sim[[P$initial_value_name]]),
-         n_pars = length(sim[[P$parameter_name]]),
-         language = sim$sfm$sim_specs$language,
+         n_pars = length(sim[[P[["parameter_name"]]]]),
+         language = sim$sfm[["sim_specs"]][["language"]],
          method = sim$sfm$sim_specs$method
-         )
+    )
   }
 
   prop1 = get_prop(sim1)
   prop2 = get_prop(sim2)
 
-  overlapping_colnames = intersect(prop1$colnames, prop2$colnames)
-  nonoverlapping_colnames = setdiff(union(prop1$colnames, prop2$colnames), overlapping_colnames)
+  overlapping_var_names = intersect(prop1$var_names, prop2$var_names)
+  nonoverlapping_var_names = setdiff(union(prop1$var_names, prop2$var_names), overlapping_var_names)
 
   check_diff = function(col1, col2){
 
@@ -495,7 +495,7 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 
     if (length(col1) != length(col2)){
       return(c(equal = FALSE,
-                  msg = paste0("Column lengths are not equal: ", length(col1)," (sim1) vs ", length(col2), " (sim2)")))
+               msg = paste0("Column lengths are not equal: ", length(col1)," (sim1) vs ", length(col2), " (sim2)")))
     }
 
     # Calculate Euclidean distance, ignoring NAs
@@ -507,16 +507,17 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
       sqrt_sum_diff = sqrt(sum((col1 - col2)^2, na.rm = TRUE))))
   }
 
-  df = lapply(overlapping_colnames,
-         function(name){c(name = name,
-                          check_diff(sim1$df[[name]], sim2$df[[name]]))}) %>%
+  df = lapply(overlapping_var_names,
+              function(name){c(name = name,
+                               check_diff(sim1$df[sim1$df$variable == name, "value"],
+                                          sim2$df[sim2$df$variable == name, "value"]))}) %>%
     do.call(dplyr::bind_rows, .) %>%
     as.data.frame()
 
   return(list(
     equal = all(as.logical(as.numeric(df$equal))),
-    overlapping_colnames = overlapping_colnames,
-    nonoverlapping_colnames = nonoverlapping_colnames,
+    overlapping_var_names = overlapping_var_names,
+    nonoverlapping_var_names = nonoverlapping_var_names,
     msg = paste0("The following columns are not equal:\n",
                  paste0(df$name, ": ", df$first_diff, " (", df$nr_diff, " differences, max diff: ", df$max_diff, ")\n", collapse = ""),
                  "\n"),
@@ -525,6 +526,205 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
     df = df)
   )
 
+
+}
+
+
+#' Create ensemble of simulations
+#'
+#' @inheritParams build
+#' @inheritParams simulate
+#' @param n Number of simulations to run in the ensemble. Defaults to 10.
+#' @param summary If TRUE, summarize the ensemble simulation results using their mean, variance, median, and quantiles. Defaults to TRUE.
+#' @param qs Quantiles to calculate in the summary, e.g. c(0.025, 0.975)
+#' @param return_sims If TRUE, return the individual simulations in the ensemble. Defaults to FALSE.
+#' @param range List of ranges to vary parameters in the ensemble. If specified, `n` will be the length of that range. All ranges have to be of the same length. Defaults to NULL.
+#'
+#' @returns Object of class sdbuildR_ensemble, which is a list containing:
+#' \describe{
+#'  \item{success}{If TRUE, simulation was successful. If FALSE, simulation failed.}
+#'  \item{filepath_sim}{Filepath to the simulation results in .ser format.}
+#'  \item{script}{Julia script used for the ensemble simulation.}
+#'  \item{duration}{Duration of the simulation in seconds.}
+#'  \item{...}{Other parameters passed to ensemble}
+#'  }
+#' @export
+#'
+#' @examples
+ensemble = function(sfm,
+                    n = 10,
+                    summary = TRUE,
+                    qs = c(0.025, 0.975),
+                    return_sims = FALSE,
+                    range = NULL,
+                    keep_nonnegative_flow = TRUE,
+                    keep_nonnegative_stock = FALSE,
+                    keep_unit = TRUE,
+                    only_stocks = FALSE,
+                    verbose = FALSE,
+                    debug = FALSE
+){
+
+  check_xmile(sfm)
+
+  if (sfm[["sim_specs"]][["language"]] != "Julia"){
+    stop("Ensemble simulations are only supported for Julia models. Please set sfm %>% sim_specs(language = 'Julia').")
+  }
+
+  if (!return_sims & !summary){
+    stop("Set either return_sims or summary to TRUE to obtain simulation output.")
+  }
+
+  if (!is.numeric(n)){
+    stop("n should be a numerical value!")
+  }
+
+  if (n <= 1){
+    stop("The number of simulations must be greater than 1!")
+  }
+
+  if (!is.numeric(qs)){
+    stop("qs should be a numerical vector with quantiles to calculate!")
+  }
+
+  if (length(qs) != 2){
+    stop("The quantiles qs should be of length two!")
+  }
+
+  if (!is.null(range)){
+
+    if (!is.list(range)){
+      stop("range must be a named list! Please provide a named list with ranges for the parameters to vary in the ensemble.")
+    }
+
+    if (length(range) == 0){
+      stop("range must be a named list with at least one element! Please provide a named list with ranges for the parameters to vary in the ensemble.")
+    }
+
+    if (is.null(names(range))){
+      stop("range must be a named list! Please provide a named list with ranges for the parameters to vary in the ensemble.")
+    }
+
+    # All must be numerical values
+    if (!all(sapply(range, is.numeric))){
+      stop("All elements in range must be numeric vectors!")
+    }
+
+    # All varied elements must exist in the model
+    names_df = get_names(sfm)
+    names_range = names(range)
+    idx = names_range %in% names_df$name
+    if (any(!idx)){
+      stop(paste0("The following names in range do not exist in the model: ",
+                  paste0(names_range[!idx], collapse = ", ")))
+    }
+
+    # All varied elements must be a stock or constant
+    idx = names_range %in% c(names_df[names_df[["type"]] %in% c("stock", "constant"), "name"])
+    if (any(!idx)){
+      stop(paste0("Only constants or the initial value of stocks can be varied. Please exclude: ",
+                  paste0(names_range[!idx], collapse = ", ")))
+    }
+
+    # All ranges must be of the same length
+    range_lengths = sapply(range, length)
+    if (length(unique(range_lengths)) != 1){
+      stop("All ranges must be of the same length! Please check the lengths of the ranges in range.")
+    }
+    n = unique(range_lengths)
+
+  }
+
+  # Collect arguments
+  argg <- c(
+    as.list(environment()))
+  # Remove NULL arguments
+  argg = argg[!lengths(argg) == 0]
+  # Remove some elements
+  # argg[c("sfm")] = NULL
+
+  # Create ensemble parameters
+  ensemble_pars = list(n = n,
+                       summary = summary,
+                       qs = qs,
+                       return_sims = return_sims,
+                       range = range)
+
+  # Get output filepaths
+  ensemble_pars[["filepath_df"]] = get_tempfile(fileext = ".csv")
+  ensemble_pars[["filepath_summ"]] = get_tempfile(fileext = ".csv")
+  filepath = get_tempfile(fileext = ".jl")
+
+  # Compile script
+  script = compile_julia(sfm, filepath_sim = "",
+                         ensemble_pars = ensemble_pars,
+                         keep_nonnegative_flow = keep_nonnegative_flow,
+                         keep_nonnegative_stock = keep_nonnegative_stock,
+                         only_stocks = only_stocks,
+                         keep_unit = keep_unit, debug = debug)
+  write_script(script, filepath)
+  script = paste0(readLines(filepath), collapse = "\n")
+
+
+  # Evaluate script
+  sim = tryCatch({
+
+    # Evaluate script
+    use_julia()
+
+    start_t = Sys.time()
+
+    # Wrap in invisible and capture.output to not show message of units module being overwritten
+    invisible(utils::capture.output(
+      JuliaConnectoR::juliaEval(paste0('include("', filepath, '")'))
+      ))
+
+    end_t = Sys.time()
+
+    if (verbose){
+      message(paste0("Simulation took ", round(end_t - start_t, 4), " seconds"))
+    }
+
+    # Delete file
+    file.remove(filepath)
+
+    if (return_sims){
+      df = as.data.frame(data.table::fread(ensemble_pars[["filepath_df"]], na.strings = c("", "NA")))
+
+      # Delete files
+      file.remove(ensemble_pars[["filepath_df"]])
+    } else {
+      df = NULL
+    }
+
+    # If summary is requested, read the summary file
+    if (summary){
+      summ = as.data.frame(data.table::fread(ensemble_pars[["filepath_summ"]], na.strings = c("", "NA")))
+
+      # Delete files
+      file.remove(ensemble_pars[["filepath_summ"]])
+    } else {
+      summ = NULL
+    }
+
+    list(success = TRUE,
+         df = df,
+         summ = summ,
+         # filepath_sim = filepath_sim,
+         script = script,
+         duration = end_t - start_t) %>% utils::modifyList(argg) %>%
+      structure(., class = "sdbuildR_ensemble")
+
+  },
+  error = function(e) {
+    warning("\nAn error occurred while running the Julia script.")
+    list(success = FALSE, error_message = e[["message"]],
+         script = script) %>% utils::modifyList(argg) %>%
+      structure(., class = "sdbuildR_ensemble")
+  })
+
+
+  return(sim)
 
 }
 
