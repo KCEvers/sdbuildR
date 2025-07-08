@@ -10,11 +10,11 @@ sim_specs(
   start = "0.0",
   stop = "100.0",
   dt = "0.01",
-  saveat = dt,
+  save_at = dt,
+  save_from = start,
   seed = NULL,
   time_units = "s",
-  language = "R",
-  ...
+  language = "R"
 )
 }
 \arguments{
@@ -28,15 +28,15 @@ sim_specs(
 
 \item{dt}{Timestep of solver. Defaults to 0.01.}
 
-\item{saveat}{Timestep at which to save computed values. Defaults to dt.}
+\item{save_at}{Timestep at which to save computed values. Defaults to dt.}
+
+\item{save_from}{Time to at which to start saving computed values. Defaults to start. Set to a larger time than start to store less data.}
 
 \item{seed}{Seed number to ensure reproducibility across runs in case of random elements. Must be an integer. Defaults to NULL (no seed).}
 
 \item{time_units}{Simulation time unit, e.g. 's' (second). Defaults to "s".}
 
 \item{language}{Coding language in which to simulate model. Either "R" or "Julia". Julia is necessary for using units or delay functions. Defaults to "R".}
-
-\item{...}{Optional additional parameters}
 }
 \value{
 Updated stock-and-flow model with new simulation specifications
@@ -56,8 +56,8 @@ sfm = sfm \%>\% sim_specs(method = "rk4")
 # Change the time units to "years", such that one time unit is one year
 sfm = sfm \%>\% sim_specs(time_units = "years")
 
-# To save storage but not affect accuracy, use saveat
-sfm = sfm \%>\% sim_specs(saveat = 0.1, dt = 0.001)
+# To save storage but not affect accuracy, use save_at
+sfm = sfm \%>\% sim_specs(save_at = 0.1, dt = 0.001)
 sim = simulate(sfm)
 head(as.data.frame(sim))
 

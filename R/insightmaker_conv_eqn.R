@@ -78,9 +78,9 @@ convert_equations_IM = function(
 
     # Step 5. Replace built-in functions
     conv_list = convert_builtin_functions_IM(type, name, eqn, var_names, debug = debug)
-    eqn = conv_list$eqn
-    add_Rcode = conv_list$add_Rcode
-    translated_func = conv_list$translated_func
+    eqn = conv_list[["eqn"]]
+    add_Rcode = conv_list[["add_Rcode"]]
+    translated_func = conv_list[["translated_func"]]
 
     # Ensure units which need scientific notation have it
     eqn = clean_unit_in_u(eqn, regex_units)
@@ -132,17 +132,17 @@ replace_comments = function(eqn) {
       next
     }
 
-    idxs_comments$char = rep(comment_char, sapply(idxs_comments_, nrow))
+    idxs_comments[["char"]] = rep(comment_char, sapply(idxs_comments_, nrow))
 
     # Remove those that are in comments (#) or quotation marks
     idxs_exclude = get_seq_exclude(eqn, type = "quot", names_with_brackets = TRUE)
-    idxs_comments = idxs_comments[!(idxs_comments$start %in% idxs_exclude | idxs_comments$end %in% idxs_exclude), ]
+    idxs_comments = idxs_comments[!(idxs_comments[["start"]] %in% idxs_exclude | idxs_comments[["end"]] %in% idxs_exclude), ]
 
     if (nrow(idxs_comments) == 0){
       done = TRUE
     } else {
       idx_comments = idxs_comments[1,]
-      replacement = replacements[match(idx_comments$char, comment_char)]
+      replacement = replacements[match(idx_comments[["char"]], comment_char)]
       stringr::str_sub(eqn, idx_comments[["start"]], idx_comments[["end"]]) = replacement
     }
 
@@ -1375,39 +1375,56 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 
   while (!done) {
 
-    # Remove those matches that are in quotation marks or names
-    idxs_exclude = get_seq_exclude(eqn, var_names, names_with_brackets = TRUE)
+    # idx_df <- lapply(1:nrow(syntax_df), function(i) {
+    #   matches <- gregexpr(IM_regex[i], eqn, ignore.case = ignore_case_arg)[[1]]
+    #
+    #   if (matches[1] == -1) {
+    #     return(data.frame(start = integer(), end = integer()))
+    #   } else {
+    #     dplyr::bind_cols(syntax_df[i, ],
+    #           data.frame(
+    #             start = as.integer(matches),
+    #             end = as.integer(matches + attr(matches, "match.length") - 1)
+    #           ))
+    #   }
+    # }) %>% do.call(rbind, .)
+    #
+    # if (nrow(idx_df) == 0){
+    #   done = TRUE
+    #   next
+    # }
 
-    idx_df <- lapply(1:nrow(syntax_df), function(i) {
+    idx_df <- lapply(seq_along(IM_regex), function(i) {
       matches <- gregexpr(IM_regex[i], eqn, ignore.case = ignore_case_arg)[[1]]
 
       if (matches[1] == -1) {
-        return(data.frame(start = integer(), end = integer()))
+        return(NULL)
       } else {
         dplyr::bind_cols(syntax_df[i, ],
-              data.frame(
-                start = as.integer(matches),
-                end = as.integer(matches + attr(matches, "match.length") - 1)
-              ))
+                         data.frame(
+                           start = as.integer(matches),
+                           end = as.integer(matches + attr(matches, "match.length") - 1)
+                         ))
       }
-    }) %>% do.call(rbind, .)
+    })
 
-    if (nrow(idx_df) == 0){
+    # Remove NULL entries
+    idx_df <- idx_df[!sapply(idx_df, is.null)]
+
+    if (length(idx_df) == 0){
       done = TRUE
       next
     }
 
-    # idx_df = idx_df %>% as.data.frame() %>%
-    #   # Double matches in case of functions that don't need brackets, e.g. Days() -> select one with longest end, as we want to match Days() over Days
-    #   dplyr::group_by(.data$insightmaker, .data$start) %>%
-    #   dplyr::slice_max(order_by = .data$end, n = 1) %>%
-    #   dplyr::ungroup()
+    idx_df <- as.data.frame(do.call(rbind, idx_df))
 
   # Double matches in case of functions that don't need brackets, e.g. Days() -> select one with longest end, as we want to match Days() over Days
-    idx_df <- as.data.frame(idx_df)
     idx_df <- idx_df[order(idx_df$insightmaker, idx_df$start, -idx_df$end), ]
     idx_df <- idx_df[!duplicated(idx_df[, c("insightmaker", "start")]), ]
     rownames(idx_df) <- NULL
+
+    # Remove those matches that are in quotation marks or names
+    idxs_exclude = get_seq_exclude(eqn, var_names, names_with_brackets = TRUE)
 
     if (nrow(idx_df) > 0) idx_df = idx_df[!(idx_df$start %in% idxs_exclude | idx_df$end %in% idxs_exclude), ]
 

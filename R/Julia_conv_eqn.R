@@ -72,9 +72,11 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units,
     print(eqn)
   }
 
+  if (length(eqn) > 1){
+    stop("eqn must be of length 1!")
+  }
+
   default_out = list(eqn_julia = "0.0",
-                     # translated_func = c(),
-                     # intermediary = c(),
                      func = list())
 
   # Check whether eqn is empty or NULL
@@ -978,6 +980,11 @@ get_syntax_julia = function(){
     "range", "extrema", "syntax1", "", "", F,
 
     "as.logical", "Bool", "syntax1", "", "" , T,
+    # "seq", "seq", "syntax1", "", "", F,
+    # "sequence", "seq", "syntax1", "", "", F,
+    # "seq_along", "seq_along", "syntax1", "", "", F,
+    # "sample", "sample", "syntax1", "", "", F,
+
 
 
     # ** mad()
@@ -1412,8 +1419,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
     syntax_df = out$syntax_df
     conv_df = out$conv_df
 
-    # intermediary = compute = update = setup = c()
-
     # Preparation for first iteration
     done = FALSE
     i = 1
@@ -1424,23 +1429,46 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
       # Remove those matches that are in quotation marks or names
       idxs_exclude = get_seq_exclude(eqn, var_names)
 
-      # Update location indices of functions in eqn
-      idx_df <- lapply(1:length(R_regex), function(i) {
+      # # Update location indices of functions in eqn
+      # idx_df <- lapply(1:length(R_regex), function(i) {
+      #   matches <- gregexpr(R_regex[i], eqn, perl = TRUE, ignore.case = FALSE)[[1]]
+      #   if (matches[1] == -1) {
+      #     return(data.frame(start = integer(), end = integer()))
+      #   } else {
+      #     # dplyr::bind_cols instead of cbind(), as cbind() gives rownames for short variable have been discarded warning
+      #     dplyr::bind_cols(syntax_df[i, ],
+      #           data.frame(
+      #             start = as.integer(matches),
+      #             end = as.integer(matches + attr(matches, "match.length") - 1)
+      #           ))
+      #   }
+      # }) %>% do.call(rbind, .) %>% as.data.frame()
+
+      idx_df <- lapply(seq_along(R_regex), function(i) {
         matches <- gregexpr(R_regex[i], eqn, perl = TRUE, ignore.case = FALSE)[[1]]
-        # matches <- gregexpr(syntax_df[i, ][[which_regex]], eqn, ignore.case = FALSE)[[1]]
+
         if (matches[1] == -1) {
-          return(data.frame(start = integer(), end = integer()))
+          return(NULL)  # Return NULL instead of empty data.frame
         } else {
-          # dplyr::bind_cols instead of cbind(), as cbind() gives rownames for short variable have been discarded warning
-          dplyr::bind_cols(syntax_df[i, ],
+          # Use cbind instead of dplyr::bind_cols for speed
+          cbind(syntax_df[rep(i, length(matches)), , drop = FALSE],
                 data.frame(
                   start = as.integer(matches),
                   end = as.integer(matches + attr(matches, "match.length") - 1)
                 ))
         }
-      }) %>% do.call(rbind, .) %>% as.data.frame()
+      })
 
-      # idx_df <- idx_df[!((idx_df[["start"]] %in% idxs_exclude) | (idx_df[["end"]] %in% idxs_exclude)), ]
+      # Remove NULL entries
+      idx_df <- idx_df[!sapply(idx_df, is.null)]
+
+      if (length(idx_df) == 0) {
+        done = TRUE
+        next
+      }
+
+      idx_df = do.call(rbind, idx_df)
+
       if (nrow(idx_df) > 0) idx_df = idx_df[!(idx_df[["start"]] %in% idxs_exclude | idx_df[["end"]] %in% idxs_exclude), ]
       if (nrow(idx_df) == 0){
         done = TRUE
@@ -1589,13 +1617,12 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
                                arg[2], ", ",
                                arg3, ", ",
                                P[["time_name"]],
-                               # ", \"", arg[1], "\", \"single\", ",
                                # Symbols are faster
                                ", :", arg[1],
-                               # ", \"single\", ",
                                ", ",
-
-                               P[["intermediaries"]], ", ", P[["intermediary_names"]], ")")
+                               P[["intermediaries"]], ", ",
+                               P[["model_setup_name"]], ".",
+                               P[["intermediary_names"]], ")")
 
           add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(var = arg[1],
                                                                      length = arg[2],
@@ -1621,12 +1648,12 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
                                arg[1], ", ",
                                arg2, ", nothing, ",
                                P[["time_name"]],
-                               # ", \"", arg[1], "\", \"interval\", ",
                                # Symbols are faster
                                ", :", arg[1],
-                               # ", \"interval\", ",
                                ", ",
-                               P[["intermediaries"]], ", ", P[["intermediary_names"]], ")")
+                               P[["intermediaries"]], ", ",
+                               P[["model_setup_name"]], ".",
+                               P[["intermediary_names"]], ")")
           add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(var = arg[1],
                                                                      length = arg2)
 

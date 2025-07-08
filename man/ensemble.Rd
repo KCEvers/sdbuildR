@@ -2,35 +2,38 @@
 % Please edit documentation in R/compile.R
 \name{ensemble}
 \alias{ensemble}
-\title{Create ensemble of simulations}
+\title{Run ensemble simulation}
 \usage{
 ensemble(
   sfm,
   n = 10,
-  summary = TRUE,
+  threaded = TRUE,
   qs = c(0.025, 0.975),
-  return_sims = FALSE,
+  return_sims = TRUE,
   range = NULL,
+  cross = FALSE,
   keep_nonnegative_flow = TRUE,
   keep_nonnegative_stock = FALSE,
   keep_unit = TRUE,
-  only_stocks = FALSE,
-  verbose = FALSE,
+  only_stocks = TRUE,
+  verbose = TRUE,
   debug = FALSE
 )
 }
 \arguments{
 \item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
 
-\item{n}{Number of simulations to run in the ensemble. Defaults to 10.}
+\item{n}{Number of simulations to run in the ensemble. When range is specified, n defines the number of simulations to run per condition. If each condition only needs to be run once, set n = 1. Defaults to 10.}
 
-\item{summary}{If TRUE, summarize the ensemble simulation results using their mean, variance, median, and quantiles. Defaults to TRUE.}
+\item{threaded}{If TRUE, run the ensemble in threaded. Defaults to TRUE.}
 
-\item{qs}{Quantiles to calculate in the summary, e.g. c(0.025, 0.975)}
+\item{qs}{Quantiles to calculate in the summary, e.g. c(0.025, 0.975).}
 
-\item{return_sims}{If TRUE, return the individual simulations in the ensemble. Defaults to FALSE.}
+\item{return_sims}{If TRUE, return the individual simulations in the ensemble. Set to FALSE to save memory. Defaults to TRUE.}
 
-\item{range}{List of ranges to vary parameters in the ensemble. If specified, \code{n} will be the length of that range. All ranges have to be of the same length. Defaults to NULL.}
+\item{range}{List of ranges to vary parameters in the ensemble. Only stocks and constants can be specified. All ranges have to be of the same length if cross = FALSE. Defaults to NULL.}
+
+\item{cross}{If TRUE, cross the parameters in the range list to generate all possible combinations of parameters. Defaults to TRUE.}
 
 \item{keep_nonnegative_flow}{If TRUE, keeps original non-negativity setting of flows. Defaults to TRUE.}
 
@@ -48,12 +51,18 @@ ensemble(
 Object of class sdbuildR_ensemble, which is a list containing:
 \describe{
 \item{success}{If TRUE, simulation was successful. If FALSE, simulation failed.}
-\item{filepath_sim}{Filepath to the simulation results in .ser format.}
+\item{error_message}{If success is FALSE, contains the error message.}
+\item{df}{Dataframe with simulation results in long format, if return_sims is TRUE. The iteration number is indicated by column "i". If range was specified, the condition is indicated by column "j".}
+\item{summary}{Dataframe with summary statistics of the ensemble, including quantiles specified in qs. If range was specified, summary statistics are calculated for each condition (j) in the ensemble.}
+\item{n}{Number of simulations run in the ensemble (per condition j if range is specified).}
+\item{total_n}{Total number of simulations run in the ensemble (across all conditions if range is specified).}
+\item{conditions}{Dataframe with the conditions used in the ensemble, if range is specified.}
+\item{constants}{Dataframe with the constant parameters used in the ensemble. The first two columns are "j" (iteration number) and "i" (parameter index), followed by the parameter names.}
 \item{script}{Julia script used for the ensemble simulation.}
 \item{duration}{Duration of the simulation in seconds.}
 \item{...}{Other parameters passed to ensemble}
 }
 }
 \description{
-Create ensemble of simulations
+Run ensemble simulation
 }

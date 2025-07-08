@@ -336,7 +336,7 @@ kableExtra::kbl(functions_table, format = "markdown",
 
 ### Simulation specifications
 
-We may want to observe the system over a longer time period, or with a different time step. To change the simulation specifications, use `sim_specs()`. Below, we simulate from 0 to 250 days.  To decrease the size of the resulting dataframe, the simulation time step `dt` should *not* be lowered, as this can affect the accuracy of the simulation. Rather, we can save the simulation results only every 0.1 days, which preserves accuracy. The method is set to `"euler"`, which is the simplest numerical integration method. 
+We may want to observe the system over a longer time period, or with a different time step. To change the simulation specifications, use `sim_specs()`. Below, we simulate from 0 to 250 days.  To decrease the size of the resulting dataframe, the simulation time step `dt` should *not* be lowered, as this can affect the accuracy of the simulation. Rather, we can save the simulation results only every 0.1 days, which preserves accuracy. We additionally don't save the first 100 days. The method is set to `"euler"`, which is the simplest numerical integration method. 
 
 ```{r}
 sfm = xmile("predator-prey") %>% 
@@ -345,7 +345,8 @@ sfm = xmile("predator-prey") %>%
                      stop = 250,
                      method = "euler",
                      dt = 0.001,
-                     saveat = 0.1)
+                     save_at = 0.1,
+                     save_from = 100)
 ```
 
 In case the simulation contains stochastic elements, we may want to set a seed to ensure that the simulation is reproducible. For example, the initial value of the predator and prey stocks could be a random number. The seed needs to be an integer, and can also be set with `sim_specs()`.

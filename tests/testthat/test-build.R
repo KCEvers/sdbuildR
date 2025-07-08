@@ -15,9 +15,16 @@ test_that("xmile() works", {
   expect_equal(sim_specs(sfm, start = 1990, stop = 2000)$sim_specs$start, "1990.0")
   expect_equal(sim_specs(sfm, start = 1, stop = 1e+06)$sim_specs$stop, "1000000.0")
   expect_equal(sim_specs(sfm, dt = 1e-08)$sim_specs$dt, "0.00000001")
-  expect_warning(sim_specs(sfm, dt = .1, saveat = .01), "dt must be smaller or equal to saveat! Setting saveat equal to dt")
+  expect_warning(sim_specs(sfm, dt = .1, save_at = .01), "dt must be smaller or equal to save_at! Setting save_at equal to dt")
+
+
+  # Non existing template
+  expect_error(xmile("A"), "A is not an available template. The available templates are")
+  expect_error(xmile(""), "is not an available template. The available templates are")
+  expect_error(xmile(" "), "  is not an available template. The available templates are")
 
 })
+
 
 test_that("sim_specs() works", {
 
@@ -26,7 +33,8 @@ test_that("sim_specs() works", {
   expect_equal(sfm$sim_specs$start, "0.0")
   expect_equal(sfm$sim_specs$stop, "100.0")
   expect_equal(sfm$sim_specs$dt, "0.01")
-  expect_equal(sfm$sim_specs$saveat, "0.01")
+  expect_equal(sfm$sim_specs$save_at, "0.01")
+  expect_equal(sfm$sim_specs$save_from, sfm$sim_specs$start)
 
   # Check that empty sim_specs() doesn't change anything
   sfm = xmile()
@@ -59,13 +67,33 @@ test_that("sim_specs() works", {
 
   # Check that dt must be smaller than stop - start
   expect_error(xmile() %>% sim_specs(start = 0, stop = .05, dt = .1), "dt must be smaller than the difference between start and stop!")
-  expect_error(xmile() %>% sim_specs(start = 0, stop = 1, saveat = 2), "saveat must be smaller than the difference between start and stop!")
+  expect_error(xmile() %>% sim_specs(start = 0, stop = 1, save_at = 2), "save_at must be smaller than the difference between start and stop!")
 
-  # saveat and dt
+  # save_at and dt
   expect_no_error(xmile() %>% sim_specs(dt = .1))
   sfm = xmile() %>% sim_specs(dt = 0.1)
   expect_equal(sfm$sim_specs$dt, "0.1")
-  expect_equal(sfm$sim_specs$saveat, "0.1")
+  expect_equal(sfm$sim_specs$save_at, "0.1")
+
+  # save_from
+  sfm = xmile() %>% sim_specs(start = 0, stop = 100, dt = .01, save_at = .1)
+  expect_error(sfm %>% sim_specs(save_from = -1),
+               "save_from must be within the start \\(0\\) and stop \\(100\\) time of the simulation")
+  expect_error(sfm %>% sim_specs(save_from = 101),
+               "save_from must be within the start \\(0\\) and stop \\(100\\) time of the simulation")
+  sfm = expect_no_error(sfm %>% sim_specs(save_from = 10))
+  expect_equal(sfm$sim_specs$save_from, "10.0")
+
+  # Check that save_at is updated if start and stop are updated
+  sfm = xmile("SIR") %>% sim_specs(start = 0, stop = 20) %>%
+    sim_specs(save_at = 0.1, dt = 0.001, start = 100, stop = 200)
+  expect_equal(sfm$sim_specs$save_from, "100.0")
+  sfm = xmile("SIR") %>% sim_specs(start = 50, stop = 100) %>%
+    sim_specs(save_at = 0.1, dt = 0.001, start = 0, stop = 75)
+  expect_equal(sfm$sim_specs$save_from, "0.0")
+  sfm = xmile("coffee_cup") %>% sim_specs(start = 0, stop = 100) %>%
+    sim_specs(save_at = 0.1, dt = 0.001, start = 100, stop = 200)
+  expect_equal(sfm$sim_specs$save_from, "100.0")
 
   # warning for large dt
   expect_warning(xmile() %>% sim_specs(dt = 2), "dt is larger than 0\\.1! This will likely lead to inaccuracies in the simulation.")

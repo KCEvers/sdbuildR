@@ -12,6 +12,8 @@
 #' @param change_state_name String; name of the state change variable
 #' @param times_name String; name of the time sequence variable
 #' @param timestep_name String; name of the timestep variable
+#' @param saveat_name String; name of the saveat variable
+#' @param savefrom_name String; name of the saverange variable
 #' @param time_units_name String; name of the simulation time unit variable
 #' @param conveyor_suffix String; suffix of conveyor variables
 #' @param delayN_suffix String; suffix of delayN variables
@@ -24,8 +26,11 @@
 #' @param fix_suffix String; suffix of fix variables
 #' @param fix_length_suffix String; suffix of fix length variables
 #' @param ensemble_prob_name String; name of the ensemble problem
+#' @param ensemble_output_func String; name of the ensemble output function
+#' @param ensemble_range String; name of the ensemble range variable
 #' @param ensemble_suffix String; suffix of specified ensemble conditions
 #' @param ensemble_iter String; name of the ensemble iteration variable
+#' @param ensemble_n String; name of the number of ensemble iterations
 #' @param ensemble_func_name String; name of the ensemble function
 #' @param sim_df_name String; name of the simulation data frame
 #' @param prob_name String; name of the problem variable
@@ -53,14 +58,16 @@ P = list(
   macro_name = "macro",
   initial_value_name = "init",
          initial_value_names = "init_names",
-         parameter_name = "constants",
-         state_name = "current_state",
+  parameter_name = "constants",
+  parameter_names = "constant_names",
+  state_name = "current_state",
          change_prefix = "d",
          time_name = "t",
          change_state_name = "dSdt",
          times_name = "times",
          timestep_name = "dt",
          saveat_name = "saveat",
+  savefrom_name = "savefrom",
          time_units_name = "time_units",
          # time_unit_pars_name = time_unit_pars_name,
          # archive_name = "archive",
@@ -79,8 +86,12 @@ P = list(
          fix_suffix = "_fix",
          fix_length_suffix = "_fixlength",
          ensemble_prob_name = "ensemble_prob",
+  ensemble_output_func = "output_func",
+  ensemble_range = "ensemble_range",
          ensemble_pars = "ensemble_pars",
          ensemble_iter = "i",
+  ensemble_n = "ensemble_n",
+  ensemble_total_n = "ensemble_total_n",
          ensemble_func_name = "prob_func",
          summary_df_name = "summary_df",
          sim_df_name = "df",

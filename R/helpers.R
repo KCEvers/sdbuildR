@@ -6,7 +6,7 @@
 #' @returns List with NULL values removed
 #' @noRd
 compact_ = function(x){
-  Filter(Negate(is.null), x)
+  Filter(Negate(rlang::is_empty), Filter(Negate(is.null), x))
 }
 
 
