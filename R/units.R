@@ -109,7 +109,7 @@ split_units = function(x){
     split_df = rbind(idxs_word_df,
                      data.frame(start = idxs_word_df$end[-nrow(idxs_word_df)] + 1,
                                 end = idxs_word_df$start[-1] - 1))
-    split_df = split_df[order(split_df$start), ]
+    split_df = split_df[order(split_df[["start"]]), ]
 
     # Make sure beginning characters are included
     if (split_df$start[1] > 1){
@@ -122,7 +122,7 @@ split_units = function(x){
       split_df = rbind(split_df, data.frame(start = split_df$end[nrow(split_df)] + 1, end = nchar(x))) %>% as.data.frame()
     }
 
-
+    # Split string
     x_split = lapply(1:nrow(split_df), function(i){
       stringr::str_sub(x, split_df[i, "start"], split_df[i, "end"])
     })
@@ -144,28 +144,84 @@ split_units = function(x){
 replace_written_powers = function(x){
 
   # Prepare regular expressions for detecting written powers
-  regex_written_powers = stringr::regex(c("square[d]?", "cubic", "cube[d]?"), ignore_case = TRUE)
-  regex_replacement = stringr::regex(c("^square[d]? (.*?)$" = "\\1\\^2",
-                                       "^(.*?) square[d]?$" = "\\1\\^2",
-                                       "^cubic (.*?)$" = "\\1\\^3",
-                                       "^cube[d]? (.*?)$" = "\\1\\^3"), ignore_case = TRUE)
+  powers = c("square", "cubic", "cube", "quartic", "quintic")
+  regex_written_powers = stringr::regex(
+    paste0("\\b", c("square[d]?", "cubic", "cube[d]?", "quartic", "quintic"), "\\b"),                                      ignore_case = TRUE)
 
-  while ( any(stringr::str_detect(x, regex_written_powers))){
-    # Find indices of words
-    idxs_words = stringr::str_locate_all(x, "[a-zA-Z][a-zA-Z 0-9\\._]*")[[1]]
+  if (any(stringr::str_detect(x, regex_written_powers))){
+
+    # Find all words
+    idxs_words = get_words(x)
+
+    if (nrow(idxs_words) == 0) return(x)
 
     # Find indices of powers
-    idxs_power = x %>% stringr::str_locate_all(regex_written_powers) %>% do.call(rbind, .)
+    idxs_power = stringr::str_locate_all(x, regex_written_powers)
+    df_power = as.data.frame(do.call(rbind, idxs_power))
+    df_power[["power"]] = rep(powers, sapply(idxs_power, nrow))
+    df_power = df_power[order(df_power[, "start"]), ]
 
-    # Get first word with powers
-    keep_idx = idxs_words[idxs_words[, "start"] <= idxs_power[1, "start"] & idxs_words[, "end"] > idxs_power[1, "start"] ,]
+    if (nrow(idxs_words) == nrow(df_power)) return(x)
 
-    sub_string = stringr::str_sub(x, keep_idx["start"], keep_idx["end"])
-    replacement = sub_string %>% stringr::str_replace_all(regex_replacement)
-    stringr::str_sub(x, keep_idx["start"], keep_idx["end"]) = replacement
+    for (i in rev(1:nrow(df_power))){
+      pre = which(idxs_words[, "end"] < df_power[i, "start"] & nzchar(idxs_words[, "word"]))
+      pre = ifelse(length(pre) > 0, pre[length(pre)], NA) # select last
+      post = which(idxs_words[, "start"] > df_power[i, "end"] & nzchar(idxs_words[, "word"]))[1] # select first
+      idx_power_word = which(idxs_words["start"] == df_power[i, "start"])
 
+      if (df_power[i, "power"] %in% c("square", "cube")){
+
+        # If there is a preceding word, use that
+        if (!is.na(pre)){
+          idxs_words[pre, "word"] = paste0(idxs_words[pre, "word"], ifelse(df_power[i, "power"] == "square", "^2", "^3"))
+          idxs_words[idx_power_word, "word"] = "" # Remove power word
+        } else {
+          idxs_words[post, "word"] = paste0(idxs_words[post, "word"], ifelse(df_power[i, "power"] == "square", "^2", "^3"))
+          idxs_words[idx_power_word, "word"] = "" # Remove power word
+        }
+      } else if (df_power[i, "power"] %in% c("cubic", "quartic", "quintic")){
+        power_exp = switch(df_power[i, "power"],
+                                 cubic = "^3",
+                                 quartic = "^4",
+                                 quintic = "^5")
+        idxs_words[post, "word"] = paste0(idxs_words[post, "word"], power_exp)
+        idxs_words[idx_power_word, "word"] = "" # Remove power word
+      }
+
+    }
+
+    # Paste string together again
+    y = idxs_words[, "word"]
+    # Remove empty words
+    x = paste0(y[y != ""], collapse = " ")
   }
   return(x)
+
+  # regex_replacement = stringr::regex(c("^square[d]? (.*?)$" = "\\1\\^2",
+  #                                      "^(.*?) square[d]?$" = "\\1\\^2",
+  #                                      "^cubic (.*?)$" = "\\1\\^3",
+  #                                      "^cube[d]? (.*?)$" = "\\1\\^3"), ignore_case = TRUE)
+  #
+  #
+  # idxs_written_power = stringr::str_locate_all(x, regex_written_powers)
+
+  # # while ( any(stringr::str_detect(x, regex_written_powers))){
+  #
+  #   # Find indices of words
+  #   # idxs_words = stringr::str_locate_all(x, "[a-zA-Z][a-zA-Z 0-9\\._]*")[[1]]
+  #
+  #   # Find indices of powers
+  #   idxs_power = do.call(rbind, stringr::str_locate_all(x, regex_written_powers))
+  #
+  #   # Get first word with powers
+  #   keep_idx = idxs_words[idxs_words[, "start"] <= idxs_power[1, "start"] & idxs_words[, "end"] > idxs_power[1, "start"], ]
+  #
+  #   sub_string = stringr::str_sub(x, keep_idx["start"], keep_idx["end"])
+  #   replacement = stringr::str_replace_all(sub_string, regex_replacement)
+  #   stringr::str_sub(x, keep_idx["start"], keep_idx["end"]) = replacement
+  #
+  # }
+  # return(x)
 }
 
 
@@ -181,7 +237,28 @@ replace_written_powers = function(x){
 #' clean_unit_in_u("u('10 Meters') + u('Kilograms per sec') + u('10 pounds squared')",
 #' get_regex_units())
 clean_unit_in_u = function(x, regex_units){
-  stringr::str_replace_all(x, "\\bu\\([\"|'](.*?)[\"|']\\)", function(y){clean_unit(y, regex_units)})
+  # old:
+  # stringr::str_replace_all(x, "\\bu\\([\"|'](.*?)[\"|']\\)", function(y){clean_unit(y, regex_units)})
+
+  # Extract all u('...') patterns
+  matches <- stringr::str_extract_all(x, "\\bu\\([\"|'](.*?)[\"|']\\)")[[1]]
+
+  if (length(matches) == 0) return(x)
+
+  # Remove surrounding u('')
+  matches_no_u = sapply(matches, function(y){stringr::str_sub(y, 4, nchar(y)-2)}, USE.NAMES = FALSE)
+
+  # Clean all matches at once
+  cleaned <- paste0("u(\"", sapply(matches_no_u, clean_unit, regex_units = regex_units, USE.NAMES = FALSE), "\")")
+
+  # Replace back
+  result <- x
+  for (i in seq_along(matches)) {
+    # Need to do str_replace_all, because there might be multiple occurrences of the same unit and otherwise it always uses the first match
+    result <- stringr::str_replace_all(result, stringr::fixed(matches[i]), cleaned[i])
+  }
+
+  return(result)
 }
 
 
@@ -199,7 +276,7 @@ clean_unit <- function(x, regex_units, ignore_case = FALSE, include_translation 
 
   if (x == "1") {
     x_new = x
-    x_parts = x %>% stats::setNames(x)
+    x_parts = stats::setNames(x, x)
 
   } else {
 
@@ -210,7 +287,7 @@ clean_unit <- function(x, regex_units, ignore_case = FALSE, include_translation 
     x <- gsub("\\s+", " ", trimws(x))
 
     # Replace squared -> ^2 and cubed -> ^3
-    x = unname(sapply(x, replace_written_powers))
+    x = sapply(x, replace_written_powers, USE.NAMES = FALSE)
 
     # Replace "per" with "/"
     x <- gsub("[[:space:]\\)][Pp]er[[:space:]\\(]", "/", x, ignore.case = ignore_case)

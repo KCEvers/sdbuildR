@@ -7,6 +7,7 @@
 #' @param stop If TRUE, stop active Julia session. Defaults to FALSE.
 #' @param version Julia version. Default is "latest", which will install the most recent stable release.
 #' @param JULIA_HOME Path to Julia installation. Defaults to NULL to locate Julia automatically.
+#' @param JULIA_NUM_THREADS Number of Julia threads to use. Defaults to 4. If set to a value higher than the number of available cores minus 2, it will be set to the number of available cores minus 2.
 #' @param dir Directory to install Julia. Defaults to NULL to use default location.
 #' @param force If TRUE, force Julia setup to execute again.
 #' @param force_install If TRUE, force Julia installation even if existing version is found. Defaults to FALSE.
@@ -24,6 +25,7 @@ use_julia <- function(
     stop = FALSE,
     version = "latest",
     JULIA_HOME = NULL,
+    JULIA_NUM_THREADS = 4,
     dir = NULL,
     force = FALSE,
     force_install = FALSE, ...){
@@ -171,6 +173,14 @@ use_julia <- function(
     JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, P[["jl_pkg_name"]]), '")'))
   }
 
+
+  # Set number of Julia threads to use
+  if (JULIA_NUM_THREADS > (parallel::detectCores() - 2)){
+    warning("JULIA_NUM_THREADS is set to ", JULIA_NUM_THREADS, ", which is higher than the number of available cores minus 2. Setting it to ", parallel::detectCores() - 2, ".")
+    JULIA_NUM_THREADS = parallel::detectCores() - 2
+  }
+  Sys.setenv("JULIA_NUM_THREADS" = JULIA_NUM_THREADS)
+  # Sys.getenv("JULIA_NUM_THREADS")
 
   # Run initialization
   run_init()
@@ -371,7 +381,7 @@ create_julia_pkg = function(){
     "custom_func" = "using Unitful\nusing DataInterpolations\nusing Distributions\nusing ..unit_func: convert_u\n",
     "past" = "using Unitful\nusing ..custom_func: itp\nusing ..unit_func: convert_u\n",
     "clean" = "using Unitful\nusing DataFrames\nusing ..custom_func: itp\n",
-    "ensemble" = "using Unitful\nusing Statistics\nusing DataFrames\nusing ..clean: clean_df")
+    "ensemble" = "using Unitful\nusing Statistics\nusing DataFrames\n")
 
 
   # Write all submodules

@@ -30,6 +30,10 @@
 #' sim = simulate(sfm)
 #' plot(sfm)
 #'
+#' # Obtain all model variables
+#' sim = simulate(sfm, only_stocks = FALSE)
+#' plot(sfm, add_constants = TRUE)
+#'
 #' # Use Julia for models with units or delay functions
 #' sfm = xmile("coffee_cup") %>% sim_specs(language = "Julia")
 #' use_julia()
@@ -44,7 +48,7 @@ simulate = function(sfm,
                     keep_nonnegative_flow = TRUE,
                     keep_nonnegative_stock = FALSE,
                     keep_unit = TRUE,
-                    only_stocks = FALSE,
+                    only_stocks = TRUE,
                     verbose = FALSE,
                     debug = FALSE,  ...){
 
@@ -99,15 +103,12 @@ detect_undefined_var = function(sfm){
   # Macros and graphical functions can be functions
   possible_func_in_model = c(names(sfm[["macro"]]), names(sfm[["model"]][["variables"]][["gf"]]))
 
-  # ** Many more possible functions, e.g. * / + etc.
   possible_func = c(possible_func_in_model,
                     get_syntax_julia()[["syntax_df"]][["R_first_iter"]],
                     unlist(P),
                     # Remove base R names
                     "pi", "letters", "LETTERS",
                     "month.abb", "month.name")
-
-  # ** to do: check whether gf or macro functions are used without brackets
 
   # Find references to variables which are not in names_df$name
   missing_ref = unlist(sfm[["model"]][["variables"]], recursive = FALSE, use.names = FALSE) %>%
@@ -530,20 +531,27 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 }
 
 
-#' Create ensemble of simulations
+#' Run ensemble simulation
 #'
 #' @inheritParams build
 #' @inheritParams simulate
-#' @param n Number of simulations to run in the ensemble. Defaults to 10.
-#' @param summary If TRUE, summarize the ensemble simulation results using their mean, variance, median, and quantiles. Defaults to TRUE.
-#' @param qs Quantiles to calculate in the summary, e.g. c(0.025, 0.975)
-#' @param return_sims If TRUE, return the individual simulations in the ensemble. Defaults to FALSE.
-#' @param range List of ranges to vary parameters in the ensemble. If specified, `n` will be the length of that range. All ranges have to be of the same length. Defaults to NULL.
+#' @param n Number of simulations to run in the ensemble. When range is specified, n defines the number of simulations to run per condition. If each condition only needs to be run once, set n = 1. Defaults to 10.
+#' @param threaded If TRUE, run the ensemble in threaded. Defaults to TRUE.
+#' @param qs Quantiles to calculate in the summary, e.g. c(0.025, 0.975).
+#' @param return_sims If TRUE, return the individual simulations in the ensemble. Set to FALSE to save memory. Defaults to TRUE.
+#' @param range List of ranges to vary parameters in the ensemble. Only stocks and constants can be specified. All ranges have to be of the same length if cross = FALSE. Defaults to NULL.
+#' @param cross If TRUE, cross the parameters in the range list to generate all possible combinations of parameters. Defaults to TRUE.
 #'
 #' @returns Object of class sdbuildR_ensemble, which is a list containing:
 #' \describe{
 #'  \item{success}{If TRUE, simulation was successful. If FALSE, simulation failed.}
-#'  \item{filepath_sim}{Filepath to the simulation results in .ser format.}
+#'  \item{error_message}{If success is FALSE, contains the error message.}
+#'  \item{df}{Dataframe with simulation results in long format, if return_sims is TRUE. The iteration number is indicated by column "i". If range was specified, the condition is indicated by column "j".}
+#'  \item{summary}{Dataframe with summary statistics of the ensemble, including quantiles specified in qs. If range was specified, summary statistics are calculated for each condition (j) in the ensemble.}
+#'  \item{n}{Number of simulations run in the ensemble (per condition j if range is specified).}
+#'  \item{total_n}{Total number of simulations run in the ensemble (across all conditions if range is specified).}
+#'  \item{conditions}{Dataframe with the conditions used in the ensemble, if range is specified.}
+#'  \item{constants}{Dataframe with the constant parameters used in the ensemble. The first two columns are "j" (iteration number) and "i" (parameter index), followed by the parameter names.}
 #'  \item{script}{Julia script used for the ensemble simulation.}
 #'  \item{duration}{Duration of the simulation in seconds.}
 #'  \item{...}{Other parameters passed to ensemble}
@@ -553,15 +561,16 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #' @examples
 ensemble = function(sfm,
                     n = 10,
-                    summary = TRUE,
+                    threaded = TRUE,
                     qs = c(0.025, 0.975),
-                    return_sims = FALSE,
+                    return_sims = TRUE,
                     range = NULL,
+                    cross = FALSE,
                     keep_nonnegative_flow = TRUE,
                     keep_nonnegative_stock = FALSE,
                     keep_unit = TRUE,
-                    only_stocks = FALSE,
-                    verbose = FALSE,
+                    only_stocks = TRUE,
+                    verbose = TRUE,
                     debug = FALSE
 ){
 
@@ -571,16 +580,12 @@ ensemble = function(sfm,
     stop("Ensemble simulations are only supported for Julia models. Please set sfm %>% sim_specs(language = 'Julia').")
   }
 
-  if (!return_sims & !summary){
-    stop("Set either return_sims or summary to TRUE to obtain simulation output.")
-  }
-
   if (!is.numeric(n)){
     stop("n should be a numerical value!")
   }
 
-  if (n <= 1){
-    stop("The number of simulations must be greater than 1!")
+  if (n <= 0){
+    stop("The number of simulations must be greater than 0!")
   }
 
   if (!is.numeric(qs)){
@@ -589,6 +594,14 @@ ensemble = function(sfm,
 
   if (length(qs) != 2){
     stop("The quantiles qs should be of length two!")
+  }
+
+  if (!is.logical(cross)){
+    stop("cross should be TRUE or FALSE!")
+  }
+
+  if (!is.logical(threaded)){
+    stop("threaded should be TRUE or FALSE!")
   }
 
   if (!is.null(range)){
@@ -626,14 +639,30 @@ ensemble = function(sfm,
                   paste0(names_range[!idx], collapse = ", ")))
     }
 
-    # All ranges must be of the same length
+    # All ranges must be of the same length if not a crossed design
     range_lengths = sapply(range, length)
-    if (length(unique(range_lengths)) != 1){
-      stop("All ranges must be of the same length! Please check the lengths of the ranges in range.")
-    }
-    n = unique(range_lengths)
+    if (!cross){
+      if (length(unique(range_lengths)) != 1){
+        stop("All ranges must be of the same length when cross = FALSE! Please check the lengths of the ranges in range.")
+      }
 
+      n_conditions = unique(range_lengths)
+    } else {
+      # Compute the total number of conditions
+      n_conditions = prod(range_lengths)
+    }
+
+  } else {
+    n_conditions = 1
   }
+
+
+  if (verbose){
+    message(paste0("Running a total of ", n * n_conditions, " simulations",
+                   ifelse(is.null(range), "", paste0(" for ", n_conditions, " conditions (",
+                                                     n, " simulations per condition)"))))
+  }
+
 
   # Collect arguments
   argg <- c(
@@ -645,10 +674,10 @@ ensemble = function(sfm,
 
   # Create ensemble parameters
   ensemble_pars = list(n = n,
-                       summary = summary,
+                       threaded = threaded,
                        qs = qs,
                        return_sims = return_sims,
-                       range = range)
+                       range = range, cross = cross)
 
   # Get output filepaths
   ensemble_pars[["filepath_df"]] = get_tempfile(fileext = ".csv")
@@ -688,6 +717,29 @@ ensemble = function(sfm,
     # Delete file
     file.remove(filepath)
 
+    # Read the total number of simulations
+    n = JuliaConnectoR::juliaEval(P[["ensemble_n"]])
+    total_n = JuliaConnectoR::juliaEval(P[["ensemble_total_n"]])
+
+    # Read the ensemble conditions
+    if (!is.null(ensemble_pars[["range"]])){
+
+      conditions = JuliaConnectoR::juliaEval(paste0("Matrix(hcat(", P[["ensemble_pars"]], "...)')"))
+      colnames(conditions) = names(ensemble_pars[["range"]])
+      conditions = cbind(j = 1:nrow(conditions), conditions)
+
+      } else {
+
+        conditions = NULL
+
+    }
+
+    constants = JuliaConnectoR::juliaEval(P[["parameter_name"]])
+    colnames(constants) = c("j", "i", JuliaConnectoR::juliaEval(P[["parameter_names"]]))
+
+
+
+    # Read the simulation results
     if (return_sims){
       df = as.data.frame(data.table::fread(ensemble_pars[["filepath_df"]], na.strings = c("", "NA")))
 
@@ -697,20 +749,20 @@ ensemble = function(sfm,
       df = NULL
     }
 
-    # If summary is requested, read the summary file
-    if (summary){
-      summ = as.data.frame(data.table::fread(ensemble_pars[["filepath_summ"]], na.strings = c("", "NA")))
+    # Read the summary file
+    summary = as.data.frame(data.table::fread(ensemble_pars[["filepath_summ"]], na.strings = c("", "NA")))
 
-      # Delete files
-      file.remove(ensemble_pars[["filepath_summ"]])
-    } else {
-      summ = NULL
-    }
+    # Delete files
+    file.remove(ensemble_pars[["filepath_summ"]])
+
 
     list(success = TRUE,
          df = df,
-         summ = summ,
-         # filepath_sim = filepath_sim,
+         summary = summary,
+         n = n,
+         total_n = total_n,
+         conditions = conditions,
+         constants = constants,
          script = script,
          duration = end_t - start_t) %>% utils::modifyList(argg) %>%
       structure(., class = "sdbuildR_ensemble")

@@ -841,9 +841,10 @@ compile_ode = function(sfm, ordering, prep_script, static_eqn,
 
   # Save all variables in return statement
   if (!only_stocks){
-    save_var_str = paste0(", c(",
+    # Filter out functions in case they are in auxiliaries
+    save_var_str = paste0(", Filter(Negate(is.function), c(",
       paste0(paste0(names(dynamic_eqn), " = ", names(dynamic_eqn)), collapse = ", "),
-      gf_str, ")")
+      gf_str, "))")
   } else {
     save_var_str = ""
   }
@@ -936,26 +937,23 @@ compile_run_ode = function(sfm, nonneg_stocks){
                    P[["initial_value_name"]],
                    P[["times_name"]], P[["parameter_name"]],
                    sfm[["sim_specs"]][["method"]],
-  nonneg_stocks$root_arg,
-  nonneg_stocks$check_root)
-
+  nonneg_stocks[["root_arg"]],
+  nonneg_stocks[["check_root"]])
 
   # If different times need to be saved, linearly interpolate
-  if (sfm[["sim_specs"]][["dt"]] != sfm[["sim_specs"]][["saveat"]]){
-    script = paste0(script, "\n# Linearly interpolate to reduce stored values to saveat\n",
-                    "new_times = seq(", P[["times_name"]], "[1], ",
-                    P[["times_name"]], "[length(", P[["times_name"]], ")], by = ", sfm[["sim_specs"]][["saveat"]], ")\n", # Create new time vector\n",
+  if (sfm[["sim_specs"]][["dt"]] != sfm[["sim_specs"]][["save_at"]] |
+      sfm[["sim_specs"]][["start"]] != sfm[["sim_specs"]][["save_from"]]){
+    script = paste0(script, "\n# Linearly interpolate to reduce stored values to save_at\n",
+                    "new_times = seq(", sfm[["sim_specs"]][["save_from"]], ", ",
+                    sfm[["sim_specs"]][["stop"]], ", by = ",
+                    sfm[["sim_specs"]][["save_at"]], ")\n",
+                    # Create new time vector\n",
 
                     P[["sim_df_name"]], " = ", P[["saveat_func"]], "(", P[["sim_df_name"]], ", 'time', new_times)\n")
 
   }
 
-  # # Convert to long format
-  # script = paste0(script, "\n# Convert to long format\n",
-  #                 P[["sim_df_name"]], " = tidyr::pivot_longer(",
-  #                 P[["sim_df_name"]], ", cols = -", P[["time_name"]],
-  #                 ", names_to = 'variable', values_to = 'value')\n")
-
+  # Convert to long format
   script = paste0(script,
                   sprintf("# Wide to long
     %s <- stats::reshape(

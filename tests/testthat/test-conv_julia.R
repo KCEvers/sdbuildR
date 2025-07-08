@@ -181,6 +181,11 @@ test_that("clean units for Julia", {
   expected = "m^3"
   expect_equal(result, expected)
 
+  x = "cubic"
+  result = clean_unit(x, regex_units)
+  expected = "cubic"
+  expect_equal(result, expected)
+
   x = "meter per 100 sec"
   result = clean_unit(x, regex_units)
   expected = "m/100s"
@@ -320,12 +325,18 @@ test_that("clean_unit_in_u() works", {
   regex_units = get_regex_units()
 
   result = clean_unit_in_u("u('10 Meters') + u('Kilograms per sec') + u('10 pounds squared')", regex_units)
-  expected = "u('10m') + u('kg/s') + u('10lb^2')"
+  expected = "u(\"10m\") + u(\"kg/s\") + u(\"10lb^2\")"
   expect_equal(result, expected)
 
   x = "u(\"3.86e26 Watts\") * ([Radius_of_planet] / [Distance_from_sun])^2 / 4\n\n# The sun's total radiation is 3.86×10^26 Watts.  From https://en.wikipedia.org/wiki/Solar_constant#The_Sun.27s_total_radiation\n# Incoming solar radiation = total radiation * (Shadow area of planet) / (Surface area of sphere at planet distance)\n# At Earth's distance, the incoming radiation density should be {1367 Watts / square meter}."
   result = clean_unit_in_u(x, regex_units)
   expected = "u(\"3.86e+26W\") * ([Radius_of_planet] / [Distance_from_sun])^2 / 4\n\n# The sun's total radiation is 3.86×10^26 Watts.  From https://en.wikipedia.org/wiki/Solar_constant#The_Sun.27s_total_radiation\n# Incoming solar radiation = total radiation * (Shadow area of planet) / (Surface area of sphere at planet distance)\n# At Earth's distance, the incoming radiation density should be {1367 Watts / square meter}."
+  expect_equal(result, expected)
+
+  # Check whether repeating units are all replaced
+  x = "u('10 Meters squared per second') - u('10lb^2') + u('10 Meters squared per second') * + u('10lb^2')"
+  result = clean_unit_in_u(x, regex_units)
+  expected = "u(\"10m^2/s\") - u(\"10lb^2\") + u(\"10m^2/s\") * + u(\"10lb^2\")"
   expect_equal(result, expected)
 
 })
@@ -402,7 +413,7 @@ test_that("replace_written_powers() works", {
   expect_equal(result, expected)
 
   result = replace_written_powers("squared cubic meter")
-  expected = "meter^2^3"
+  expected = "meter^3^2"
   expect_equal(result, expected)
 
 })

@@ -37,36 +37,52 @@ test_that("templates work", {
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
 
-  # Non existing template
-  expect_error(xmile("A"), "A is not an available template. The available templates are")
-  expect_error(xmile(""), "is not an available template. The available templates are")
-  expect_error(xmile(" "), "  is not an available template. The available templates are")
-
 })
 
 
 
-test_that("saveat works", {
+test_that("save_at works", {
 
   use_julia()
 
-  # Cannot set saveat to lower than dt
+  # Cannot set save_at to lower than dt
   sfm = xmile("SIR")
-  expect_warning(sfm %>% sim_specs(dt = .1, saveat = .01),
-                 "dt must be smaller or equal to saveat! Setting saveat equal to dt")
+  expect_warning(sfm %>% sim_specs(dt = .1, save_at = .01),
+                 "dt must be smaller or equal to save_at! Setting save_at equal to dt")
 
-  # Check whether dataframe is returned at saveat times
+  # Check whether dataframe is returned at save_at times
   sfm = sfm %>%
-    sim_specs(saveat = 0.1, dt = 0.001, start = 100, stop = 200)
+    sim_specs(save_at = 0.1, dt = 0.001, start = 100, stop = 200)
   sim = simulate(sfm %>% sim_specs(language = "Julia"))
-  expect_equal(diff(sim$df$time)[1], as.numeric(sfm$sim_specs$saveat))
+  expect_equal(diff(sim$df[sim$df$variable == "Infected", "time"])[1],
+               as.numeric(sfm$sim_specs$save_at))
 
   sim = simulate(sfm %>% sim_specs(language = "R"))
-  expect_equal(diff(sim$df$time)[1], as.numeric(sfm$sim_specs$saveat))
+  expect_equal(diff(sim$df[sim$df$variable == "Infected", "time"])[1],
+               as.numeric(sfm$sim_specs$save_at))
+
+  # Also works with models with units
+  sfm = xmile("coffee_cup") %>% sim_specs(language = "Julia") %>%
+    sim_specs(save_at = 0.1, dt = 0.001, start = 100, stop = 200)
+  sim = simulate(sfm %>% sim_specs(language = "Julia"))
+  expect_equal(diff(sim$df[sim$df$variable == "coffee_temperature", "time"])[1],
+               as.numeric(sfm$sim_specs$save_at))
+
 
 })
 
 
+test_that("save_from works", {
+
+  sfm = xmile("SIR") %>% sim_specs(start = 0, stop = 100,
+                                   save_from = 10, language = "Julia")
+  sim = expect_no_error(simulate(sfm))
+  expect_equal(min(sim$df$time), 10)
+  expect_equal(max(sim$df$time), 100)
+  expect_no_error(plot(sim))
+  expect_no_error(summary(sfm))
+
+})
 
 
 test_that("simulate with different components works", {
@@ -84,7 +100,7 @@ test_that("simulate with different components works", {
   # With one stock and no flows and no parameters
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build("A", "stock", eqn = "100")
-  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia"), only_stocks = FALSE))
   expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
   expect_equal(unique(sim$df$variable), c("A"))
 
@@ -92,7 +108,7 @@ test_that("simulate with different components works", {
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build(c("A", "B"), "stock", eqn = "100") %>%
     build("C", "flow", eqn = "1", to = "A")
-  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia"), only_stocks = FALSE))
   expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
   expect_equal(unique(sim$df$variable), c("A", "B", "C"))
 
@@ -102,7 +118,7 @@ test_that("simulate with different components works", {
     build("A", "stock", eqn = "100") %>%
     build("B", "flow", eqn = "1", to = "A") %>%
     build("C", "aux", eqn = "B + 1")
-  sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia"), only_stocks = FALSE))
   expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
   expect_equal(unique(sim$df$variable), c("A", "B", "C"))
 
@@ -110,7 +126,7 @@ test_that("simulate with different components works", {
   sfm = xmile() %>% sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build("A", "stock", eqn = "100") %>%
     build("B", "flow", eqn = "delay(A, 5)", to = "A")
-  sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia"), only_stocks = FALSE))
   expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
   expect_equal(unique(sim$df$variable), c("A", "B"))
 
@@ -119,7 +135,7 @@ test_that("simulate with different components works", {
     build("A", "stock", eqn = "100") %>%
     build("B", "stock", eqn = "1") %>%
     build("C", "aux", eqn = "B + 1")
-  sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = expect_no_message(simulate(sfm %>% sim_specs(language = "Julia"), only_stocks = FALSE))
   expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
   expect_equal(unique(sim$df$variable), c("A", "B", "C"))
 

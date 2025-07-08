@@ -27,12 +27,14 @@ xmile <- function(name = NULL){
 
   spec_defaults <- as.list(formals(sim_specs))
   spec_defaults <- spec_defaults[!names(spec_defaults) %in% c("sfm", "...")]
-  spec_defaults[["saveat"]] = spec_defaults[["dt"]]
+
+  # Manually overwrite these as the defaults of save_at and save_from are defined in terms of other variables
+  spec_defaults[["save_at"]] = spec_defaults[["dt"]]
+  spec_defaults[["save_from"]] = spec_defaults[["start"]]
 
   obj = list(
     header = header_defaults,
     sim_specs = spec_defaults,
-    # global = list(),
     # behavior = list(stock = list(non_negative = "FALSE"),
     #                 flow = list(non_negative = "FALSE")),
              model = list(
@@ -441,13 +443,15 @@ plot.sdbuildR_sim = function(x,
 #' Visualise ensemble simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.
 #'
 #' @param x Output of ensemble().
+#' @param i Indices of the individual trajectories to plot if type = "sims". Defaults to 1:10. Including a high number of trajectories will slow down plotting considerably.
+#' @param j Index of the condition to plot. Defaults to 1.
 #' @param palette Colour palette. Must be one of hcl.pals().
 #' @param colors Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
 #' @param font_family Font family. Defaults to "Times New Roman".
 #' @param font_size Font size. Defaults to 16.
 #' @param ... Optional parameters
 #'
-#' @return Plot object
+#' @return Plot of ensemble simulation.
 #' @export
 #' @seealso [ensemble()]
 #' @method plot sdbuildR_ensemble
@@ -455,7 +459,7 @@ plot.sdbuildR_sim = function(x,
 #' @examples
 #'
 #'
-plot.sdbuildR_ensemble = function(x,
+plot.sdbuildR_ensemble = function(x, i = 1:10, j = 1,
                                   # type = c("summary", "sims")[1],
                                   palette = "Dark 2",
                                   colors = NULL,
@@ -476,6 +480,13 @@ plot.sdbuildR_ensemble = function(x,
     stop("Ensemble simulation failed!")
   }
 
+  # Check whether j is a valid index
+  cond_nrs = unique(x[["summary"]][["j"]])
+  if (!j %in% cond_nrs){
+    stop(paste0("Condition j = ", j, " is not a valid index. Must be one of: ", paste0(cond_nrs, collapse = ", "), "."))
+  }
+
+
   # # Check whether type is valid
   # type = trimws(tolower(type))
   # type = ifelse(type == "sim", "sims", type)
@@ -483,10 +494,11 @@ plot.sdbuildR_ensemble = function(x,
   #   stop("Type must be one of 'summary' or 'sims'.")
   # }
   # # @param type Type of plot. Must be one of "summary" or "sims". Defaults to "summary". If "summary", the plot will show the mean and confidence intervals of the simulation results. If "sims", the plot will show all individual simulation runs.
-  #
+
   dots <- list(...)
   main <- if (!"main" %in% names(dots)) {
-    paste0(x[["sfm"]][["header"]], " (", x[["n"]], " simulations)")
+    paste0(x[["sfm"]][["header"]][["name"]], " (", x[["n"]], " simulations",
+           ifelse(length(cond_nrs) > 1, paste0(" of condition ", j, ")"), ")"))
     # paste0(x[["n"]], " simulations with [", x[["qs"]][1], ", ", x[["qs"]][2], "] confidence interval")
   } else {
     dots[["main"]]
@@ -534,55 +546,69 @@ plot.sdbuildR_ensemble = function(x,
 
     x_col = "time"
 
-    # x[["df"]] = x[["df"]][, intersect(colnames(x[["df"]]),
-    #                                   c(x_col, unname(stock_names),
-    #                                     unname(nonstock_names))),
-    #                       drop = FALSE]
-    #
-    # # Wide to long
-    # df_long <- stats::reshape(
-    #   data = as.data.frame(x[["df"]]),
-    #   direction = "long",
-    #   idvar = "time",
-    #   varying = colnames(x[["df"]])[colnames(x[["df"]]) != "time"],
-    #   # varying = which(colnames(x[["df"]]) != "time"),
-    #   v.names = "value",
-    #   timevar = "variable",
-    #   # Ensure variable names are used
-    #   times = colnames(x[["df"]])[colnames(x[["df"]]) != "time"]
-    # ) %>% magrittr::set_rownames(NULL)
+    if (!is.null(x[["summary"]])){
+      summary_df = x[["summary"]]
+    } else {
+      stop("No summary data available!")
+    }
 
-    if (type == "summary"){
+    # To plot individual simulation trajectories, extract df
+    if (type == "sims"){
 
-      if ("summ" %in% names(x)){
-        df = x[["summ"]]
-      } else {
-        stop("No summary data available! Run ensemble() with summary = TRUE.")
-      }
-
-    } else if (type == "sims"){
-
-      if ("df" %in% names(x)){
+      if (!is.null(x[["df"]])){
         df = x[["df"]]
+
+        # Check if i is a valid index
+        passed_arg = names(as.list(match.call())[-1])
+
+        if ("i" %in% passed_arg){
+          if (length(i) == 0){
+            stop("i must be a non-empty vector of indices.")
+          }
+
+          if (is.numeric(i)){
+            if (any(i < 1 | i > x[["n"]])){
+              stop(paste0("i must be a vector with integers between 1 and ", x[["n"]], "."))
+            }
+          } else {
+            stop("i must be a numeric vector.")
+          }
+        } else {
+
+          # Adjust i if necessary to match the number of simulations
+          i = seq(1, min(x[["n"]], max(i)))
+        }
+
+        # Filter condition
+        df = df[df[["j"]] == j & df[["i"]] %in% i, ]
+
       } else {
         stop("No simulation data available! Run ensemble() with return_sims = TRUE.")
       }
     }
 
-    n = length(unique(df[["variable"]]))
+    # Filter condition
+    summary_df = summary_df[summary_df[["j"]] == j, ]
+
+    # Find qlow and qhigh
+    q_cols = colnames(summary_df)[grepl("^q", colnames(summary_df))]
+    q_num = as.numeric(gsub("^q", "", q_cols))
+    q_low = q_cols[which.min(q_num)]
+    q_high = q_cols[which.max(q_num)]
 
     # Don't add check for template in hcl.pals(), because hcl is more flexible in palette names matching.
+    nr_var = length(unique(summary_df[["variable"]]))
 
     if (is.null(colors)){
-      colors = grDevices::hcl.colors(n = n, palette = palette)
+      colors = grDevices::hcl.colors(n = nr_var, palette = palette)
     } else {
       # Ensure there are enough colors
-      if (length(colors) < n){
-        stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", n, ").\nUsing template instead..."))
-        colors = grDevices::hcl.colors(n = n, palette = palette)
+      if (length(colors) < nr_var){
+        stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing template instead..."))
+        colors = grDevices::hcl.colors(n = nr_var, palette = palette)
       } else {
         # Cut number of colors to number of variables
-        colors = colors[1:n]
+        colors = colors[1:nr_var]
       }
     }
 
@@ -599,10 +625,10 @@ plot.sdbuildR_ensemble = function(x,
 
         pl <- pl %>%
           plotly::add_ribbons(
-            data = df[df[["variable"]] %in% stock_names, ],
+            data = summary_df[summary_df[["variable"]] %in% stock_names, ],
             x = ~get(x_col),
-            ymin = ~qlow,
-            ymax = ~qhigh,
+            ymin = ~get(q_low),
+            ymax = ~get(q_high),
             color = ~variable,
             fillcolor = ~variable,
             opacity = alpha,
@@ -618,10 +644,10 @@ plot.sdbuildR_ensemble = function(x,
       if (length(nonstock_names) > 0) {
 
         pl = pl %>% plotly::add_ribbons(
-          data = df[df[["variable"]] %in% nonstock_names, ],
+          data = summary_df[summary_df[["variable"]] %in% nonstock_names, ],
           x = ~get(x_col),
-          ymin = ~qlow,
-          ymax = ~qhigh,
+          ymin = ~get(q_low),
+          ymax = ~get(q_low),
           color = ~variable,
           fillcolor = ~variable,
           opacity = alpha,
@@ -632,35 +658,6 @@ plot.sdbuildR_ensemble = function(x,
           # showlegend = FALSE,
           visible = "legendonly"
         )
-      }
-
-      # Then plot mean lines
-      if (length(stock_names) > 0) {
-
-        pl <- pl %>%
-          plotly::add_trace(
-            data = df[df[["variable"]] %in% stock_names, ],
-            x = ~get(x_col),
-            y = ~mean,
-            color = ~variable,
-            type = "scatter",
-            mode = "lines",
-            colors = colors,
-            visible = TRUE
-          )
-      }
-
-      if (length(nonstock_names) > 0) {
-        pl <- pl %>%
-          plotly::add_trace(
-            data = df[df[["variable"]] %in% nonstock_names, ],
-            x = ~get(x_col),
-            y = ~mean,
-            color = ~variable,
-            type = "scatter",
-            mode = "lines",
-            visible = "legendonly"
-          )
       }
 
     } else if (type == "sims"){
@@ -676,7 +673,7 @@ plot.sdbuildR_ensemble = function(x,
             mode = "lines",
             opacity = alpha,
             colors = colors,
-            split = ~interaction(variable, simulation),  # ensures each line is treated separately
+            split = ~interaction(variable, i),  # ensures each line is treated separately
             showlegend = FALSE,
             # Add traces for stock variables (visible = TRUE)
             visible = TRUE
@@ -694,14 +691,43 @@ plot.sdbuildR_ensemble = function(x,
             type = "scatter",
             mode = "lines",
             opacity = alpha,
-            split = ~interaction(variable, simulation),  # ensures each line is treated separately
+            split = ~interaction(variable, i),  # ensures each line is treated separately
             showlegend = FALSE,
             visible = "legendonly"
           )
       }
 
-
     }
+
+    # Always plot mean lines
+    if (length(stock_names) > 0) {
+
+      pl <- pl %>%
+        plotly::add_trace(
+          data = summary_df[summary_df[["variable"]] %in% stock_names, ],
+          x = ~get(x_col),
+          y = ~mean,
+          color = ~variable,
+          type = "scatter",
+          mode = "lines",
+          colors = colors,
+          visible = TRUE
+        )
+    }
+
+    if (length(nonstock_names) > 0) {
+      pl <- pl %>%
+        plotly::add_trace(
+          data = summary_df[summary_df[["variable"]] %in% nonstock_names, ],
+          x = ~get(x_col),
+          y = ~mean,
+          color = ~variable,
+          type = "scatter",
+          mode = "lines",
+          visible = "legendonly"
+        )
+    }
+
 
     # Customize layout
     pl <- pl %>% plotly::layout(
@@ -826,7 +852,15 @@ summary.sdbuildR_xmile <- function(object, ...) {
   matched_time_unit = find_matching_regex(object[["sim_specs"]][["time_units"]], get_regex_time_units())
 
   # Simulation specifications
-  ans = paste0(ans, paste0("\nSimulation time: ", object[["sim_specs"]][["start"]], " to ", object[["sim_specs"]][["stop"]], " ", matched_time_unit, " (dt = ", object[["sim_specs"]][["dt"]], ifelse(object[["sim_specs"]][["saveat"]] == object[["sim_specs"]][["dt"]], "", paste0(", saveat = ", object[["sim_specs"]][["saveat"]])), ")\nSimulation settings: solver ", object[["sim_specs"]][["method"]], ifelse(is_defined(object[["sim_specs"]][["seed"]]), paste0(" and seed ", object[["sim_specs"]][["seed"]]), ""), " in ", object[["sim_specs"]][["language"]]))
+  ans = paste0(ans, paste0("\nSimulation time: ",
+                           object[["sim_specs"]][["start"]], " to ",
+                           object[["sim_specs"]][["stop"]], " ",
+                           matched_time_unit, " (dt = ", object[["sim_specs"]][["dt"]],
+                           ifelse(object[["sim_specs"]][["save_at"]] == object[["sim_specs"]][["dt"]], "", paste0(", save_at = ", object[["sim_specs"]][["save_at"]])),
+                           ")\nSimulation settings: solver ",
+                           object[["sim_specs"]][["method"]],
+                           ifelse(is_defined(object[["sim_specs"]][["seed"]]), paste0(" and seed ", object[["sim_specs"]][["seed"]]), ""),
+                           " in ", object[["sim_specs"]][["language"]]))
 
   class(ans) <- "summary.sdbuildR_xmile"
   cat(ans)
@@ -1235,7 +1269,7 @@ model_units = function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_nam
       chosen_name = name
     }
 
-    name = sapply(chosen_name, function(x){clean_unit(x, regex_units, unit_name = TRUE)}) %>% unname()
+    name = sapply(chosen_name, function(x){clean_unit(x, regex_units, unit_name = TRUE)}, USE.NAMES = FALSE)
 
     # Keep existing names the same
     name[!idx_nonexist] = chosen_name[!idx_nonexist]
@@ -1342,7 +1376,7 @@ model_units = function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_nam
     argg[["name"]] = name
 
     if ("eqn" %in% passed_arg){
-      eqn = sapply(eqn, clean_unit, regex_units) %>% unname()
+      eqn = sapply(eqn, clean_unit, regex_units, USE.NAMES = FALSE)
       eqn = ensure_length(eqn, name)
       argg[["eqn"]] = eqn
     }
@@ -1541,7 +1575,7 @@ macro = function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = F
                                                                 regex_units = regex_units,
                                                                 debug = FALSE)[["eqn_julia"]]
       # No need to save $func because delay family cannot be used for macros
-      }) %>% unname()
+      }, USE.NAMES = FALSE)
 
     argg[["eqn"]] = eqn
     argg[["eqn_julia"]] = eqn_julia
@@ -1646,11 +1680,11 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 #' @param start Start time of simulation. Defaults to 0.
 #' @param stop End time of simulation. Defaults to 100.
 #' @param dt Timestep of solver. Defaults to 0.01.
-#' @param saveat Timestep at which to save computed values. Defaults to dt.
+#' @param save_at Timestep at which to save computed values. Defaults to dt.
+#' @param save_from Time to at which to start saving computed values. Defaults to start. Set to a larger time than start to store less data.
 #' @param seed Seed number to ensure reproducibility across runs in case of random elements. Must be an integer. Defaults to NULL (no seed).
 #' @param time_units Simulation time unit, e.g. 's' (second). Defaults to "s".
 #' @param language Coding language in which to simulate model. Either "R" or "Julia". Julia is necessary for using units or delay functions. Defaults to "R".
-#' @param ... Optional additional parameters
 #'
 #' @return Updated stock-and-flow model with new simulation specifications
 #' @export
@@ -1666,8 +1700,8 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 #'# Change the time units to "years", such that one time unit is one year
 #'sfm = sfm %>% sim_specs(time_units = "years")
 #'
-#'# To save storage but not affect accuracy, use saveat
-#'sfm = sfm %>% sim_specs(saveat = 0.1, dt = 0.001)
+#'# To save storage but not affect accuracy, use save_at and save_from
+#'sfm = sfm %>% sim_specs(dt = 0.001, save_at = 0.1, save_from = 2000)
 #'sim = simulate(sfm)
 #'head(as.data.frame(sim))
 #'
@@ -1695,11 +1729,12 @@ sim_specs = function(sfm,
                      start = "0.0",
                      stop = "100.0",
                      dt = "0.01",
-                     saveat = dt,
+                     save_at = dt,
+                     save_from = start,
                      # adaptive = FALSE,
                      seed = NULL,
                      time_units = "s",
-                     language = "R", ...){
+                     language = "R"){
 
   # Basic check
   if (missing(sfm)){
@@ -1707,12 +1742,11 @@ sim_specs = function(sfm,
   }
 
   check_xmile(sfm)
-  var_names = get_model_var(sfm)
 
   # Get names of passed arguments
   passed_arg = names(as.list(match.call())[-1]) %>%
     # Remove some arguments
-    setdiff(c("sfm", "..."))
+    setdiff(c("sfm"))
 
   if (!missing(start)){
     start = suppressWarnings(as.numeric(start))
@@ -1736,19 +1770,25 @@ sim_specs = function(sfm,
 
     if (dt != 1){
       if (dt > .1){
-        warning(paste0("dt is larger than 0.1! This will likely lead to inaccuracies in the simulation. To reduce the size of the simulaton dataframe, use saveat = ", dt, ", and keep dt to a smaller value. To simulate in discrete time, set dt = 1."))
+        warning(paste0("dt is larger than 0.1! This will likely lead to inaccuracies in the simulation. To reduce the size of the simulaton dataframe, use save_at = ", dt, ", and keep dt to a smaller value. To simulate in discrete time, set dt = 1."))
       }
     }
 
   }
 
-  if (!missing(saveat)){
-    saveat = suppressWarnings(as.numeric(saveat))
-    if (is.na(saveat)){
-      stop("saveat must be a number!")
+  if (!missing(save_at)){
+    save_at = suppressWarnings(as.numeric(save_at))
+    if (is.na(save_at)){
+      stop("save_at must be a number!")
     }
   }
 
+  if (!missing(save_from)){
+    save_from = suppressWarnings(as.numeric(save_from))
+    if (is.na(save_from)){
+      stop("save_from must be a vector of two numbers!")
+    }
+  }
 
   # Ensure time_units are formatted correctly
   if (!missing(time_units)){
@@ -1779,8 +1819,6 @@ sim_specs = function(sfm,
   }
 
 
-
-
   # # Check simulation method
   # if (sfm[["sim_specs"]][["language"]] == "R"){
   #   if (!requireNamespace("deSolve", quietly = TRUE)){
@@ -1802,30 +1840,32 @@ sim_specs = function(sfm,
 
 
   # Check whether start is smaller than stop
-  if (!missing(start)){
-    if (missing(stop)){
+  if ("start" %in% passed_arg){
+    if (!"stop" %in% passed_arg){
       stop = as.numeric(sfm[["sim_specs"]][["stop"]])
     }
     if (start >= stop){
       stop("Start time must be smaller than stop time!")
     }
+
   }
 
-  if (!missing(stop)){
-    if (missing(start)){
+  if ("stop" %in% passed_arg){
+    if (!"start" %in% passed_arg){
       start = as.numeric(sfm[["sim_specs"]][["start"]])
     }
     if (start >= stop){
       stop("Start time must be smaller than stop time!")
     }
+
   }
 
   # Check whether dt is smaller than stop; if not, stop
-  if (!missing(dt)){
-    if (missing(stop)){
+  if ("dt" %in% passed_arg){
+    if (!"stop" %in% passed_arg){
       stop = as.numeric(sfm[["sim_specs"]][["stop"]])
     }
-    if (missing(start)){
+    if (!"start" %in% passed_arg){
       start = as.numeric(sfm[["sim_specs"]][["start"]])
     }
     if (dt > (stop - start)){
@@ -1833,52 +1873,127 @@ sim_specs = function(sfm,
     }
   }
 
-  # Check whether saveat is smaller than stop; if not, stop
-  if (!missing(saveat)){
-    if (missing(stop)){
+  # Check whether save_at is smaller than stop; if not, stop
+  if ("save_at" %in% passed_arg){
+    if (!"stop" %in% passed_arg){
       stop = as.numeric(sfm[["sim_specs"]][["stop"]])
     }
-    if (missing(start)){
+    if (!"start" %in% passed_arg){
       start = as.numeric(sfm[["sim_specs"]][["start"]])
     }
-    if (saveat > (stop - start)){
-      stop("saveat must be smaller than the difference between start and stop!")
+    if (!"save_from" %in% passed_arg){
+      save_from = as.numeric(sfm[["sim_specs"]][["save_from"]])
+    }
+    if (save_at > (stop - start)){
+      stop("save_at must be smaller than the difference between start and stop!")
+    }
+    if (save_at > (stop - save_from)){
+      stop("save_at must be smaller than the difference between save_from and stop!")
     }
   }
 
-  # Check whether dt is smaller than saveat; if not, set saveat to dt
-  if (!missing(dt)){
-    if (!missing(saveat)){
-      if (dt > saveat){
-        warning("dt must be smaller or equal to saveat! Setting saveat equal to dt...")
-        saveat = dt
-        passed_arg = c(passed_arg, "saveat")
+  # Check whether dt is smaller than save_at; if not, set save_at to dt
+  if ("dt" %in% passed_arg){
+    if ("save_at" %in% passed_arg){
+      if (dt > save_at){
+        warning("dt must be smaller or equal to save_at! Setting save_at equal to dt...")
+        save_at = dt
+        passed_arg = c(passed_arg, "save_at")
       }
-    } else if (missing(saveat)){
-      if (is_defined(sfm[["sim_specs"]][["saveat"]])){
-        if (dt > as.numeric(sfm[["sim_specs"]][["saveat"]])){
-          # warning("dt must be smaller or equal to saveat! Setting saveat equal to dt...")
-          saveat = dt
-          passed_arg = c(passed_arg, "saveat")
+    } else if (!"save_at" %in% passed_arg){
+      if (is_defined(sfm[["sim_specs"]][["save_at"]])){
+        if (dt > as.numeric(sfm[["sim_specs"]][["save_at"]])){
+          # warning("dt must be smaller or equal to save_at! Setting save_at equal to dt...")
+          save_at = dt
+          passed_arg = c(passed_arg, "save_at")
         }
       } else {
-        saveat = dt
-        passed_arg = c(passed_arg, "saveat")
+        save_at = dt
+        passed_arg = c(passed_arg, "save_at")
       }
     }
-  } else if (!missing(saveat)){
-    # The above ifelse takes care of when saveat and dt are both not NULL; now only saveat can be not NULL
+  } else if ("save_at" %in% passed_arg){
+    # The above ifelse takes care of when save_at and dt are both not NULL; now only save_at can be not NULL
     if (is_defined(sfm[["sim_specs"]][["dt"]])){
-      if (saveat < as.numeric(sfm[["sim_specs"]][["dt"]])){
-        warning("dt must be smaller or equal to saveat! Setting saveat equal to dt...")
-        saveat = dt
-        passed_arg = c(passed_arg, "saveat")
+      if (save_at < as.numeric(sfm[["sim_specs"]][["dt"]])){
+        warning("dt must be smaller or equal to save_at! Setting save_at equal to dt...")
+        save_at = dt
+        passed_arg = c(passed_arg, "save_at")
       }
     }
+  }
+
+  # Check whether save_from is smaller than stop and larger than start; if not, stop
+  if ("save_from" %in% passed_arg){
+
+    if (!"start" %in% passed_arg){
+      start = as.numeric(sfm[["sim_specs"]][["start"]])
+    }
+    if (!"stop" %in% passed_arg){
+      stop = as.numeric(sfm[["sim_specs"]][["stop"]])
+    }
+
+    if (save_from < start | save_from > stop){
+      stop(paste0("save_from must be within the start (", start, ") and stop (", stop, ") time of the simulation!"))
+    }
+
+  } else {
+
+    # Ensure that save_from stays within start and stop, also when save_from is not specified
+    # When save_from is not specified, it is automatically updated to start
+    if ("start" %in% passed_arg){
+      save_from = start
+      passed_arg = c(passed_arg, "save_from")
+    }
+    # if (!"stop" %in% passed_arg){
+    #   stop = as.numeric(sfm[["sim_specs"]][["stop"]])
+    # }
+    #
+    # if (is_defined(sfm[["sim_specs"]][["save_from"]])){
+    #   save_from = as.numeric(sfm[["sim_specs"]][["save_from"]])
+    #
+    #   # Update save_from with start and stop if these were passed
+    #   if ("start" %in% passed_arg){
+    #
+    #   }
+    #
+    #
+    #   possible_range = c(start, stop)
+    #
+    #   print("save_from")
+    #   print(save_from)
+    #   print("possible_range")
+    #   print(possible_range)
+    #
+    #
+    #   if (save_from[1] < possible_range[1] | save_from[1] > possible_range[2]){
+    #     # warning("save_from must be within start and stop! Changing save_from...")
+    #
+    #     print("adjust start")
+    #
+    #     save_from[1] = start
+    #     passed_arg = c(passed_arg, "save_from")
+    #   }
+    #
+    #   if (save_from[2] < possible_range[1] | save_from[2] > possible_range[2]){
+    #     # warning("save_from must be within start and stop! Changing save_from...")
+    #
+    #     print("adjust stop")
+    #
+    #     save_from[2] = stop
+    #     passed_arg = c(passed_arg, "save_from")
+    #   }
+    #
+    #
+    #   print("save_from after adjustment")
+    #   print(save_from)
+    #
+    # }
+
   }
 
   # Seed must be NULL or an integer
-  if (!missing(seed)){
+  if ("seed" %in% passed_arg){
 
     if (!is.null(seed)){
       if (nzchar(seed)){
@@ -1896,7 +2011,7 @@ sim_specs = function(sfm,
   }
 
   # Check coding language
-  if (!missing(language)){
+  if ("language" %in% passed_arg){
     if (!tolower(language) %in% c("r", "julia", "jl")){
       stop(sprintf("The language %s is not one of the languages available in sdbuildR. The available languages are 'Julia' (recommended) or 'R'.", language))
     } else {
@@ -1908,22 +2023,25 @@ sim_specs = function(sfm,
 
   # Ensure no scientific notation is present
   if ("start" %in% passed_arg){
-    start = replace_digits_with_floats(scientific_notation(start), var_names)
+    start = replace_digits_with_floats(scientific_notation(start), NULL)
   }
   if ("stop" %in% passed_arg){
-    stop = replace_digits_with_floats(scientific_notation(stop), var_names)
+    stop = replace_digits_with_floats(scientific_notation(stop), NULL)
   }
   if ("dt" %in% passed_arg){
-    dt = replace_digits_with_floats(scientific_notation(dt), var_names)
+    dt = replace_digits_with_floats(scientific_notation(dt), NULL)
   }
-  if ("saveat" %in% passed_arg){
-    saveat = replace_digits_with_floats(scientific_notation(saveat), var_names)
+  if ("save_at" %in% passed_arg){
+    save_at = replace_digits_with_floats(scientific_notation(save_at), NULL)
   }
+  if ("save_from" %in% passed_arg){
+    save_from = replace_digits_with_floats(scientific_notation(save_from), NULL)
+  }
+
 
   # Collect all arguments
   argg <- c(
-    as.list(environment()),
-    list(...))[unique(passed_arg)]
+    as.list(environment()))[unique(passed_arg)]
 
   # Overwrite simulation specifications
   sfm[["sim_specs"]] = sfm[["sim_specs"]] %>% utils::modifyList(argg)
@@ -2526,34 +2644,9 @@ build = function(sfm, name, type,
     }
 
     # Units are not supported well in R, so translate to julia directly
-    units = sapply(units, function(x){clean_unit(x, regex_units)}) %>% unname()
+    units = sapply(units, function(x){clean_unit(x, regex_units)}, USE.NAMES = FALSE)
     units = ensure_length(units, name)
   }
-
-  # # Minimum and maximum constraint
-  # if (!is.null(min)){
-  #
-  #   min = clean_unit_in_u(min, regex_units)
-  #   # min = sapply(min, function(x){clean_unit_in_u(x, regex_units)}) %>% unname()
-  #
-  #   min_julia = sapply(min, function(x){convert_equations_julia(sfm, "min", "min", x, var_names,
-  #                                                               regex_units = regex_units,
-  #                                                               debug = FALSE)$eqn_julia}) %>% unname()
-  #   min = ensure_length(min, name)
-  #   min_julia = ensure_length(min_julia, name)
-  #   passed_arg = c(passed_arg, "min_julia")
-  # }
-  #
-  # if (!is.null(max)){
-  #   max = clean_unit_in_u(max, regex_units)
-  #
-  #   max_julia = sapply(max, function(x){convert_equations_julia(sfm, "max", "max", x, var_names,
-  #                                                               regex_units = regex_units,
-  #                                                               debug = FALSE)$eqn_julia}) %>% unname()
-  #   max = ensure_length(max, name)
-  #   max_julia = ensure_length(max_julia, name)
-  #   passed_arg = c(passed_arg, "max_julia")
-  # }
 
   if ("conveyor" %in% passed_arg){
     if (!inherits(conveyor, "logical")){
@@ -2954,7 +3047,6 @@ get_build_code = function(sfm, format_code = TRUE){
 #' - Absence of flows
 #' - Stocks without inflows or outflows
 #' - Equations with a value of 0
-#' - Static variables depending on dynamic variables
 #'
 #' @inheritParams build
 #' @param quietly If TRUE, don't print problems. Defaults to FALSE.

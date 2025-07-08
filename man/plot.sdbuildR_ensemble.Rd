@@ -6,6 +6,8 @@
 \usage{
 \method{plot}{sdbuildR_ensemble}(
   x,
+  i = 1:10,
+  j = 1,
   palette = "Dark 2",
   colors = NULL,
   font_family = "Times New Roman",
@@ -15,6 +17,10 @@
 }
 \arguments{
 \item{x}{Output of ensemble().}
+
+\item{i}{Indices of the individual trajectories to plot if type = "sims". Defaults to 1:10. Including a high number of trajectories will slow down plotting considerably.}
+
+\item{j}{Index of the condition to plot. Defaults to 1.}
 
 \item{palette}{Colour palette. Must be one of hcl.pals().}
 
@@ -27,7 +33,7 @@
 \item{...}{Optional parameters}
 }
 \value{
-Plot object
+Plot of ensemble simulation.
 }
 \description{
 Visualise ensemble simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.

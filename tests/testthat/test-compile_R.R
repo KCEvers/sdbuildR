@@ -23,7 +23,7 @@ test_that("simulate with different components works", {
     sim_specs(start = 0, stop = 10, dt = 0.1) %>%
     build(c("A", "B"), "stock", eqn = "100") %>%
     build("C", "flow", eqn = "1", to = "A")
-  sim = expect_no_error(simulate(sfm))
+  sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
   expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
   expect_equal(unique(sim$df$variable), c("A", "B", "C"))
 
@@ -33,7 +33,7 @@ test_that("simulate with different components works", {
     build("A", "stock", eqn = "100") %>%
     build("B", "flow", eqn = "1", to = "A") %>%
     build("C", "aux", eqn = "B + 1")
-  sim = expect_no_message(simulate(sfm))
+  sim = expect_no_message(simulate(sfm, only_stocks = FALSE))
   expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
   expect_equal(unique(sim$df$variable), c("A", "B", "C"))
 
@@ -43,7 +43,7 @@ test_that("simulate with different components works", {
     build("A", "stock", eqn = "100") %>%
     build("B", "stock", eqn = "1") %>%
     build("C", "aux", eqn = "B + 1")
-  sim = expect_no_message(simulate(sfm))
+  sim = expect_no_message(simulate(sfm, only_stocks = FALSE))
   expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
   expect_equal(unique(sim$df$variable), c("A", "B", "C"))
 
@@ -109,10 +109,24 @@ test_that("throw error in compile_R for unsupported functions", {
 })
 
 
+test_that("save_from works", {
+
+  sfm = xmile("SIR") %>% sim_specs(start = 0, stop = 100,
+                                   save_from = 10, language = "R")
+  sim = expect_no_error(simulate(sfm))
+  expect_equal(min(sim$df$time), 10)
+  expect_equal(max(sim$df$time), 100)
+  expect_no_error(plot(sim))
+  expect_no_error(summary(sfm))
+
+})
+
+
 test_that("seed works", {
 
   # Without a seed, simulations shouldn't be the same
-  sfm = xmile("predator-prey") %>% sim_specs(language = "R") %>%
+  sfm = xmile("predator-prey") %>%
+    sim_specs(language = "R", start = 0, stop = 10, dt = 0.1) %>%
     sim_specs(seed = NULL) %>%
     build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
   sim1 = simulate(sfm)
@@ -121,7 +135,7 @@ test_that("seed works", {
   expect_equal(dplyr::last(sim1$df$value) == dplyr::last(sim2$df$value), FALSE)
 
   # With a seed, simulations should be the same
-  sfm = sfm %>% sim_specs(language = "R") %>% sim_specs(seed = 1)
+  sfm = sfm %>% sim_specs(seed = 1)
   sim1 = simulate(sfm)
   sim2 = simulate(sfm)
   expect_equal(dplyr::last(sim1$df$value), dplyr::last(sim2$df$value))

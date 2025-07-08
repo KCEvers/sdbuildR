@@ -34,7 +34,6 @@ The following potential problems are detected:
 \item Absence of flows
 \item Stocks without inflows or outflows
 \item Equations with a value of 0
-\item Static variables depending on dynamic variables
 }
 }
 \examples{

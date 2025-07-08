@@ -10,7 +10,7 @@ simulate(
   keep_nonnegative_flow = TRUE,
   keep_nonnegative_stock = FALSE,
   keep_unit = TRUE,
-  only_stocks = FALSE,
+  only_stocks = TRUE,
   verbose = FALSE,
   debug = FALSE,
   ...
@@ -54,6 +54,10 @@ Simulate a stock-and-flow model with simulation specifications defined by \code{
 sfm = xmile("SIR")
 sim = simulate(sfm)
 plot(sfm)
+
+# Obtain all model variables
+sim = simulate(sfm, only_stocks = FALSE)
+plot(sfm, add_constants = TRUE)
 
 # Use Julia for models with units or delay functions
 sfm = xmile("coffee_cup") \%>\% sim_specs(language = "Julia")

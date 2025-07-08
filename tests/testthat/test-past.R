@@ -32,15 +32,20 @@ test_that("delay() works", {
   sfm = xmile()  %>% sim_specs(language = "Julia") %>%
     sim_specs(start = 0, stop = 20, dt = 0.1) %>%
     build("MaterialinTransit", "stock", eqn = "400") %>%
-    build("Inflow", "flow", eqn = "ifelse(t < 8, 100, 200)", to = "MaterialinTransit") %>%
-    build("Outflow", "flow", eqn = "delay(Inflow, AverageDelay, 100)", from = "MaterialinTransit") %>%
+    build("Inflow", "flow", eqn = "ifelse(t < 8, 100, 200)",
+          to = "MaterialinTransit") %>%
+    build("Outflow", "flow", eqn = "delay(Inflow, AverageDelay, 100)",
+          from = "MaterialinTransit") %>%
     build("AverageDelay", "constant", eqn = 4)
   expect_no_error(plot(sfm))
-  sim = expect_no_error(simulate(sfm))
-  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time < 8)[1]], 100)
-  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time > 8)[1]], 200)
-  expect_equal(sim$df[sim$df$variable == "Outflow", "value"][which(sim$df$time < 8 + 4)[1]], 100)
-  expect_equal(sim$df[sim$df$variable == "Outflow", "value"][which(sim$df$time >= 8 + 4)[1]], 200)
+  sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
+  inflow = sim$df[sim$df$variable == "Inflow", "value"]
+  outflow = sim$df[sim$df$variable == "Inflow", "value"]
+  t = sim$df[sim$df$variable == "Inflow", "time"]
+  expect_equal(inflow[which(t < 8)[1]], 100)
+  expect_equal(inflow[which(t > 8)[1]], 200)
+  expect_equal(outflow[which(t < 8 + 4)[1]], 100)
+  expect_equal(outflow[which(t >= 8 + 4)[1]], 200)
 
   # **Check whether first argument to delay() is in variables
 
@@ -66,11 +71,14 @@ test_that("past() works", {
     build("Outflow", "flow", eqn = "max(past(Inflow, AverageDelay))", from = "MaterialinTransit") %>%
     build("AverageDelay", "constant", eqn = 4)
   expect_no_error(plot(sfm))
-  sim = expect_no_error(simulate(sfm))
-  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time < 8)[1]], 100)
-  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time > 8)[1]], 200)
-  expect_equal(sim$df[sim$df$variable == "Outflow", "value"][which(sim$df$time < 8 + 4)[1]], 100)
-  expect_equal(sim$df[sim$df$variable == "Outflow", "value"][which(sim$df$time >= 8 + 4)[1]], 200)
+  sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
+  inflow = sim$df[sim$df$variable == "Inflow", "value"]
+  outflow = sim$df[sim$df$variable == "Inflow", "value"]
+  t = sim$df[sim$df$variable == "Inflow", "time"]
+  expect_equal(inflow[which(t < 8)[1]], 100)
+  expect_equal(inflow[which(t > 8)[1]], 200)
+  expect_equal(outflow[which(t < 8 + 4)[1]], 100)
+  expect_equal(outflow[which(t >= 8 + 4)[1]], 200)
 
 
 })
@@ -96,9 +104,11 @@ test_that("delayN() works", {
     build("Outflow", "flow", eqn = "delayN(Inflow, AverageDelay, 5, 0)", from = "MaterialinTransit") %>%
     build("AverageDelay", "constant", eqn = 4))
   expect_no_error(plot(sfm))
-  sim = expect_no_error(simulate(sfm))
-  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time < 8)[1]], 100)
-  expect_equal(sim$df[sim$df$variable == "Inflow", "value"][which(sim$df$time > 8)[1]], 200)
+  sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
+  inflow = sim$df[sim$df$variable == "Inflow", "value"]
+  t = sim$df[sim$df$variable == "Inflow", "time"]
+  expect_equal(inflow[which(t < 8)[1]], 100)
+  expect_equal(inflow[which(t > 8)[1]], 200)
 
 
   sfm = expect_no_error(xmile() %>%
@@ -109,7 +119,7 @@ test_that("delayN() works", {
     build("discrepancy", "aux", "goal - smoothN(effort, .1, 3)") %>%
     build("exertion", "flow", "0.1 * discrepancy", to = "effort"))
 
-  sim = expect_no_error(simulate(sfm))
+  sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
   expect_no_error(plot(sim, add_constants = TRUE))
 
   # **
