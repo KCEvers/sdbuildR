@@ -19,5 +19,5 @@ smoothN(variable, length, order, initial = NULL)
 Smoothed variable
 }
 \description{
-Smoothing of order N
+Smoothing of order N, which is a more complex smoothing that can be used to model processes with multiple stages or orders of smoothing. Note that this function is only usable for simulations run with Julia.
 }
