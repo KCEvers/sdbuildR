@@ -15,20 +15,20 @@ convert_equations_julia_wrapper = function(sfm, regex_units, debug = TRUE){
   var_names = get_model_var(sfm)
 
   sfm[["model"]][["variables"]] = lapply(sfm[["model"]][["variables"]],
-                               function(x){
-    lapply(x, function(y){
-      # print(y$eqn)
+                                         function(x){
+                                           lapply(x, function(y){
+                                             # print(y$eqn)
 
-      if (is_defined(y[["eqn"]])){
-        out = convert_equations_julia(sfm, y[["type"]], y[["name"]], y[["eqn"]], var_names,
-                                              regex_units = regex_units,
-                                              debug = debug)
-        y = utils::modifyList(y, out)
-      }
-      # print(y$eqn_julia)
-      return(y)
-    })
-  })
+                                             if (is_defined(y[["eqn"]])){
+                                               out = convert_equations_julia(sfm, y[["type"]], y[["name"]], y[["eqn"]], var_names,
+                                                                             regex_units = regex_units,
+                                                                             debug = debug)
+                                               y = utils::modifyList(y, out)
+                                             }
+                                             # print(y$eqn_julia)
+                                             return(y)
+                                           })
+                                         })
 
   # Macros
   sfm[["macro"]] = lapply(sfm[["macro"]], function(x){
@@ -41,7 +41,7 @@ convert_equations_julia_wrapper = function(sfm, regex_units, debug = TRUE){
     }
 
     out = convert_equations_julia(sfm, "macro", "macro", x[["eqn_julia"]], var_names,
-                                          regex_units = regex_units, debug = debug)
+                                  regex_units = regex_units, debug = debug)
     x = utils::modifyList(x, out)
 
     return(x)
@@ -206,8 +206,9 @@ get_range_digits = function(eqn, var_names){
   idxs_exclude = get_seq_exclude(eqn, var_names, names_with_brackets = FALSE)
 
   # Locate all integers
-  # idx_df = stringr::str_locate_all(eqn, "[\\.]*[0-9]+[\\.[0-9]+]*")[[1]] %>% as.data.frame()
-  idx_df = as.data.frame(stringr::str_locate_all(eqn, "(?<![a-zA-Z0-9\\.:punct:])[0-9]+(?![a-zA-Z0-9\\.:punct:])")[[1]])
+  # idx_df = as.data.frame(stringr::str_locate_all(eqn, "(?<![a-zA-Z0-9\\.:punct:])[0-9]+(?![a-zA-Z0-9\\.:punct:])")[[1]])
+  # Remove :punct: -> !"#%&'()*+,-./:; -> this skips e.g. 1:10
+  idx_df = as.data.frame(stringr::str_locate_all(eqn, "(?<![a-zA-Z0-9\\.])[0-9]+(?![a-zA-Z0-9\\.])")[[1]])
 
   if (nrow(idx_df) > 0){
 
@@ -337,12 +338,12 @@ replace_op_julia <- function(eqn, var_names) {
     # Assignment
     "<-" = " = ",
     # Pipe operator
-   "%>%" = " |> ",
-  # Matrix algebra
+    "%>%" = " |> ",
+    # Matrix algebra
     "%*%" = " * ",
     "%in%" = " in "
-  # "%%" = "mod"
-  # "$"
+    # "%%" = "mod"
+    # "$"
   )
   #
 
@@ -416,7 +417,7 @@ find_round = function(df, round_brackets, eqn, var_names){
 
   start_word = end_word = func_name = NA
 
-   if (df[["statement"]] %in% c("function", "FUNCTION")){
+  if (df[["statement"]] %in% c("function", "FUNCTION")){
 
     # Get words before statement
     words = get_words(stringr::str_sub(eqn, 1, df[["start"]] - 1))
@@ -500,205 +501,205 @@ convert_all_statements_julia = function(eqn, var_names, debug){
 
     while (!done) {
 
-    # Create sequence of indices of curly brackets; update each iteration
-    paired_idxs = get_range_all_pairs(eqn, var_names, type = "curly")
+      # Create sequence of indices of curly brackets; update each iteration
+      paired_idxs = get_range_all_pairs(eqn, var_names, type = "curly")
 
-    # Look for statements
-    idx_statements = stringr::str_locate_all(eqn, unname(statement_regex))
-    df_statements = as.data.frame(do.call(rbind, idx_statements))
-    df_statements$statement = rep(names(statement_regex), sapply(idx_statements, nrow))
+      # Look for statements
+      idx_statements = stringr::str_locate_all(eqn, unname(statement_regex))
+      df_statements = as.data.frame(do.call(rbind, idx_statements))
+      df_statements$statement = rep(names(statement_regex), sapply(idx_statements, nrow))
 
-    # # Remove those matches that are in quotation marks or names
-    idxs_exclude = get_seq_exclude(eqn, var_names, type = "quot")
-    if (nrow(df_statements) > 0) df_statements = df_statements[!(df_statements[["start"]] %in% idxs_exclude | df_statements[["end"]] %in% idxs_exclude), ]
+      # # Remove those matches that are in quotation marks or names
+      idxs_exclude = get_seq_exclude(eqn, var_names, type = "quot")
+      if (nrow(df_statements) > 0) df_statements = df_statements[!(df_statements[["start"]] %in% idxs_exclude | df_statements[["end"]] %in% idxs_exclude), ]
 
-    if (!(nrow(paired_idxs) > 0 & nrow(df_statements) > 0)) {
-      done = TRUE
-    } else {
-
-      # Sort by start index
-      paired_idxs = paired_idxs[order(paired_idxs[["start"]]), ]
-
-      # Get all round brackets
-      round_brackets = get_range_all_pairs(eqn, var_names, type = "round")
-
-      # print(df_statements)
-#
-#       # Add round brackets and curly brackets to df_statements
-#       df_statements = df_statements %>%
-#         dplyr::arrange(.data$start) %>%
-#         # else if and if will have matching ending characters, choose one with longest statement
-#         dplyr::group_by(.data$end) %>%
-#         dplyr::slice_min(.data$start, n = 1) %>%
-#         dplyr::ungroup() %>%
-#         dplyr::mutate(id = 1:nrow(.)) %>% dplyr::group_by(.data$id) %>%
-#         # Find matching round brackets
-#         dplyr::group_modify(~ find_round(.x, round_brackets, eqn, var_names)) %>%
-#         # Find matching curly brackets, pass df_statements to check if there is another statement after the curly bracket
-#         dplyr::group_modify(~ find_curly(.x, paired_idxs)) %>%
-#         dplyr::ungroup() %>%
-#         dplyr::mutate(lead_start = dplyr::lead(.data$start, default = 0) - 1,
-#                       # Check if there is another statement after the curly bracket
-#                       next_statement = dplyr::if_else(.data$end_curly == .data$lead_start,
-#                                                       dplyr::lead(.data$statement), NA))
-#
-#       df_statements
-
-      # #
-      #       # Add round brackets and curly brackets to df_statements
-      #       df_statements = df_statements[order(df_statements[["start"]]), ]
-      #       df_statements = df_statements %>%
-      #         # else if and if will have matching ending characters, choose one with longest statement
-      #         dplyr::group_by(.data$end) %>%
-      #         dplyr::slice_min(.data$start, n = 1) %>%
-      #         dplyr::ungroup() %>%
-      #         dplyr::mutate(id = 1:nrow(.)) %>% dplyr::group_by(.data$id) %>%
-      #         # Find matching round brackets
-      #         dplyr::group_modify(~ find_round(.x, round_brackets, eqn, var_names)) %>%
-      #         # Find matching curly brackets, pass df_statements to check if there is another statement after the curly bracket
-      #         dplyr::group_modify(~ find_curly(.x, paired_idxs)) %>%
-      #         dplyr::ungroup()
-      #       df_statements[["lead_start"]] = dplyr::lead(df_statements$start, default = 0) - 1
-      #       # Check if there is another statement after the curly bracket
-      #       df_statements[["next_statement"]] = dplyr::if_else(df_statements[["end_curly"]] == df_statements[["lead_start"]], dplyr::lead(df_statements[["statement"]]), NA)
-
-            df_statements = df_statements[order(df_statements[["start"]]), ]
-
-            # Step 1: Group by 'end' and keep row with minimum 'start' value for each group
-            df_grouped <- split(df_statements, df_statements[["end"]])
-            df_min_rows <- do.call(rbind, lapply(df_grouped, function(group) {
-              min_start_idx <- which.min(group[["start"]])
-              group[min_start_idx, ]
-            }))
-
-            # Step 2: Add row numbers as 'id' column
-            df_min_rows[["id"]] <- seq_len(nrow(df_min_rows))
-
-            # Step 3: Apply find_round function to each row
-            df_with_round <- do.call(rbind, lapply(seq_len(nrow(df_min_rows)), function(i) {
-              row_data <- df_min_rows[i, ]
-              result <- find_round(row_data, round_brackets, eqn, var_names)
-              result[["id"]] <- i  # Preserve the id
-              result
-            }))
-
-            # Step 4: Apply find_curly function to each row
-            df_statements <- do.call(rbind, lapply(seq_len(nrow(df_with_round)), function(i) {
-              row_data <- df_with_round[i, ]
-              result <- find_curly(row_data, paired_idxs)
-              result[["id"]] <- i  # Preserve the id
-              result
-            }))
-
-            # Remove row names that might have been created by rbind
-            rownames(df_statements) <- NULL
-
-            # Add lead_start column (equivalent to dplyr::lead with default = 0)
-            lead_start <- c(df_statements[["start"]][-1], 0) - 1
-            df_statements[["lead_start"]] <- lead_start
-
-            # Add next_statement column (equivalent to dplyr::if_else with dplyr::lead)
-            lead_statement <- c(df_statements[["statement"]][-1], NA)
-            df_statements[["next_statement"]] <- ifelse(
-              df_statements[["end_curly"]] == df_statements[["lead_start"]],
-              lead_statement,
-              NA
-            )
-
-
-            df_statements
-
-      if (nrow(df_statements) == 0) {
+      if (!(nrow(paired_idxs) > 0 & nrow(df_statements) > 0)) {
         done = TRUE
       } else {
 
-        # # At first iteration, replace all with uppercase versions, as the statement names are the same in R and Julia. This is necessart because someone may have enclosed their if statement etc. in extra round brackets, such that it still matches
-        if (i == 1){
+        # Sort by start index
+        paired_idxs = paired_idxs[order(paired_idxs[["start"]]), ]
 
-          # Replace all statement names with uppercase versions
-          for (i in 1:nrow(df_statements)){
-            stringr::str_sub(eqn, df_statements[i, "start"], df_statements[i, "end"]) = toupper(stringr::str_sub(eqn, df_statements[i, "start"], df_statements[i, "end"]))
+        # Get all round brackets
+        round_brackets = get_range_all_pairs(eqn, var_names, type = "round")
+
+        # print(df_statements)
+        #
+        #       # Add round brackets and curly brackets to df_statements
+        #       df_statements = df_statements %>%
+        #         dplyr::arrange(.data$start) %>%
+        #         # else if and if will have matching ending characters, choose one with longest statement
+        #         dplyr::group_by(.data$end) %>%
+        #         dplyr::slice_min(.data$start, n = 1) %>%
+        #         dplyr::ungroup() %>%
+        #         dplyr::mutate(id = 1:nrow(.)) %>% dplyr::group_by(.data$id) %>%
+        #         # Find matching round brackets
+        #         dplyr::group_modify(~ find_round(.x, round_brackets, eqn, var_names)) %>%
+        #         # Find matching curly brackets, pass df_statements to check if there is another statement after the curly bracket
+        #         dplyr::group_modify(~ find_curly(.x, paired_idxs)) %>%
+        #         dplyr::ungroup() %>%
+        #         dplyr::mutate(lead_start = dplyr::lead(.data$start, default = 0) - 1,
+        #                       # Check if there is another statement after the curly bracket
+        #                       next_statement = dplyr::if_else(.data$end_curly == .data$lead_start,
+        #                                                       dplyr::lead(.data$statement), NA))
+        #
+        #       df_statements
+
+        # #
+        #       # Add round brackets and curly brackets to df_statements
+        #       df_statements = df_statements[order(df_statements[["start"]]), ]
+        #       df_statements = df_statements %>%
+        #         # else if and if will have matching ending characters, choose one with longest statement
+        #         dplyr::group_by(.data$end) %>%
+        #         dplyr::slice_min(.data$start, n = 1) %>%
+        #         dplyr::ungroup() %>%
+        #         dplyr::mutate(id = 1:nrow(.)) %>% dplyr::group_by(.data$id) %>%
+        #         # Find matching round brackets
+        #         dplyr::group_modify(~ find_round(.x, round_brackets, eqn, var_names)) %>%
+        #         # Find matching curly brackets, pass df_statements to check if there is another statement after the curly bracket
+        #         dplyr::group_modify(~ find_curly(.x, paired_idxs)) %>%
+        #         dplyr::ungroup()
+        #       df_statements[["lead_start"]] = dplyr::lead(df_statements$start, default = 0) - 1
+        #       # Check if there is another statement after the curly bracket
+        #       df_statements[["next_statement"]] = dplyr::if_else(df_statements[["end_curly"]] == df_statements[["lead_start"]], dplyr::lead(df_statements[["statement"]]), NA)
+
+        df_statements = df_statements[order(df_statements[["start"]]), ]
+
+        # Step 1: Group by 'end' and keep row with minimum 'start' value for each group
+        df_grouped <- split(df_statements, df_statements[["end"]])
+        df_min_rows <- do.call(rbind, lapply(df_grouped, function(group) {
+          min_start_idx <- which.min(group[["start"]])
+          group[min_start_idx, ]
+        }))
+
+        # Step 2: Add row numbers as 'id' column
+        df_min_rows[["id"]] <- seq_len(nrow(df_min_rows))
+
+        # Step 3: Apply find_round function to each row
+        df_with_round <- do.call(rbind, lapply(seq_len(nrow(df_min_rows)), function(i) {
+          row_data <- df_min_rows[i, ]
+          result <- find_round(row_data, round_brackets, eqn, var_names)
+          result[["id"]] <- i  # Preserve the id
+          result
+        }))
+
+        # Step 4: Apply find_curly function to each row
+        df_statements <- do.call(rbind, lapply(seq_len(nrow(df_with_round)), function(i) {
+          row_data <- df_with_round[i, ]
+          result <- find_curly(row_data, paired_idxs)
+          result[["id"]] <- i  # Preserve the id
+          result
+        }))
+
+        # Remove row names that might have been created by rbind
+        rownames(df_statements) <- NULL
+
+        # Add lead_start column (equivalent to dplyr::lead with default = 0)
+        lead_start <- c(df_statements[["start"]][-1], 0) - 1
+        df_statements[["lead_start"]] <- lead_start
+
+        # Add next_statement column (equivalent to dplyr::if_else with dplyr::lead)
+        lead_statement <- c(df_statements[["statement"]][-1], NA)
+        df_statements[["next_statement"]] <- ifelse(
+          df_statements[["end_curly"]] == df_statements[["lead_start"]],
+          lead_statement,
+          NA
+        )
+
+
+        df_statements
+
+        if (nrow(df_statements) == 0) {
+          done = TRUE
+        } else {
+
+          # # At first iteration, replace all with uppercase versions, as the statement names are the same in R and Julia. This is necessart because someone may have enclosed their if statement etc. in extra round brackets, such that it still matches
+          if (i == 1){
+
+            # Replace all statement names with uppercase versions
+            for (i in 1:nrow(df_statements)){
+              stringr::str_sub(eqn, df_statements[i, "start"], df_statements[i, "end"]) = toupper(stringr::str_sub(eqn, df_statements[i, "start"], df_statements[i, "end"]))
+            }
+            statement_regex = toupper(statement_regex)
+            i = i + 1
+            next
           }
-          statement_regex = toupper(statement_regex)
-          i = i + 1
-          next
-        }
 
 
-        # Start with first pair
-        pair = df_statements[1, ]
-        pair %>% as.data.frame()
+          # Start with first pair
+          pair = df_statements[1, ]
+          pair %>% as.data.frame()
 
-        if (pair[["statement"]] %in% c("if")) {
-          if (pair[["next_statement"]] %in% c("else if", "else")){
-            stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = ""
-          } else {
+          if (pair[["statement"]] %in% c("if")) {
+            if (pair[["next_statement"]] %in% c("else if", "else")){
+              stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = ""
+            } else {
+              stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = "end"
+            }
+            stringr::str_sub(eqn, pair[["start_curly"]], pair[["start_curly"]]) = ""
+            stringr::str_sub(eqn, pair[["end_round"]], pair[["end_round"]]) = " "
+            stringr::str_sub(eqn, pair[["start_round"]], pair[["start_round"]]) = " "
+            stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1) = tolower(stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1)) # replace statement, not opening bracket
+
+          } else if (pair$statement %in% c("else if")) {
+            if (pair$next_statement %in% c("else if", "else")){
+              stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = ""
+            } else {
+              stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = "end"
+            }
+            stringr::str_sub(eqn, pair[["start_curly"]], pair[["start_curly"]]) = ""
+            stringr::str_sub(eqn, pair[["end_round"]], pair[["end_round"]]) = " "
+            stringr::str_sub(eqn, pair[["start"]], pair[["end"]]) = "elseif " # also captures opening round bracket
+
+          } else if (pair$statement %in% c("else")) {
             stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = "end"
-          }
-          stringr::str_sub(eqn, pair[["start_curly"]], pair[["start_curly"]]) = ""
-          stringr::str_sub(eqn, pair[["end_round"]], pair[["end_round"]]) = " "
-          stringr::str_sub(eqn, pair[["start_round"]], pair[["start_round"]]) = " "
-          stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1) = tolower(stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1)) # replace statement, not opening bracket
+            stringr::str_sub(eqn, pair[["start_curly"]], pair[["start_curly"]]) = ""
+            stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1) = tolower(stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1)) # replace statement, not opening bracket
 
-        } else if (pair$statement %in% c("else if")) {
-          if (pair$next_statement %in% c("else if", "else")){
-            stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = ""
-          } else {
+          } else if (pair$statement %in% c("for", "while")) {
             stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = "end"
-          }
-          stringr::str_sub(eqn, pair[["start_curly"]], pair[["start_curly"]]) = ""
-          stringr::str_sub(eqn, pair[["end_round"]], pair[["end_round"]]) = " "
-          stringr::str_sub(eqn, pair[["start"]], pair[["end"]]) = "elseif " # also captures opening round bracket
+            stringr::str_sub(eqn, pair[["start_curly"]], pair[["start_curly"]]) = ""
+            stringr::str_sub(eqn, pair[["end_round"]], pair[["end_round"]]) = " "
+            stringr::str_sub(eqn, pair[["start_round"]], pair[["start_round"]]) = " "
+            stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1) = tolower(stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1)) # replace statement, not opening bracket
 
-        } else if (pair$statement %in% c("else")) {
-          stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = "end"
-          stringr::str_sub(eqn, pair[["start_curly"]], pair[["start_curly"]]) = ""
-          stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1) = tolower(stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1)) # replace statement, not opening bracket
+          } else if (pair$statement %in% c("function")) {
+            stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = "end"
+            stringr::str_sub(eqn, pair[["start_curly"]], pair[["start_curly"]]) = ""
 
-        } else if (pair$statement %in% c("for", "while")) {
-          stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = "end"
-          stringr::str_sub(eqn, pair[["start_curly"]], pair[["start_curly"]]) = ""
-          stringr::str_sub(eqn, pair[["end_round"]], pair[["end_round"]]) = " "
-          stringr::str_sub(eqn, pair[["start_round"]], pair[["start_round"]]) = " "
-          stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1) = tolower(stringr::str_sub(eqn, pair[["start"]], pair[["end"]]-1)) # replace statement, not opening bracket
+            # Parse arguments
+            arg = parse_args(stringr::str_sub(eqn, pair[["start_round"]]+1, pair[["end_round"]]-1))
 
-        } else if (pair$statement %in% c("function")) {
-          stringr::str_sub(eqn, pair[["end_curly"]], pair[["end_curly"]]) = "end"
-          stringr::str_sub(eqn, pair[["start_curly"]], pair[["start_curly"]]) = ""
+            # All default arguments have to be at the end; if not, throw error
+            contains_name = stringr::str_detect(arg, "=")
+            arg_split = stringr::str_split_fixed(arg, "=", n = 2)
+            names_arg = ifelse(contains_name, arg_split[, 1], NA) %>% trimws()
 
-          # Parse arguments
-          arg = parse_args(stringr::str_sub(eqn, pair[["start_round"]]+1, pair[["end_round"]]-1))
+            # error when there are non-default arguments between default argumens or when default argument is not at the end
+            if (any(!is.na(names_arg))){
+              if (any(diff(which(!is.na(names_arg))) > 1) | max(which(!is.na(names_arg))) != length(names_arg) ){
+                stop(paste0("Please change the function definition of ", pair[["func_name"]], ". All arguments with defaults have to be placed at the end of the function arguments."))
+              }
 
-          # All default arguments have to be at the end; if not, throw error
-          contains_name = stringr::str_detect(arg, "=")
-          arg_split = stringr::str_split_fixed(arg, "=", n = 2)
-          names_arg = ifelse(contains_name, arg_split[, 1], NA) %>% trimws()
-
-          # error when there are non-default arguments between default argumens or when default argument is not at the end
-          if (any(!is.na(names_arg))){
-            if (any(diff(which(!is.na(names_arg))) > 1) | max(which(!is.na(names_arg))) != length(names_arg) ){
-            stop(paste0("Please change the function definition of ", pair[["func_name"]], ". All arguments with defaults have to be placed at the end of the function arguments."))
             }
 
+            arg = paste0(arg, collapse = ", ") %>%
+              # Varargs (Variable Arguments): , ... -> ...
+              stringr::str_replace_all(",[ ]*\\.\\.\\.", "...")
+
+            stringr::str_sub(eqn, pair[["start_word"]], pair[["end_round"]]) = paste0("function ", pair[["func_name"]],
+                                                                                      # # To mimic R's flexibility in positional and keyword arguments, we use keyword arguments for all arguments in Julia
+                                                                                      # "(;",
+                                                                                      # For consistency, we use NO keyword arguments for all arguments in Julia, so no ; in function statements
+                                                                                      "(",
+                                                                                      arg, ")"
+            )
           }
 
-          arg = paste0(arg, collapse = ", ") %>%
-            # Varargs (Variable Arguments): , ... -> ...
-            stringr::str_replace_all(",[ ]*\\.\\.\\.", "...")
-
-          stringr::str_sub(eqn, pair[["start_word"]], pair[["end_round"]]) = paste0("function ", pair[["func_name"]],
-                                                                              # # To mimic R's flexibility in positional and keyword arguments, we use keyword arguments for all arguments in Julia
-                                                                              # "(;",
-                                                                          # For consistency, we use NO keyword arguments for all arguments in Julia, so no ;
-                                                                          "(",
-                arg, ")"
-          )
         }
 
       }
-
     }
-  }
 
   }
 
@@ -819,7 +820,7 @@ order_arg_in_func_wrapper = function(sfm, var_names){
                lapply(sfm[["model"]][["variables"]], function(x){
                  lapply(x, `[[`, "eqn_julia")
                })
-               ) %>%
+  ) %>%
     unlist() %>%
     unname() %>% paste0(collapse = "\n")
   idxs_exclude = get_seq_exclude(all_eqns, var_names)
@@ -838,120 +839,6 @@ order_arg_in_func_wrapper = function(sfm, var_names){
 
 
 
-#' Add keyword arguments to custom functions in all equations
-#'
-#' @inheritParams build
-#' @inheritParams convert_equations_IM
-#'
-#' @noRd
-#' @returns Updated stock-and-flow model
-#'
-add_keyword_arg_wrapper = function(sfm, var_names){
-
-  # Replace all function calls with named arguments
-  all_eqns = c(lapply(sfm[["macro"]], `[[`, "eqn_julia"),
-               lapply(sfm[["model"]][["variables"]],
-                      function(x){lapply(x, `[[`, "eqn_julia")})
-                 ) %>% unlist() %>%
-    unname() %>% paste0(collapse = "\n")
-  idxs_exclude = get_seq_exclude(all_eqns, var_names)
-
-  # Get arguments function
-  paired_idxs = get_range_all_pairs(all_eqns, var_names, type = "round")
-
-  if (nrow(paired_idxs) > 0){
-
-    # Select only function definitions
-    paired_idxs = paired_idxs[grepl("\\(;", paired_idxs[["match"]]), ]
-
-    if (nrow(paired_idxs) > 0){
-
-      # Get function name
-      paired_idxs$func_name = trimws(stringr::str_match(stringr::str_sub(all_eqns, 1, paired_idxs[["start"]]-1) , "function (.*?)$")[,2])
-      # Pull arguments from match
-      paired_idxs[["bracket_arg"]] = stringr::str_replace_all(paired_idxs[["match"]], c("\\(;" = "", "\\)$" = ""))
-
-      # Create default arguments
-      default_arg_list = lapply(1:nrow(paired_idxs), function(i){
-          # Parse arguments
-          parse_args(paired_idxs[i, "bracket_arg"]) %>%
-          create_default_arg(.)}) %>% stats::setNames(paired_idxs$func_name)
-
-      for (i in 1:nrow(paired_idxs)){
-        sfm[["model"]][["variables"]] = lapply(sfm[["model"]][["variables"]],
-                                               function(y){
-                                                 lapply(y, function(x){
-          if (is_defined(x[["eqn_julia"]])){
-            x[["eqn_julia"]] = add_keyword_arg(x[["eqn_julia"]],
-                                               var_names,
-                                               paired_idxs[i, "func_name"],
-                                               default_arg_list[[i]])
-          }
-          return(x)
-        })
-                                               })
-
-        sfm[["macro"]] = lapply(sfm[["macro"]], function(x){
-          x[["eqn_julia"]] = add_keyword_arg(x[["eqn_julia"]], var_names, paired_idxs[i, "func_name"], default_arg_list[[i]])
-          return(x)
-        })
-
-      }
-
-    }
-  }
-  return(sfm)
-
-}
-
-
-
-#' Add keyword arguments to custom functions in equation
-#'
-#' @inheritParams convert_equations_IM
-#' @param func_name String with function name
-#' @param default_arg List with default arguments
-#'
-#' @returns Updated eqn
-#' @noRd
-#'
-add_keyword_arg = function(eqn, var_names, func_name, default_arg){
-
-  # Find all function calls in eqn
-  paired_idxs = get_range_all_pairs(eqn, var_names, add_custom = paste0(func_name, "()"), type = func_name)
-
-  if (nrow(paired_idxs) > 0){
-
-    paired_idxs[["bracket_arg"]] = stringr::str_replace_all(paired_idxs[["match"]], paste0("^", func_name, "\\("), "") %>%
-                      stringr::str_replace_all(paste0("\\)$"), "")
-    # Ensure it doesn't start with ; - this is the function definition
-    paired_idxs = paired_idxs[!grepl("^;", paired_idxs[["bracket_arg"]]), ]
-
-    if (nrow(paired_idxs) > 0){
-
-      # For each match, extract and sort arguments, and place back with named arguments; reverse order to not mess up the indices
-      for (i in rev(seq.int(nrow(paired_idxs)))){
-        # Parse arguments
-        arg = parse_args(paired_idxs[i, ][["bracket_arg"]])
-
-        # Sort arguments
-        arg_sorted = sort_args(arg, func_name, default_arg = default_arg, var_names = var_names)
-
-        # Replace in eqn with names
-        arg_str = paste0(paste0(names(arg_sorted), " = ", unname(arg_sorted)), collapse = ", ")
-        # NA means there is no default value
-
-        stringr::str_sub(eqn, paired_idxs[i, "start"] + nchar(paste0(func_name, "(")), paired_idxs[i, "end"] - 1) = arg_str
-      }
-    }
-  }
-
-  return(eqn)
-
-}
-
-
-
 #' Get regular expressions for Julia functions
 #'
 #' @noRd
@@ -959,7 +846,7 @@ add_keyword_arg = function(eqn, var_names, func_name, default_arg){
 get_syntax_julia = function(){
 
   # https://www.johnmyleswhite.com/notebook/2012/04/09/comparing-julia-and-rs-vocabularies/
-# https://docs.julialang.org/en/v1/manual/noteworthy-differences/
+  # https://docs.julialang.org/en/v1/manual/noteworthy-differences/
 
   # Custom function to replace each (nested) function; necessary because regex in stringr unfortunately doesn't seem to handle nested functions
   conv_df = matrix(c(
@@ -980,11 +867,12 @@ get_syntax_julia = function(){
     "range", "extrema", "syntax1", "", "", F,
 
     "as.logical", "Bool", "syntax1", "", "" , T,
-    # "seq", "seq", "syntax1", "", "", F,
-    # "sequence", "seq", "syntax1", "", "", F,
-    # "seq_along", "seq_along", "syntax1", "", "", F,
-    # "sample", "sample", "syntax1", "", "", F,
-
+    "seq", "range", "syntax_seq", "", "", F,
+    "seq.int", "range", "syntax_seq", "", "", F,
+    "seq_along", "range", "syntax_seq", "", "", F,
+    "seq_len", "range", "syntax_seq", "", "", F,
+    "sample", "StatsBase.sample", "syntax_sample", "", "", F,
+    "sample.int", "StatsBase.sample", "syntax_sample", "", "", F,
 
 
     # ** mad()
@@ -1480,8 +1368,8 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
       if (i == 1 & nrow(idx_df) > 0){
 
         idx_df <- idx_df[order(idx_df[["start"]]), ]
-        idx_df$R_regex <- stringr::str_replace_all(idx_df[["R_regex"]],
-                                            stringr::fixed(c("(?<!\\.)\\b" = "", "\\(" = "(", "\\)" = ")")))
+        idx_df[["R_regex"]] <- stringr::str_replace_all(idx_df[["R_regex"]],
+                                                   stringr::fixed(c("(?<!\\.)\\b" = "", "\\(" = "(", "\\)" = ")")))
 
         for (j in rev(1:nrow(idx_df))){
           stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) = idx_df[j, ][["R_regex"]] #%>%
@@ -1551,7 +1439,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
         # Start with most nested function
         idx_funcs_ordered = idx_funcs
         idx_funcs_ordered[["is_nested_around"]] = any(idx_funcs_ordered[["start"]] < idx_funcs[["start"]] &
-                                                   idx_funcs_ordered[["end"]] > idx_funcs[["end"]])
+                                                        idx_funcs_ordered[["end"]] > idx_funcs[["end"]])
         idx_funcs_ordered = idx_funcs_ordered[order(idx_funcs_ordered[["is_nested_around"]]), ]
         idx_func = idx_funcs_ordered[1, ] # Select first match
 
@@ -1567,8 +1455,8 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
         # print(bracket_arg)
 
         arg = parse_args(bracket_arg)
-        arg = sort_args(arg, idx_func[["R_first_iter"]], var_names = var_names)
-        arg = unname(unlist(arg))
+        named_arg = sort_args(arg, idx_func[["R_first_iter"]], var_names = var_names)
+        arg = unname(unlist(named_arg))
 
         # print("arg")
         # print(arg)
@@ -1625,8 +1513,8 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
                                P[["intermediary_names"]], ")")
 
           add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(var = arg[1],
-                                                                     length = arg[2],
-                                                                     initial = arg3
+                                                                          length = arg[2],
+                                                                          initial = arg3
           )
 
         } else if (idx_func[["syntax"]] == "past"){
@@ -1655,7 +1543,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
                                P[["model_setup_name"]], ".",
                                P[["intermediary_names"]], ")")
           add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(var = arg[1],
-                                                                     length = arg2)
+                                                                          length = arg2)
 
 
         } else if (idx_func[["syntax"]] == "delayN"){
@@ -1686,26 +1574,25 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
                          # Symbols are faster
                          ", :", func_name, ")")
           compute = paste0(idx_func[["julia"]], "(",
-                                    arg[1], ", ",
+                           arg[1], ", ",
                            func_name, ", ",
-                                    arg[2], ", ",
-                                    arg[3], ")")
+                           arg[2], ", ",
+                           arg[3], ")")
 
           update = paste0(func_name, ".update")
 
           add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(setup = setup,
-                                                                     compute = compute,
-                                                                     update = update,
-                                                                     type = idx_func[["julia"]],
-                                                                     var = arg[1],
-                                                                     length = arg[2],
-                                                                     order = arg[3],
-                                                                     initial = arg4)
+                                                                          compute = compute,
+                                                                          update = update,
+                                                                          type = idx_func[["julia"]],
+                                                                          var = arg[1],
+                                                                          length = arg[2],
+                                                                          order = arg[3],
+                                                                          initial = arg4)
 
 
 
         } else if (idx_func[["syntax"]] == "smoothN"){
-
 
           if (type %in% c("stock", "gf", "constant", "macro")){
             stop(paste0("Adjust equation of ", name, ": smoothN() cannot be used for a ", type, "."))
@@ -1740,25 +1627,14 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
 
           update = paste0(func_name, ".update")
 
-          # add_Rcode[["func"]] = append(add_Rcode[["func"]],
-          #                                   list(list(setup = setup,
-          #                                             compute = compute,
-          #                                             update = update,
-          #                                             type = idx_func[["julia"]],
-          #                                             var = arg[1],
-          #                                             length = arg[2],
-          #                                             order = arg[3],
-          #                                             initial = arg4
-          #                                             )) %>% stats::setNames(func_name))
-
           add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(setup = setup,
-                                                                     compute = compute,
-                                                                     update = update,
-                                                                     type = idx_func[["julia"]],
-                                                                     var = arg[1],
-                                                                     length = arg[2],
-                                                                     order = arg[3],
-                                                                     initial = arg4
+                                                                          compute = compute,
+                                                                          update = update,
+                                                                          type = idx_func[["julia"]],
+                                                                          var = arg[1],
+                                                                          length = arg[2],
+                                                                          order = arg[3],
+                                                                          initial = arg4
           )
 
         } else if (idx_func[["syntax"]] == "syntaxD"){
@@ -1767,6 +1643,20 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
           replacement = conv_distribution(arg,
                                           idx_func[["julia"]],
                                           idx_func[["add_first_arg"]])
+
+        } else if (idx_func[["syntax"]] == "syntax_seq"){
+
+          # Convert sequence
+          replacement = conv_seq(named_arg,
+                                 idx_func[["R_first_iter"]],
+                                 idx_func[["julia"]])
+
+        } else if (idx_func[["syntax"]] == "syntax_sample"){
+
+          # Convert sequence
+          replacement = conv_sample(named_arg,
+                                 idx_func[["R_first_iter"]],
+                                 idx_func[["julia"]])
         }
 
         if (debug){
@@ -1782,12 +1672,12 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
       }
     }
     # add_Rcode = list(list(add_Rcode) %>% stats::setNames(name)) %>%
-      # stats::setNames(type)
+    # stats::setNames(type)
 
-}
+  }
   return(list(eqn = eqn, add_Rcode = add_Rcode
               # , translated_func = translated_func
-              ))
+  ))
 
 }
 
@@ -1816,6 +1706,16 @@ sort_args = function(arg, func_name, default_arg = NULL, var_names = NULL){
     varargs = any(names(default_arg) == "...")
     default_arg = default_arg[names(default_arg) != "..."] # Remove ellipsis
 
+    # formals(seq) is empty for some reason
+    if (func_name == "seq"){
+      default_arg = list("from" = "1.0", "to" = "1.0", "by" = NULL,
+                         "length.out" = NULL, "along.with" = NULL)
+    } else if (func_name == "seq_along"){
+      default_arg = list("along.with" = "NULL")
+    } else if (func_name == "seq_len"){
+      default_arg = list("length.out" = "1.0")
+    }
+
     # default_arg_Julia = JuliaCall::julia_eval(sprintf("using Distributions; params(%s())", Julia_func))
   }
 
@@ -1828,7 +1728,7 @@ sort_args = function(arg, func_name, default_arg = NULL, var_names = NULL){
   # For some functions, there are no default arguments, so there is no need to sort them
   if (length(default_arg) == 0){
 
-    arg_R = values_arg
+    arg_R = stats::setNames(values_arg, names_arg)
 
   } else {
 
@@ -2002,6 +1902,97 @@ conv_distribution = function(arg, julia_func, distribution){
 }
 
 
+#' Convert sequence in R to Julia
+#'
+#' @inheritParams sort_args
+#' @param R_func String with R function, e.g. "seq", "seq_along"
+#' @param julia_func String with Julia function
+#'
+#' @returns String with Julia code
+#' @noRd
+#'
+conv_seq = function(arg, R_func, julia_func){
+
+  # print("arg in conv_seq")
+  # print(arg)
+
+  if (R_func == "seq_along"){
+
+    julia_str = paste0(julia_func, "(1.0, length(", arg[["along.with"]], "))")
+
+  } else if (R_func == "seq_len"){
+
+    julia_str = paste0(julia_func, "(1.0, ", arg[["length.out"]], ")")
+
+  } else {
+
+    # If nothing is specified, specify by
+    if (!is_defined(arg[["by"]]) && !is_defined(arg[["length.out"]]) && !is_defined(arg[["along.with"]])){
+      arg[["by"]] = "1.0" # Default value for by
+    }
+
+    if (is_defined(arg[["by"]])){
+
+      julia_str = sprintf("%s(%s, %s, step=%s)",
+                          julia_func, arg[["from"]], arg[["to"]], arg[["by"]])
+
+    } else if (is_defined(arg[["length.out"]])){
+
+      # Julia throws an error in this case
+      if (as.numeric(arg[["length.out"]]) == 1 & as.numeric(arg[["from"]]) != as.numeric(arg[["to"]])){
+
+        julia_str = arg[["from"]]
+
+      } else {
+
+        # length.out should be an integer
+        julia_str = sprintf("%s(%s, %s, round_(%s))",
+                            julia_func, arg[["from"]], arg[["to"]], arg[["length.out"]])
+      }
+
+    } else if (is_defined(arg[["along.with"]])) {
+
+      julia_str = sprintf("%s(%s, %s, length(%s))",
+                          julia_func, arg[["from"]], arg[["to"]], arg[["along.with"]])
+
+    }
+  }
+
+  return(julia_str)
+}
+
+
+
+#' Convert R sample() to Julia StatsBase.sample()
+#'
+#' @inheritParams conv_seq
+#'
+#' @returns String with Julia code
+#' @noRd
+conv_sample = function(arg, R_func, julia_func){
+
+  # print("arg in conv_sample")
+  # print(arg)
+
+  # Order in StatsBase.sample() is different
+  if (R_func == "sample.int"){
+    arg[["x"]] = paste0("seq(1.0, ", arg[["n"]], ")")
+  }
+
+  arg[["replace"]] = ifelse(tolower(arg[["replace"]]) == "true", "true", "false")
+
+  if (is_defined(arg[["prob"]])){
+    julia_str = sprintf("%s(%s, StatsBase.pweights(%s), round_(%s), replace=%s)",
+                        julia_func, arg[["x"]], arg[["prob"]], arg[["size"]], arg[["replace"]])
+  } else {
+    julia_str = sprintf("%s(%s, round_(%s), replace=%s)",
+                        julia_func, arg[["x"]], arg[["size"]], arg[["replace"]])
+  }
+
+  return(julia_str)
+
+}
+
 
 #' Translate vector bracket syntax from R to square brackets in Julia
 #'
@@ -2086,14 +2077,14 @@ scientific_notation = function(eqn, task = c("remove", "add")[1], digits_max = 1
                              format(num, scientific = TRUE, trim = TRUE),
                              ifelse(is.na(following_whitespace), "", following_whitespace) )
       } else {
-      # Change nothing otherwise
+        # Change nothing otherwise
         replacement = match
       }
 
     } else if (task == "remove"){
       replacement = paste0(ifelse(is.na(leading_whitespace), "", leading_whitespace),
                            format(num, scientific = FALSE),
-                                                 ifelse(is.na(following_whitespace), "", following_whitespace) )
+                           ifelse(is.na(following_whitespace), "", following_whitespace) )
     }
 
     return(replacement) # Convert back to fixed string

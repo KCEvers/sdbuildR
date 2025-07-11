@@ -6,28 +6,11 @@
 get_func_julia = function(){
 
   func_def = list(
-    #   "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = 2)
-    #
-    #     # Ensure y is sorted along x
-    #     idx = sortperm(x)
-    #     x = x[idx]
-    #     y = y[idx]
-    #
-    #     # Extrapolation extrapolation: What happens outside of defined values?
-    #     # Rule 1: return NaN; Rule 2: return closest value
-    #     rule_method = ifelse(extrapolation == 1, NaN, ifelse(extrapolation == 2, Flat(), \"?\"))
-    #
-    #     if method == \"constant\"
-    #         func = extrapolate(interpolate((x,), y, Gridded(Constant{Previous}())), rule_method)
-    #     elseif method == \"linear\"
-    #         func = linear_interpolation(x, y, extrapolation_bc=rule_method)
-    #     end
-    #
-    #     return(func)
-    # end",
+
     # extrapolation = 1: return NA when outside of bounds
     # extrapolation = 2: return nearest value when outside of bounds
     "custom_func" = list(
+      "is_function_or_interp" = "is_function_or_interp(x) = isa(x, Function) || isa(x, DataInterpolations.AbstractInterpolation)",
       "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = \"nearest\")
 
   # Ensure y is sorted along x
@@ -47,23 +30,6 @@ get_func_julia = function(){
 
   return(func)
 end",
-      # **to do: ExtrapolationType.None throws error instead of returning NaN
-
-      #                "ramp" = "# Make ramp signal\nfunction ramp(times; start, end, start_h_ramp = 0.0, height = 1.0)
-      #
-      #     x = [start, end]
-      #     y = [start_h_ramp, height]
-      #
-      #     # If the ramp is after the start time, add a zero at the start
-      #     if start > first(times)
-      #         x = [first(times); x]
-      #         y = [0; y]
-      #     end
-      #
-      #     func = itp(x, y, method = \"linear\", extrapolation = 2)
-      #
-      #     return(func)
-      # end",
       "ramp" = "function ramp(times, time_units, start, finish, height = 1.0)
 
     @assert start < finish \"The finish time of the ramp cannot be before the start time. To specify a decreasing ramp, set the height to a negative value.\"
@@ -112,21 +78,7 @@ end",
 
     return(func)
 end ",
-      #                "step" = "# Make step signal\nfunction step(times; start, height = 1.0)
-      #
-      #     x = [start, times[2]]
-      #     y = [height, height]
-      #
-      #     # If the step is after the start time, add a zero at the start
-      #     if start > first(times)
-      #         x = [first(times); x]
-      #         y = [0; y]
-      #     end
-      #
-      #     func = itp(x, y, method = \"constant\", extrapolation = \"nearest\")
-      #
-      #     return(func)
-      # end",
+
       "make_step" = "# Make step signal
 function make_step(times, time_units, start, height = 1.0)
 
@@ -163,51 +115,7 @@ function make_step(times, time_units, start, height = 1.0)
 end
 
     ",
-      #     "@constraints" = "# Constraints macro
-      # macro constraints(exprs...)
-      #     pairs = map(exprs) do ex
-      #         quote
-      #             ($(string(ex)), $(esc(ex)))
-      #         end
-      #     end
-      #     quote
-      #         [$(pairs...)]
-      #     end
-      # end",
-      #                "pulse" = "# Make pulse signal\nfunction pulse(times; start, height = 1.0, width = 1.0 * time_units, repeat_interval = nothing)
-      #
-      #     # Define start and end times of pulses
-      #     last_time = last(times)
-      #     # If no repeats, set end of pulse to after end time
-      #     step_size = isnothing(repeat_interval) ? last_time * 2 : repeat_interval
-      #     start_ts = collect(start:step_size:last_time)
-      #     end_ts = start_ts .+ width
-      #
-      #     # Build signal as vectors of times and y-values
-      #     signal_times = [start_ts; end_ts]
-      #     signal_y = [fill(height, length(start_ts)); fill(0, length(end_ts))]
-      #
-      #     # If the first pulse is after the start time, add a zero at the start
-      #     if minimum(start_ts) > first(times)
-      #         signal_times = [first(times); signal_times]
-      #         signal_y = [0; signal_y]
-      #     end
-      #
-      #     # If the last pulse doesn't cover the end, add a zero at the end
-      #     # (I don't fully understand why this is necessary, but otherwise it gives incorrect results with repeat_interval <= 0)
-      #     if maximum(end_ts) < last_time
-      #         signal_times = [signal_times; last_time]
-      #         signal_y = [signal_y; 0]
-      #     end
-      #
-      #     # Sort by time
-      #     perm = sortperm(signal_times)
-      #     x = signal_times[perm]
-      #     y = signal_y[perm]
-      #     func = itp(x, y, method = \"constant\", extrapolation = \"nearest\")
-      #
-      #     return(func)
-      # end",
+
       "pulse" = "# Make pulse signal
 function pulse(times, time_units, start, height = 1.0, width = 1.0 * time_units, repeat_interval = nothing)
     # If times has units, but the pulse times don't, convert them to the same units
@@ -284,9 +192,7 @@ end",
 
     return(func)
 end",
-      # ** constant interpolation is not supported with units! linear is
 
-      # ** other custom_func
       "IM_round" = "# Convert Insight Maker's Round() function to R\n# Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in julia, round(.5) = 0.0\nfunction IM_round(x::Real, digits::Int=0)
     # Compute the fractional part after scaling by 10^digits
     scaled_x = x * 10.0^digits
@@ -309,13 +215,6 @@ end",
     upper / (1 + exp(-slope * (x - midpoint)))
 end
 ",
-      #     "nonnegative" = "# Prevent non-negativity\nfunction nonnegative(x)
-      #     if eltype(x) <: Unitful.Quantity
-      #         max.(0.0, Unitful.ustrip(x)) .* Unitful.unit.(x)
-      #     else
-      #         max.(0.0, x)
-      #     end
-      # end",
       "nonnegative" = "# Prevent non-negativity (below zero)
 # Scalar case: non-unitful types
 nonnegative(x::Real) = max(0.0, x)
@@ -332,9 +231,7 @@ nonnegative(x::AbstractArray{<:Unitful.Quantity}) = max.(0.0, Unitful.ustrip.(x)
       "rbool" = "# Generate random boolean value, equivalent of RandBoolean() in Insight Maker\nfunction rbool(p)
     return rand() < p
 end",
-      #                "rdist" = "function rdist(a,b)
-      #     StatsBase.wsample(a, b, 1)
-      # end",
+
       "rdist" = "function rdist(a::Vector{T}, b::Vector{<:Real}) where T
     # Check lengths match
     if length(a) != length(b)
@@ -358,13 +255,7 @@ end",
         return isnothing(pos) ? 0 : pos
     end
 end",
-      # "IM_length"= "function IM_length(x)
-      #     if isa(x, AbstractString)
-      #         return length(x)
-      #     else
-      #         return length(x)
-      #     end
-      # end",
+
       "IM_contains" = "function IM_contains(haystack, needle)
     if isa(haystack, AbstractString) && isa(needle, AbstractString)
         return occursin(needle, haystack)
@@ -405,274 +296,11 @@ round_(x; digits::Real=0) = round(x, digits=round(Int, digits))
 round_(x::Unitful.Quantity, digits::Real) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)
 
 round_(x::Unitful.Quantity; digits::Real=0) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)",
-      # "seasonal" = "# Create seasonal wave\nfunction seasonal(;wave_unit=u\"yr\", wave_peak=0u\"yr\")
-      #     (t, u=wave_unit, p=wave_peak) -> cos.(Unitful.ustrip.(Unitful.uconvert.(u, t - p)))
-      # end"
-      #     "seasonal" = "# Create seasonal wave \nfunction seasonal(t, period = u\"1yr\", shift = u\"0yr\")
-      #     phase = 2 * pi * (t - shift) / period  # π radians
-      #     return(cos(phase))
-      # end",
 
       "\\u2295" = "# Define the operator \\u2295 for the modulus
 function \\u2295(x, y)
     return mod(x, y)
-end"
-#       "sample_weighted" = "
-# \"\"\"
-#     sample_weighted(x, weights)
-#
-# Sample a single element from x using weights.
-# \"\"\"
-# function sample_weighted(x::AbstractVector, weights::AbstractVector)
-#     r = rand()
-#     cumsum_weights = cumsum(weights)
-#     idx = findfirst(w -> r <= w, cumsum_weights)
-#     return x[idx]
-# end
-# ",
-#
-#       "sample_weighted_without_replacement" = "
-# \"\"\"
-#     sample_weighted_without_replacement(x, weights, size)
-#
-# Sample without replacement using weights.
-# \"\"\"
-# function sample_weighted_without_replacement(x::AbstractVector, weights::AbstractVector, size::Integer)
-#     n = length(x)
-#     result = eltype(x)[]
-#     available_indices = collect(1:n)
-#     current_weights = copy(weights)
-#
-#     for _ in 1:size
-#         # Normalize current weights
-#         if sum(current_weights) ≈ 0
-#             break
-#         end
-#         norm_weights = current_weights ./ sum(current_weights)
-#
-#         # Sample from available indices
-#         r = rand()
-#         cumsum_weights = cumsum(norm_weights)
-#         local_idx = findfirst(w -> r <= w, cumsum_weights)
-#
-#         # Get the actual index and add to result
-#         actual_idx = available_indices[local_idx]
-#         push!(result, x[actual_idx])
-#
-#         # Remove selected index and corresponding weight
-#         deleteat!(available_indices, local_idx)
-#         deleteat!(current_weights, local_idx)
-#     end
-#
-#     return result
-# end
-# ",
-#       "sample" = "
-# \"\"\"
-#       sample(x, size=length(x); replace=false, prob=nothing)
-#
-#       Sample from vector x with or without replacement.
-#       Equivalent to R's sample(x, size, replace, prob).
-# \"\"\"
-# function sample(x::AbstractVector, size::Integer=length(x); replace::Bool=false, prob::Union{Nothing,AbstractVector}=nothing)
-#     if size < 0
-#         throw(ArgumentError(\"'size' must be non-negative\"))
-#     end
-#
-#     if size == 0
-#         return eltype(x)[]
-#     end
-#
-#     n = length(x)
-#
-#     if !replace && size > n
-#         throw(ArgumentError(\"cannot take a sample larger than the population when 'replace=false'\"))
-#     end
-#
-#     if prob === nothing
-#         if replace
-#             return [x[rand(1:n)] for _ in 1:size]
-#         else
-#             if size == n
-#                 return x[randperm(n)]
-#             else
-#                 indices = randperm(n)[1:size]
-#                 return x[indices]
-#             end
-#         end
-#     else
-#         # Weighted sampling
-#         if length(prob) != n
-#             throw(ArgumentError(\"'prob' should be of length $(n)\"))
-#         end
-#
-#         if any(p -> p < 0, prob)
-#             throw(ArgumentError(\"'prob' should contain non-negative values\"))
-#         end
-#
-#         if sum(prob) ≈ 0
-#             throw(ArgumentError(\"'prob' should contain at least some positive values\"))
-#         end
-#
-#         # Normalize probabilities
-#         weights = prob ./ sum(prob)
-#
-#         if replace
-#             return [sample_weighted(x, weights) for _ in 1:size]
-#         else
-#             return sample_weighted_without_replacement(x, weights, size)
-#         end
-#     end
-# end
-#
-# \"\"\"
-#     sample(n::Integer, size=n; replace=false, prob=nothing)
-#
-# Sample from 1:n with or without replacement.
-# Equivalent to R's sample(n, size, replace, prob).
-#       \"\"\"
-# function sample(n::Integer, size::Integer=n; replace::Bool=false, prob::Union{Nothing,AbstractVector}=nothing)
-#     if n < 0
-#         throw(ArgumentError(\"'n' must be non-negative\"))
-#     end
-#     return sample(1:n, size; replace=replace, prob=prob)
-# end
-#
-# \"\"\"
-#       sample(x; replace=false, prob=nothing)
-#
-#       Sample all elements from x (permutation when replace=false).
-#       Equivalent to R's sample(x).
-# \"\"\"
-# function sample(x::AbstractVector; replace::Bool=false, prob::Union{Nothing,AbstractVector}=nothing)
-#     return sample(x, length(x); replace=replace, prob=prob)
-# end
-# ",
-#       "sample_int" = "\"\"\"
-#       sample_int(n, size=n; replace=false, prob=nothing)
-#
-#       Sample integers from 1:n with or without replacement.
-#       Equivalent to R's sample.int(n, size, replace, prob).
-# More efficient than sample(1:n, ...) for large n.
-# \"\"\"
-# function sample_int(n::Integer, size::Integer=n; replace::Bool=false, prob::Union{Nothing,AbstractVector}=nothing)
-#     if n < 0
-#         throw(ArgumentError(\"'n' must be non-negative\"))
-#     end
-#
-#     if size < 0
-#         throw(ArgumentError(\"'size' must be non-negative\"))
-#     end
-#
-#     if size == 0
-#         return Int[]
-#     end
-#
-#     if !replace && size > n
-#         throw(ArgumentError(\"cannot take a sample larger than the population when 'replace=false'\"))
-#     end
-#
-#     if prob === nothing
-#         if replace
-#             return [rand(1:n) for _ in 1:size]
-#         else
-#             if size == n
-#                 return randperm(n)
-#             else
-#                 return randperm(n)[1:size]
-#             end
-#         end
-#     else
-#         # Use the existing weighted sampling on 1:n
-#         return sample(1:n, size; replace=replace, prob=prob)
-#     end
-# end",
-#       "seq"= "
-#       \"\"\"
-#     seq(from, to, by=1)
-#
-# Generate sequence from 'from' to 'to' by step 'by'.
-# Equivalent to R's seq(from, to, by).
-# \"\"\"
-#       function seq(from::Real, to::Real, by::Real=1)
-#       if by == 0
-#       throw(ArgumentError(\"'by' must be non-zero\"))
-#       end
-#
-#       if (to - from) * by < 0
-#       return typeof(from)[]  # Empty sequence
-#       end
-#
-#       return collect(from:by:to)
-#       end
-#
-#       \"\"\"
-#     seq(from, to; length_out)
-#
-# Generate sequence from 'from' to 'to' with specified length.
-# Equivalent to R's seq(from, to, length.out=length_out).
-# \"\"\"
-#       function seq(from::Real, to::Real; length_out::Integer)
-#       if length_out < 0
-#       throw(ArgumentError(\"'length_out' must be non-negative\"))
-#       end
-#
-#       if length_out == 0
-#       return Float64[]
-#       elseif length_out == 1
-#       return [from]
-#       else
-#         return collect(range(from, to, length=length_out))
-#       end
-#       end
-#
-#       \"\"\"
-#     seq(from, to; along_with)
-#
-# Generate sequence with same length as along_with.
-# Equivalent to R's seq(from, to, along.with=along_with).
-# \"\"\"
-#       function seq(from::Real, to::Real; along_with::AbstractVector)
-#       return seq(from, to; length_out=length(along_with))
-#       end
-#
-#       \"\"\"
-#     seq(; along_with)
-#
-# Generate sequence 1:length(along_with).
-# Equivalent to R's seq(along.with=along_with) or seq_along(along_with).
-# \"\"\"
-#       function seq(; along_with::AbstractVector)
-#       return collect(1:length(along_with))
-#       end",
-#
-#       "seq_along" = "
-#       \"\"\"
-#     seq_along(x)
-#
-# Generate sequence 1:length(x).
-# Equivalent to R's seq_along(x).
-# \"\"\"
-#       function seq_along(x::AbstractVector)
-#       return collect(1:length(x))
-#       end
-#       ",
-#
-#       "seq_len" = "
-#       \"\"\"
-#     seq_len(n)
-#
-# Generate sequence 1:n.
-# Equivalent to R's seq_len(n).
-# \"\"\"
-#       function seq_len(n::Integer)
-#       if n < 0
-#       throw(ArgumentError(\"'n' must be non-negative\"))
-#       end
-#       return n == 0 ? Int[] : collect(1:n)
-#       end
-#       "
-      ),
+end"),
 
     "unit_func" = list(
 
@@ -703,192 +331,6 @@ function convert_u(x::Float64, unit_def::Unitful.Units)
 end
 ")
     ),
-
-
-    # Previously: convert_u supported passing a string as unit_def, but this requires a global variable unit_context or to pass unit_context to many functions.
-    #
-    # function convert_u(x::Unitful.Quantity, unit_def::String)
-    # try
-    # unit_def = Unitful.uparse(unit_def, unit_context = unit_context)  # Parse string to unit (e.g., \"wk\" -> u\"wk\")
-    #
-    # if Unitful.unit(x) == unit_def
-    # return x  # No conversion needed
-    # else
-    #   Unitful.uconvert.(unit_def, x)
-    # end
-    # catch e
-    # error(\"Invalid unit string: $unit_def\")
-    #     end
-    # end
-    #
-    # function convert_u(x::Float64, unit_def::String)
-    # try
-    # unit_def = Unitful.uparse(unit_def, unit_context = unit_context)  # Parse string to unit (e.g., \"wk\" -> u\"wk\")
-    # x * unit_def
-    # catch e
-    # error(\"Invalid unit string: $unit_def\")
-    #     end
-    # end
-
-    # "retrieve_past"= "function retrieve_past(var_value, delay_time, default_value, t, var_name, single_or_interval, intermediaries, intermediary_names)
-    #
-    # 	# Ensure t and delay_time are of the same type
-    # 	if !(eltype(delay_time) <: Unitful.Quantity) & (eltype(t) <: Unitful.Quantity)
-    # 		delay_time = convert_u(delay_time, t)
-    # 	end
-    #
-    #     # Extract single value from the past
-    # 	if single_or_interval == \"single\"
-    # 		extract_t = t - delay_time
-    #
-    # 		# If trying to retrieve a value in the \"past\" (i.e. before times[1]), use default value if specified, otherwise use value at first time point
-    # 		if extract_t < 0
-    # 			if isnothing(default_value)
-    #                 if isempty(intermediaries.saveval)
-    #                     return var_value
-    #                 else
-    #                     return intermediaries.saveval[1][findfirst(isequal(var_name), intermediary_names)]
-    #                 end
-    # 			else
-    # 				return default_value
-    # 			end
-    # 		elseif extract_t == 0 || extract_t == t
-    #       return var_value
-    # 		end
-    #
-    # 	# Or: extract interval of past values
-    # 	elseif single_or_interval == \"interval\"
-    #
-    #         # Check if intermediaries.saveval is empty
-    #         if isempty(intermediaries.saveval)
-    #             return var_value
-    #         end
-    #
-    #         # Create vector of times
-    #         if !(t in intermediaries.t)
-    #             extract_t = [intermediaries.t; t]
-    #         else
-    #             extract_t = intermediaries.t
-    #         end
-    #
-    # 		# If no past interval is specified, access entire history
-    # 		if !isnothing(delay_time)
-    # 			first_time = t - delay_time
-    #
-    # 			if first_time < 0
-    # 				first_time = intermediaries.t[1]  # Set to start time if negative
-    # 			end
-    #
-    # 			# Extract from first_time up until t
-    # 			_, first_time_idx = findmin(abs.(extract_t .- first_time))
-    # 			extract_t = extract_t[first_time_idx:end]
-    #
-    #             if length(extract_t) == 1
-    #                 return var_value
-    #             end
-    # 		end
-    # 	end
-    #
-    #     # Check if intermediaries.saveval is empty
-    #     if isempty(intermediaries.saveval)
-    #         # If empty, return default value if specified, otherwise return NaN
-    #         if isnothing(default_value)
-    #             return var_value
-    #         else
-    #             return default_value
-    #         end
-    #     end
-    #
-    # 	## Create a DataFrame from the saved values
-    # 	i#ntermediary_df = DataFrame(intermediaries.saveval, Symbol.(intermediary_names))
-    #
-    #     # Add t if not in intermediaries.t yet
-    #     if !(t in intermediaries.t)
-    #         ts = [intermediaries.t; t]
-    #     else
-    #         ts = intermediaries.t
-    #     end
-    #
-    #     #ys = [intermediary_df[!, var_name]; var_value]
-    #    # ys = ys[1:length(ts)]  # Ensure ys is the same length as ts
-    #
-    #     var_index = findfirst(==(var_name), intermediary_names)
-    #     ys = [[val[var_index] for val in intermediaries.saveval]; var_value][1:length(ts)]
-    #
-    # 	# Define interpolation function
-    #     itp(ts, ys, method = \"linear\", extrapolation = \"nearest\")(extract_t)
-    #
-    # end
-    # ",
-    #     "retrieve_past"= "# Function to retrieve past values
-    #
-    # function retrieve_past(var_value, delay_time, default_value, t, var_name, single_or_interval, intermediaries, intermediary_names)
-    #     # Handle empty intermediaries
-    #     if isempty(intermediaries.saveval)
-    #         return isnothing(default_value) ? var_value : default_value
-    #     end
-    #
-    #     # Ensure t and delay_time have compatible units
-    #     if !(eltype(delay_time) <: Unitful.Quantity) && (eltype(t) <: Unitful.Quantity)
-    #         # delay_time = delay_time * unit(t)
-    #         delay_time = convert_u(delay_time, t)
-    #     end
-    #
-    #     # Extract variable index
-    #     var_index = findfirst(==(var_name), intermediary_names)
-    #     # if isnothing(var_index)
-    #     #     error(\"Variable '$var_name' not found in intermediary_names: $intermediary_names\")
-    #     # end
-    #
-    #     # Extract times and values
-    #     ts = intermediaries.t
-    #     ys = [val[var_index] for val in intermediaries.saveval]
-    #
-    #     # Handle current time t
-    #     if !(t in ts)
-    #         ts = [ts; t]
-    #     end
-    #
-    #     ys = [ys; var_value][1:length(ts)]  # Ensure ys is the same length as ts
-    #
-    #     # Single value extraction
-    #     if single_or_interval == \"single\"
-    #         extract_t = t - delay_time
-    #         if extract_t < ts[1]
-    #             return isnothing(default_value) ? ys[1] : default_value
-    #         elseif extract_t == t
-    #             return var_value
-    #         end
-    #
-    #         # Interpolate
-    #         # interp = LinearInterpolation(ys, ts, extrapolation_bc = Flat())
-    #         # Define interpolation function
-    #         return itp(ts, ys, method = \"linear\")(extract_t)
-    #
-    #     end
-    #
-    #     # Interval extraction
-    #     if single_or_interval == \"interval\"
-    #         if isnothing(delay_time)
-    #             return ys  # Return entire history
-    #         end
-    #
-    #         first_time = t - delay_time
-    #         if first_time < ts[1]
-    #             first_time = ts[1]
-    #         end
-    #
-    #         # Find indices for interval
-    #         idx = findfirst(t -> t >= first_time, ts)
-    #         if isnothing(idx) || idx == length(ts)
-    #             return [var_value]
-    #         end
-    #
-    #         return ys[idx:end]
-    #     end
-    #
-    # end
-    # ",
 
     "past" = list(
       "retrieve_delay" = "function retrieve_delay(var_value, delay_time, default_value, t, var_name, intermediaries, intermediary_names)
@@ -980,34 +422,6 @@ end",
 
 end",
 
-      # "setunit_flow" = "# Define function to set unit of flow; Alleviate users from dividing the flow in the equation by the time unit if they have specified the desired units in the units property of the flow
-      # function setunit_flow(x, unit_def)
-      #     # If trying to set the unit throws an error
-      #     try
-      #         return convert_u(x, unit_def)
-      #     catch e
-      #         if isa(e, ErrorException) | isa(e, Unitful.DimensionError)
-      #             try
-      #                 # In cases where e.g. x = 1u\"m\", unit_def = u\"m/d\"
-      #                 # I want to find the necessary divisor.
-      #                 div_required = x / unit_def
-      #                 # if Unitful.unit(x / div_required) == unit_def   # this is always true
-      #                 # If the unit of the divisor is a time unit, return the flow divided by the divisor
-      #                 if typeof(Unitful.unit(div_required)) <: Unitful.TimeUnits
-      #                     return x / div_required
-      #                 else
-      #                     error(\"Cannot set unit of flow: $x to $unit_def\")
-      #                 end
-      #
-      #             catch
-      #                 error(\"Cannot set unit of flow: $x to $unit_def\")
-      #             end
-      #         else
-      #             error(\"Cannot set unit of flow: $x to $unit_def\")
-      #         end
-      #     end
-      # end"
-
       "compute_delayN" = "function compute_delayN(inflow, accumulator::AbstractVector{Float64}, length_delay, order_delay::Float64)
     order_delay = round(Int, order_delay)
     d_accumulator = zeros(eltype(accumulator), order_delay)
@@ -1045,7 +459,7 @@ end",
     # Create a dictionary with names like \"name_acc1\", \"name_acc2\", ...
     #return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
     return Dict(Symbol(name, \"%s\", i) => value for i in 1:order_delay)
-end",P$delayN_acc_suffix),
+end",P[["delayN_acc_suffix"]]),
 
       "setup_smoothN" = sprintf("function setup_smoothN(initial_value, length_delay, order_delay::Float64, name::Symbol)
     # Compute the initial value for each accumulator
@@ -1056,7 +470,7 @@ end",P$delayN_acc_suffix),
     # Create a dictionary with names like \"name_acc1\", \"name_acc2\", ...
     #return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
     return Dict(Symbol(name, \"%s\", i) => value for i in 1:order_delay)
-end",P$smoothN_acc_suffix)),
+end",P[["smoothN_acc_suffix"]])),
 
     "clean" = list(
       "saveat_func" = "# Function to save dataframe at specific times
@@ -1064,87 +478,74 @@ function saveat_func(t, y, new_times)
     # Interpolate y at new_times
     itp(t, y, method = \"linear\", extrapolation = \"nearest\")(new_times)
 end",
-      # "clean_df" = sprintf("function clean_df(%s, %s, %s, %s, %s;
-      #                   %s=nothing, %s=nothing)
-      #     # Always create df from solve_out and init_names
-      #     %s = Unitful.ustrip.(DataFrame(%s, [:time; %s]))
-      #
-      #     # If intermediary data was passed, process and append
-      #     if %s !== nothing && %s !== nothing
-      #       # Error is thrown for dataframe creation of there is only one variable
-      #       # Necessary to add first.() because otherwise the column is a list in R, causing issues in plot(sim)
-      #       if length(%s) == 1
-      #         intermediary_df = Unitful.ustrip.(DataFrame(:temp => first.(%s.saveval)))
-      #         rename!(intermediary_df, :temp => %s...)
-      #       else
-      #         intermediary_df = Unitful.ustrip.(DataFrame(%s.saveval, %s))
-      #       end
-      #
-      #       # Remove variables in intermediary_var that are in initial_value_names
-      #       if any(name -> name in %s, %s)
-      #         select!(intermediary_df, setdiff(%s, %s))
-      #       end
-      #
-      #       # Merge df with intermediary values
-      #       %s = hcat(%s, intermediary_df)
-      #     end
-      #
-      #     # Ensure correct number of rows, resample if needed
-      #     if %s != %s
-      #         # Linearly interpolate to reduce stored values to saveat
-      #     new_times = collect(%s[1]:%s:%s[2]) # Create new time vector
-      #     %s = DataFrame(Dict(
-      #     :time => new_times,
-      #         [Symbol(col) => saveat_func(%s.time, %s[!, col], new_times) for col in names(%s) if col != \"time\"]...
-      #     ))
-      #     elseif nrow(%s) != length(%s[1]:%s:%s[2])
-      #         %s = Unitful.ustrip.(%s)
-      #         new_times = collect(%s[1]:%s:%s[2])  # use passed dt
-      #         %s = DataFrame(Dict(
-      #             :time => new_times,
-      #             [Symbol(col) => saveat_func(%s.time, %s[!, col], new_times)
-      #              for col in names(%s) if col != \"time\"]...
-      #         ))
-      #     end
-      #
-      #     # Convert to long
-      #     long = stack(%s, Not(:time), variable_name=:variable, value_name=:value)
-      #
-      #     return long
-      # end",
-      #                      P$solution_name, P$initial_value_names,
-      #                      P$times_name, P$timestep_name, P$saveat_name,
-      #                      P$intermediaries, P$intermediary_names,
-      #                      P$sim_df_name, P$solution_name, P$initial_value_names,
-      #                      P$intermediaries, P$intermediary_names,
-      #                      P$intermediary_names,
-      #                      P$intermediaries,
-      #                      P$intermediary_names,
-      #                      P$intermediaries, P$intermediary_names,
-      #
-      #                      P$intermediary_names, P$initial_value_names,
-      #                      P$intermediary_names, P$initial_value_names,
-      #
-      #                      P$sim_df_name, P$sim_df_name,
-      #                      P$timestep_name, P$saveat_name, P$times_name, P$saveat_name, P$times_name, P$sim_df_name, P$sim_df_name,P$sim_df_name, P$sim_df_name,
-      #
-      #                      P$sim_df_name, P$times_name, P$timestep_name, P$times_name,
-      #                      P$times_name, P$times_name, P$times_name, P$timestep_name, P$times_name,
-      #                      P$sim_df_name, P$sim_df_name, P$sim_df_name, P$sim_df_name, P$sim_df_name ),
 
-      "clean_df" = "function clean_df(solve_out, init_names, intermediaries=nothing, intermediary_names=nothing)
+      "clean_df" = "function clean_df(prob, solve_out, init_names, intermediaries=nothing, intermediary_names=nothing)
     \"\"\"
-Convert a single (non-ensemble) solution to a DataFrame, including intermediaries.
+Convert a single (non-ensemble) solution to a DataFrame, including intermediaries, and extract parameter/initial values.
 
 Args:
+  prob: Single problem function object from DifferentialEquations.jl
   solve_out: Single solution object from DifferentialEquations.jl
-init_names: Names of the initial conditions/state variables
-intermediaries: Optional intermediary values from saving callback
-intermediary_names: Optional names for intermediary variables
+  init_names: Names of the initial conditions/state variables
+  intermediaries: Optional intermediary values from saving callback
+  intermediary_names: Optional names for intermediary variables
 
 Returns:
   timeseries_df: DataFrame with columns [time, variable, value]
+  param_values: Vector of parameter values
+  param_names: Vector of parameter names
+  init_values: Vector of initial values
+  init_names: Vector of initial value names (same as input for completeness)
 \"\"\"
+
+    # Extract parameter names and values
+    param_names = String[]
+    param_values = Float64[]
+    params = prob.p
+
+    if isa(params, NamedTuple)
+        for (key, val) in pairs(params)
+            if !is_function_or_interp(val)
+                push!(param_names, string(key))
+                val_stripped = isa(val, Quantity) ? ustrip(val) : Float64(val)
+                push!(param_values, val_stripped)
+            end
+        end
+    elseif isa(params, AbstractVector)
+        for i in eachindex(params)
+            if !is_function_or_interp(params[i])
+                push!(param_names, \"p$i\")
+                val_stripped = isa(params[i], Quantity) ? ustrip(params[i]) : Float64(params[i])
+                push!(param_values, val_stripped)
+            end
+        end
+    elseif isa(params, Number)
+        push!(param_names, \"p1\")
+        val_stripped = isa(params, Quantity) ? ustrip(params) : Float64(params)
+        push!(param_values, val_stripped)
+    end
+
+    # Extract initial values
+    init_values = Float64[]
+    init_vals = prob.u0
+    init_val_names = [string(name) for name in init_names]
+
+    if isa(init_vals, NamedTuple)
+        for init_name in init_val_names
+            init_val = getproperty(init_vals, Symbol(init_name))
+            init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : Float64(init_val)
+            push!(init_values, init_val_stripped)
+        end
+    elseif isa(init_vals, AbstractVector)
+        for init_val in init_vals
+            init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : Float64(init_val)
+            push!(init_values, init_val_stripped)
+        end
+    else
+        # Single initial value
+        init_val_stripped = isa(init_vals, Quantity) ? ustrip(init_vals) : Float64(init_vals)
+        push!(init_values, init_val_stripped)
+    end
 
     # Get time values
     t_vals = isa(solve_out.t[1], Quantity) ? ustrip.(solve_out.t) : solve_out.t
@@ -1239,7 +640,7 @@ Returns:
         value = value_vec
     )
 
-    return timeseries_df
+    return timeseries_df, param_values, param_names, init_values, init_val_names
 end",
 
       "clean_constants" = sprintf("function clean_constants(%s)
@@ -1261,171 +662,6 @@ end
 end", P[["initial_value_name"]], P[["initial_value_names"]], P[["initial_value_names"]], P[["initial_value_name"]])),
 
     "ensemble" = list(
-
-
-      #   "all_timestep_stats" = "function all_timestep_stats(intermediaries, key = :saveval, qs = [0.05, 0.95])
-      #     n_steps = length(getfield(first(intermediaries), key))  # number of time steps
-      #     n_vars = length(first(getfield(first(intermediaries), key)))  # number of variables
-      #
-      #     # Preallocate storage
-      #     means   = zeros(n_vars, n_steps)
-      #     vars_   = zeros(n_vars, n_steps)
-      #     medians = zeros(n_vars, n_steps)
-      #     qlows   = zeros(n_vars, n_steps)
-      #     qhighs  = zeros(n_vars, n_steps)
-      #
-      #     for i in 1:n_steps
-      #         vals = [collect(getfield(sv, key)[i]) for sv in intermediaries]
-      #         mat = reduce(hcat, vals)  # rows: variables, cols: trajectories
-      #
-      #         means[:, i]   .= mapslices(mean, mat; dims=2)[:]
-      #         vars_[:, i]   .= mapslices(var, mat; dims=2)[:]
-      #         medians[:, i] .= mapslices(Statistics.median, mat; dims=2)[:]
-      #         qlows[:, i]   .= mapslices(x -> Statistics.quantile(x, qs[1]), mat; dims=2)[:]
-      #         qhighs[:, i]  .= mapslices(x -> Statistics.quantile(x, qs[2]), mat; dims=2)[:]
-      #     end
-      #
-      #     return (
-      #         mean = means,
-      #         var = vars_,
-      #         median = medians,
-      #         qlow = qlows,
-      #         qhigh = qhighs
-      #     )
-      # end",
-      #'
-      #'
-      #' "all_timestep_stats" = "function all_timestep_stats(intermediaries, key = :saveval, qs = (0.05, 0.95))    n_steps = length(getfield(first(intermediaries), key))          # time steps
-      #'     n_vars  = length(getfield(first(intermediaries), key)[1])       # variables
-      #'     n_ens   = length(intermediaries)                                # ensemble size
-      #'
-      #'     # Preallocate storage
-      #'     means   = zeros(n_vars, n_steps)
-      #'     vars_   = zeros(n_vars, n_steps)
-      #'     medians = zeros(n_vars, n_steps)
-      #'     qlows   = zeros(n_vars, n_steps)
-      #'     qhighs  = zeros(n_vars, n_steps)
-      #'
-      #'     # Reuse buffer to avoid repeated allocation
-      #'     buffer = Vector{Float64}(undef, n_ens)
-      #'
-      #'     for t in 1:n_steps
-      #'         for v in 1:n_vars
-      #'             # Extract the v-th variable at time step t across all trajectories
-      #'             @inbounds for i in 1:n_ens
-      #'                 buffer[i] = getfield(intermediaries[i], key)[t][v]
-      #'             end
-      #'
-      #'             # Summary statistics
-      #'             @inbounds means[v, t]   = mean(buffer)
-      #'             @inbounds vars_[v, t]   = var(buffer)
-      #'             @inbounds medians[v, t] = median(buffer)
-      #'             @inbounds qlows[v, t]   = quantile(buffer, qs[1])
-      #'             @inbounds qhighs[v, t]  = quantile(buffer, qs[2])
-      #'         end
-      #'     end
-      #'
-      #'     return (
-      #'         mean = means,
-      #'         var = vars_,
-      #'         median = medians,
-      #'         qlow = qlows,
-      #'         qhigh = qhighs
-      #'     )
-      #' end",
-      #'
-      #'
-
-      #   "summary_to_long" = "function summary_to_long(stats, times, var_names)
-      #     dfs = DataFrame[]
-      #     # for (statname, matrix) in stats
-      #     for statname in keys(stats)
-      #
-      #         df = permutedims(DataFrame(getfield(stats, statname), :auto))
-      #         rename!(df, var_names)
-      #         df.time = times
-      #         long = stack(df, var_names; variable_name=:variable, value_name=:value)
-      #         long.statistic .= statname
-      #         push!(dfs, long)
-      #     end
-      #     vcat(dfs...)
-      # end",
-      #
-      # "summary_to_long" = "function summary_to_long(stats, times, var_names)
-      #     dfs = DataFrame[]
-      #     # for (statname, matrix) in stats
-      #     for statname in keys(stats)
-      #
-      #         df = permutedims(DataFrame(getfield(stats, statname), :auto))
-      #         rename!(df, var_names)
-      #
-      #         if (statname == first(keys(stats)))
-      #             df.time = times
-      #         end
-      #
-      #         long = stack(df, var_names; variable_name=:variable, value_name=statname)
-      #
-      #         # Remove the variable column
-      #         if (statname != first(keys(stats)))
-      #             select!(long, Not(:variable))
-      #         end
-      #
-      #         # long.statistic .= statname
-      #         push!(dfs, long)
-      #     end
-      #
-      #     hcat(dfs...)
-      # end",
-      #
-      #   "create_ensemble_summ" = "function create_ensemble_summ(solve_out, init_names, intermediaries, intermediary_names, qs = [0.05, 0.95])
-      #
-      #     stats = all_timestep_stats(solve_out, :u, qs);
-      #     summ = summary_to_long(stats, solve_out[1].t, init_names)
-      #
-      #     if !isnothing(intermediaries)
-      #         stats = all_timestep_stats(intermediaries, :saveval, qs);
-      #         summ = vcat(summ, summary_to_long(stats, intermediaries[1].t, intermediary_names))
-      #     end
-      #
-      #     return summ
-      # end
-      # ",
-
-      # "ensemble_to_df" = "
-      # function ensemble_to_df(solve_out, init_names, times, dt, saveat;
-      #                   intermediaries=nothing, intermediary_names=nothing)
-      #     dfs = DataFrame[]
-      #
-      #     for i in eachindex(solve_out)
-      #
-      #         df = clean_df(solve_out[i], init_names, times, dt, saveat;
-      #           intermediaries=intermediaries[i], intermediary_names=intermediary_names)
-      #
-      #         insertcols!(df, 1, :simulation .=> i)
-      #         push!(dfs, df)
-      #     end
-      #
-      #     vcat(dfs...)
-      # end"
-
-      # "ensemble_to_df" = "function ensemble_to_df(solve_out, init_names, times, dt, saveat;
-      #                    intermediaries=nothing, intermediary_names=nothing)
-      #     n = length(solve_out)
-      #     dfs = Vector{DataFrame}(undef, n)
-      #
-      #     for i in 1:n
-      #         df = clean_df(
-      #             solve_out[i], init_names, times, dt, saveat;
-      #             intermediaries = isnothing(intermediaries) ? nothing : intermediaries[i],
-      #             intermediary_names = intermediary_names
-      #         )
-      #         df.simulation = fill(i, nrow(df))
-      #         dfs[i] = df
-      #     end
-      #
-      #     return reduce(vcat, dfs)
-      # end",
-
       "transform_intermediaries" = "function transform_intermediaries(intermediaries, intermediary_names=nothing)
     \"\"\"
 Transform intermediaries to the same format as solve_out for unified processing.
@@ -1630,14 +866,49 @@ Unified processing where intermediaries are transformed to solve_out format firs
         rem.(b .- 1, ensemble_n) .+ 1,
         param_matrix)
 
-    return timeseries_df, param_matrix, param_names
+    # Extract initial values matrix
+    init_val_names = [string(name) for name in init_names]
+
+    # Initial values matrix: (trajectories, initial values)
+    init_val_matrix = Array{Float64, 2}(undef, n_trajectories, length(init_val_names))
+
+    for (traj_idx, result) in enumerate(solve_out)
+        init_vals = result.u0
+
+        if isa(init_vals, NamedTuple)
+            for (init_idx, init_name) in enumerate(init_val_names)
+                init_val = getproperty(init_vals, Symbol(init_name))
+                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+                init_val_matrix[traj_idx, init_idx] = init_val_stripped
+            end
+        elseif isa(init_vals, AbstractVector)
+            for (init_idx, init_name) in enumerate(init_val_names)
+                init_val = init_vals[init_idx]
+                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+                init_val_matrix[traj_idx, init_idx] = init_val_stripped
+            end
+        else
+            # Single initial value
+            init_val_stripped = isa(init_vals, Quantity) ? ustrip(init_vals) : init_vals
+            init_val_matrix[traj_idx, 1] = init_val_stripped
+        end
+    end
+
+    # Add initial values index
+    init_val_matrix = hcat(
+        # Parameter ensemble index
+        div.(b .- 1, ensemble_n) .+ 1,
+        # Trajectory index within the ensemble
+        rem.(b .- 1, ensemble_n) .+ 1,
+        init_val_matrix)
+
+    return timeseries_df, param_matrix, param_names, init_val_matrix, init_val_names
 end
 ",
 
       "generate_param_combinations" = "
 \"\"\"
-generate_param_combinations(param_ranges; crossed=true, n_replicates=100,
-                            param_names=nothing, random_seed=nothing)
+generate_param_combinations(param_ranges; crossed=true, n_replicates=100)
 
 Generate parameter combinations for ensemble simulations.
 
@@ -1645,8 +916,6 @@ Generate parameter combinations for ensemble simulations.
 - `param_ranges`: Dict or NamedTuple of parameter names to ranges/vectors
 - `crossed`: Boolean, whether to cross all parameter combinations (default: true)
 - `n_replicates`: Number of replicates per condition (default: 100)
-- `param_names`: Optional vector of parameter names if using positional parameters
-- `random_seed`: Optional seed for reproducibility
 
 # Returns
 - `param_combinations`: Vector of parameter combinations
@@ -1679,28 +948,11 @@ param_combinations, total_sims = generate_param_combinations(
 ```
 \"\"\"
 function generate_param_combinations(param_ranges;
-                                   crossed=true, n_replicates=100,
-                                   param_names=nothing, random_seed=nothing)
+                                   crossed=true, n_replicates=100)
 
-    # Set random seed if provided
-    if random_seed !== nothing
-        Random.seed!(random_seed)
-    end
-
-    # Handle different input formats
-    if isa(param_ranges, Dict) || isa(param_ranges, NamedTuple)
-        param_dict = Dict(param_ranges)
-        names_list = collect(keys(param_dict))
-        values_list = collect(values(param_dict))
-    else
-        # Assume it's a vector of ranges
-        if param_names === nothing
-            param_names = [Symbol(\"param$i\") for i in 1:length(param_ranges)]
-        end
-        param_dict = Dict(zip(param_names, param_ranges))
-        names_list = param_names
-        values_list = param_ranges
-    end
+       # Sort keys for consistent ordering
+    names_list = sort(collect(keys(param_ranges)))
+    values_list = [param_ranges[name] for name in names_list]
 
     # Generate parameter combinations
     if crossed
@@ -1912,7 +1164,44 @@ Unified processing where intermediaries are transformed to solve_out format firs
         rem.(b .- 1, ensemble_n) .+ 1,
         param_matrix)
 
-    return timeseries_df, param_matrix, param_names
+    # Extract initial values matrix
+    init_val_names = [string(name) for name in init_names]
+
+    # Initial values matrix: (trajectories, initial values)
+    init_val_matrix = Array{Float64, 2}(undef, n_trajectories, length(init_val_names))
+
+    Base.Threads.@threads for traj_idx in 1:length(solve_out)
+        result = solve_out[traj_idx]
+        init_vals = result.u0
+
+        if isa(init_vals, NamedTuple)
+            for (init_idx, init_name) in enumerate(init_val_names)
+                init_val = getproperty(init_vals, Symbol(init_name))
+                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+                init_val_matrix[traj_idx, init_idx] = init_val_stripped
+            end
+        elseif isa(init_vals, AbstractVector)
+            for (init_idx, init_name) in enumerate(init_val_names)
+                init_val = init_vals[init_idx]
+                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+                init_val_matrix[traj_idx, init_idx] = init_val_stripped
+            end
+        else
+            # Single initial value
+            init_val_stripped = isa(init_vals, Quantity) ? ustrip(init_vals) : init_vals
+            init_val_matrix[traj_idx, 1] = init_val_stripped
+        end
+    end
+
+    # Add initial values index
+    init_val_matrix = hcat(
+        # Parameter ensemble index
+        div.(b .- 1, ensemble_n) .+ 1,
+        # Trajectory index within the ensemble
+        rem.(b .- 1, ensemble_n) .+ 1,
+        init_val_matrix)
+
+    return timeseries_df, param_matrix, param_names, init_val_matrix, init_val_names
 end
 ",
 
@@ -1921,17 +1210,37 @@ end
     stats_df = combine(groupby(timeseries_df, [:j, :time, :variable])) do group
         values = group.value
 
-        # Base statistics
-        result = (
-            mean = mean(values),
-            variance = var(values),
-            median = Statistics.median(values)
-        )
+        # Filter out missing and NaN
+        is_valid = .!(ismissing.(values) .| isnan.(values))
+        clean_values = values[is_valid]
+        num_missing = count(!, is_valid)
 
-        # Add quantiles
-        for q in quantiles
-            q_str = replace(string(q), r\"^0\\.\" => \"\")
-            result = merge(result, (Symbol(\"q$q_str\") => Statistics.quantile(values, q),))
+        if isempty(clean_values)
+            # Return NaNs if no valid values
+            result = (
+                mean = NaN,
+                variance = NaN,
+                median = NaN,
+                missing_count = num_missing
+            )
+
+            for q in quantiles
+                q_str = replace(string(q), r\"^0\\.\" => \"\")
+                result = merge(result, (Symbol(\"q$q_str\") => NaN,))
+            end
+        else
+            # Compute statistics
+            result = (
+                mean = mean(clean_values),
+                variance = var(clean_values),
+                median = Statistics.median(clean_values),
+                missing_count = num_missing
+            )
+
+            for q in quantiles
+                q_str = replace(string(q), r\"^0\\.\" => \"\")
+                result = merge(result, (Symbol(\"q$q_str\") => Statistics.quantile(clean_values, q),))
+            end
         end
 
         return result
@@ -1955,6 +1264,7 @@ end",
     mean_vals = Vector{Float64}(undef, n_groups)
     variance_vals = Vector{Float64}(undef, n_groups)
     median_vals = Vector{Float64}(undef, n_groups)
+    missing_counts = Vector{Int}(undef, n_groups)
 
     # Pre-allocate quantile arrays
     quantile_arrays = Dict{String, Vector{Float64}}()
@@ -1969,21 +1279,38 @@ end",
         key = group_keys[i]
         values = group.value
 
+        # Count and filter NaN/missing
+        is_valid = .!(ismissing.(values) .| isnan.(values))
+        clean_values = values[is_valid]
+        num_missing = count(!, is_valid)
+
         # Extract group keys
         j_vals[i] = key.j
         time_vals[i] = key.time
         variable_vals[i] = key.variable
 
-        # Calculate statistics
-        mean_vals[i] = mean(values)
-        variance_vals[i] = var(values)
-        median_vals[i] = Statistics.median(values)
-
-        # Calculate quantiles
-        for q in quantiles
-            q_str = replace(string(q), r\"^0\\.\" => \"\")
-            quantile_arrays[\"q$q_str\"][i] = Statistics.quantile(values, q)
+        # Handle empty groups after filtering
+        if isempty(clean_values)
+            mean_vals[i] = NaN
+            variance_vals[i] = NaN
+            median_vals[i] = NaN
+            for q in quantiles
+                q_str = replace(string(q), r\"^0\\.\" => \"\")
+                quantile_arrays[\"q$q_str\"][i] = NaN
+            end
+        else
+            # Compute stats
+            mean_vals[i] = mean(clean_values)
+            variance_vals[i] = var(clean_values)
+            median_vals[i] = Statistics.median(clean_values)
+            for q in quantiles
+                q_str = replace(string(q), r\"^0\\.\" => \"\")
+                quantile_arrays[\"q$q_str\"][i] = Statistics.quantile(clean_values, q)
+            end
         end
+
+        # Store missing count
+        missing_counts[i] = num_missing
     end
 
     # Create result DataFrame with desired column order
@@ -1994,7 +1321,8 @@ end",
         variable = variable_vals,
         mean = mean_vals,
         median = median_vals,
-        variance = variance_vals
+        variance = variance_vals,
+        missing_count = missing_counts
     )
 
     # Add quantile columns in order
@@ -2004,38 +1332,8 @@ end",
     end
 
     return stats_df
-end"
-
-# "solve_out_to_df" = "function solve_out_to_df(solve_out, var_names)
-#     dfs = DataFrame[]
-#
-#     for (i, sol) in enumerate(solve_out)
-#         df = DataFrame(sol; copycols=true)
-#         rename!(df, [:time; var_names])
-#         insertcols!(df, 1, :simulation .=> i)
-#         long = stack(df, var_names; variable_name = :variable, value_name = :value)
-#         push!(dfs, long)
-#     end
-#
-#     vcat(dfs...)
-# end",
-#
-# "intermediaries_to_df" = "function intermediaries_to_df(intermediaries, var_names)
-#     dfs = DataFrame[]
-#
-#     for (i, sv) in enumerate(intermediaries)
-#         df = DataFrame(sv.saveval, var_names)
-#         rename!(df, var_names)
-#         # df.time = sv.t
-#         # Put simulation number as first column
-#         # insertcols!(df, 1, :simulation .=> i)
-#         long = stack(df, var_names; variable_name = :variable, value_name = :value)
-#         push!(dfs, long)
-#     end
-#
-#     vcat(dfs...)
-# end"
-
+end
+"
     ))
 
 return(func_def)

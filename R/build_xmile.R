@@ -224,6 +224,7 @@ get_flow_df = function(sfm){
 #' @param colors Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
 #' @param font_family Font family. Defaults to "Times New Roman".
 #' @param font_size Font size. Defaults to 16.
+#' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
 #' @param ... Optional parameters
 #'
 #' @return Plot object
@@ -245,6 +246,7 @@ plot.sdbuildR_sim = function(x,
                              colors = NULL,
                              font_family = "Times New Roman",
                              font_size = 16,
+                             wrap_width = 25,
                              ...){
 
 
@@ -261,6 +263,10 @@ plot.sdbuildR_sim = function(x,
 
   if (x[["success"]] == FALSE){
     stop("Simulation failed!")
+  }
+
+  if (nrow(x[["df"]]) == 0){
+    stop("Dataframe has no rows!")
   }
 
   dots <- list(...)
@@ -290,13 +296,9 @@ plot.sdbuildR_sim = function(x,
   nonstock_names = names_df[names_df[["type"]] != "stock", ]
   nonstock_names = stats::setNames(nonstock_names[["name"]], nonstock_names[["label"]])
 
-  if (length(stock_names) == 0){
-    stop("No stocks to plot!")
-  }
-
-  if (nrow(x[["df"]]) == 0){
-    stop("Dataframe has no rows!")
-  }
+  # Wrap names to prevent long names from squishing the plot
+  names(stock_names) = stringr::str_wrap(names(stock_names), width = wrap_width)
+  names(nonstock_names) = stringr::str_wrap(names(nonstock_names), width = wrap_width)
 
   if (add_constants){
     if (length(x[["constants"]]) > 0){
@@ -308,7 +310,8 @@ plot.sdbuildR_sim = function(x,
       # Remove from names
       nonstock_names = nonstock_names[!nonstock_names %in% names(idx_func[idx_func])]
 
-      if (length(x[["constants"]]) > 0) x[["df"]] = x[["df"]] %>% cbind(unclass(x[["constants"]]))
+      if (length(x[["constants"]]) > 0) x[["df"]] = cbind(x[["df"]],
+                                                          as.list(unclass(x[["constants"]])))
     }
   }
 
@@ -320,6 +323,21 @@ plot.sdbuildR_sim = function(x,
     x_col = "time"
 
     df_long = x[["df"]]
+    df_long_stocks = df_long[df_long[["variable"]] %in% unname(stock_names), ]
+    df_long_nonstocks = df_long[df_long[["variable"]] %in% unname(nonstock_names), ]
+
+    # Change labels of variables
+    df_long_stocks[["variable"]] <- factor(
+      df_long_stocks[["variable"]],
+      levels = unname(stock_names),
+      labels = names(stock_names)
+    )
+    df_long_nonstocks[["variable"]] <- factor(
+      df_long_nonstocks[["variable"]],
+      levels = unname(nonstock_names),
+      labels = names(nonstock_names)
+    )
+
     # x[["df"]] = x[["df"]][, intersect(colnames(x[["df"]]),
     #                         c(x_col, unname(stock_names), unname(nonstock_names))),
     #             drop = FALSE]
@@ -337,22 +355,26 @@ plot.sdbuildR_sim = function(x,
     #   times = colnames(x[["df"]])[colnames(x[["df"]]) != "time"]
     # ) %>% magrittr::set_rownames(NULL)
 
-    n = length(unique(df_long[["variable"]]))
+    nr_var = length(unique(df_long[["variable"]]))
+
+    # Minimum number of variables needed for colour palette generation
+    if (nr_var < 3){
+      nr_var = 3
+    }
 
     # Don't add check for template in hcl.pals(), because hcl is more flexible in palette names matching.
-
     if (is.null(colors)){
-      colors = grDevices::hcl.colors(n = n, palette = palette)
+      colors = grDevices::hcl.colors(n = nr_var, palette = palette)
     } else {
       # Ensure there are enough colors
-      if (length(colors) < n){
-        stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", n, ").\nUsing template instead..."))
-        colors = grDevices::hcl.colors(n = n, palette = palette)
-      } else {
-        # Cut number of colors to number of variables
-        colors = colors[1:n]
+      if (length(colors) < nr_var){
+        stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing template instead..."))
+        colors = grDevices::hcl.colors(n = nr_var, palette = palette)
       }
     }
+
+    # Cut number of colors to number of variables
+    colors = colors[1:nr_var]
 
     # The colors are unintuitively plotted from back to front
     colors = rev(colors)
@@ -360,11 +382,25 @@ plot.sdbuildR_sim = function(x,
     # Initialize plotly object
     pl <- plotly::plot_ly()
 
+    # Add traces for non-stock variables (visible = "legendonly")
+    if (length(nonstock_names) > 0) {
+      pl <- pl %>%
+        plotly::add_trace(
+          data = df_long_nonstocks,
+          x = ~get(x_col),
+          y = ~value,
+          color = ~variable,
+          type = "scatter",
+          mode = "lines",
+          visible = "legendonly"
+        )
+    }
+
     # Add traces for stock variables (visible = TRUE)
     if (length(stock_names) > 0) {
       pl <- pl %>%
         plotly::add_trace(
-          data = df_long[df_long[["variable"]] %in% stock_names, ],
+          data = df_long_stocks,
           x = ~get(x_col),
           y = ~value,
           color = ~variable,
@@ -375,26 +411,23 @@ plot.sdbuildR_sim = function(x,
         )
     }
 
-    # Add traces for non-stock variables (visible = "legendonly")
-    if (length(nonstock_names) > 0) {
-      pl <- pl %>%
-        plotly::add_trace(
-          data = df_long[df_long[["variable"]] %in% nonstock_names, ],
-          x = ~get(x_col),
-          y = ~value,
-          color = ~variable,
-          type = "scatter",
-          mode = "lines",
-          visible = "legendonly"
-        )
-    }
-
     # Customize layout
-    pl <- pl %>% plotly::layout(
+    pl <- pl %>%
+      plotly::layout(
+        # As the most important things are at the top, reverse the trace order
+        legend = list(traceorder = "reversed",
+                      font = list(size = ceiling(font_size*.85))
+                      # itemsizing = "constant",  # Keeps legend symbols same size
+                      # itemwidth = 10,           # Control item width
+                      # x = 1.02,                 # Position legend outside plot
+                      # y = 1,
+                      # xanchor = "left",
+                      # yanchor = "top"
+        ),
       showlegend = TRUE,
       title = main,
-      xaxis = list(title = xlab),
-      yaxis = list(title = ylab),
+      xaxis = list(title = xlab, font = list(size = font_size)),
+      yaxis = list(title = ylab, font = list(size = font_size)),
       font = list(family = font_family, size = font_size),
       margin = list(t = 50, b = 50, l = 50, r = 50)  # Increase top margin to 100 pixels
     )
@@ -440,15 +473,21 @@ plot.sdbuildR_sim = function(x,
 
 #' Plot timeseries of ensemble
 #'
-#' Visualise ensemble simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.
+#' Visualise ensemble simulation results of a stock-and-flow model. Either summary statistics or individual trajectories can be plotted. When multiple conditions j are specified, a grid of subplots is plotted. See `ensemble()` for examples.
 #'
 #' @param x Output of ensemble().
+#' @param type Type of plot. Either "summary" for a summary plot with mean or median lines and confidence intervals, or "sims" for individual simulation trajectories with mean or median lines. Defaults to "summary".
 #' @param i Indices of the individual trajectories to plot if type = "sims". Defaults to 1:10. Including a high number of trajectories will slow down plotting considerably.
-#' @param j Index of the condition to plot. Defaults to 1.
+#' @param j Indices of the condition to plot. Defaults to 1:9. If only one condition is specified, the plot will not be a grid of subplots.
+#' @param nrows Number of rows in the plot grid. Defaults to ceiling(sqrt(n_conditions)).
+#' @param shareX If TRUE, share the x-axis across subplots. Defaults to TRUE.
+#' @param shareY If TRUE, share the y-axis across subplots. Defaults to TRUE.
 #' @param palette Colour palette. Must be one of hcl.pals().
 #' @param colors Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
 #' @param font_family Font family. Defaults to "Times New Roman".
 #' @param font_size Font size. Defaults to 16.
+#' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
+#' @param central_tendency Central tendency to use for the mean line. Either "mean" or "median". Defaults to "mean".
 #' @param ... Optional parameters
 #'
 #' @return Plot of ensemble simulation.
@@ -456,15 +495,19 @@ plot.sdbuildR_sim = function(x,
 #' @seealso [ensemble()]
 #' @method plot sdbuildR_ensemble
 #'
-#' @examples
-#'
-#'
-plot.sdbuildR_ensemble = function(x, i = 1:10, j = 1,
-                                  # type = c("summary", "sims")[1],
+plot.sdbuildR_ensemble = function(x,
+                                  type = c("summary", "sims")[1],
+                                  i = seq(1, min(c(x[["n"]], 10))),
+                                  j = seq(1, min(c(x[["n_conditions"]], 9))),
+                                  nrows = ceiling(sqrt(max(j))),
+                                  shareX = TRUE,
+                                  shareY = TRUE,
                                   palette = "Dark 2",
                                   colors = NULL,
                                   font_family = "Times New Roman",
                                   font_size = 16,
+                                  wrap_width = 25,
+                                  central_tendency = c("mean", "median")[1],
                                   ...){
 
   if (missing(x)){
@@ -480,29 +523,50 @@ plot.sdbuildR_ensemble = function(x, i = 1:10, j = 1,
     stop("Ensemble simulation failed!")
   }
 
-  # Check whether j is a valid index
-  cond_nrs = unique(x[["summary"]][["j"]])
-  if (!j %in% cond_nrs){
-    stop(paste0("Condition j = ", j, " is not a valid index. Must be one of: ", paste0(cond_nrs, collapse = ", "), "."))
+  # Check type
+  type = trimws(tolower(type))
+  type = ifelse(type == "sim", "sims", type)
+  if (!type %in% c("summary", "sims")){
+    stop("type must be one of 'summary' or 'sims'.")
   }
 
+  # Check central tendency
+  central_tendency = trimws(tolower(central_tendency))
+  if (!central_tendency %in% c("mean", "median")){
+    stop("central_tendency must be one of 'mean' or 'median'.")
+  }
 
-  # # Check whether type is valid
-  # type = trimws(tolower(type))
-  # type = ifelse(type == "sim", "sims", type)
-  # if (!type %in% c("summary", "sims")){
-  #   stop("Type must be one of 'summary' or 'sims'.")
-  # }
-  # # @param type Type of plot. Must be one of "summary" or "sims". Defaults to "summary". If "summary", the plot will show the mean and confidence intervals of the simulation results. If "sims", the plot will show all individual simulation runs.
+  # Get passed arguments
+  passed_arg = names(as.list(match.call())[-1])
 
   dots <- list(...)
+
+  if (type == "summary"){
+    subtitle = paste0(stringr::str_to_title(central_tendency), " with [",
+                      min(x[["quantiles"]]), ", ", max(x[["quantiles"]]),
+                      "] confidence interval of ", x[["n"]], " simulation",
+                      ifelse(x[["n"]] == 1, "", "s"))
+
+  } else if (type == "sims"){
+    subtitle = paste0(stringr::str_to_title(central_tendency), " with ", length(i), "/", x[["n"]], " simulation",
+                      ifelse(x[["n"]] == 1, "", "s"))
+  }
+
   main <- if (!"main" %in% names(dots)) {
-    paste0(x[["sfm"]][["header"]][["name"]], " (", x[["n"]], " simulations",
-           ifelse(length(cond_nrs) > 1, paste0(" of condition ", j, ")"), ")"))
+    # paste0(x[["sfm"]][["header"]][["name"]], " (", x[["n"]], " simulations",
+    # ifelse(length(cond_nrs) > 1, paste0(" of condition ", j, ")"), ")"))
+
+    # paste0(x[["sfm"]][["header"]][["name"]], " (", x[["n"]], " simulations",
+           # ifelse(length(j) == 1, paste0(" of condition ", j, ")"), ")"))
+
     # paste0(x[["n"]], " simulations with [", x[["qs"]][1], ", ", x[["qs"]][2], "] confidence interval")
+    paste0("Ensemble of ", x[["sfm"]][["header"]][["name"]],
+           "\n<span style='font-size:", font_size, "px;'>", subtitle, "</span>")
+
   } else {
     dots[["main"]]
   }
+
 
   xlab <- if (!"xlab" %in% names(dots)) {
     matched_time_unit <- find_matching_regex(x[["sfm"]][["sim_specs"]][["time_units"]], get_regex_time_units())
@@ -523,10 +587,78 @@ plot.sdbuildR_ensemble = function(x, i = 1:10, j = 1,
     dots[["alpha"]]
   }
 
-  type <- if (!"type" %in% names(dots)) {
-    "summary"
+  if (!is.null(x[["summary"]])){
+    summary_df = x[["summary"]]
   } else {
-    dots[["type"]]
+    stop("No summary data available!")
+  }
+
+  # Check if j is a valid index
+  if ("j" %in% passed_arg){
+    if (length(j) == 0){
+      stop("j must be a non-empty vector of indices.")
+    }
+
+    if (is.numeric(j)){
+      if (any(j < 1 | j > x[["n_conditions"]])){
+
+        if (x[["n_conditions"]] == 1){
+          stop(paste0("There is only one condition. Set j = 1."))
+        } else {
+          stop(paste0("j must be a vector with integers between 1 and ", x[["n_conditions"]], "."))
+        }
+      }
+    } else {
+      stop("j must be a numeric vector.")
+    }
+  }
+
+  # Ensure there aren't more rows than j
+  nrows = min(nrows, length(j))
+  ncols = ceiling(length(j) / nrows)
+
+  # Whether to create subplots or not
+  create_subplots = length(j) > 1
+
+  # To plot individual simulation trajectories, extract df
+  if (type == "sims"){
+
+    if (!is.null(x[["df"]])){
+      df = x[["df"]]
+
+      # Check if i is a valid index
+      if ("i" %in% passed_arg){
+        if (length(i) == 0){
+          stop("i must be a non-empty vector of indices.")
+        }
+
+        if (is.numeric(i)){
+          if (any(i < 1 | i > x[["n"]])){
+
+            if (x[["n"]] == 1){
+              stop(paste0("There is only one simulation. Set i = 1."))
+            } else {
+              stop(paste0("i must be a vector with integers between 1 and ", x[["n"]], "."))
+            }
+          }
+        } else {
+          stop("i must be a numeric vector.")
+        }
+      }
+
+      # Filter condition
+      df = df[df[["i"]] %in% i, ]
+
+    } else {
+      stop("No simulation data available! Run ensemble() with return_sims = TRUE.")
+    }
+  } else {
+
+    if ("i" %in% passed_arg){
+      message("i is not used when type = 'summary'. Set type = 'sims' to plot individual trajectories.")
+    }
+
+    df = NULL
   }
 
   # Get names of stocks and non-stock variables
@@ -536,59 +668,14 @@ plot.sdbuildR_ensemble = function(x, i = 1:10, j = 1,
   nonstock_names = names_df[names_df[["type"]] != "stock", ]
   nonstock_names = stats::setNames(nonstock_names[["name"]], nonstock_names[["label"]])
 
-  # if (nrow(x[["df"]]) == 0){
-  #   stop("Dataframe has no rows!")
-  # }
+  # Wrap names to prevent long names from squishing the plot
+  names(stock_names) = stringr::str_wrap(names(stock_names), width = wrap_width)
+  names(nonstock_names) = stringr::str_wrap(names(nonstock_names), width = wrap_width)
 
-  nonstock_names = nonstock_names[unname(nonstock_names) %in% colnames(x[["df"]])]
 
   if (requireNamespace("plotly", quietly = TRUE)){
 
     x_col = "time"
-
-    if (!is.null(x[["summary"]])){
-      summary_df = x[["summary"]]
-    } else {
-      stop("No summary data available!")
-    }
-
-    # To plot individual simulation trajectories, extract df
-    if (type == "sims"){
-
-      if (!is.null(x[["df"]])){
-        df = x[["df"]]
-
-        # Check if i is a valid index
-        passed_arg = names(as.list(match.call())[-1])
-
-        if ("i" %in% passed_arg){
-          if (length(i) == 0){
-            stop("i must be a non-empty vector of indices.")
-          }
-
-          if (is.numeric(i)){
-            if (any(i < 1 | i > x[["n"]])){
-              stop(paste0("i must be a vector with integers between 1 and ", x[["n"]], "."))
-            }
-          } else {
-            stop("i must be a numeric vector.")
-          }
-        } else {
-
-          # Adjust i if necessary to match the number of simulations
-          i = seq(1, min(x[["n"]], max(i)))
-        }
-
-        # Filter condition
-        df = df[df[["j"]] == j & df[["i"]] %in% i, ]
-
-      } else {
-        stop("No simulation data available! Run ensemble() with return_sims = TRUE.")
-      }
-    }
-
-    # Filter condition
-    summary_df = summary_df[summary_df[["j"]] == j, ]
 
     # Find qlow and qhigh
     q_cols = colnames(summary_df)[grepl("^q", colnames(summary_df))]
@@ -599,159 +686,411 @@ plot.sdbuildR_ensemble = function(x, i = 1:10, j = 1,
     # Don't add check for template in hcl.pals(), because hcl is more flexible in palette names matching.
     nr_var = length(unique(summary_df[["variable"]]))
 
+    # Minimum number of variables needed for colour palette generation
+    if (nr_var < 3){
+      nr_var = 3
+    }
+
     if (is.null(colors)){
       colors = grDevices::hcl.colors(n = nr_var, palette = palette)
     } else {
       # Ensure there are enough colors
       if (length(colors) < nr_var){
-        stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing template instead..."))
+        stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing palette instead..."))
         colors = grDevices::hcl.colors(n = nr_var, palette = palette)
-      } else {
-        # Cut number of colors to number of variables
-        colors = colors[1:nr_var]
       }
     }
+
+    # Cut number of colors to number of variables
+    colors = colors[1:nr_var]
 
     # The colors are unintuitively plotted from back to front
     colors = rev(colors)
 
-    # Initialize plotly object
-    pl <- plotly::plot_ly()
+    # Plot
+    if (!create_subplots){
 
-    if (type == "summary"){
+      j_idx = 1
+      j_name = j[j_idx]
+      pl = plot_ensemble_helper(j_idx = j_idx,
+                                j_name = j_name, j = j,
+                                type = type,
+                                create_subplots = create_subplots,
 
-      # First plot confidence bands
-      if (length(stock_names) > 0) {
+                                summary_df = summary_df,
+                                df = df,
+                                central_tendency = central_tendency,
+                                q_low = q_low,
+                                q_high = q_high,
+                                colors = colors,
+                                dots = dots,
+                                main = main,
+                                xlab = xlab, ylab = ylab,
+                                stock_names = stock_names,
+                                nonstock_names = nonstock_names,
+                                font_family = font_family,
+                                font_size = font_size,
+                                alpha = alpha
+      )
 
-        pl <- pl %>%
-          plotly::add_ribbons(
-            data = summary_df[summary_df[["variable"]] %in% stock_names, ],
-            x = ~get(x_col),
-            ymin = ~get(q_low),
-            ymax = ~get(q_high),
-            color = ~variable,
-            fillcolor = ~variable,
-            opacity = alpha,
-            type = "scatter",
-            mode = "lines",
-            colors = colors,
-            # showlegend = FALSE,
-            # Add traces for stock variables (visible = TRUE)
-            visible = TRUE
-          )
+    } else {
+
+      # Create a list of plotly objects for each condition
+      pl_list = list()
+      for (j_idx in seq_along(j)){
+        j_name = j[j_idx]
+
+        pl_list[[j_idx]] = plot_ensemble_helper(j_idx = j_idx,
+                                                j_name = j_name, j = j,
+                                                type = type,
+                                                create_subplots = create_subplots,
+
+                                                summary_df = summary_df,
+                                                df = df,
+                                                central_tendency = central_tendency,
+                                                q_low = q_low,
+                                                q_high = q_high,
+                                                colors = colors,
+                                                dots = dots,
+                                                main = main,
+                                                xlab = xlab, ylab = ylab,
+                                                stock_names = stock_names,
+                                                nonstock_names = nonstock_names,
+                                                font_family = font_family,
+                                                font_size = font_size,
+                                                alpha = alpha
+        )
+
       }
 
-      if (length(nonstock_names) > 0) {
+      pl = plotly::subplot(pl_list,
+                           nrows = nrows,
+                           shareX = shareX,
+                           shareY = shareY,
+                           titleY = FALSE,
+                           titleX = FALSE
+                           # margin sets vertical spacing between subplots
+                           # margin = 0.05
+      )   %>%
+        plotly::layout(
+          title = list(text = main),#, font = list(size = font_size)),
+          # xaxis = list(title = list(text=xlab, standoff = 15), position = 0.5),
+          yaxis = list(title = list(text=ylab)),
+          font = list(family = font_family, size = font_size),
+          margin = list(t = 100, b = 50, l = 50, r = 50),  # Increase top margin to 100 pixels
+          legend = list(
+            orientation = "h",  # orientation
+            x = 0.5,           # Center horizontally
+            y = -0.2,          # Below the plot
+            xanchor = "center",
+            yanchor = "top"
+          )
+        ) %>%
+        plotly::layout(
+          annotations = list(
+            list(
+              text = xlab,
+              font = list(
+                family = font_family
+                # size = font_size
+              ),
+              xref = "paper",
+              yref = "paper",
+              xanchor = "center", yanchor = "top",
+              x = 0.5, y = -.1,
+              showarrow = FALSE
+            )
+          )
+        )
+    }
 
-        pl = pl %>% plotly::add_ribbons(
-          data = summary_df[summary_df[["variable"]] %in% nonstock_names, ],
+    return(pl)
+  }
+
+}
+
+
+
+#' Helper function to plot ensemble simulation results
+#'
+#' @param j_idx Index of the condition to plot.
+#' @param j_name Name of the condition to plot.
+#' @param j Index of the condition to plot. Used to determine whether to show the legend.
+#' @param type Type of plot. Must be one of "summary" or "sims". Defaults to "summary". If "summary", the plot will show the mean and confidence intervals of the simulation results. If "sims", the plot will show all individual simulation runs in i.
+#' @param create_subplots If TRUE, create subplots for each condition. If FALSE, plot all conditions in one plot.
+#' @param summary_df Dataframe with summary statistics of the ensemble simulation results. Must contain columns "j", "variable", "mean", and confidence interval columns (e.g., "q0.025", "q0.975").
+#' @param df Dataframe with individual simulation results. Must contain columns "i", "j", "variable", and "value". Only used if type = "sims".
+#' @param central_tendency Column name for the central tendency (e.g., "mean").
+#' @param q_low Column name for the lower bound of the confidence interval (e.g., "q0.025").
+#' @param q_high Column name for the upper bound of the confidence interval (e.g., "q0.975").
+#' @param colors Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
+#' @param dots List of additional parameters passed to the plotly functions.
+#' @param main Main title of the plot. Defaults to the name of the stock-and-flow model and the number of simulations.
+#' @param xlab Label on x-axis.
+#' @param ylab Label on y-axis.
+#' @param stock_names Vector of stock variable names. Used to filter the summary_df and df dataframes.
+#' @param nonstock_names Vector of non-stock variable names. Used to filter the summary_df and df dataframes.
+#' @param font_family Font family.
+#' @param font_size Font size.
+#' @param alpha Opacity of the confidence bands or individual trajectories. Defaults to 0.3.
+#'
+#' @returns Plotly object
+#' @noRd
+plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
+                                summary_df, df,
+                                central_tendency,
+                                q_low, q_high,
+                                colors, dots,
+                                main, xlab, ylab,
+                                stock_names, nonstock_names,
+                                font_family, font_size, alpha
+){
+
+  showlegend = ifelse(j_name != max(j), FALSE, TRUE)
+  x_col = "time"
+
+  # Filter data for the current condition
+  summary_df = summary_df[summary_df[["j"]] == j_name, ]
+  summary_df_stocks <- summary_df[summary_df[["variable"]] %in% unname(stock_names), ]
+  summary_df_nonstocks <- summary_df[!summary_df[["variable"]] %in% unname(stock_names), ]
+
+  # Change labels of variables
+  summary_df_stocks[["variable"]] <- factor(
+    summary_df_stocks[["variable"]],
+    levels = unname(stock_names),
+    labels = names(stock_names)
+  )
+
+  # Change labels of variables
+  if (length(nonstock_names) > 0){
+    summary_df_nonstocks[["variable"]] <- factor(
+      summary_df_nonstocks[["variable"]],
+      levels = unname(nonstock_names),
+      labels = names(nonstock_names)
+    )
+  }
+
+  if (type == "sims"){
+    df = df[df[["j"]] == j_name, ]
+    df_stocks = df[df[["variable"]] %in% unname(stock_names), ]
+    df_nonstocks = df[!df[["variable"]] %in% unname(stock_names), ]
+
+    # Change labels of variables
+    df_stocks[["variable"]] <- factor(
+      df_stocks[["variable"]],
+      levels = unname(stock_names),
+      labels = names(stock_names)
+    )
+
+    # Change labels of variables
+    if (length(nonstock_names) > 0){
+      df_nonstocks[["variable"]] <- factor(
+        df_nonstocks[["variable"]],
+        levels = unname(nonstock_names),
+        labels = names(nonstock_names)
+      )
+    }
+  }
+
+
+
+  # Initialize plotly object
+  pl <- plotly::plot_ly()
+
+  if (type == "summary"){
+
+    if (length(nonstock_names) > 0) {
+
+      pl = pl %>% plotly::add_ribbons(
+        data = summary_df_nonstocks,
+        x = ~get(x_col),
+        ymin = ~get(q_low),
+        ymax = ~get(q_low),
+        color = ~variable,
+        legendgroup = ~variable,
+        fillcolor = ~variable,
+        opacity = alpha,
+        type = "scatter",
+        mode = "lines",
+        colors = colors,
+        # Add traces for non-stock variables (visible = "legendonly")
+        showlegend = showlegend,
+        visible = "legendonly"
+      )
+    }
+
+    # First plot confidence bands
+    if (length(stock_names) > 0) {
+
+      pl <- pl %>%
+        plotly::add_ribbons(
+          data = summary_df_stocks,
           x = ~get(x_col),
           ymin = ~get(q_low),
-          ymax = ~get(q_low),
+          ymax = ~get(q_high),
           color = ~variable,
+          legendgroup = ~variable,
           fillcolor = ~variable,
           opacity = alpha,
           type = "scatter",
           mode = "lines",
           colors = colors,
-          # Add traces for non-stock variables (visible = "legendonly")
-          # showlegend = FALSE,
-          visible = "legendonly"
-        )
-      }
-
-    } else if (type == "sims"){
-
-      if (length(stock_names) > 0) {
-        pl <- pl %>%
-          plotly::add_trace(
-            data = df[df[["variable"]] %in% stock_names, ],
-            x = ~get(x_col),
-            y = ~value,
-            color = ~variable,
-            type = "scatter",
-            mode = "lines",
-            opacity = alpha,
-            colors = colors,
-            split = ~interaction(variable, i),  # ensures each line is treated separately
-            showlegend = FALSE,
-            # Add traces for stock variables (visible = TRUE)
-            visible = TRUE
-          )
-      }
-
-      # Add traces for non-stock variables (visible = "legendonly")
-      if (length(nonstock_names) > 0) {
-        pl <- pl %>%
-          plotly::add_trace(
-            data = df[df[["variable"]] %in% nonstock_names, ],
-            x = ~get(x_col),
-            y = ~value,
-            color = ~variable,
-            type = "scatter",
-            mode = "lines",
-            opacity = alpha,
-            split = ~interaction(variable, i),  # ensures each line is treated separately
-            showlegend = FALSE,
-            visible = "legendonly"
-          )
-      }
-
-    }
-
-    # Always plot mean lines
-    if (length(stock_names) > 0) {
-
-      pl <- pl %>%
-        plotly::add_trace(
-          data = summary_df[summary_df[["variable"]] %in% stock_names, ],
-          x = ~get(x_col),
-          y = ~mean,
-          color = ~variable,
-          type = "scatter",
-          mode = "lines",
-          colors = colors,
+          showlegend = showlegend,
+          # Add traces for stock variables (visible = TRUE)
           visible = TRUE
         )
     }
 
+  } else if (type == "sims"){
+
+    # Add traces for non-stock variables (visible = "legendonly")
     if (length(nonstock_names) > 0) {
       pl <- pl %>%
         plotly::add_trace(
-          data = summary_df[summary_df[["variable"]] %in% nonstock_names, ],
+          data = df_nonstocks,
           x = ~get(x_col),
-          y = ~mean,
+          y = ~value,
           color = ~variable,
+          legendgroup = ~variable,
           type = "scatter",
           mode = "lines",
+          opacity = alpha,
+          colors = colors,
+          split = ~interaction(variable, i),  # ensures each line is treated separately
+          showlegend = FALSE,
           visible = "legendonly"
         )
     }
 
+    if (length(stock_names) > 0) {
+      pl <- pl %>%
+        plotly::add_trace(
+          data = df_stocks,
+          x = ~get(x_col),
+          y = ~value,
+          color = ~variable,
+          legendgroup = ~variable,
+          type = "scatter",
+          mode = "lines",
+          opacity = alpha,
+          colors = colors,
+          split = ~interaction(variable, i),  # ensures each line is treated separately
+          showlegend = FALSE,
+          # Add traces for stock variables (visible = TRUE)
+          visible = TRUE
+        )
+    }
 
-    # Customize layout
+
+
+  }
+
+  # Always plot mean lines
+
+  if (length(nonstock_names) > 0) {
+    pl <- pl %>%
+      plotly::add_trace(
+        data = summary_df_nonstocks,
+        x = ~get(x_col),
+        y = ~get(central_tendency),
+        color = ~variable,
+        legendgroup = ~variable,
+        type = "scatter",
+        mode = "lines",
+        colors = colors,
+        showlegend = showlegend,
+        line = list(width = 3),  # thicker line for mean
+        visible = "legendonly"
+      )
+  }
+
+  if (length(stock_names) > 0) {
+
+    pl <- pl %>%
+      plotly::add_trace(
+        data = summary_df_stocks,
+        x = ~get(x_col),
+        y = ~get(central_tendency),
+        color = ~variable,
+        legendgroup = ~variable,
+        type = "scatter",
+        mode = "lines",
+        line = list(width = 3),  # thicker line for mean
+        showlegend = showlegend,
+        colors = colors,
+        visible = TRUE
+      )
+  }
+
+
+
+  # Customize layout
+  pl <- pl %>% plotly::layout(
+    margin = list(t = 50, b = 50, l = 50, r = 50),
+    # xaxis = list(tickfont = list(size = ceiling(font_size *.75))),
+    # yaxis = list(tickfont = list(size = ceiling(font_size *.75))),
+    # As the most important things are at the top, reverse the trace order
+    legend = list(traceorder = "reversed",
+                  font = list(size = ceiling(font_size*.85))
+                  # itemsizing = "constant",  # Keeps legend symbols same size
+                  # itemwidth = 10,           # Control item width
+                  # x = 1.02,                 # Position legend outside plot
+                  # y = 1,
+                  # xanchor = "left",
+                  # yanchor = "top"
+                  )
+  )
+
+  if (!create_subplots){
     pl <- pl %>% plotly::layout(
-      showlegend = TRUE,
       title = main,
       xaxis = list(title = xlab),
       yaxis = list(title = ylab),
-      font = list(family = font_family, size = font_size),
-      margin = list(t = 50, b = 50, l = 50, r = 50)  # Increase top margin to 100 pixels
+      font = list(family = font_family, size = font_size)
     )
+  }
 
-    # Set x-axis limits if specified
-    if ("xlim" %in% names(dots)) {
-      pl <- pl %>% plotly::layout(
-        xaxis = list(range = dots[["xlim"]])
+
+  # Add subplot title
+  if (create_subplots){
+
+    # # Choose position
+    # pos <- get_annotation_position(j_position)
+
+    # x_pos <- .5 + (j_idx - 1) / length(j) + 1/(2*length(j))
+
+    pl = pl %>%
+      plotly::layout(
+        annotations = list(
+          list(
+            text = paste0("j = ", j_name),
+            font = list(
+              family = font_family,
+              size = ceiling(font_size * .75)
+            ),
+            bgcolor = "white",
+            xref = "paper",
+            yref = "paper",
+            xanchor = "center", yanchor = "top",
+            x = 0.5, y = 1,
+            showarrow = FALSE
+          )
+        )
       )
-    }
+  }
 
-    if ("ylim" %in% names(dots)) {
-      pl <- pl %>% plotly::layout(
-        yaxis = list(range = dots[["ylim"]])
-      )
-    }
+  # Set x-axis limits if specified
+  if ("xlim" %in% names(dots)) {
+    pl <- pl %>% plotly::layout(
+      xaxis = list(range = dots[["xlim"]])
+    )
+  }
 
+  # Set y-axis limits if specified
+  if ("ylim" %in% names(dots)) {
+    pl <- pl %>% plotly::layout(
+      yaxis = list(range = dots[["ylim"]])
+    )
   }
 
   return(pl)
@@ -1701,7 +2040,7 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 #'sfm = sfm %>% sim_specs(time_units = "years")
 #'
 #'# To save storage but not affect accuracy, use save_at and save_from
-#'sfm = sfm %>% sim_specs(dt = 0.001, save_at = 0.1, save_from = 2000)
+#'sfm = sfm %>% sim_specs(dt = 0.001, save_at = 1, save_from = 2000)
 #'sim = simulate(sfm)
 #'head(as.data.frame(sim))
 #'

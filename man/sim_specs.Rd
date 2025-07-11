@@ -56,8 +56,8 @@ sfm = sfm \%>\% sim_specs(method = "rk4")
 # Change the time units to "years", such that one time unit is one year
 sfm = sfm \%>\% sim_specs(time_units = "years")
 
-# To save storage but not affect accuracy, use save_at
-sfm = sfm \%>\% sim_specs(save_at = 0.1, dt = 0.001)
+# To save storage but not affect accuracy, use save_at and save_from
+sfm = sfm \%>\% sim_specs(dt = 0.001, save_at = 1, save_from = 2000)
 sim = simulate(sfm)
 head(as.data.frame(sim))
 

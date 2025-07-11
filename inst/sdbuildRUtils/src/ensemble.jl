@@ -207,14 +207,49 @@ Unified processing where intermediaries are transformed to solve_out format firs
         rem.(b .- 1, ensemble_n) .+ 1,
         param_matrix)
 
-    return timeseries_df, param_matrix, param_names
+    # Extract initial values matrix
+    init_val_names = [string(name) for name in init_names]
+
+    # Initial values matrix: (trajectories, initial values)
+    init_val_matrix = Array{Float64, 2}(undef, n_trajectories, length(init_val_names))
+
+    for (traj_idx, result) in enumerate(solve_out)
+        init_vals = result.u0
+
+        if isa(init_vals, NamedTuple)
+            for (init_idx, init_name) in enumerate(init_val_names)
+                init_val = getproperty(init_vals, Symbol(init_name))
+                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+                init_val_matrix[traj_idx, init_idx] = init_val_stripped
+            end
+        elseif isa(init_vals, AbstractVector)
+            for (init_idx, init_name) in enumerate(init_val_names)
+                init_val = init_vals[init_idx]
+                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+                init_val_matrix[traj_idx, init_idx] = init_val_stripped
+            end
+        else
+            # Single initial value
+            init_val_stripped = isa(init_vals, Quantity) ? ustrip(init_vals) : init_vals
+            init_val_matrix[traj_idx, 1] = init_val_stripped
+        end
+    end
+
+    # Add initial values index
+    init_val_matrix = hcat(
+        # Parameter ensemble index
+        div.(b .- 1, ensemble_n) .+ 1,
+        # Trajectory index within the ensemble
+        rem.(b .- 1, ensemble_n) .+ 1,
+        init_val_matrix)
+
+    return timeseries_df, param_matrix, param_names, init_val_matrix, init_val_names
 end
 
 
 
 """
-generate_param_combinations(param_ranges; crossed=true, n_replicates=100,
-                            param_names=nothing, random_seed=nothing)
+generate_param_combinations(param_ranges; crossed=true, n_replicates=100)
 
 Generate parameter combinations for ensemble simulations.
 
@@ -222,8 +257,6 @@ Generate parameter combinations for ensemble simulations.
 - `param_ranges`: Dict or NamedTuple of parameter names to ranges/vectors
 - `crossed`: Boolean, whether to cross all parameter combinations (default: true)
 - `n_replicates`: Number of replicates per condition (default: 100)
-- `param_names`: Optional vector of parameter names if using positional parameters
-- `random_seed`: Optional seed for reproducibility
 
 # Returns
 - `param_combinations`: Vector of parameter combinations
@@ -256,28 +289,11 @@ param_combinations, total_sims = generate_param_combinations(
 ```
 """
 function generate_param_combinations(param_ranges;
-                                   crossed=true, n_replicates=100,
-                                   param_names=nothing, random_seed=nothing)
+                                   crossed=true, n_replicates=100)
 
-    # Set random seed if provided
-    if random_seed !== nothing
-        Random.seed!(random_seed)
-    end
-
-    # Handle different input formats
-    if isa(param_ranges, Dict) || isa(param_ranges, NamedTuple)
-        param_dict = Dict(param_ranges)
-        names_list = collect(keys(param_dict))
-        values_list = collect(values(param_dict))
-    else
-        # Assume it's a vector of ranges
-        if param_names === nothing
-            param_names = [Symbol("param$i") for i in 1:length(param_ranges)]
-        end
-        param_dict = Dict(zip(param_names, param_ranges))
-        names_list = param_names
-        values_list = param_ranges
-    end
+       # Sort keys for consistent ordering
+    names_list = sort(collect(keys(param_ranges)))
+    values_list = [param_ranges[name] for name in names_list]
 
     # Generate parameter combinations
     if crossed
@@ -489,7 +505,44 @@ Unified processing where intermediaries are transformed to solve_out format firs
         rem.(b .- 1, ensemble_n) .+ 1,
         param_matrix)
 
-    return timeseries_df, param_matrix, param_names
+    # Extract initial values matrix
+    init_val_names = [string(name) for name in init_names]
+
+    # Initial values matrix: (trajectories, initial values)
+    init_val_matrix = Array{Float64, 2}(undef, n_trajectories, length(init_val_names))
+
+    Base.Threads.@threads for traj_idx in 1:length(solve_out)
+        result = solve_out[traj_idx]
+        init_vals = result.u0
+
+        if isa(init_vals, NamedTuple)
+            for (init_idx, init_name) in enumerate(init_val_names)
+                init_val = getproperty(init_vals, Symbol(init_name))
+                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+                init_val_matrix[traj_idx, init_idx] = init_val_stripped
+            end
+        elseif isa(init_vals, AbstractVector)
+            for (init_idx, init_name) in enumerate(init_val_names)
+                init_val = init_vals[init_idx]
+                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+                init_val_matrix[traj_idx, init_idx] = init_val_stripped
+            end
+        else
+            # Single initial value
+            init_val_stripped = isa(init_vals, Quantity) ? ustrip(init_vals) : init_vals
+            init_val_matrix[traj_idx, 1] = init_val_stripped
+        end
+    end
+
+    # Add initial values index
+    init_val_matrix = hcat(
+        # Parameter ensemble index
+        div.(b .- 1, ensemble_n) .+ 1,
+        # Trajectory index within the ensemble
+        rem.(b .- 1, ensemble_n) .+ 1,
+        init_val_matrix)
+
+    return timeseries_df, param_matrix, param_names, init_val_matrix, init_val_names
 end
 
 
@@ -498,17 +551,37 @@ function ensemble_summ(timeseries_df, quantiles=[0.025, 0.0975])
     stats_df = combine(groupby(timeseries_df, [:j, :time, :variable])) do group
         values = group.value
 
-        # Base statistics
-        result = (
-            mean = mean(values),
-            variance = var(values),
-            median = Statistics.median(values)
-        )
+        # Filter out missing and NaN
+        is_valid = .!(ismissing.(values) .| isnan.(values))
+        clean_values = values[is_valid]
+        num_missing = count(!, is_valid)
 
-        # Add quantiles
-        for q in quantiles
-            q_str = replace(string(q), r"^0\." => "")
-            result = merge(result, (Symbol("q$q_str") => Statistics.quantile(values, q),))
+        if isempty(clean_values)
+            # Return NaNs if no valid values
+            result = (
+                mean = NaN,
+                variance = NaN,
+                median = NaN,
+                missing_count = num_missing
+            )
+
+            for q in quantiles
+                q_str = replace(string(q), r"^0\." => "")
+                result = merge(result, (Symbol("q$q_str") => NaN,))
+            end
+        else
+            # Compute statistics
+            result = (
+                mean = mean(clean_values),
+                variance = var(clean_values),
+                median = Statistics.median(clean_values),
+                missing_count = num_missing
+            )
+
+            for q in quantiles
+                q_str = replace(string(q), r"^0\." => "")
+                result = merge(result, (Symbol("q$q_str") => Statistics.quantile(clean_values, q),))
+            end
         end
 
         return result
@@ -532,6 +605,7 @@ function ensemble_summ_threaded(timeseries_df, quantiles=[0.025, 0.975])
     mean_vals = Vector{Float64}(undef, n_groups)
     variance_vals = Vector{Float64}(undef, n_groups)
     median_vals = Vector{Float64}(undef, n_groups)
+    missing_counts = Vector{Int}(undef, n_groups)
 
     # Pre-allocate quantile arrays
     quantile_arrays = Dict{String, Vector{Float64}}()
@@ -546,21 +620,38 @@ function ensemble_summ_threaded(timeseries_df, quantiles=[0.025, 0.975])
         key = group_keys[i]
         values = group.value
 
+        # Count and filter NaN/missing
+        is_valid = .!(ismissing.(values) .| isnan.(values))
+        clean_values = values[is_valid]
+        num_missing = count(!, is_valid)
+
         # Extract group keys
         j_vals[i] = key.j
         time_vals[i] = key.time
         variable_vals[i] = key.variable
 
-        # Calculate statistics
-        mean_vals[i] = mean(values)
-        variance_vals[i] = var(values)
-        median_vals[i] = Statistics.median(values)
-
-        # Calculate quantiles
-        for q in quantiles
-            q_str = replace(string(q), r"^0\." => "")
-            quantile_arrays["q$q_str"][i] = Statistics.quantile(values, q)
+        # Handle empty groups after filtering
+        if isempty(clean_values)
+            mean_vals[i] = NaN
+            variance_vals[i] = NaN
+            median_vals[i] = NaN
+            for q in quantiles
+                q_str = replace(string(q), r"^0\." => "")
+                quantile_arrays["q$q_str"][i] = NaN
+            end
+        else
+            # Compute stats
+            mean_vals[i] = mean(clean_values)
+            variance_vals[i] = var(clean_values)
+            median_vals[i] = Statistics.median(clean_values)
+            for q in quantiles
+                q_str = replace(string(q), r"^0\." => "")
+                quantile_arrays["q$q_str"][i] = Statistics.quantile(clean_values, q)
+            end
         end
+
+        # Store missing count
+        missing_counts[i] = num_missing
     end
 
     # Create result DataFrame with desired column order
@@ -571,7 +662,8 @@ function ensemble_summ_threaded(timeseries_df, quantiles=[0.025, 0.975])
         variable = variable_vals,
         mean = mean_vals,
         median = median_vals,
-        variance = variance_vals
+        variance = variance_vals,
+        missing_count = missing_counts
     )
 
     # Add quantile columns in order
@@ -582,4 +674,5 @@ function ensemble_summ_threaded(timeseries_df, quantiles=[0.025, 0.975])
 
     return stats_df
 end
+
 end

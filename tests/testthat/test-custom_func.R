@@ -31,7 +31,7 @@ test_that("logistic works", {
   expect_equal(logistic(1, slope = -50), 0)
   expect_equal(logistic(1, slope = 50, upper = 10), 10)
 
-  sfm0 = xmile() %>%
+  sfm0 = xmile() %>% sim_specs(start = 0, stop = 1, dt = .1) %>%
     build("a", "stock") %>%
     build("b", "flow",
           eqn = "logistic(t, slope = -9, midpoint = 0.5, upper = 10)", to = "a")
@@ -248,6 +248,7 @@ test_that("ramp works", {
   expect_no_error(plot(sim, add_constants = TRUE))
 
 })
+
 
 test_that("seasonal works", {
 

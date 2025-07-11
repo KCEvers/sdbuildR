@@ -138,7 +138,7 @@ delay = function(variable, length, default_value = NULL){
 
 #' Delay of order N
 #'
-#'
+#' Delay of order N, which is a more complex delay that can be used to model processes with multiple stages or orders of delay. Note that this function is only usable for simulations run with Julia.
 #'
 #' @param variable Variable to delay.
 #' @param length Length of the delay.
@@ -156,7 +156,7 @@ delayN = function(variable, length, order, initial = NULL){
 
 #' Smoothing of order N
 #'
-#'
+#' Smoothing of order N, which is a more complex smoothing that can be used to model processes with multiple stages or orders of smoothing. Note that this function is only usable for simulations run with Julia.
 #'
 #' @param variable Variable to smooth
 #' @param length Length of smoothing.

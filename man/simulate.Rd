@@ -39,8 +39,8 @@ simulate(
 Object of class sdbuildR_sim, which is a list containing:
 \describe{
 \item{df}{Dataframe, timeseries of computed variables in the ODE}
+\item{init}{Initial value of stocks}
 \item{constants}{Constant parameters}
-\item{xstart}{Initial value of stocks}
 \item{script}{Simulation script}
 \item{duration}{Duration of simulation}
 \item{success}{If TRUE, simulation was successful. If FALSE, simulation failed.}
@@ -68,4 +68,7 @@ plot(sfm)
 # Close Julia session
 use_julia(stop = TRUE)
 
+}
+\seealso{
+\code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=debugger]{debugger()}}, \code{\link[=sim_specs]{sim_specs()}}, \code{\link[=use_julia]{use_julia()}}
 }

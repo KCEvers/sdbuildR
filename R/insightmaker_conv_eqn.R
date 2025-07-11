@@ -791,7 +791,9 @@ convert_all_statements = function(eqn, var_names, debug){
 #' @return Data frame with indices of enclosures and nesting properties.
 #' @noRd
 #' @importFrom stringr str_locate_all str_sub
-get_range_pairs <- function(eqn, var_names, opening = "c(", closing = ")", names_with_brackets = FALSE) {
+get_range_pairs <- function(eqn, var_names,
+                            opening = "c(", closing = ")",
+                            names_with_brackets = FALSE) {
 
   # Find all pairs of "bare" brackets first, e.g. () instead of c(), as to get all matching pairs of c() we need to exclude other (). The bare brackets are the last character of opening and the last character of closing
   opening_bare <- substr(opening, nchar(opening), nchar(opening))
@@ -1508,7 +1510,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
       idx_func = idx_funcs_ordered[1, ]
 
       # Remove _replace in replacement function
-      idx_func$insightmaker = stringr::str_replace(idx_func$insightmaker, "_replace$", "")
+      idx_func[["insightmaker"]] = stringr::str_replace(idx_func[["insightmaker"]], "_replace$", "")
       idx_func
 
       # Extract argument between brackets (excluding brackets)
@@ -1517,7 +1519,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 
       # Replace entire string, no arguments
       if (idx_func$syntax %in% c("syntax0", "syntax0b")) {
-        replacement = idx_func$R
+        replacement = idx_func[["R"]]
 
         # Indices of replacement in eqn
         start_idx = idx_func[["start"]]
@@ -1534,9 +1536,9 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 
         replacement = sprintf(
           "%s(%s%s%s)",
-          idx_func$R,
-          idx_func$add_first_arg,
-          ifelse(nzchar(idx_func$add_first_arg) & nzchar(arg), ", ", ""),
+          idx_func[["R"]],
+          idx_func[["add_first_arg"]],
+          ifelse(nzchar(idx_func[["add_first_arg"]]) & nzchar(arg), ", ", ""),
           arg
         )
 
@@ -1548,8 +1550,8 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 
         replacement = sprintf(
           "%s(%s)",
-          idx_func$R,
-          idx_func$add_first_arg)
+          idx_func[["R"]],
+          idx_func[["add_first_arg"]])
 
         # Indices of replacement in eqn
         start_idx = idx_func[["start"]]
@@ -1558,14 +1560,16 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
       } else if (idx_func$syntax == "syntax2") {
 
         # Extract argument before function
-        prefunc_arg = extract_prefunc_args(eqn, var_names, start_func = idx_func[["start"]], names_with_brackets = TRUE)
+        prefunc_arg = extract_prefunc_args(eqn, var_names,
+                                           start_func = idx_func[["start"]],
+                                           names_with_brackets = TRUE)
         start_idx = idx_func[["start"]] - stringr::str_length(prefunc_arg)
 
         replacement = sprintf(
           "%s(%s%s%s%s%s)",
-          idx_func$R,
-          idx_func$add_first_arg,
-          ifelse(nzchar(idx_func$add_first_arg), ", ", ""),
+          idx_func[["R"]],
+          idx_func[["add_first_arg"]],
+          ifelse(nzchar(idx_func[["add_first_arg"]]), ", ", ""),
           prefunc_arg,
           ifelse(nzchar(arg[1]), ", ", ""),
           paste0(arg, collapse = ", ")
@@ -1577,7 +1581,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
       } else if (idx_func$syntax == "syntax3") {
 
         # If it's the first function of this kind, no id is needed
-        match_idx = length(translated_func[translated_func == idx_func$insightmaker]) + 1
+        match_idx = length(translated_func[translated_func == idx_func[["insightmaker"]]]) + 1
         match_idx = ifelse(match_idx == 1, "", match_idx)
 
         # Get environment and create list of arguments needed by the function
@@ -1636,7 +1640,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
       # Replace eqn
       stringr::str_sub(eqn, start_idx, end_idx) = replacement
 
-      translated_func = c(translated_func, idx_func$insightmaker)
+      translated_func = c(translated_func, idx_func[["insightmaker"]])
     }
   }
   add_Rcode = add_Rcode_list

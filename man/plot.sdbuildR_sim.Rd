@@ -11,6 +11,7 @@
   colors = NULL,
   font_family = "Times New Roman",
   font_size = 16,
+  wrap_width = 25,
   ...
 )
 }
@@ -26,6 +27,8 @@
 \item{font_family}{Font family. Defaults to "Times New Roman".}
 
 \item{font_size}{Font size. Defaults to 16.}
+
+\item{wrap_width}{Width of text wrapping for labels. Must be an integer. Defaults to 25.}
 
 \item{...}{Optional parameters}
 }
