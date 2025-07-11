@@ -3,9 +3,10 @@ pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
   build: build.html
+  ensemble: ensemble.html
   sdbuildR: sdbuildR.html
   units: units.html
-last_built: 2025-07-08T08:13Z
+last_built: 2025-07-11T21:00Z
 urls:
   reference: https://kcevers.github.io/sdbuildR/reference
   article: https://kcevers.github.io/sdbuildR/articles

@@ -3,6 +3,7 @@
 <url><loc>https://kcevers.github.io/sdbuildR/LICENSE-text.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/LICENSE.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/articles/build.html</loc></url>
+<url><loc>https://kcevers.github.io/sdbuildR/articles/ensemble.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/articles/index.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/articles/sdbuildR.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/articles/units.html</loc></url>
@@ -25,7 +26,6 @@
 <url><loc>https://kcevers.github.io/sdbuildR/reference/ensemble.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/expit.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/get_build_code.html</loc></url>
-<url><loc>https://kcevers.github.io/sdbuildR/reference/get_func_julia.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/get_regex_time_units.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/get_regex_units.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/get_units.html</loc></url>
