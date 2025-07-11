@@ -110,7 +110,6 @@ test_that("delayN() works", {
   expect_equal(inflow[which(t < 8)[1]], 100)
   expect_equal(inflow[which(t > 8)[1]], 200)
 
-
   sfm = expect_no_error(xmile() %>%
     sim_specs(language = "Julia", time_units = "days") %>%
     build("effort", "stock", eqn = .5) %>%

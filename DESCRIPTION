@@ -17,6 +17,7 @@ Imports:
     jsonlite,
     JuliaConnectoR,
     magrittr,
+    parallel,
     purrr,
     rlang,
     rvest,

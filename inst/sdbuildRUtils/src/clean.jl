@@ -2,7 +2,7 @@
 module clean
 using Unitful
 using DataFrames
-using ..custom_func: itp
+using ..custom_func: itp, is_function_or_interp
 
 # Function to save dataframe at specific times
 function saveat_func(t, y, new_times)
@@ -10,19 +10,73 @@ function saveat_func(t, y, new_times)
     itp(t, y, method = "linear", extrapolation = "nearest")(new_times)
 end
 
-function clean_df(solve_out, init_names, intermediaries=nothing, intermediary_names=nothing)
+function clean_df(prob, solve_out, init_names, intermediaries=nothing, intermediary_names=nothing)
     """
-Convert a single (non-ensemble) solution to a DataFrame, including intermediaries.
+Convert a single (non-ensemble) solution to a DataFrame, including intermediaries, and extract parameter/initial values.
 
 Args:
+  prob: Single problem function object from DifferentialEquations.jl
   solve_out: Single solution object from DifferentialEquations.jl
-init_names: Names of the initial conditions/state variables
-intermediaries: Optional intermediary values from saving callback
-intermediary_names: Optional names for intermediary variables
+  init_names: Names of the initial conditions/state variables
+  intermediaries: Optional intermediary values from saving callback
+  intermediary_names: Optional names for intermediary variables
 
 Returns:
   timeseries_df: DataFrame with columns [time, variable, value]
+  param_values: Vector of parameter values
+  param_names: Vector of parameter names
+  init_values: Vector of initial values
+  init_names: Vector of initial value names (same as input for completeness)
 """
+
+    # Extract parameter names and values
+    param_names = String[]
+    param_values = Float64[]
+    params = prob.p
+
+    if isa(params, NamedTuple)
+        for (key, val) in pairs(params)
+            if !is_function_or_interp(val)
+                push!(param_names, string(key))
+                val_stripped = isa(val, Quantity) ? ustrip(val) : Float64(val)
+                push!(param_values, val_stripped)
+            end
+        end
+    elseif isa(params, AbstractVector)
+        for i in eachindex(params)
+            if !is_function_or_interp(params[i])
+                push!(param_names, "p$i")
+                val_stripped = isa(params[i], Quantity) ? ustrip(params[i]) : Float64(params[i])
+                push!(param_values, val_stripped)
+            end
+        end
+    elseif isa(params, Number)
+        push!(param_names, "p1")
+        val_stripped = isa(params, Quantity) ? ustrip(params) : Float64(params)
+        push!(param_values, val_stripped)
+    end
+
+    # Extract initial values
+    init_values = Float64[]
+    init_vals = prob.u0
+    init_val_names = [string(name) for name in init_names]
+
+    if isa(init_vals, NamedTuple)
+        for init_name in init_val_names
+            init_val = getproperty(init_vals, Symbol(init_name))
+            init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : Float64(init_val)
+            push!(init_values, init_val_stripped)
+        end
+    elseif isa(init_vals, AbstractVector)
+        for init_val in init_vals
+            init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : Float64(init_val)
+            push!(init_values, init_val_stripped)
+        end
+    else
+        # Single initial value
+        init_val_stripped = isa(init_vals, Quantity) ? ustrip(init_vals) : Float64(init_vals)
+        push!(init_values, init_val_stripped)
+    end
 
     # Get time values
     t_vals = isa(solve_out.t[1], Quantity) ? ustrip.(solve_out.t) : solve_out.t
@@ -117,7 +171,7 @@ Returns:
         value = value_vec
     )
 
-    return timeseries_df
+    return timeseries_df, param_values, param_names, init_values, init_val_names
 end
 
 function clean_constants(constants)

@@ -5,15 +5,6 @@
 #' @inheritParams simulate
 #'
 #' @return List with variables created in the simulation script
-#' \describe{
-#'   \item{dt}{Numeric, the timestep}
-#'   \item{times}{Numeric, sequence of time values}
-#'   \item{ode_func}{Function, the ODE function}
-#'   \item{constants}{List, constant parameters (i.e. static auxiliaries)}
-#'   \item{init}{Numeric, initial value of Stocks}
-#'   \item{df}{Dataframe, timeseries of computed variables in the ODE}
-#'   \item{...}{Other variables created in the simulation script.}
-#' }
 #' @noRd
 #'
 simulate_julia = function(sfm,
@@ -65,9 +56,17 @@ simulate_julia = function(sfm,
       message(paste0("Simulation took ", round(end_t - start_t, 4), " seconds"))
     }
 
-    pars_julia = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(paste0("clean_constants(", P[["model_setup_name"]], ".", P[["parameter_name"]], ")")))
-
+    # pars_julia = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(paste0("clean_constants(", P[["model_setup_name"]], ".", P[["parameter_name"]], ")")))
+    #
     # init_julia = JuliaConnectoR::juliaEval(paste0("clean_init(", P[["model_setup_name"]], ".", P[["initial_value_name"]], ", ", P[["model_setup_name"]], ".", P[["initial_value_names"]], ")"))
+
+    # Read the constants
+    constants = as.numeric(JuliaConnectoR::juliaEval(P[["parameter_name"]]))
+    names(constants) = JuliaConnectoR::juliaEval(P[["parameter_names"]])
+
+    # Read the initial values of stocks
+    init = as.numeric(JuliaConnectoR::juliaEval(P[["initial_value_name"]]))
+    names(init) = JuliaConnectoR::juliaEval(P[["initial_value_names"]])
 
     df = as.data.frame(data.table::fread(filepath_sim, na.strings = c("", "NA")))
 
@@ -77,7 +76,8 @@ simulate_julia = function(sfm,
 
     list(success = TRUE,
          df = df,
-         constants = pars_julia,
+         init = init,
+         constants = constants,
          script = script,
          duration = end_t - start_t) %>% utils::modifyList(argg) %>%
       structure(., class = "sdbuildR_sim")
@@ -165,16 +165,8 @@ compile_julia = function(sfm, filepath_sim,
   # Order stocks alphabetically for order in init_names and init
   sfm[["model"]][["variables"]][["stock"]] = sfm[["model"]][["variables"]][["stock"]][sort(names(sfm[["model"]][["variables"]][["stock"]]))]
 
-  # # Add keyword arguments to all functions - do this at compilation in case a function is redefined
-  # sfm = add_keyword_arg_wrapper(sfm, var_names)
-
-  # ** to do: remove all argument names from functions and order arguments correctly
-  # sfm = order_arg_in_func_wrapper(sfm)
-
-
-  # constraints = compile_constraints_julia(sfm)
-  # constants = split_aux(sfm)
-  # ordering = order_equations(sfm, constants)
+  # Check keyword arguments are not used for custom functions in Julia
+  check_no_keyword_arg(sfm, var_names)
 
   # Prepare model for ensemble range if specified
   out = prep_ensemble_range(sfm, ensemble_pars)
@@ -262,6 +254,80 @@ compile_julia = function(sfm, filepath_sim,
 
 
 
+#' Check for keyword arguments in Julia translated equation
+#'
+#' Check whether any variable names are used as functions with keyword arguments in the Julia translated equation
+#'
+#' @inheritParams build
+#' @param var_names Character vector; variable names in the model.
+#'
+#' @returns NULL
+#' @noRd
+check_no_keyword_arg = function(sfm, var_names){
+
+  # Check for all variable names if they are used as functions. If so, throw error if they are used with keyword arguments in the Julia translated equation.
+
+  eqns = lapply(sfm[["model"]][["variables"]],
+         function(x){
+           lapply(x, `[[`, "eqn_julia")
+         }) %>% compact_() %>% unname() %>% unlist()
+
+  # Find if any variables were used as functions
+  idx = stringr::str_detect(eqns, paste0(paste0(var_names, "\\("), collapse = "|"))
+
+  if (any(idx)){
+
+    # Get the equations that use variables as functions
+    eqns = eqns[idx]
+
+    named_idxs = sapply(eqns, function(eqn){
+
+      # Find all round brackets
+      paired_idxs = get_range_all_pairs(eqn, var_names = var_names, type = "round")
+      if (nrow(paired_idxs) == 0){
+        return(FALSE)
+      }
+
+      # Get start and end indices of variable names
+      pair_names = get_range_names(eqn, var_names = var_names, names_with_brackets = FALSE)
+      if (nrow(pair_names) == 0){
+        return(FALSE)
+      }
+
+      # Match brackets to variable name
+      pair_idxs = match(pair_names[["end"]] + 1, paired_idxs[["start"]])
+      if (all(is.na(pair_idxs))){
+        return(FALSE)
+      }
+      paired = cbind(pair_names[pair_idxs, ], paired_idxs[pair_idxs, ])
+
+      # Remove NA
+      paired = paired[!is.na(paired[["match"]]), ]
+
+      named_idxs = sapply(paired[["match"]], function(x){
+        y = parse_args(gsub("\\)$", "", gsub("^\\(", "", x)))
+
+        # Check for named arguments
+        any(stringr::str_detect(y, "="))
+      })
+      any(unlist(unname(named_idxs)))
+
+    })
+
+    if (any(named_idxs)){
+
+      stop("The following variables were used as functions with named arguments in the Julia translated equation: ",
+           paste0(names(named_idxs)[unname(named_idxs)], collapse = ", "), ".\n",
+           "This is not allowed in Julia. Please use arguments without naming them.")
+    }
+
+
+  }
+
+  return(invisible())
+}
+
+
 #' Prepare stock-and-flow model for ensemble range
 #'
 #' @inheritParams build
@@ -272,9 +338,6 @@ compile_julia = function(sfm, filepath_sim,
 prep_ensemble_range = function(sfm, ensemble_pars){
 
   if (!is.null(ensemble_pars[["range"]])){
-
-    # Alphabetically sort the ensemble parameters
-    ensemble_pars[["range"]] = ensemble_pars[["range"]][sort(names(ensemble_pars[["range"]]))]
 
     # Prepare the ranges for Julia
     ensemble_pars[["range"]] = lapply(ensemble_pars[["range"]],
@@ -877,9 +940,10 @@ compile_static_eqn_julia = function(sfm, ensemble_pars, ordering, intermediaries
 
       "\n\n# Generate ensemble design\n",
       P[["ensemble_n"]], " = ", ensemble_pars[["n"]], "\n",
-      P[["ensemble_range"]], " = Dict(\n",
-      paste0(paste0(":", names(ensemble_pars[["range"]]), " => ", unname(ensemble_pars[["range"]])), collapse = ",\n"),
-      "\n)\n",
+      P[["ensemble_range"]], " = (\n",
+      paste0(paste0(names(ensemble_pars[["range"]]), " = ",
+                    unname(ensemble_pars[["range"]])), collapse = ",\n"),
+      ",\n)\n",
       P[["ensemble_pars"]], ", ", P[["ensemble_total_n"]], " = generate_param_combinations(\n",
       P[["ensemble_range"]], "; crossed=", ifelse(ensemble_pars[["cross"]], "true", "false"), ", n_replicates = ",
       P[["ensemble_n"]], ")\n",
@@ -887,7 +951,7 @@ compile_static_eqn_julia = function(sfm, ensemble_pars, ordering, intermediaries
       P[["ensemble_iter"]], " = 1\n")
 
     ensemble_iter = paste0("\n\t# Assign ensemble parameters\n\t",
-                           paste0(names(ensemble_pars[["range"]]), collapse = ", "), " = ",
+                           paste0(names(ensemble_pars[["range"]]), collapse = ", "), ", = ",
                            P[["ensemble_pars"]], "[div(", P[["ensemble_iter"]], "-1, ", P[["ensemble_n"]], ") + 1]\n\n")
 
     # Remove ensemble variables from equations
@@ -995,8 +1059,18 @@ compile_static_eqn_julia = function(sfm, ensemble_pars, ordering, intermediaries
 
     # Remove names of intermediaries that are functions; these won't be saved
     intermediary_names_correct = paste0("\n# Remove names of intermediaries that are functions\n",
-                                "is_not_function = collect(.!isa.((", paste0(intermediaries[["values"]],
-                                                                     collapse = ", "), "), Function))\n",
+                                # "is_not_function = collect(.!isa.((", paste0(intermediaries[["values"]],
+                                                                     # collapse = ", "), "), Function))\n",
+    #                             "is_not_function = collect(.!isa.((",
+    # paste0(intermediaries[["values"]], collapse = ", "),
+    # "), Function) .& .!isa.((",
+    # paste0(intermediaries[["values"]], collapse = ", "),
+    # "), DataInterpolations.AbstractInterpolation))\n",
+    "is_not_function = collect(.!is_function_or_interp.((",
+    paste0(intermediaries[["values"]], collapse = ", "),
+    ifelse(length(intermediaries[["values"]]) == 1, ",", ""),
+    ")))\n",
+
                                 P[["intermediary_names"]], " = ", P[["intermediary_names"]], "[is_not_function]\n")
 
 
@@ -1337,7 +1411,7 @@ function %s(%s, %s, integrator)",
       dynamic_eqn_str,
 
       "\n\n\t# Return intermediary values and remove funcions\n\t",
-      "return filter(x -> !isa(x, Function), (",
+      "return filter(x -> !is_function_or_interp(x), (",
       paste0(intermediaries[["values"]], collapse = ", "),
       ifelse(length(intermediaries[["values"]]) == 1, ",", ""),
       "))\n",
@@ -1403,7 +1477,14 @@ compile_run_ode_julia = function(sfm,
                            paste0(", ", P[["callback_name"]], " = ", P[["callback_name"]]), ""),
                     ")\n",
 
-                    P[["sim_df_name"]], " = clean_df(",
+                    P[["sim_df_name"]],
+                    ", ", P[["parameter_name"]],
+                    ", ", P[["parameter_names"]],
+                    ", ", P[["initial_value_name"]],
+                    ", ", P[["initial_value_names"]],
+
+                    " = clean_df(",
+                    P[["prob_name"]], ", ",
                     P[["solution_name"]], ", ",
                     P[["model_setup_name"]], ".", P[["initial_value_names"]], ", ",
                     # P[["times_name"]], ", ",
@@ -1447,7 +1528,9 @@ compile_run_ode_julia = function(sfm,
                     static_eqn_script,
 
                     ifelse(!only_stocks, paste0("\n\t", P[["callback_name"]],
-                                                " = SavingCallback(", P[["callback_func_name"]], ", ", P[["intermediaries"]], "[", P[["ensemble_iter"]], "])\n"), ""),
+                                                " = SavingCallback(", P[["callback_func_name"]], ", ", P[["intermediaries"]], "[", P[["ensemble_iter"]], "], saveat = ",
+                                                P[["savefrom_name"]],
+                                                ")\n"), ""),
                     "\n\tremake(prob, u0 = ",
                     P[["model_setup_name"]], ".", P[["initial_value_name"]],
                     ", p = ", P[["model_setup_name"]], ".", P[["parameter_name"]],
@@ -1459,7 +1542,7 @@ compile_run_ode_julia = function(sfm,
                     # Output function
                     "function ", P[["ensemble_output_func"]], "(sol, i)\n",
                     "\t# Save both solution and parameters\n",
-                    "\treturn (t = sol.t, u = sol.u, p = sol.prob.p), false\n",
+                    "\treturn (t = sol.t, u = sol.u, p = sol.prob.p, u0 = sol.prob.u0), false\n",
                     "end\n\n",
 
                     # Ensemble problem definition
@@ -1488,7 +1571,7 @@ compile_run_ode_julia = function(sfm,
                     # P[["intermediary_names"]], ")\n",
                     #
                     # P[["sim_df_name"]], " = vcat(df1, df2)\ndf1 = Nothing\ndf2 = Nothing\n\n# Save to CSV\n",
-                    P[["sim_df_name"]], ", ", P[["parameter_name"]], ", ", P[["parameter_names"]],
+                    P[["sim_df_name"]], ", ", P[["parameter_name"]], ", ", P[["parameter_names"]], ", ", P[["initial_value_name"]], ", ", P[["initial_value_names"]],
                     ifelse(ensemble_pars[["threaded"]], " = ensemble_to_df_threaded(", " = ensemble_to_df("),
                     P[["solution_name"]], ", ",
                     P[["model_setup_name"]], ".", P[["initial_value_names"]],
@@ -1512,7 +1595,7 @@ compile_run_ode_julia = function(sfm,
     # Compute summary statisics
     script = paste0(script, "\n# Compute summary statisics\n",
 
-                    # P[["sim_df_name"]], " = SciMLBase.EnsembleSummary(", P[["solution_name"]], ".", P[["solution_name"]], ", quantiles = [", qs[1], ", ", qs[2], "])\n"
+                    # P[["sim_df_name"]], " = SciMLBase.EnsembleSummary(", P[["solution_name"]], ".", P[["solution_name"]], ", quantiles = [", quantiles[1], ", ", quantiles[2], "])\n"
 
                     P[["summary_df_name"]],
                     ifelse(ensemble_pars[["threaded"]], " = ensemble_summ_threaded(", " = ensemble_summ("),
@@ -1521,7 +1604,8 @@ compile_run_ode_julia = function(sfm,
                     # P[["model_setup_name"]], ".", P[["initial_value_names"]], ", ",
                     # P[["intermediaries"]], ", ",
                     # P[["intermediary_names"]],
-                    "[", ensemble_pars[["qs"]][1], ", ", ensemble_pars[["qs"]][2], "])\n\n# Save to CSV\n",
+                    "[", paste0(ensemble_pars[["quantiles"]], collapse = ", "),
+                    "])\n\n# Save to CSV\n",
                     "CSV.write(\"", ensemble_pars[["filepath_summ"]], "\", ", P[["summary_df_name"]], ")\n\n# Delete variables\n",
                     P[["sim_df_name"]], " = Nothing\n",
                     P[["summary_df_name"]], " = Nothing\n",

@@ -8,7 +8,7 @@ use_julia(
   stop = FALSE,
   version = "latest",
   JULIA_HOME = NULL,
-  JULIA_NUM_THREADS = 4,
+  JULIA_NUM_THREADS = parallel::detectCores() - 1,
   dir = NULL,
   force = FALSE,
   force_install = FALSE,
@@ -22,7 +22,7 @@ use_julia(
 
 \item{JULIA_HOME}{Path to Julia installation. Defaults to NULL to locate Julia automatically.}
 
-\item{JULIA_NUM_THREADS}{Number of Julia threads to use. Defaults to 4. If set to a value higher than the number of available cores minus 2, it will be set to the number of available cores minus 2.}
+\item{JULIA_NUM_THREADS}{Number of Julia threads to use. Defaults to parallel::detectCores() - 1. If set to a value higher than the number of available cores minus 1, it will be set to the number of available cores minus 1.}
 
 \item{dir}{Directory to install Julia. Defaults to NULL to use default location.}
 

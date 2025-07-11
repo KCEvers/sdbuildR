@@ -1,10 +1,10 @@
 # Load packages
-using SciMLBase.EnsembleAnalysis
 using OrdinaryDiffEq
 using DiffEqCallbacks#: SavingCallback, SavedValues
 using DataFrames#: DataFrame, select, innerjoin, rename!
 using Distributions
 using Statistics
+using StatsBase
 using Unitful
 using DataInterpolations
 using Random

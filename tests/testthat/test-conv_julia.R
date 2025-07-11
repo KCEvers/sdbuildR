@@ -51,7 +51,7 @@ test_that("converting equations to Julia", {
 
   result = convert_equations_julia(sfm, type, name, "for (i in 1:9){\n\tprint(i)\n}", var_names,
                                    regex_units, debug = FALSE)
-  expected = "for  i in 1:9\n\tprintln(i)\nend"
+  expected = "for  i in 1.0:9.0\n\tprintln(i)\nend"
   expect_equal(result$eqn_julia, expected)
 
   result = convert_equations_julia(sfm, type, name, "if(t<2020){\n\tgf<-0.07\n} else if (t<2025){\n\tgf<-0.03\n} else {\n\tgf<-0.02\n}", var_names,
@@ -148,18 +148,67 @@ test_that("converting functions to Julia with named arguments", {
   expect_error(xmile() %>% macro("Function", "function(x, y = 1, z){\nx + y\n}"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments.")
 
   expect_error(xmile() %>% macro("Function", "function(x, y = 1, z, a = 1) x + y"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments")
+
   expect_error(xmile() %>% macro("Function", "function(x, y = 1, z, a = 1){\nx + y\n}"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments")
 
   expect_no_error(xmile() %>% macro("Function", "function(x, y = 1, a = 1){\nx + y\n}"))
   expect_no_error(xmile() %>% macro("Function", "function(x){\nx + y\n}"))
   expect_no_error(xmile() %>% macro("Function", "function(y = 1){\nx + y\n}"))
+})
 
-  sfm = xmile() %>% macro("Function", "function(x, y = 1, z = 2) x + y")
-  expect_equal(sfm$macro$Function$eqn_julia, "function Function(x, y = 1.0, z = 2.0)\n x .+ y\nend")
 
-  # sfm = sfm %>% build("a", "aux", eqn = "Function(1)")
+test_that("custom function definitons work", {
+
+  sfm = xmile() %>% macro("func", "function(x, y = 1, z = 2) x + y")
+  expect_equal(sfm$macro$func$eqn_julia, "function func(x, y = 1.0, z = 2.0)\n x .+ y\nend")
+
+  # Is the function now usable?
+  sfm = sfm %>%
+    sim_specs(language="R", stop = 1, dt = .1) %>%
+    build("a", "stock", eqn = "func(1, 2)")
+  sim = expect_no_error(simulate(sfm))
+  expect_equal(sim$df[1, "value"], 1 + 2)
+
+  # Name argument
+  sfm = sfm %>%
+    build("a",eqn = "func(1, y = 2)")
+  expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, y = 2.0)")
+  sim = expect_no_error(simulate(sfm))
+  expect_equal(sim$df[1, "value"], 1 + 2)
+
+  # Switch order of arguments
+  sfm = sfm %>%
+    build("a",eqn = "func(1, z = 3, y = 2)")
+  expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, z = 3.0, y = 2.0)")
+  sim = expect_no_error(simulate(sfm))
+  expect_equal(sim$df[1, "value"], 1 + 2)
+
+  # Repeat in Julia
+  sfm = xmile() %>% macro("func", "function(x, y = 1, z = 2) x + y")
+  expect_equal(sfm$macro$func$eqn_julia, "function func(x, y = 1.0, z = 2.0)\n x .+ y\nend")
+
+  # Is the function now usable?
+  sfm = sfm %>%
+    sim_specs(language="Julia", stop = 1, dt = .1) %>%
+    build("a", "stock", eqn = "func(1, 2)")
+  sim = expect_no_error(simulate(sfm))
+  expect_equal(sim$df[1, "value"], 1 + 2)
+
+  # Named argument throws error when translating to Julia
+  sfm = sfm %>%
+    build("a",eqn = "func(1, y = 2)")
+  expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, y = 2.0)")
+  expect_error(simulate(sfm), "The following variables were used as functions with named arguments in the Julia translated equation")
+
+  # Switch order of arguments
+  sfm = sfm %>%
+    build("a",eqn = "func(1, z = 3, y = 2)")
+  expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, z = 3.0, y = 2.0)")
+  expect_error(simulate(sfm), "The following variables were used as functions with named arguments in the Julia translated equation")
+
 
 })
+
 
 
 test_that("clean units for Julia", {
@@ -328,6 +377,7 @@ test_that("clean_unit_in_u() works", {
   expected = "u(\"10m\") + u(\"kg/s\") + u(\"10lb^2\")"
   expect_equal(result, expected)
 
+  # Complex equation from Insight Maker
   x = "u(\"3.86e26 Watts\") * ([Radius_of_planet] / [Distance_from_sun])^2 / 4\n\n# The sun's total radiation is 3.86×10^26 Watts.  From https://en.wikipedia.org/wiki/Solar_constant#The_Sun.27s_total_radiation\n# Incoming solar radiation = total radiation * (Shadow area of planet) / (Surface area of sphere at planet distance)\n# At Earth's distance, the incoming radiation density should be {1367 Watts / square meter}."
   result = clean_unit_in_u(x, regex_units)
   expected = "u(\"3.86e+26W\") * ([Radius_of_planet] / [Distance_from_sun])^2 / 4\n\n# The sun's total radiation is 3.86×10^26 Watts.  From https://en.wikipedia.org/wiki/Solar_constant#The_Sun.27s_total_radiation\n# Incoming solar radiation = total radiation * (Shadow area of planet) / (Surface area of sphere at planet distance)\n# At Earth's distance, the incoming radiation density should be {1367 Watts / square meter}."
@@ -338,6 +388,11 @@ test_that("clean_unit_in_u() works", {
   result = clean_unit_in_u(x, regex_units)
   expected = "u(\"10m^2/s\") - u(\"10lb^2\") + u(\"10m^2/s\") * + u(\"10lb^2\")"
   expect_equal(result, expected)
+
+  # Nested unit string throws error
+  x = "u('10 Meters squared per second + u('2 meters')')"
+  expect_error(clean_unit_in_u(x, regex_units),
+               "Nested units u\\(' u\\(''\\) '\\) are not allowed")
 
 })
 
@@ -490,6 +545,79 @@ test_that("convert_distribution() to Julia", {
 })
 
 
+
+test_that("convert sequence works", {
+
+  sfm = xmile("predator-prey")
+  var_names = get_model_var(sfm)
+  name = var_names[1]
+  type = "aux"
+
+  result = convert_equations_julia(sfm, type, name, "seq()", var_names,
+                                   debug = FALSE)[["eqn_julia"]]
+  expected = "range(1.0, 1.0, step=1.0)"
+  expect_equal(result, expected)
+
+  result = convert_equations_julia(sfm, type, name, "seq(by = 1)", var_names,
+                                   debug = FALSE)[["eqn_julia"]]
+  expected = "range(1.0, 1.0, step=1.0)"
+  expect_equal(result, expected)
+
+  result = convert_equations_julia(sfm, type, name, "seq(1, 10)", var_names,
+                                   debug = FALSE)[["eqn_julia"]]
+  expected = "range(1.0, 10.0, step=1.0)"
+  expect_equal(result, expected)
+
+  result = convert_equations_julia(sfm, type, name, "seq(1, 10, 2)", var_names,
+                                  debug = FALSE)[["eqn_julia"]]
+  expected = "range(1.0, 10.0, step=2.0)"
+  expect_equal(result, expected)
+
+  result = convert_equations_julia(sfm, type, name, "seq(1, 10, by=2)", var_names,
+                                  debug = FALSE)[["eqn_julia"]]
+  expected = "range(1.0, 10.0, step=2.0)"
+  expect_equal(result, expected)
+
+  result = convert_equations_julia(sfm, type, name, "seq(1, 10, length.out=5)", var_names,
+                                  debug = FALSE)[["eqn_julia"]]
+  expected = "range(1.0, 10.0, round_(5.0))"
+  expect_equal(result, expected)
+
+})
+
+
+test_that("convert sample works", {
+
+  sfm = xmile("predator-prey")
+  var_names = get_model_var(sfm)
+  name = var_names[1]
+  type = "aux"
+
+  result = convert_equations_julia(sfm, type, name, "sample(1:10, 5)", var_names,
+                                   debug = FALSE)[["eqn_julia"]]
+  expected = "StatsBase.sample(1.0:10.0, round_(5.0), replace=false)"
+  expect_equal(result, expected)
+
+  result = convert_equations_julia(sfm, type, name, "sample(1:10, 5, replace = TRUE)", var_names,
+                                   debug = FALSE)[["eqn_julia"]]
+  expected = "StatsBase.sample(1.0:10.0, round_(5.0), replace=true)"
+  expect_equal(result, expected)
+
+  result = convert_equations_julia(sfm, type, name, "sample(1:10, 5, replace = FALSE)", var_names,
+                                   debug = FALSE)[["eqn_julia"]]
+  expected = "StatsBase.sample(1.0:10.0, round_(5.0), replace=false)"
+  expect_equal(result, expected)
+
+  result = convert_equations_julia(sfm, type, name, "sample(1:10, 5, prob = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1))",
+                                   var_names,
+                                   debug = FALSE)[["eqn_julia"]]
+  expected = "StatsBase.sample(1.0:10.0, StatsBase.pweights([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]), round_(5.0), replace=false)"
+  expect_equal(result, expected)
+
+
+})
+
+
 test_that("vector_to_square_brackets works", {
 
   var_names = NULL
@@ -504,6 +632,32 @@ test_that("vector_to_square_brackets works", {
 
   result = vector_to_square_brackets("c(1, 2, 3) + ac(4, 5, 6)", var_names)
   expected = "[1, 2, 3] + ac(4, 5, 6)"
+  expect_equal(result, expected)
+
+})
+
+
+test_that("replacing digits with floats works", {
+  var_names = NULL
+
+  result = replace_digits_with_floats("1", var_names)
+  expected = "1.0"
+  expect_equal(result, expected)
+
+  result = replace_digits_with_floats("1000", var_names)
+  expected = "1000.0"
+  expect_equal(result, expected)
+
+  result = replace_digits_with_floats("1:10", var_names)
+  expected = "1.0:10.0"
+  expect_equal(result, expected)
+
+  result = replace_digits_with_floats("1.0:10.0", var_names)
+  expected = "1.0:10.0"
+  expect_equal(result, expected)
+
+  result = replace_digits_with_floats("1/9 + (hello9 + hello10)", var_names)
+  expected = "1.0/9.0 + (hello9 + hello10)"
   expect_equal(result, expected)
 
 })
@@ -544,10 +698,6 @@ test_that("functions in Julia work", {
 
   sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "round(u('108.67 seconds'))")
   expect_no_error(simulate(sfm))
-
-  # # with digits argument ** to do: digits is a keyword argument in Julia and cannot be a float!
-  # sfm = xmile() %>% build("a", "stock", eqn = "round(10.235, digits = 1)")
-  # expect_no_error(simulate(sfm))
 
   # Cosine function needs unitless argument or argument in radians
   sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "cos(10)")

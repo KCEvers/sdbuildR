@@ -6,21 +6,35 @@
 \usage{
 \method{plot}{sdbuildR_ensemble}(
   x,
-  i = 1:10,
-  j = 1,
+  type = c("summary", "sims")[1],
+  i = seq(1, min(c(x[["n"]], 10))),
+  j = seq(1, min(c(x[["n_conditions"]], 9))),
+  nrows = ceiling(sqrt(max(j))),
+  shareX = TRUE,
+  shareY = TRUE,
   palette = "Dark 2",
   colors = NULL,
   font_family = "Times New Roman",
   font_size = 16,
+  wrap_width = 25,
+  central_tendency = c("mean", "median")[1],
   ...
 )
 }
 \arguments{
 \item{x}{Output of ensemble().}
 
+\item{type}{Type of plot. Either "summary" for a summary plot with mean or median lines and confidence intervals, or "sims" for individual simulation trajectories with mean or median lines. Defaults to "summary".}
+
 \item{i}{Indices of the individual trajectories to plot if type = "sims". Defaults to 1:10. Including a high number of trajectories will slow down plotting considerably.}
 
-\item{j}{Index of the condition to plot. Defaults to 1.}
+\item{j}{Indices of the condition to plot. Defaults to 1:9. If only one condition is specified, the plot will not be a grid of subplots.}
+
+\item{nrows}{Number of rows in the plot grid. Defaults to ceiling(sqrt(n_conditions)).}
+
+\item{shareX}{If TRUE, share the x-axis across subplots. Defaults to TRUE.}
+
+\item{shareY}{If TRUE, share the y-axis across subplots. Defaults to TRUE.}
 
 \item{palette}{Colour palette. Must be one of hcl.pals().}
 
@@ -30,13 +44,17 @@
 
 \item{font_size}{Font size. Defaults to 16.}
 
+\item{wrap_width}{Width of text wrapping for labels. Must be an integer. Defaults to 25.}
+
+\item{central_tendency}{Central tendency to use for the mean line. Either "mean" or "median". Defaults to "mean".}
+
 \item{...}{Optional parameters}
 }
 \value{
 Plot of ensemble simulation.
 }
 \description{
-Visualise ensemble simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.
+Visualise ensemble simulation results of a stock-and-flow model. Either summary statistics or individual trajectories can be plotted. When multiple conditions j are specified, a grid of subplots is plotted. See \code{ensemble()} for examples.
 }
 \seealso{
 \code{\link[=ensemble]{ensemble()}}

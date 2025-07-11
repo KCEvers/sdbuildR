@@ -74,7 +74,21 @@ test_that("simulate with different components works", {
 
 })
 
+test_that("output of simulate in R", {
 
+  sfm = xmile("SIR") %>% sim_specs(language = "R", start = 0, stop = 10, dt = .1)
+  sim = expect_no_error(simulate(sfm))
+  expect_equal(all(c("df", "init", "constants", "sfm", "script", "duration") %in% names(sim)), TRUE)
+
+  # Check that init and constants are not Julia objects
+  expect_equal(class(sim$constants), "numeric")
+  expect_equal(class(sim$init), "numeric")
+  expect_equal(sort(names(sim$constants)),
+               c("Delay", "Effective_Contact_Rate", "Total_Population"))
+  expect_equal(sort(names(sim$init)),
+               c("Infected", "Recovered", "Susceptible"))
+
+})
 
 test_that("throw error in compile_R for unsupported functions", {
 
@@ -142,3 +156,28 @@ test_that("seed works", {
 
 })
 
+
+
+
+test_that("function in aux still works", {
+
+  sfm = xmile() %>%
+    sim_specs(language = "R", start = 0, stop = 10, dt = .1) %>%
+    build("A", "stock") %>%
+    build("input", "aux", eqn = "ramp(5, 10, -1)")
+  sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
+  sim = expect_no_message(simulate(sfm, only_stocks = FALSE))
+
+  # Check that input is not returned as a variable
+  expect_equal(sort(unique(sim$df$variable)), c("A"))
+
+  # Check with two intermediary variables
+  sfm = sfm %>%
+    build("a2", "aux", eqn = " 0.38 + input(t)")
+  sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
+  sim = expect_no_message(simulate(sfm, only_stocks = FALSE))
+
+  # Check that input is not returned as a variable
+  expect_equal(sort(unique(sim$df$variable)), c("A", "a2"))
+
+})

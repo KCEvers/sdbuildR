@@ -7,7 +7,7 @@
 #' @param stop If TRUE, stop active Julia session. Defaults to FALSE.
 #' @param version Julia version. Default is "latest", which will install the most recent stable release.
 #' @param JULIA_HOME Path to Julia installation. Defaults to NULL to locate Julia automatically.
-#' @param JULIA_NUM_THREADS Number of Julia threads to use. Defaults to 4. If set to a value higher than the number of available cores minus 2, it will be set to the number of available cores minus 2.
+#' @param JULIA_NUM_THREADS Number of Julia threads to use. Defaults to parallel::detectCores() - 1. If set to a value higher than the number of available cores minus 1, it will be set to the number of available cores minus 1.
 #' @param dir Directory to install Julia. Defaults to NULL to use default location.
 #' @param force If TRUE, force Julia setup to execute again.
 #' @param force_install If TRUE, force Julia installation even if existing version is found. Defaults to FALSE.
@@ -25,7 +25,7 @@ use_julia <- function(
     stop = FALSE,
     version = "latest",
     JULIA_HOME = NULL,
-    JULIA_NUM_THREADS = 4,
+    JULIA_NUM_THREADS = parallel::detectCores() - 1,
     dir = NULL,
     force = FALSE,
     force_install = FALSE, ...){
@@ -44,6 +44,19 @@ use_julia <- function(
     JuliaConnectoR::stopJulia()
     return(invisible())
   }
+
+
+  # Set number of Julia threads to use
+  if (JULIA_NUM_THREADS > (parallel::detectCores() - 1)){
+    warning("JULIA_NUM_THREADS is set to ", JULIA_NUM_THREADS, ", which is higher than the number of available cores minus 1. Setting it to ", parallel::detectCores() - 1, ".")
+    JULIA_NUM_THREADS = parallel::detectCores() - 1
+  }
+  if (JULIA_NUM_THREADS < 1){
+    JULIA_NUM_THREADS = 1
+  }
+
+  Sys.setenv("JULIA_NUM_THREADS" = JULIA_NUM_THREADS)
+
 
   # Check whether use_julia() was run
   if (!force & !force_install & !is.null(options()[["initialization_sdbuildR"]])){
@@ -173,15 +186,6 @@ use_julia <- function(
     JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, P[["jl_pkg_name"]]), '")'))
   }
 
-
-  # Set number of Julia threads to use
-  if (JULIA_NUM_THREADS > (parallel::detectCores() - 2)){
-    warning("JULIA_NUM_THREADS is set to ", JULIA_NUM_THREADS, ", which is higher than the number of available cores minus 2. Setting it to ", parallel::detectCores() - 2, ".")
-    JULIA_NUM_THREADS = parallel::detectCores() - 2
-  }
-  Sys.setenv("JULIA_NUM_THREADS" = JULIA_NUM_THREADS)
-  # Sys.getenv("JULIA_NUM_THREADS")
-
   # Run initialization
   run_init()
 
@@ -222,7 +226,7 @@ run_init = function(){
 
 
 
-#' Internal function to create initialization file for julia
+#' Internal function to create initialization file for Julia
 #'
 #' @return NULL
 #' @noRd
@@ -266,12 +270,13 @@ create_julia_env = function(){
   script = paste0(
       "# Load packages\n",
 # "using DifferentialEquations#: ODEProblem, solve, Euler, RK4, Tsit5\n",
-"using SciMLBase.EnsembleAnalysis\n",
+# "using SciMLBase.EnsembleAnalysis\n",
 "using OrdinaryDiffEq\n",
 "using DiffEqCallbacks#: SavingCallback, SavedValues\n",
 "using DataFrames#: DataFrame, select, innerjoin, rename!\n",
 "using Distributions\n",
 "using Statistics\n",
+"using StatsBase\n",
 "using Unitful\n",
 "using DataInterpolations\n",
 "using Random\n",
@@ -337,16 +342,25 @@ Base.trunc(x::Unitful.Quantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)\n"
   write_script(script, filepath)
 
   # Add dependencies
-  pkgs = c("OrdinaryDiffEq" = "6", "DiffEqCallbacks" = "4.8", "DataFrames" = "1.7", "Distributions" = "0.25",
-           "Statistics" = "1.11", "Unitful" = "1.23", "DataInterpolations" = "8.1", "Random" = "1.11", "CSV" = "0.10", "SciMLBase" = "2.102")
+  pkgs = c("OrdinaryDiffEq" = "6.98",
+           "DiffEqCallbacks" = "4.8",
+           "DataFrames" = "1.7",
+           "Distributions" = "0.25",
+           "Statistics" = "1.11",
+           "StatsBase" = "0.34",
+           "Unitful" = "1.23",
+           "DataInterpolations" = "8.1",
+           "Random" = "1.11",
+           "CSV" = "0.10",
+           "SciMLBase" = "2.102")
 
   for (pkg in names(pkgs)){
     JuliaConnectoR::juliaEval(paste0("Pkg.add(\"", pkg, "\")"))
     JuliaConnectoR::juliaEval(paste0("Pkg.status(\"", pkg, "\")"))
-    # JuliaConnectoR::juliaEval(paste0("Pkg.compat(\"", pkg, "\", \"", pkgs[[pkg]], "\")"))
+    JuliaConnectoR::juliaEval(paste0("Pkg.compat(\"", pkg, "\", \"", pkgs[[pkg]], "\")"))
   }
 
-  JuliaConnectoR::juliaEval(paste0("Pkg.update()"))
+  # JuliaConnectoR::juliaEval(paste0("Pkg.update()"))
 
   JuliaConnectoR::juliaEval("Pkg.compat(\"julia\", \"1.11\")")
   JuliaConnectoR::juliaEval("Pkg.resolve()")
@@ -359,7 +373,11 @@ Base.trunc(x::Unitful.Quantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)\n"
 }
 
 
-
+#' Internal function to create Julia package with helper functions
+#'
+#' @return NULL
+#' @noRd
+#'
 create_julia_pkg = function(){
 
   # Initialize Julia
@@ -380,7 +398,7 @@ create_julia_pkg = function(){
     "unit_func" = "using Unitful\n",
     "custom_func" = "using Unitful\nusing DataInterpolations\nusing Distributions\nusing ..unit_func: convert_u\n",
     "past" = "using Unitful\nusing ..custom_func: itp\nusing ..unit_func: convert_u\n",
-    "clean" = "using Unitful\nusing DataFrames\nusing ..custom_func: itp\n",
+    "clean" = "using Unitful\nusing DataFrames\nusing ..custom_func: itp, is_function_or_interp\n",
     "ensemble" = "using Unitful\nusing Statistics\nusing DataFrames\n")
 
 
@@ -534,18 +552,21 @@ create_julia_pkg = function(){
   JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, "\\\\", P[["jl_pkg_name"]],'")'))
 
   # Add dependencies
-  pkgs = c("DataFrames" = "1.7", "Distributions" = "0.25",
-           "Statistics" = "1.11", "Unitful" = "1.23",
-           "DataInterpolations" = "8.1", "Random" = "1.11")
+  pkgs = c("DataFrames" = "1.7",
+           "Distributions" = "0.25",
+           "Statistics" = "1.11",
+           "Unitful" = "1.23",
+           "DataInterpolations" = "8.1",
+           "Random" = "1.11")
 
   for (pkg in names(pkgs)){
     JuliaConnectoR::juliaEval(paste0("Pkg.add(\"", pkg, "\")"))
     JuliaConnectoR::juliaEval(paste0("Pkg.status(\"", pkg, "\")"))
-    # JuliaConnectoR::juliaEval(paste0("Pkg.compat(\"", pkg, "\", \"", pkgs[[pkg]], "\")"))
+    JuliaConnectoR::juliaEval(paste0("Pkg.compat(\"", pkg, "\", \"", pkgs[[pkg]], "\")"))
   }
 
   # JuliaConnectoR::juliaEval("Pkg.gc()")
-  JuliaConnectoR::juliaEval("Pkg.update()")
+  # JuliaConnectoR::juliaEval("Pkg.update()")
 
   # Add Julia compatibility
   JuliaConnectoR::juliaEval("Pkg.compat(\"julia\", \"1.11\")")

@@ -248,6 +248,12 @@ clean_unit_in_u = function(x, regex_units){
   # Remove surrounding u('')
   matches_no_u = sapply(matches, function(y){stringr::str_sub(y, 4, nchar(y)-2)}, USE.NAMES = FALSE)
 
+  # Throw error if a match includes u(''): units cannot be nested
+  if (any(stringr::str_detect(matches_no_u, "u\\([\"|']"))) {
+    stop("Nested units u(' u('') ') are not allowed. Please remove the u() from the unit string.")
+  }
+
+
   # Clean all matches at once
   cleaned <- paste0("u(\"", sapply(matches_no_u, clean_unit, regex_units = regex_units, USE.NAMES = FALSE), "\")")
 

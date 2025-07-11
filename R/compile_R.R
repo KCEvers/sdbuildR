@@ -5,14 +5,6 @@
 #' @inheritParams simulate
 #'
 #' @return List with variables created in the simulation script
-#' \describe{
-#'   \item{dt}{Numeric, the timestep}
-#'   \item{times}{Numeric, sequence of time values}
-#'   \item{ode_func}{Function, the ODE function}
-#'   \item{constants}{List, constant parameters (i.e. static Auxiliaries)}
-#'   \item{df}{Dataframe, timeseries of computed variables in the ODE}
-#'   \item{...}{Other variables created in the simulation script.}
-#' }
 #' @noRd
 #'
 simulate_R = function(sfm,
@@ -77,8 +69,8 @@ simulate_R = function(sfm,
     #      )
     out = list()
     out[[P[["sim_df_name"]]]] = envir[[P[["sim_df_name"]]]]
-    # out[[P[["initial_value_name"]]]] = envir[[P[["initial_value_name"]]]]
-    out[[P[["parameter_name"]]]] = envir[[P[["parameter_name"]]]]
+    out[["init"]] = unlist(envir[[P[["initial_value_name"]]]])
+    out[["constants"]] = unlist(envir[[P[["parameter_name"]]]])
     out$keep_unit = FALSE
     out$script = script
     # out$filepath = filepath

@@ -5,6 +5,8 @@ using DataInterpolations
 using Distributions
 using ..unit_func: convert_u
 
+is_function_or_interp(x) = isa(x, Function) || isa(x, DataInterpolations.AbstractInterpolation)
+
 # Extrapolation function
 function itp(x, y; method = "linear", extrapolation = "nearest")
 
