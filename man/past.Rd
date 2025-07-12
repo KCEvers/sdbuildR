@@ -2,7 +2,7 @@
 % Please edit documentation in R/delay.R
 \name{past}
 \alias{past}
-\title{Retrieve an interval of values from the past}
+\title{Retrieve values from the past}
 \usage{
 past(variable, length = NULL)
 }
@@ -15,5 +15,12 @@ past(variable, length = NULL)
 Past values
 }
 \description{
-Note that this function is only usable for simulations run with Julia.
+Function in development; currently unusable. Note that this function is only usable for simulations run with Julia.
 }
+\seealso{
+Other delay: 
+\code{\link{delay}()},
+\code{\link{delayN}()},
+\code{\link{smoothN}()}
+}
+\concept{delay}

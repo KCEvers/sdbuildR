@@ -48,3 +48,16 @@ sfm = xmile() \%>\%
   author = "Kyra Evers",
   version = "1.1")
 }
+\seealso{
+Other build: 
+\code{\link{as.data.frame.sdbuildR_sim}()},
+\code{\link{as.data.frame.sdbuildR_xmile}()},
+\code{\link{build}()},
+\code{\link{debugger}()},
+\code{\link{get_build_code}()},
+\code{\link{macro}()},
+\code{\link{plot.sdbuildR_xmile}()},
+\code{\link{summary.sdbuildR_xmile}()},
+\code{\link{xmile}()}
+}
+\concept{build}

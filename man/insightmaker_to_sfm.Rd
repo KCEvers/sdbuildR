@@ -10,8 +10,7 @@ insightmaker_to_sfm(
   directory = tempdir(),
   keep_nonnegative_flow = TRUE,
   keep_nonnegative_stock = FALSE,
-  keep_solver = FALSE,
-  debug = FALSE
+  keep_solver = FALSE
 )
 }
 \arguments{
@@ -26,8 +25,6 @@ insightmaker_to_sfm(
 \item{keep_nonnegative_stock}{If TRUE, keeps original non-negativity setting of stocks Defaults to TRUE.}
 
 \item{keep_solver}{If TRUE, keep the ODE solver as it is. If FALSE, switch to Euler integration in case of non-negative stocks to reproduce the Insight Maker data exactly. Defaults to FALSE.}
-
-\item{debug}{If TRUE, print all conversion output. Defaults to FALSE.}
 }
 \value{
 Stock-and-flow model of class xmile.
@@ -36,12 +33,20 @@ Stock-and-flow model of class xmile.
 Import a stock-and-flow model from \href{https://insightmaker.com/}{Insight Maker}. Models may be your own or from another user. Importing causal loop diagrams or agent-based models is not supported.
 }
 \examples{
+# Load a model from Insight Maker
 sfm = insightmaker_to_sfm(URL =
  'https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022')
 plot(sfm)
+
+# Simulate the model
 sim = simulate(sfm)
 plot(sim)
+
 }
 \seealso{
 \code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}
+
+Other insightmaker: 
+\code{\link{url_to_IM}()}
 }
+\concept{insightmaker}

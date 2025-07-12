@@ -19,3 +19,8 @@ String with Insight Maker model
 \description{
 Extract Insight Maker model XML string from URL
 }
+\seealso{
+Other insightmaker: 
+\code{\link{insightmaker_to_sfm}()}
+}
+\concept{insightmaker}

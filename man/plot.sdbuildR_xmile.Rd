@@ -47,7 +47,20 @@ Visualise a stock-and-flow diagram using DiagrammeR. Stocks are represented as b
 \examples{
 sfm = xmile("SIR")
 plot(sfm)
+
 }
 \seealso{
 \code{\link[=insightmaker_to_sfm]{insightmaker_to_sfm()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=plot.sdbuildR_sim]{plot.sdbuildR_sim()}}
+
+Other build: 
+\code{\link{as.data.frame.sdbuildR_sim}()},
+\code{\link{as.data.frame.sdbuildR_xmile}()},
+\code{\link{build}()},
+\code{\link{debugger}()},
+\code{\link{get_build_code}()},
+\code{\link{header}()},
+\code{\link{macro}()},
+\code{\link{summary.sdbuildR_xmile}()},
+\code{\link{xmile}()}
 }
+\concept{build}

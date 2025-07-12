@@ -29,7 +29,7 @@ knitr::opts_chunk$set(
 library(sdbuildR)
 ```
 
-After having built a stock-and-flow model, you may want to explore how different parameter values affect the model's behaviour. Running multiple simulations with varying parameters is also called an ensemble, which provides insight into the range of possible outcomes and uncertainty associated with your model. In this vignette, we will explore how to set up and run ensemble simulations using the `sdbuildR` package. 
+After having built a stock-and-flow model, you may want to explore how different parameter values affect the model's behaviour. Running multiple simulations with varying parameters is also called an ensemble, which provides insight into the range of possible outcomes and uncertainty associated with your model. In this vignette, we will explore how to set up and run ensemble simulations using the sdbuildR package. 
 
 ## Setting up the model
 
@@ -133,7 +133,7 @@ Instead of generating an ensemble with random initial conditions, we can also sp
 ```{r}
 sims = ensemble(sfm, 
                 range = list("a2" = c(0.2, 0.4, 0.6, 0.8)), 
-                n = 100, verbose = TRUE, debug = TRUE)
+                n = 100)
 ```
 
 

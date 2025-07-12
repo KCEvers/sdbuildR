@@ -1,5 +1,5 @@
-# past
-module past
+# delay
+module delay
 using Unitful
 using ..custom_func: itp
 using ..unit_func: convert_u
@@ -136,7 +136,7 @@ function setup_smoothN(initial_value, length_delay, order_delay::Float64, name::
     # Compute the initial value for each accumulator
     # from https://www.simulistics.com/help/equations/functions/delay.htm
     order_delay = round(Int, order_delay) # Turn order into integer
-    value = initial_value * length_delay / order_delay # same initialization for smoothN() as delayN() as verified by Insight Maker
+    value = initial_value #* length_delay / order_delay
 
     # Create a dictionary with names like "name_acc1", "name_acc2", ...
     #return Dict(string(name, "_acc", i) => value for i in 1:order_delay)

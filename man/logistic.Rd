@@ -25,3 +25,21 @@ Logistic function
 logistic(0)
 logistic(1, slope = 5, midpoint = 0.5)
 }
+\seealso{
+Other custom: 
+\code{\link{\%REM\%}()},
+\code{\link{contains_IM}()},
+\code{\link{expit}()},
+\code{\link{filter_IM}()},
+\code{\link{indexof}()},
+\code{\link{length_IM}()},
+\code{\link{logit}()},
+\code{\link{mod}()},
+\code{\link{rbool}()},
+\code{\link{rdist}()},
+\code{\link{rem}()},
+\code{\link{round_IM}()},
+\code{\link{shuffle}()},
+\code{\link{substr_i}()}
+}
+\concept{custom}

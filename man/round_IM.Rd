@@ -23,3 +23,21 @@ Source: https://stackoverflow.com/questions/12688717/round-up-from-5/12688836#12
 \examples{
 round_IM(.5)
 }
+\seealso{
+Other custom: 
+\code{\link{\%REM\%}()},
+\code{\link{contains_IM}()},
+\code{\link{expit}()},
+\code{\link{filter_IM}()},
+\code{\link{indexof}()},
+\code{\link{length_IM}()},
+\code{\link{logistic}()},
+\code{\link{logit}()},
+\code{\link{mod}()},
+\code{\link{rbool}()},
+\code{\link{rdist}()},
+\code{\link{rem}()},
+\code{\link{shuffle}()},
+\code{\link{substr_i}()}
+}
+\concept{custom}

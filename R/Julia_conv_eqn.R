@@ -9,7 +9,7 @@
 #' @return Updated sfm
 #' @noRd
 #'
-convert_equations_julia_wrapper = function(sfm, regex_units, debug = TRUE){
+convert_equations_julia_wrapper = function(sfm, regex_units){
 
   # Get variable names
   var_names = get_model_var(sfm)
@@ -21,8 +21,7 @@ convert_equations_julia_wrapper = function(sfm, regex_units, debug = TRUE){
 
                                              if (is_defined(y[["eqn"]])){
                                                out = convert_equations_julia(sfm, y[["type"]], y[["name"]], y[["eqn"]], var_names,
-                                                                             regex_units = regex_units,
-                                                                             debug = debug)
+                                                                             regex_units = regex_units)
                                                y = utils::modifyList(y, out)
                                              }
                                              # print(y$eqn_julia)
@@ -41,7 +40,7 @@ convert_equations_julia_wrapper = function(sfm, regex_units, debug = TRUE){
     }
 
     out = convert_equations_julia(sfm, "macro", "macro", x[["eqn_julia"]], var_names,
-                                  regex_units = regex_units, debug = debug)
+                                  regex_units = regex_units)
     x = utils::modifyList(x, out)
 
     return(x)
@@ -63,9 +62,9 @@ convert_equations_julia_wrapper = function(sfm, regex_units, debug = TRUE){
 #' @importFrom rlang .data
 #' @noRd
 #'
-convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units, debug = TRUE){
+convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units){
 
-  if (debug) {
+  if (P[["debug"]]) {
     # print("")
     # print(type)
     # print(name)
@@ -140,7 +139,7 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units,
     # print(eqn)
 
     # Step 3. Statements (if, for, while, functions, try)
-    eqn = convert_all_statements_julia(eqn, var_names, debug)
+    eqn = convert_all_statements_julia(eqn, var_names)
 
     # Step 4. Operators (booleans, logical operators, addition of strings)
     eqn = eqn %>%
@@ -152,7 +151,7 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units,
     # replace_range_julia(., var_names)
 
     # Step 5. Replace R functions to Julia functions
-    conv_list = convert_builtin_functions_julia(type, name, eqn, var_names, debug = debug)
+    conv_list = convert_builtin_functions_julia(type, name, eqn, var_names)
     eqn = conv_list[["eqn"]]
     add_Rcode = conv_list[["add_Rcode"]]
     # translated_func = conv_list$translated_func
@@ -180,7 +179,7 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units,
     #   eqn = paste0("begin\n", eqn, "\nend")
     # }
 
-    # if (debug){print(eqn)}
+    # if (P[["debug"]]){print(eqn)}
 
     out =  append(list(eqn_julia = eqn), add_Rcode)
 
@@ -467,7 +466,7 @@ find_curly = function(df, paired_idxs){
 #' @return Updated eqn
 #' @noRd
 #'
-convert_all_statements_julia = function(eqn, var_names, debug){
+convert_all_statements_julia = function(eqn, var_names){
 
   eqn_old = eqn
 
@@ -1030,7 +1029,7 @@ get_syntax_julia = function(){
     "ramp", "ramp", "syntax1", paste0(P[["times_name"]], ", ", P[["time_units_name"]]), "", F,
     "seasonal", "seasonal", "syntax1", paste0(P[["times_name"]], ", ", P[["timestep_name"]]), "", F,
 
-    "IM_length", "length", "syntax1", "", "", F,
+    "length_IM", "length", "syntax1", "", "", F,
 
     "delay", "retrieve_delay", "delay", "", "", F,
     "past", "retrieve_past", "past", "", "", F,
@@ -1294,9 +1293,7 @@ get_syntax_julia = function(){
 #' @noRd
 #' @importFrom rlang .data
 #'
-convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
-
-  # translated_func = c()
+convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
 
   add_Rcode = list(func = list())
 
@@ -1317,21 +1314,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
       # Remove those matches that are in quotation marks or names
       idxs_exclude = get_seq_exclude(eqn, var_names)
 
-      # # Update location indices of functions in eqn
-      # idx_df <- lapply(1:length(R_regex), function(i) {
-      #   matches <- gregexpr(R_regex[i], eqn, perl = TRUE, ignore.case = FALSE)[[1]]
-      #   if (matches[1] == -1) {
-      #     return(data.frame(start = integer(), end = integer()))
-      #   } else {
-      #     # dplyr::bind_cols instead of cbind(), as cbind() gives rownames for short variable have been discarded warning
-      #     dplyr::bind_cols(syntax_df[i, ],
-      #           data.frame(
-      #             start = as.integer(matches),
-      #             end = as.integer(matches + attr(matches, "match.length") - 1)
-      #           ))
-      #   }
-      # }) %>% do.call(rbind, .) %>% as.data.frame()
-
+      # Update location indices of functions in eqn
       idx_df <- lapply(seq_along(R_regex), function(i) {
         matches <- gregexpr(R_regex[i], eqn, perl = TRUE, ignore.case = FALSE)[[1]]
 
@@ -1414,21 +1397,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
           idx_funcs = idx_funcs[order(idx_funcs[["end"]]), ]
           idx_funcs
 
-
-          # # Match the opening bracket of each function to round brackets in paired_idxs
-          # idx_funcs = merge(
-          #   paired_idxs[paired_idxs$type == "round", ],
-          #   idx_df,
-          #   by.x = "start",
-          #   by.y = "end"
-          # ) %>% dplyr::rename(start_bracket = "start", start = "start.y") %>%
-          #   # Add back syntax1b which does not need brackets
-          #   dplyr::bind_rows(idx_df[idx_df$syntax %in% c("syntax0b", "syntax1b"), ] %>%
-          #                      # Add start_bracket column to prevent errors
-          #                      dplyr::mutate(start_bracket = .data$start)) %>%
-          #   dplyr::arrange(.data$end)
-          # idx_funcs
-
         } else {
           # If there are no brackets in the eqn:
           idx_funcs = idx_df
@@ -1443,7 +1411,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
         idx_funcs_ordered = idx_funcs_ordered[order(idx_funcs_ordered[["is_nested_around"]]), ]
         idx_func = idx_funcs_ordered[1, ] # Select first match
 
-        if (debug){
+        if (P[["debug"]]){
           print("idx_func")
           print(idx_func)
         }
@@ -1659,7 +1627,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names, debug) {
                                  idx_func[["julia"]])
         }
 
-        if (debug){
+        if (P[["debug"]]){
           print(stringr::str_sub(eqn, start_idx, end_idx))
           print(replacement)
           print("")

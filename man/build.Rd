@@ -72,7 +72,7 @@ build(
 Updated stock-and-flow model.
 }
 \description{
-Variables in stock-and-flow models may be stocks, flows, constants, auxiliaries, or graphical functions. Add, change, or erase a variable in a stock-and-flow model.
+Add, change, or erase variables in a stock-and-flow model. Variables may be stocks, flows, constants, auxiliaries, or graphical functions.
 }
 \section{Stocks}{
  Stocks define the state of the system. They accumulate material or information over time, such as people, products, or beliefs, which creates memory and inertia in the system. As such, stocks need not be tangible. Stocks are variables that can increase and decrease, and can be measured at a single moment in time. The value of a stock is increased or decreased by flows. A stock may have multiple inflows and multiple outflows. The net change in a stock is the sum of its inflows minus the sum of its outflows.
@@ -117,7 +117,9 @@ sfm = sfm \%>\%
  build("prey", "stock", eqn = 50, label = "Prey")
 
 # Plot the stock-and-flow diagram
-plot(sfm)
+plot(sfm, center_stocks = TRUE)
+
+
 
 # Add four flows: the births and deaths of both the predators and prey. The
 # "eqn" property of flows represents the rate of the flow. In addition, we
@@ -149,4 +151,16 @@ plot(sim)
 }
 \seealso{
 \code{\link[=xmile]{xmile()}}
+
+Other build: 
+\code{\link{as.data.frame.sdbuildR_sim}()},
+\code{\link{as.data.frame.sdbuildR_xmile}()},
+\code{\link{debugger}()},
+\code{\link{get_build_code}()},
+\code{\link{header}()},
+\code{\link{macro}()},
+\code{\link{plot.sdbuildR_xmile}()},
+\code{\link{summary.sdbuildR_xmile}()},
+\code{\link{xmile}()}
 }
+\concept{build}

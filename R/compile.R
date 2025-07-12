@@ -9,7 +9,6 @@
 #' @param format_code If TRUE, format the R script with the styler package; only works if language is set to "R" in sim_specs. Defaults to TRUE.
 #' @param keep_unit If TRUE, keeps units of variables. Defaults to TRUE.
 #' @param verbose If TRUE, update on progress. Defaults to FALSE.
-#' @param debug If TRUE, print output for debugging. Defaults to FALSE.
 #' @param only_stocks If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.
 #' @param ... Optional arguments
 #'
@@ -24,21 +23,22 @@
 #'   \item{...}{Other parameters passed to simulate}
 #' }
 #' @export
+#' @family simulate
 #' @seealso [build()], [xmile()], [debugger()], [sim_specs()], [use_julia()]
 #'
 #' @examples sfm = xmile("SIR")
 #' sim = simulate(sfm)
-#' plot(sfm)
+#' plot(sim)
 #'
 #' # Obtain all model variables
 #' sim = simulate(sfm, only_stocks = FALSE)
-#' plot(sfm, add_constants = TRUE)
+#' plot(sim, add_constants = TRUE)
 #'
 #' # Use Julia for models with units or delay functions
 #' sfm = xmile("coffee_cup") %>% sim_specs(language = "Julia")
 #' use_julia()
 #' sim = simulate(sfm)
-#' plot(sfm)
+#' plot(sim)
 #'
 #' # Close Julia session
 #' use_julia(stop = TRUE)
@@ -50,7 +50,7 @@ simulate = function(sfm,
                     keep_unit = TRUE,
                     only_stocks = TRUE,
                     verbose = FALSE,
-                    debug = FALSE,  ...){
+                    ...){
 
   # First assess whether the model is valid
   problems = debugger(sfm, quietly = TRUE)
@@ -63,7 +63,7 @@ simulate = function(sfm,
                           keep_nonnegative_flow = keep_nonnegative_flow,
                           keep_nonnegative_stock = keep_nonnegative_stock,
                           keep_unit = keep_unit, only_stocks = only_stocks,
-                          verbose = verbose, debug = debug))
+                          verbose = verbose))
 
   } else if (tolower(sfm[["sim_specs"]][["language"]]) == "r"){
 
@@ -77,7 +77,7 @@ simulate = function(sfm,
                       keep_nonnegative_flow = keep_nonnegative_flow,
                       keep_nonnegative_stock = keep_nonnegative_stock,
                       only_stocks = only_stocks,
-                      verbose = verbose, debug = debug))
+                      verbose = verbose))
   } else {
     stop("Language not supported.\nPlease run either sfm %>% sim_specs(language = 'Julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
   }
@@ -459,6 +459,7 @@ order_equations <- function(sfm, print_msg = TRUE){
 #'
 #' @returns List with comparison results
 #' @export
+#' @family internal
 #'
 compare_sim = function(sim1, sim2, tolerance = .00001){
 
@@ -565,6 +566,7 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #'  \item{...}{Other parameters passed to ensemble}
 #'  }
 #' @export
+#' @family simulate
 #' @seealso [build()], [xmile()], [sim_specs()], [use_julia()]
 #'
 #' @examples
@@ -592,8 +594,7 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #'plot(sims, type = "sims", i = 1)
 #'
 #'# Plot the median with lighter individual trajectories
-#'plot(sims, central_tendency = "median",
-#'     type = "sims", alpha = 0.1)
+#'plot(sims, central_tendency = "median", type = "sims", alpha = 0.1)
 #'
 #'# Ensembles can also be run with exact values for the initial conditions
 #'# and parameters. Below, we vary the initial values of the predator and the
@@ -637,8 +638,7 @@ ensemble = function(sfm,
                     keep_nonnegative_stock = FALSE,
                     keep_unit = TRUE,
                     only_stocks = TRUE,
-                    verbose = TRUE,
-                    debug = FALSE
+                    verbose = TRUE
 ){
 
   check_xmile(sfm)
@@ -783,7 +783,7 @@ ensemble = function(sfm,
                          keep_nonnegative_flow = keep_nonnegative_flow,
                          keep_nonnegative_stock = keep_nonnegative_stock,
                          only_stocks = only_stocks,
-                         keep_unit = keep_unit, debug = debug)
+                         keep_unit = keep_unit)
   write_script(script, filepath)
   script = paste0(readLines(filepath), collapse = "\n")
 

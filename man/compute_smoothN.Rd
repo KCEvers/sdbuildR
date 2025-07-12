@@ -21,3 +21,13 @@ A list containing the outflow value and the updated state.
 \description{
 Internal function to compute the smoothN accumulator.
 }
+\seealso{
+Other internal: 
+\code{\link{compare_sim}()},
+\code{\link{compute_delayN}()},
+\code{\link{nonnegative}()},
+\code{\link{saveat_func}()},
+\code{\link{setup_delayN}()},
+\code{\link{setup_smoothN}()}
+}
+\concept{internal}

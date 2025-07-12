@@ -28,6 +28,19 @@ Macros are global variables or functions that can be used throughout your stock-
 \examples{
 # If the logistic() function did not exist, you could create it yourself:
 sfm = xmile() \%>\%
-macro("logistic", eqn = "function(x, slope = 1, midpoint = .5) 1 / (1 + exp(-slope*(x-midpoint)))")
+macro("func", eqn = "function(x, slope = 1, midpoint = .5) 1 / (1 + exp(-slope*(x-midpoint)))")
 
 }
+\seealso{
+Other build: 
+\code{\link{as.data.frame.sdbuildR_sim}()},
+\code{\link{as.data.frame.sdbuildR_xmile}()},
+\code{\link{build}()},
+\code{\link{debugger}()},
+\code{\link{get_build_code}()},
+\code{\link{header}()},
+\code{\link{plot.sdbuildR_xmile}()},
+\code{\link{summary.sdbuildR_xmile}()},
+\code{\link{xmile}()}
+}
+\concept{build}

@@ -50,4 +50,14 @@ sfm = xmile() \%>\% sim_specs(stop = 1, time_units = "days") \%>\%
 }
 \seealso{
 \code{\link[=model_units]{model_units()}}, \code{\link[=unit_prefixes]{unit_prefixes()}}, \code{\link[=convert_u]{convert_u()}}, \code{\link[=drop_u]{drop_u()}}
+
+Other units: 
+\code{\link{convert_u}()},
+\code{\link{drop_u}()},
+\code{\link{get_regex_time_units}()},
+\code{\link{get_regex_units}()},
+\code{\link{get_units}()},
+\code{\link{model_units}()},
+\code{\link{unit_prefixes}()}
 }
+\concept{units}

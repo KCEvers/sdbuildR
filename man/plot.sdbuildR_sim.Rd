@@ -46,7 +46,22 @@ plot(sim)
 # The default plot title and axis labels can be changed like so:
 plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
 
+# If you want to add constants to the plot, set `add_constants = TRUE`
+plot(sim, add_constants = TRUE)
+
+# To plot all model variables, run the simulation with `only_stocks = FALSE`
+sim = simulate(sfm, only_stocks = FALSE)
+plot(sim, add_constants = TRUE)
+
 }
 \seealso{
 \code{\link[=simulate]{simulate()}}, \code{\link[=as.data.frame.sdbuildR_sim]{as.data.frame.sdbuildR_sim()}}, \code{\link[=plot.sdbuildR_xmile]{plot.sdbuildR_xmile()}}
+
+Other simulate: 
+\code{\link{ensemble}()},
+\code{\link{plot.sdbuildR_ensemble}()},
+\code{\link{sim_specs}()},
+\code{\link{simulate}()},
+\code{\link{use_julia}()}
 }
+\concept{simulate}

@@ -24,9 +24,19 @@ Equivalent of Seasonal() in Insight Maker
 # Create a simple model with a seasonal wave
 sfm = xmile() \%>\%
 build("a", "stock") \%>\%
-build("input", "constant", eqn = "seasonal(1, 0)") \%>\%
+build("input", "constant", eqn = "seasonal(10, 0)") \%>\%
 build("inflow", "flow", eqn = "input(t)", to = "a")
 
-sim = simulate(sfm)
+sim = simulate(sfm, only_stocks = FALSE)
 plot(sim)
+
 }
+\seealso{
+\code{\link[=step]{step()}}, \code{\link[=pulse]{pulse()}}, \code{\link[=ramp]{ramp()}}
+
+Other input: 
+\code{\link{pulse}()},
+\code{\link{ramp}()},
+\code{\link{step}()}
+}
+\concept{input}

@@ -21,3 +21,10 @@ Delayed variable
 \description{
 Delay of order N, which is a more complex delay that can be used to model processes with multiple stages or orders of delay. Note that this function is only usable for simulations run with Julia.
 }
+\seealso{
+Other delay: 
+\code{\link{delay}()},
+\code{\link{past}()},
+\code{\link{smoothN}()}
+}
+\concept{delay}

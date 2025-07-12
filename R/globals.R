@@ -1,5 +1,6 @@
 # Global variables for the sdbuildR package
 
+#' @param debug Logical; whether to print debug messages
 #' @param insightmaker_version Integer with Insight Maker version the package sdbuildR was built with
 #' @param jl_pkg_name String; name of the Julia package
 #' @param model_setup_name String; name of the model setup variable
@@ -20,8 +21,7 @@
 #' @param smoothN_suffix String; suffix of smoothN variables
 #' @param delay_suffix String; suffix of delay variables
 #' @param outflow_suffix String; suffix of outflow entry in delay variables
-#' @param delayN_acc_suffix String; suffix of delayN accumulator variables
-#' @param smoothN_acc_suffix String; suffix of smoothN accumulator variables
+#' @param acc_suffix String; suffix of delayN and smoothN accumulator variables
 #' @param past_suffix String; suffix of past variables
 #' @param fix_suffix String; suffix of fix variables
 #' @param fix_length_suffix String; suffix of fix length variables
@@ -52,6 +52,7 @@
 #' @param saveat_func String; name of the saveat function
 #' @param init_sdbuildR String; name of the initialization function for sdbuildR
 P = list(
+  debug = FALSE,
   insightmaker_version = 38,
   jl_pkg_name = "sdbuildRUtils",
   model_setup_name = "model_setup",
@@ -79,8 +80,8 @@ P = list(
          outflow_suffix = ".outflow",
          # delay_order_suffix = "_order",
          # delay_length_suffix = "_length",
-         delayN_acc_suffix = "_acc",
-         smoothN_acc_suffix = "_acc",
+         acc_suffix = "_acc",
+  delay_idx_name = "idx",
          past_suffix = "_past",
          # past_length_suffix = "_length",
          fix_suffix = "_fix",

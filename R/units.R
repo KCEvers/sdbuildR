@@ -10,6 +10,7 @@
 #' @returns Specified unit (only in Julia)
 #'
 #' @seealso [model_units()], [unit_prefixes()], [convert_u()], [drop_u()]
+#' @family units
 #' @export
 #'
 #' @examples
@@ -55,6 +56,7 @@ u = function(unit_str){
 #'
 #' @returns Unitless variable
 #' @seealso [model_units()], [unit_prefixes()], [u()], [convert_u()]
+#' @family units
 #' @export
 #'
 #' @examples
@@ -78,6 +80,7 @@ drop_u = function(x){
 #'
 #' @returns Variable with new unit
 #' @seealso [model_units()], [unit_prefixes()], [u()], [drop_u()]
+#' @family units
 #' @export
 #'
 #' @examples
@@ -413,6 +416,7 @@ detect_undefined_units = function(sfm, new_eqns, new_units, regex_units, R_or_Ju
 #' `get_units()` yields a dataframe with all standard units in Julia's Unitful package and added custom units by sdbuildR.
 #'
 #' @returns Dataframe with units in Julia
+#' @family units
 #' @export
 #'
 get_units = function(){
@@ -597,6 +601,7 @@ get_units = function(){
 #'
 #' @returns Named vector with regular expressions as names and units as entries
 #'
+#' @family units
 #' @export
 get_regex_time_units = function(){
 
@@ -659,6 +664,7 @@ get_regex_time_units = function(){
 #' Show unit prefixes
 #'
 #' @returns Matrix with unit prefixes, symbols, and power-of-ten scale
+#' @family units
 #' @export
 #'
 #' @examples unit_prefixes()
@@ -701,6 +707,7 @@ unit_prefixes = function(){
 #' @inheritParams build
 #' @returns Named vector with regular expressions as names and units as entries
 #'
+#' @family units
 #' @export
 get_regex_units = function(sfm = NULL){
 

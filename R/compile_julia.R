@@ -12,8 +12,7 @@ simulate_julia = function(sfm,
                           keep_nonnegative_stock,
                           keep_unit,
                           only_stocks,
-                          verbose,
-                          debug){
+                          verbose){
 
 
   # Collect arguments
@@ -35,7 +34,7 @@ simulate_julia = function(sfm,
                          keep_nonnegative_flow = keep_nonnegative_flow,
                          keep_nonnegative_stock = keep_nonnegative_stock,
                          only_stocks = only_stocks,
-                         keep_unit = keep_unit, debug = debug)
+                         keep_unit = keep_unit)
   write_script(script, filepath)
   script = paste0(readLines(filepath), collapse = "\n")
 
@@ -109,7 +108,7 @@ compile_julia = function(sfm, filepath_sim,
                          keep_nonnegative_flow,
                          keep_nonnegative_stock,
                          keep_unit, only_stocks,
-                         verbose, debug){
+                         verbose){
 
   # Add "inflow" and "outflow" entries to stocks to match flow "to" and "from" entries
   flow_df = get_flow_df(sfm)
@@ -162,8 +161,10 @@ compile_julia = function(sfm, filepath_sim,
   # sfm = convert_conveyor(sfm)
   #
 
+
   # Order stocks alphabetically for order in init_names and init
   sfm[["model"]][["variables"]][["stock"]] = sfm[["model"]][["variables"]][["stock"]][sort(names(sfm[["model"]][["variables"]][["stock"]]))]
+
 
   # Check keyword arguments are not used for custom functions in Julia
   check_no_keyword_arg(sfm, var_names)
@@ -179,19 +180,26 @@ compile_julia = function(sfm, filepath_sim,
 
   sfm = prep_delayN_smoothN(sfm, delayN_smoothN)
 
+
   # Order equations including delayN() and smoothN() functions, if any
   ordering = order_equations(sfm)
 
   # If there are no dynamic variables or delayed variables, set only_stocks to TRUE
   delay_past = get_delay_past(sfm)
 
-  only_stocks = ifelse(is.null(ordering[["dynamic"]][["order"]]) & length(delay_past) == 0, TRUE, only_stocks)
+  if (!only_stocks & is.null(ordering[["dynamic"]][["order"]])){
+    only_stocks = TRUE
+  }
+
+  if (length(delay_past) > 0){
+    only_stocks = FALSE
+  }
 
   # Compile all parts of the R script
   times = compile_times_julia(sfm, keep_unit)
 
   # Macros
-  macros = compile_macros_julia(sfm, debug = debug)
+  macros = compile_macros_julia(sfm)
 
   # Prepare equations
   sfm = prep_equations_variables_julia(sfm, keep_unit, keep_nonnegative_flow)
@@ -394,6 +402,9 @@ prep_delayN_smoothN = function(sfm, delayN_smoothN){
 
   # If delayN() and smoothN() were used, add these to the model
   if (length(delayN_smoothN) > 0){
+
+    # Order alphabetically
+    delayN_smoothN = delayN_smoothN[sort(names(delayN_smoothN))]
 
     names_df = get_names(sfm)
     allowed_delay_var = names_df[names_df[["type"]] %in% c("stock", "flow", "aux"), "name"]
@@ -599,7 +610,7 @@ compile_units_julia = function(sfm, keep_unit){
 #'
 #' @return List with macro script
 #' @noRd
-compile_macros_julia = function(sfm, debug){
+compile_macros_julia = function(sfm){
 
   script = ""
 
@@ -636,11 +647,10 @@ compile_macros_julia = function(sfm, debug){
 compile_times_julia = function(sfm, keep_unit){
 
   script = sprintf("\n\n# Simulation time unit (smallest time scale in your model)
-%s = u\"%s\"\n# Define time sequence\n%s = (%s, %s)%s\n# Initialize time (only necessary if constants use t)\n%s = %s[1]\n# Time step\n%s = %s%s\n# Save at value\n%s = %s%s\n\n# Define saving time sequence\n%s = %s%s; %s = %s:%s:%s[2]\n",
+%s = u\"%s\"\n# Define time sequence\n%s = (%s, %s)%s\n# Initialize time (only necessary if constants use t)\n%s = %s[1]\n# Time step\n%s = %s%s\n# Save at value\n%s = %s%s\n# Define saving time sequence\n%s = %s%s; %s = %s:%s:%s[2]\n",
                    P[["time_units_name"]], sfm[["sim_specs"]][["time_units"]],
                    P[["times_name"]], sfm[["sim_specs"]][["start"]], sfm[["sim_specs"]][["stop"]],
                    ifelse(keep_unit, paste0(" .* ", P[["time_units_name"]]), ""),
-                   # paste0(" .* ", P[["time_units_name"]]),
                    P[["time_name"]], P[["times_name"]],
                    P[["timestep_name"]], sfm[["sim_specs"]][["dt"]],
                    ifelse(keep_unit, paste0(" * ", P[["time_units_name"]]), ""),
@@ -814,7 +824,6 @@ prep_intermediary_variables_julia = function(sfm, ordering){
   # Create separate vector for names of intermediate variables and values, because graphical functions need to be in the intermediate funciton as gf(t), but their name should be gf
   intermediary_var = intermediary_var_values = ordering[["dynamic"]][["order"]]
 
-
   # Graphical functions (gf)
   gf_str = ""
   if (length(sfm[["model"]][["variables"]][["gf"]]) > 0){
@@ -839,8 +848,6 @@ prep_intermediary_variables_julia = function(sfm, ordering){
 
     }
   }
-
-
 
   # Add fixed delayed and past variables to intermediary_var
   delay_past = get_delay_past(sfm)
@@ -885,11 +892,17 @@ prep_intermediary_variables_julia = function(sfm, ordering){
 
   }
 
+  # Order intermediary variables and values alphabetically
+  if (length(extra_intermediary_var) > 0){
+    idx = order(intermediary_var)
+    intermediary_var = intermediary_var[idx]
+    intermediary_var_values = intermediary_var_values[idx]
+  }
 
-  # Sometimes, step/pulse/ramp/seasonal functions are in auxiliaries. Exclude these from intermediary_var
-  idx = grepl("_step$|_pulse$|_ramp$|_seasonal$", intermediary_var)
-  intermediary_var = intermediary_var[!idx]
-  intermediary_var_values = intermediary_var_values[!idx]
+  # # Sometimes, step/pulse/ramp/seasonal functions are in auxiliaries. Exclude these from intermediary_var
+  # idx = grepl("_step$|_pulse$|_ramp$|_seasonal$", intermediary_var)
+  # intermediary_var = intermediary_var[!idx]
+  # intermediary_var_values = intermediary_var_values[!idx]
 
   return(list(
     names = intermediary_var,
@@ -925,16 +938,6 @@ compile_static_eqn_julia = function(sfm, ensemble_pars, ordering, intermediaries
 
   # Prepare ensemble range if specified
   if (length(ensemble_pars[["range"]]) > 0){
-
-    # ensemble_def = paste0("\n# Define parameter range for ensemble\n",
-    #                       P[["ensemble_pars"]], " = (",
-    #                       paste0(names(ensemble_pars[["range"]]), " = ",
-    #                                     ensemble_pars[["range"]], collapse = ",\n\t"),
-    #                       ")\n\n",
-    #                       # Initialize ensemble range iterator if specified
-    #                       P[["ensemble_iter"]], " = 1\n",
-    #
-    #                       "\n\n")
 
     ensemble_def = paste0(
 
@@ -1019,13 +1022,25 @@ compile_static_eqn_julia = function(sfm, ensemble_pars, ordering, intermediaries
   if (length(delayN_smoothN) > 0){
     delay_names = names(unlist(unname(delayN_smoothN), recursive = FALSE))
 
-    init_def_stocks = paste0(
-      paste0(setdiff(names(stock_eqn), delay_names), collapse = ", "), ", ",
-      paste0(paste0("values(", delay_names, ")"), collapse = ", "))
-    init_names = paste0(
-      paste0(paste0(":", setdiff(names(stock_eqn), delay_names)), collapse = ", "), ", ",
-      paste0(paste0("keys(", delay_names, ")..."), collapse = ", ")
-    )
+    # Preserve order of stocks but wrap delayN and smoothN stocks in values() and keys()
+    x = y = names(stock_eqn)
+    idx = names(stock_eqn) %in% delay_names
+    x[idx] = paste0("values(", x[idx], ")")
+    y[!idx] = paste0(":", y[!idx])
+    y[idx] = paste0("keys(", y[idx], ")...")
+
+    init_def_stocks = paste0(x, collapse = ", ")
+    init_names = paste0(y, collapse = ", ")
+
+    # Find indices of names in vector
+    init_idx = paste0("\n", P[["delay_idx_name"]], " = (",
+           paste0(paste0(delay_names, " = ",
+                  "findall(n -> occursin(r\"", delay_names, P[["acc_suffix"]], "[0-9]+$\", string(n)), ",
+                                          P[["initial_value_names"]], ")"
+                  ), collapse = ",\n\t"),
+
+           ",)\n")
+
 
     # Make sure that any .outflow references are replaced with first(values(variable))
     dict = stringr::fixed(stats::setNames(paste0("first(values(", delay_names, "))"),
@@ -1036,6 +1051,7 @@ compile_static_eqn_julia = function(sfm, ensemble_pars, ordering, intermediaries
     init_def_stocks = paste0(names(stock_eqn), collapse = ", ")
     # Symbols are faster than characters
     init_names = paste0(paste0(":", names(stock_eqn)), collapse = ", ")
+    init_idx = ""
   }
 
   # Put initial states together in (unnamed) vector
@@ -1059,13 +1075,7 @@ compile_static_eqn_julia = function(sfm, ensemble_pars, ordering, intermediaries
 
     # Remove names of intermediaries that are functions; these won't be saved
     intermediary_names_correct = paste0("\n# Remove names of intermediaries that are functions\n",
-                                # "is_not_function = collect(.!isa.((", paste0(intermediaries[["values"]],
-                                                                     # collapse = ", "), "), Function))\n",
-    #                             "is_not_function = collect(.!isa.((",
-    # paste0(intermediaries[["values"]], collapse = ", "),
-    # "), Function) .& .!isa.((",
-    # paste0(intermediaries[["values"]], collapse = ", "),
-    # "), DataInterpolations.AbstractInterpolation))\n",
+
     "is_not_function = collect(.!is_function_or_interp.((",
     paste0(intermediaries[["values"]], collapse = ", "),
     ifelse(length(intermediaries[["values"]]) == 1, ",", ""),
@@ -1097,11 +1107,13 @@ compile_static_eqn_julia = function(sfm, ensemble_pars, ordering, intermediaries
       pars_def,
       init_def,
       init_names,
+      init_idx,
       intermediary_names_correct,
       "\n\t(", P[["parameter_name"]], " = ", P[["parameter_name"]], ", ",
       P[["initial_value_name"]], " = ", P[["initial_value_name"]], ", ",
       P[["initial_value_names"]], " = ", P[["initial_value_names"]], ", ",
       P[["intermediary_names"]], " = ",  P[["intermediary_names"]],
+      ifelse(nzchar(init_idx), paste0(", ", P[["delay_idx_name"]], " = ", P[["delay_idx_name"]]), ""),
       ")\n",
       "end\n"
 
@@ -1127,10 +1139,17 @@ prep_stock_change_julia = function(sfm, keep_unit){
                                                       inflow = outflow = ""
 
                                                       if (x[["type"]] == "delayN_smoothN"){
-                                                        regex_find_idx = paste0("findall(n -> occursin(r\"", x[["name"]], P[["delayN_acc_suffix"]], "[0-9]+$|", x[["name"]], P[["smoothN_acc_suffix"]], "[0-9]+$\", string(n)), ",
-                                                                                P[["model_setup_name"]], ".", P[["initial_value_names"]], ")")
-                                                        x[["sum_name"]] = paste0(P[["change_state_name"]], "[", regex_find_idx, "]")
-                                                        x[["unpack_state"]] = paste0(P[["state_name"]], "[", regex_find_idx, "]")
+                                                        # regex_find_idx = paste0("findall(n -> occursin(r\"", x[["name"]], P[["acc_suffix"]], "[0-9]+$\", string(n)), ",
+                                                        #                         P[["model_setup_name"]], ".", P[["initial_value_names"]], ")")
+                                                        # x[["sum_name"]] = paste0(P[["change_state_name"]], "[", regex_find_idx, "]")
+                                                        # x[["unpack_state"]] = paste0(P[["state_name"]], "[", regex_find_idx, "]")
+
+
+                                                        x[["sum_name"]] = paste0(P[["change_state_name"]], "[", P[["model_setup_name"]], ".", P[["delay_idx_name"]], ".", x[["name"]], "]")
+                                                        x[["unpack_state"]] = paste0(P[["state_name"]], "[", P[["model_setup_name"]], ".", P[["delay_idx_name"]], ".", x[["name"]], "]")
+
+
+
                                                       } else {
                                                         x[["sum_name"]] = paste0(P[["change_state_name"]], "[", match(x[["name"]], stock_names), "]")
                                                       }
@@ -1256,68 +1275,6 @@ compile_ode_julia = function(sfm, ensemble_pars, ordering, intermediaries,
   # Names of changing Stocks, e.g. dR for stock R
   stock_changes_names = unname(unlist(lapply(sfm[["model"]][["variables"]][["stock"]], `[[`, "sum_name")))
 
-
-  # # Create separate vector for names of intermediate variables and values, because graphical functions need to be in the intermediate funciton as gf(t), but their name should be gf
-  # intermediary_var = intermediary_var_values = names(dynamic_eqn)
-  #
-  #
-  # # Graphical functions (gf)
-  # gf_str = ""
-  # if (length(sfm[["model"]][["variables"]][["gf"]]) > 0){
-  #
-  #   # Some gf have other gf as source; recursively replace
-  #   gf_sources = lapply(sfm[["model"]][["variables"]][["gf"]], `[[`, "source") %>% compact_() %>% unlist()
-  #
-  #   if (length(gf_sources) > 0){
-  #
-  #     # Graphical functions with source
-  #     gf = paste0(names(gf_sources), "(", unname(gf_sources), ")") %>% stats::setNames(names(gf_sources))
-  #
-  #     # Create dictionary to add source to nested graphical functions
-  #     dict2 = paste0("(", names(gf_sources), "(", unname(gf_sources), "))") %>%
-  #       stats::setNames(paste0("\\(", stringr::str_escape(names(gf_sources)), "\\)"))
-  #
-  #     gf_str = stringr::str_replace_all(unname(gf), dict2)
-  #
-  #     # Add names of graphical functions to intermediary_var
-  #     intermediary_var = c(intermediary_var, names(gf))
-  #     intermediary_var_values = c(intermediary_var_values, gf_str)
-  #
-  #   }
-  # }
-  #
-  #
-  #   # Add fixed delayed and past variables to intermediary_var
-  #   delay_past = get_delay_past(sfm)
-  #   extra_intermediary_var = list_extract(delay_past, "var")
-  #
-  #
-  #   if (length(extra_intermediary_var) > 0){
-  #
-  #     # Check whether the intermediary variables are in the model
-  #     names_df = get_names(sfm)
-  #     allowed_intermediary_var = names_df[names_df[["type"]] %in% c("stock", "flow", "aux"), "name"]
-  #
-  #     idx = !(extra_intermediary_var %in% names_df[["name"]])
-  #     if (any(idx)){
-  #       stop(paste0("The following variables used in delay() or past() are not defined in the model: ", paste0(extra_intermediary_var[idx], collapse = ", ")))
-  #     }
-  #
-  #     idx = !(extra_intermediary_var %in% allowed_intermediary_var)
-  #     if (any(idx)){
-  #       stop(paste0("The following variables used in delay() or past() are not stocks, flows, or auxiliaries: ", paste0(extra_intermediary_var[idx], collapse = ", ")))
-  #     }
-  #
-  #     # Get unique intermediary variables to add
-  #     new_intermediary_var = setdiff(unique(unlist(extra_intermediary_var)), intermediary_var)
-  #
-  #     if (length(new_intermediary_var) > 0){
-  #       intermediary_var = c(intermediary_var, new_intermediary_var)
-  #       intermediary_var_values = c(intermediary_var_values, new_intermediary_var)
-  #     }
-  #
-  #   }
-  #
   # If delayN() and smoothN() were used, state has to be unpacked differently
   delayN_smoothN = get_delayN_smoothN(sfm)
 
@@ -1329,8 +1286,8 @@ compile_ode_julia = function(sfm, ensemble_pars, ordering, intermediaries,
     #     intermediary_var_values = setdiff(intermediary_var_values, delay_names)
 
     # Unpack non delayN stocks
-    unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P[["state_name"]], "[findall(n -> !occursin(r\"", P[["delayN_suffix"]], "[0-9]+", P[["delayN_acc_suffix"]], "[0-9]+$|",
-                              P[["smoothN_suffix"]], "[0-9]+", P[["smoothN_acc_suffix"]], "[0-9]+$\", string(n)), ", P[["model_setup_name"]], ".", P[["initial_value_names"]], ")]")
+    unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P[["state_name"]], "[findall(n -> !occursin(r\"", P[["delayN_suffix"]], "[0-9]+", P[["acc_suffix"]], "[0-9]+$|",
+                              P[["smoothN_suffix"]], "[0-9]+", P[["acc_suffix"]], "[0-9]+$\", string(n)), ", P[["model_setup_name"]], ".", P[["initial_value_names"]], ")]")
 
     # Unpack each delayN or smoothN stock separately
     unpack_delayN = lapply(sfm[["model"]][["variables"]][["stock"]],
@@ -1381,7 +1338,6 @@ function %s!(%s, %s%s, %s)",
   if (only_stocks){
 
     script_callback = paste0("\n\n# Define empty callback function\n",
-                             # P[["intermediary_names"]], " = nothing\n",
                              P[["intermediaries"]], " = nothing\n",
                              P[["callback_name"]], " = nothing\n\n")
 
@@ -1487,12 +1443,7 @@ compile_run_ode_julia = function(sfm,
                     P[["prob_name"]], ", ",
                     P[["solution_name"]], ", ",
                     P[["model_setup_name"]], ".", P[["initial_value_names"]], ", ",
-                    # P[["times_name"]], ", ",
-                    # P[["timestep_name"]], ", ",
-                    # P[["saveat_name"]], ", ",
-                    # P[["intermediaries"]], " = ",
                     P[["intermediaries"]], ", ",
-                    # P[["intermediary_names"]], " = ",
                     P[["model_setup_name"]], ".", P[["intermediary_names"]], ")\n"
     )
 
@@ -1563,26 +1514,13 @@ compile_run_ode_julia = function(sfm,
     # Save timeseries dataframe
     script = paste0(script, "\n# Save timeseries dataframe\n",
 
-                    # "df1 = solve_out_to_df(",
-                    # P[["solution_name"]], ", ",
-                    # P[["model_setup_name"]], ".", P[["initial_value_names"]], ")\n",
-                    # "df2 = intermediaries_to_df(",
-                    # P[["intermediaries"]], ", ",
-                    # P[["intermediary_names"]], ")\n",
-                    #
-                    # P[["sim_df_name"]], " = vcat(df1, df2)\ndf1 = Nothing\ndf2 = Nothing\n\n# Save to CSV\n",
                     P[["sim_df_name"]], ", ", P[["parameter_name"]], ", ", P[["parameter_names"]], ", ", P[["initial_value_name"]], ", ", P[["initial_value_names"]],
                     ifelse(ensemble_pars[["threaded"]], " = ensemble_to_df_threaded(", " = ensemble_to_df("),
                     P[["solution_name"]], ", ",
                     P[["model_setup_name"]], ".", P[["initial_value_names"]],
                     ", ",
-                    # P[["times_name"]], ", ",
-                    # P[["timestep_name"]], ", ",
-                    # P[["saveat_name"]], "; ",
-                    # P[["intermediaries"]], " = ",
                     P[["intermediaries"]],
                     ", ",
-                    # P[["intermediary_names"]], " = ",
                     P[["model_setup_name"]], ".", P[["intermediary_names"]],
                     ", ", P[["ensemble_n"]],
                     ")\n")
@@ -1600,10 +1538,6 @@ compile_run_ode_julia = function(sfm,
                     P[["summary_df_name"]],
                     ifelse(ensemble_pars[["threaded"]], " = ensemble_summ_threaded(", " = ensemble_summ("),
                     P[["sim_df_name"]], ", ",
-                    # P[["solution_name"]], ", ",
-                    # P[["model_setup_name"]], ".", P[["initial_value_names"]], ", ",
-                    # P[["intermediaries"]], ", ",
-                    # P[["intermediary_names"]],
                     "[", paste0(ensemble_pars[["quantiles"]], collapse = ", "),
                     "])\n\n# Save to CSV\n",
                     "CSV.write(\"", ensemble_pars[["filepath_summ"]], "\", ", P[["summary_df_name"]], ")\n\n# Delete variables\n",

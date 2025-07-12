@@ -58,4 +58,12 @@ Visualise ensemble simulation results of a stock-and-flow model. Either summary 
 }
 \seealso{
 \code{\link[=ensemble]{ensemble()}}
+
+Other simulate: 
+\code{\link{ensemble}()},
+\code{\link{plot.sdbuildR_sim}()},
+\code{\link{sim_specs}()},
+\code{\link{simulate}()},
+\code{\link{use_julia}()}
 }
+\concept{simulate}
