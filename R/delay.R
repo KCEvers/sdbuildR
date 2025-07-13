@@ -12,6 +12,7 @@
 #'
 #' @returns A list containing the outflow value and the updated accumulator.
 #' @export
+#' @family internal
 #'
 compute_delayN <- function(input, accumulator, length, order) {
   order <- round(order)
@@ -41,6 +42,7 @@ compute_delayN <- function(input, accumulator, length, order) {
 #' @param order Order of the smoothing.
 #'
 #' @returns A list containing the outflow value and the updated state.
+#' @family internal
 #' @export
 #'
 compute_smoothN <- function(input, state, length, order) {
@@ -70,12 +72,13 @@ compute_smoothN <- function(input, state, length, order) {
 #' @param name Name of the accumulator.
 #'
 #' @returns A named vector of initial values for the accumulator.
+#' @family internal
 #' @export
 #'
 setup_delayN <- function(initial, length, order, name) {
   order <- round(order)
   value <- initial * length / order
-  acc_names <- paste0(name, P$delayN_acc_suffix, seq_len(order))
+  acc_names <- paste0(name, P[["acc_suffix"]], seq_len(order))
   accumulator <- stats::setNames(rep(value, order), acc_names)
   return(accumulator)
 }
@@ -90,25 +93,27 @@ setup_delayN <- function(initial, length, order, name) {
 #' @param name Name of the accumulator.
 #'
 #' @returns A named vector of initial values for the accumulator.
+#' @family internal
 #' @export
 #'
 setup_smoothN <- function(initial, length, order, name) {
   order <- round(order)
-  value <- initial * length / order
-  acc_names <- paste0(name, P$smoothN_acc_suffix, seq_len(order))
+  value <- initial #* length / order
+  acc_names <- paste0(name, P[["acc_suffix"]], seq_len(order))
   accumulator <- stats::setNames(rep(value, order), acc_names)
   return(accumulator)
 }
 
 
-#' Retrieve an interval of values from the past
+#' Retrieve values from the past
 #'
-#' Note that this function is only usable for simulations run with Julia.
-
+#' Function in development; currently unusable. Note that this function is only usable for simulations run with Julia.
+#'
 #' @param variable Variable of which to access past values.
 #' @param length Interval from the current time point to look back to. If NULL, all available past values are returned. Defaults to NULL.
 #'
 #' @return Past values
+#' @family delay
 #' @export
 #'
 #' @examples
@@ -126,6 +131,7 @@ past = function(variable, length = NULL){
 #' @param default_value Value to return when the delay length has not passed yet. If NULL, the value at the first time point is returned. Defaults to NULL.
 #'
 #' @return Past value
+#' @family delay
 #' @export
 #'
 #' @examples
@@ -146,6 +152,7 @@ delay = function(variable, length, default_value = NULL){
 #' @param initial Value to initialize the accumulator with. If NULL, the first value of the variable to delay is used. Defaults to NULL.
 #'
 #' @return Delayed variable
+#' @family delay
 #' @export
 #'
 #' @examples
@@ -164,6 +171,7 @@ delayN = function(variable, length, order, initial = NULL){
 #' @param initial Value to initialize the accumulator with. If NULL, the first value of the variable to smooth is used. Defaults to NULL.
 #'
 #' @return Smoothed variable
+#' @family delay
 #' @export
 #'
 #' @examples

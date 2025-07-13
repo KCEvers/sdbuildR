@@ -9,6 +9,7 @@
 #' @param digits Number of digits; optional, defaults to 0
 #'
 #' @return Rounded value
+#' @family custom
 #' @export
 #'
 #' @examples round_IM(.5)
@@ -25,6 +26,7 @@ round_IM = function(x, digits = 0) {
 #' @param p Probability, numerical value between 0 and 1
 #'
 #' @return Logit
+#' @family custom
 #' @export
 #'
 #' @examples
@@ -41,6 +43,7 @@ logit = function(p){
 #' @param x Numerical value
 #'
 #' @return Numerical value
+#' @family custom
 #' @export
 #'
 #' @examples
@@ -58,6 +61,7 @@ expit = function(x){
 #' @param p Probability of TRUE, numerical value between 0 and 1
 #'
 #' @return Boolean
+#' @family custom
 #' @export
 #'
 #' @examples
@@ -75,6 +79,7 @@ rbool = function(p){
 #' @param b Vector of probabilities
 #'
 #' @return One sample from custom distribution
+#' @family custom
 #' @export
 #'
 #' @examples
@@ -92,6 +97,7 @@ rdist = function(a, b){
 #' @param needle Value to search for
 #'
 #' @return Index
+#' @family custom
 #' @export
 #'
 #' @examples
@@ -127,13 +133,14 @@ indexof = function(haystack, needle){
 #' @param x A vector or a string
 #'
 #' @return The number of elements in x if x is a vector; the number of characters in x if x is a string
+#' @family custom
 #' @export
 #'
 #' @examples
-#' IM_length(c("a", "b", "c")) # 3
-#' IM_length("abcdef") # 6
-#' IM_length(c("abcdef")) # 6
-IM_length = function(x){
+#' length_IM(c("a", "b", "c")) # 3
+#' length_IM("abcdef") # 6
+#' length_IM(c("abcdef")) # 6
+length_IM = function(x){
   if (length(x) == 1 & is.character(x)){
     return(stringr::str_length(x))
   } else {
@@ -150,12 +157,13 @@ IM_length = function(x){
 #' @param needle Value to search for
 #'
 #' @return Boolean
+#' @family custom
 #' @export
 #'
 #' @examples
-#' IM_contains(c("a", "b", "c"), "d") # FALSE
-#' IM_contains(c("abcdef"), "bc") # TRUE
-IM_contains = function(haystack, needle){
+#' contains_IM(c("a", "b", "c"), "d") # FALSE
+#' contains_IM(c("abcdef"), "bc") # TRUE
+contains_IM = function(haystack, needle){
   if (length(haystack) == 1 & is.character(haystack)){
     return(grepl(needle, haystack, fixed = TRUE))
   } else {
@@ -172,6 +180,7 @@ IM_contains = function(haystack, needle){
 #' @param idxs Integer or vector of integers indexing which characters to extract
 #'
 #' @return Substring
+#' @family custom
 #' @export
 #'
 #' @examples
@@ -190,16 +199,17 @@ substr_i = function(string, idxs){
 #' @param condition_func Function which takes arguments x and key and outputs a boolean value
 #'
 #' @return Vector with elements which meet condition_func
+#' @family custom
 #' @export
 #'
 #' @examples
-#' IM_filter(c(a = 1, b = 2, c = 3), function(x, key){x > 1})
+#' filter_IM(c(a = 1, b = 2, c = 3), function(x, key){x > 1})
 #' # b c
 #' # 2 3
-#' IM_filter(c(a = 1, b = 2, c = 3), function(x, key){x > 1 & key != "b"})
+#' filter_IM(c(a = 1, b = 2, c = 3), function(x, key){x > 1 & key != "b"})
 #' # c
 #' # 3
-IM_filter = function(y, condition_func){
+filter_IM = function(y, condition_func){
   purrr::map2(y, names(y), function(x,key){if (condition_func(x, key)){return(x)}}) %>%
     purrr::compact() %>% unlist()
 }
@@ -218,21 +228,23 @@ IM_filter = function(y, condition_func){
 #'
 #' @export
 #' @return Interpolation function
+#' @family input
+#' @seealso [step()], [pulse()], [seasonal()]
 #' @examples
 #' # Create a simple model with a ramp function
 #' sfm = xmile() %>%
 #' build("a", "stock") %>%
-#' build("input", "constant", eqn = "ramp(2, 5, 3)") %>%
+#' build("input", "constant", eqn = "ramp(20, 30, 3)") %>%
 #' build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
-#' sim = simulate(sfm)
+#' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
 #' # To create a decreasing ramp, set the height to a negative value
 #' sfm = sfm %>%
-#' build("input", eqn = "ramp(2, 5, -3)")
+#' build("input", eqn = "ramp(20, 30, -3)")
 #'
-#' sim = simulate(sfm)
+#' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
 ramp <- function(start, finish, height = 1){
@@ -275,24 +287,27 @@ ramp <- function(start, finish, height = 1){
 #'
 #' @export
 #' @return Interpolation function
+#' @seealso [step()], [ramp()], [seasonal()]
+#' @family input
 #' @examples
 #' # Create a simple model with a pulse function
 #' # that starts at time 5, jumps to a height of 2
 #' # with a width of 1, and does not repeat
 #' sfm = xmile() %>%
-#' build("a", "stock") %>%
-#' build("input", "constant", eqn = "pulse(5, 2, 1)") %>%
-#' build("inflow", "flow", eqn = "input(t)", to = "a")
+#'   build("a", "stock") %>%
+#'   build("input", "constant", eqn = "pulse(5, 2, 1)") %>%
+#'   build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
-#' sim = simulate(sfm)
+#' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
 #' # Create a pulse that repeats every 5 time units
 #' sfm = sfm %>%
-#' build("input", eqn = "pulse(5, 2, 1, 5)")
+#'   build("input", eqn = "pulse(5, 2, 1, 5)")
 #'
-#' sim = simulate(sfm)
+#' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
+#'
 pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 
   if (width <= 0){
@@ -343,21 +358,23 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 #'
 #' @export
 #' @return Interpolation function
+#' @seealso [ramp()], [pulse()], [seasonal()]
+#' @family input
 #' @examples
 #' # Create a simple model with a step function
-#' # that jumps at time 2 to a height of 5
+#' # that jumps at time 50 to a height of 5
 #' sfm = xmile() %>%
 #' build("a", "stock") %>%
-#' build("input", "constant", eqn = "step(2, 5)") %>%
+#' build("input", "constant", eqn = "step(50, 5)") %>%
 #' build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
-#' sim = simulate(sfm)
+#' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
 #' # Negative heights are also possible
-#' sfm = sfm %>% build("input", eqn = "step(2, -10)")
+#' sfm = sfm %>% build("input", eqn = "step(50, -10)")
 #'
-#' sim = simulate(sfm)
+#' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 step <- function(start, height = 1){
 
@@ -384,17 +401,20 @@ step <- function(start, height = 1){
 #' @param shift Timing of wave peak in simulation time units. Defaults to 0.
 #'
 #' @return Seasonal wave
+#' @family input
+#' @seealso [step()], [pulse()], [ramp()]
 #' @export
 #'
 #' @examples
 #' # Create a simple model with a seasonal wave
 #' sfm = xmile() %>%
 #' build("a", "stock") %>%
-#' build("input", "constant", eqn = "seasonal(1, 0)") %>%
+#' build("input", "constant", eqn = "seasonal(10, 0)") %>%
 #' build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
-#' sim = simulate(sfm)
+#' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
+#'
 seasonal = function(period = 1, shift = 0){
 
   if (period <= 0){
@@ -421,6 +441,7 @@ seasonal = function(period = 1, shift = 0){
 #' @param x Value
 #'
 #' @return x if x is greater than 0, 0 otherwise
+#' @family internal
 #' @export
 #'
 #' @examples nonnegative(NA)
@@ -445,6 +466,7 @@ nonnegative = function(x){
 #' @param b Divisor
 #'
 #' @returns Remainder
+#' @family custom
 #' @export
 #'
 #' @examples
@@ -472,6 +494,7 @@ rem <- function(a, b) {
 #' @inheritParams rem
 #'
 #' @returns Modulus
+#' @family custom
 #' @export
 #'
 #' @examples
@@ -503,6 +526,7 @@ mod = function(a, b){
 #' @inheritParams rem
 #'
 #' @returns Remainder
+#' @family custom
 #' @export
 #'
 #' @examples
@@ -517,6 +541,7 @@ mod = function(a, b){
 #' @param x Vector to shuffle
 #'
 #' @returns Shuffled x
+#' @family custom
 #' @export
 #'
 #' @examples
@@ -535,6 +560,7 @@ shuffle = function(x){
 #' @param upper Maximal value returned by logistic function. Defaults to 1.
 #'
 #' @returns f(x), where f is the logistic function
+#' @family custom
 #' @export
 #'
 #' @examples logistic(0)
@@ -549,15 +575,16 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
 
 
 
-#' Function to save dataframe at specific times
+#' Internal function to save dataframe at specific times
 #'
-#' Internal function used to save the dataframe at specific times in case saveat != dt in the simulation specifications.
+#' Internal function used to save the dataframe at specific times in case save_at is not equal to dt in the simulation specifications.
 #'
 #' @param df Dataframe
 #' @param time_col Name of the time column
 #' @param new_times Vector of new times to save the dataframe at
 #'
 #' @returns Dataframe with new times and interpolated values
+#' @family internal
 #' @export
 #'
 saveat_func <- function(df, time_col, new_times) {

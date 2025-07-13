@@ -21,3 +21,13 @@ A named vector of initial values for the accumulator.
 \description{
 Internal function to set up a delayN accumulator.
 }
+\seealso{
+Other internal: 
+\code{\link{compare_sim}()},
+\code{\link{compute_delayN}()},
+\code{\link{compute_smoothN}()},
+\code{\link{nonnegative}()},
+\code{\link{saveat_func}()},
+\code{\link{setup_smoothN}()}
+}
+\concept{internal}

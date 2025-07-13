@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup_julia.R
 \name{use_julia}
 \alias{use_julia}
-\title{Set up Julia environment for sdbuildR}
+\title{Set up Julia environment}
 \usage{
 use_julia(
   stop = FALSE,
@@ -33,11 +33,27 @@ use_julia(
 \item{...}{Optional arguments passed to JuliaCall::julia_setup()}
 }
 \description{
-Create Julia environment to simulate stock-and-flow models. \code{use_julia()} looks for a Julia installation, and will install Julia as well as some required packages if not found. Keep in mind that the installation can take around 5-15 minutes. In every R session, \code{use_julia()} needs to be run once, which can take around 20 seconds.
+Create Julia environment to simulate stock-and-flow models. \code{use_julia()} looks for a Julia installation, and will install Julia as well as some required packages if not found. A Julia environment is created in the inst directory of the sdbuildR package.
+}
+\details{
+Keep in mind that the installation can take around 5-15 minutes. In every R session, \code{use_julia()} needs to be run once (which is done automatically in simulate()), which can take around 20 seconds.
 }
 \examples{
+# For first time use, install Julia and set up environment
+use_julia()
+
 # Start Julia session
 use_julia()
+
 # Stop Julia session
 use_julia(stop = TRUE)
 }
+\seealso{
+Other simulate: 
+\code{\link{ensemble}()},
+\code{\link{plot.sdbuildR_ensemble}()},
+\code{\link{plot.sdbuildR_sim}()},
+\code{\link{sim_specs}()},
+\code{\link{simulate}()}
+}
+\concept{simulate}

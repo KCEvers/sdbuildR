@@ -1,4 +1,30 @@
 url: https://kcevers.github.io/sdbuildR/
 template:
   bootstrap: 5
+reference:
+- title: Building stock-and-flow models
+- contents:
+  - has_concept("build")
+- title: Simulate stock-and-flow models
+- contents:
+  - has_concept("simulate")
+- title: Insight Maker
+- contents:
+  - has_concept("insightmaker")
+- title: Input functions
+- contents:
+  - has_concept("input")
+- title: Custom functions
+- contents:
+  - has_concept("custom")
+- title: Delay functions
+- contents:
+  - has_concept("delay")
+- title: Units
+- contents:
+  - has_concept("units")
+- title: Internal functions
+- contents:
+  - has_concept("internal")
+
 

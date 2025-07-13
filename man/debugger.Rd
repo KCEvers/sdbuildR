@@ -23,9 +23,9 @@ The following problems are detected:
 \item An absence of stocks
 \item Flows without a source (\code{from}) or target (\code{to})
 \item Flows connected to a stock that does not exist
-\item Connected stocks and flows without both having units or no units
 \item Undefined variable references in equations
 \item Circularities in equations
+\item Connected stocks and flows without both having units or no units
 \item Missing unit definitions
 }
 
@@ -55,3 +55,16 @@ sfm = xmile() \%>\% build("Prey", "stock", eqn = "Predator") \%>\%
 debugger(sfm)
 
 }
+\seealso{
+Other build: 
+\code{\link{as.data.frame.sdbuildR_sim}()},
+\code{\link{as.data.frame.sdbuildR_xmile}()},
+\code{\link{build}()},
+\code{\link{get_build_code}()},
+\code{\link{header}()},
+\code{\link{macro}()},
+\code{\link{plot.sdbuildR_xmile}()},
+\code{\link{summary.sdbuildR_xmile}()},
+\code{\link{xmile}()}
+}
+\concept{build}

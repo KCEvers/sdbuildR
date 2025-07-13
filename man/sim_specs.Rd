@@ -57,7 +57,7 @@ sfm = sfm \%>\% sim_specs(method = "rk4")
 sfm = sfm \%>\% sim_specs(time_units = "years")
 
 # To save storage but not affect accuracy, use save_at and save_from
-sfm = sfm \%>\% sim_specs(dt = 0.001, save_at = 1, save_from = 2000)
+sfm = sfm \%>\% sim_specs(dt = 0.001, save_at = .1, save_from = 2000)
 sim = simulate(sfm)
 head(as.data.frame(sim))
 
@@ -81,3 +81,12 @@ plot(sim2)
 sfm = sfm \%>\% sim_specs(language = "Julia")
 
 }
+\seealso{
+Other simulate: 
+\code{\link{ensemble}()},
+\code{\link{plot.sdbuildR_ensemble}()},
+\code{\link{plot.sdbuildR_sim}()},
+\code{\link{simulate}()},
+\code{\link{use_julia}()}
+}
+\concept{simulate}

@@ -22,18 +22,27 @@ Equivalent of Step() in Insight Maker
 }
 \examples{
 # Create a simple model with a step function
-# that jumps at time 2 to a height of 5
+# that jumps at time 50 to a height of 5
 sfm = xmile() \%>\%
 build("a", "stock") \%>\%
-build("input", "constant", eqn = "step(2, 5)") \%>\%
+build("input", "constant", eqn = "step(50, 5)") \%>\%
 build("inflow", "flow", eqn = "input(t)", to = "a")
 
-sim = simulate(sfm)
+sim = simulate(sfm, only_stocks = FALSE)
 plot(sim)
 
 # Negative heights are also possible
-sfm = sfm \%>\% build("input", eqn = "step(2, -10)")
+sfm = sfm \%>\% build("input", eqn = "step(50, -10)")
 
-sim = simulate(sfm)
+sim = simulate(sfm, only_stocks = FALSE)
 plot(sim)
 }
+\seealso{
+\code{\link[=ramp]{ramp()}}, \code{\link[=pulse]{pulse()}}, \code{\link[=seasonal]{seasonal()}}
+
+Other input: 
+\code{\link{pulse}()},
+\code{\link{ramp}()},
+\code{\link{seasonal}()}
+}
+\concept{input}

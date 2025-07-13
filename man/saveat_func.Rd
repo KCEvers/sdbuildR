@@ -2,7 +2,7 @@
 % Please edit documentation in R/custom_func.R
 \name{saveat_func}
 \alias{saveat_func}
-\title{Function to save dataframe at specific times}
+\title{Internal function to save dataframe at specific times}
 \usage{
 saveat_func(df, time_col, new_times)
 }
@@ -17,5 +17,15 @@ saveat_func(df, time_col, new_times)
 Dataframe with new times and interpolated values
 }
 \description{
-Internal function used to save the dataframe at specific times in case saveat != dt in the simulation specifications.
+Internal function used to save the dataframe at specific times in case save_at is not equal to dt in the simulation specifications.
 }
+\seealso{
+Other internal: 
+\code{\link{compare_sim}()},
+\code{\link{compute_delayN}()},
+\code{\link{compute_smoothN}()},
+\code{\link{nonnegative}()},
+\code{\link{setup_delayN}()},
+\code{\link{setup_smoothN}()}
+}
+\concept{internal}

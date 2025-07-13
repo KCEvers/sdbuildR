@@ -6,7 +6,6 @@
 #' @param var_names Dataframe with type, name, label and units per variable
 #' @param name R name of variable to which the eqn belongs
 #' @param type Name of model element to which the eqn belongs
-#' @param debug Boolean; whether to be talkative; defaults to FALSE
 #' @inheritParams clean_unit
 #'
 #' @return Dataframe with transformed eqn and additional R code needed to make the eqn function
@@ -20,9 +19,8 @@ convert_equations_IM = function(
                         name,
                         eqn,
                         var_names,
-                        regex_units,
-                        debug = FALSE) {
-  if (debug) {
+                        regex_units) {
+  if (P[["debug"]]) {
     print("")
     # print(type)
     print(name)
@@ -65,7 +63,7 @@ convert_equations_IM = function(
 
 
     # Step 3. Statements (if, for, while, functions, try)
-    eqn = convert_all_statements(eqn, var_names, debug)
+    eqn = convert_all_statements(eqn, var_names)
 
     # Step 4. Operators (booleans, logical operators, addition of strings)
     eqn = eqn %>%
@@ -77,7 +75,7 @@ convert_equations_IM = function(
       replace_colon(., var_names)
 
     # Step 5. Replace built-in functions
-    conv_list = convert_builtin_functions_IM(type, name, eqn, var_names, debug = debug)
+    conv_list = convert_builtin_functions_IM(type, name, eqn, var_names)
     eqn = conv_list[["eqn"]]
     add_Rcode = conv_list[["add_Rcode"]]
     translated_func = conv_list[["translated_func"]]
@@ -96,7 +94,7 @@ convert_equations_IM = function(
     }
 
 
-    if (debug){print(eqn)}
+    if (P[["debug"]]){print(eqn)}
   }
 
   out = list(list(list(eqn = eqn,
@@ -592,7 +590,7 @@ get_words = function(eqn){
 #' @return Updated line
 #' @noRd
 #'
-convert_statement = function(line, var_names, debug){
+convert_statement = function(line, var_names){
 
   # # Split by first comment #
   # mat = stringr::str_split_fixed(line, "#", n = 2)
@@ -726,7 +724,7 @@ convert_statement = function(line, var_names, debug){
   # comment = sprintf("%s%s%s", ifelse(nzchar(join_str) & nzchar(comment), " ", ""), ifelse(nzchar(comment), "#", ""), comment)
   # join_str = paste0(c(join_str), comment, collapse = "")
 
-  if (debug){
+  if (P[["debug"]]){
     print("Converting statements:")
     print(line)
     print(join_str)
@@ -744,7 +742,7 @@ convert_statement = function(line, var_names, debug){
 #' @return Updated eqn
 #' @noRd
 #'
-convert_all_statements = function(eqn, var_names, debug){
+convert_all_statements = function(eqn, var_names){
 
   # Insight Maker doesn't require users to specify an Else-statement in If ... Else If ... End If -> if no condition evaluates to TRUE, the output is zero. Add "Else\n0\n" in these lines.
   # Find all if end if
@@ -774,7 +772,7 @@ convert_all_statements = function(eqn, var_names, debug){
   }
   eqn =  stringr::str_c(formula_split, collapse = "\n")
 
-  formula_new = unlist(lapply(stringr::str_split(eqn, "\n")[[1]], convert_statement, var_names, debug)) %>% stringr::str_c(collapse = "\n")
+  formula_new = unlist(lapply(stringr::str_split(eqn, "\n")[[1]], convert_statement, var_names)) %>% stringr::str_c(collapse = "\n")
   return(formula_new)
 
 }
@@ -1130,7 +1128,7 @@ get_syntax_IM = function(){
   # Custom function to replace each (nested) function; necessary because regex in stringr unfortunately doesn't seem to handle nested functions
   conv_df = matrix(c(
     # Mathematical Functions (27)
-    "Round", "IM_round", "syntax1", F, T, "",
+    "Round", "round_IM", "syntax1", F, T, "",
     "Ceiling", "ceiling", "syntax1", F, T, "",
     "Floor", "floor", "syntax1", F, T, "",
     "Cos", "cos", "syntax1", F, T, "",
@@ -1212,7 +1210,7 @@ get_syntax_IM = function(){
     "Parse", "as.numeric", "syntax2", F, T, "",
 
     # Vector Functions (20)
-    "Length", "IM_length", "syntax2", F, T, "",
+    "Length", "length_IM", "syntax2", F, T, "",
     # "Join", "c", "syntax1", ),
     # "Flatten", "purrr::flatten", "syntax2", ),
     "Unique", "unique", "syntax2", F, T, "",
@@ -1223,7 +1221,7 @@ get_syntax_IM = function(){
     "Reverse", "rev", "syntax2", F, T, "",
     "Sample", "sample", "syntax2", F, T, "",
     "IndexOf", "indexof", "syntax2", F, T, "",
-    "Contains", "IM_contains", "syntax2", F, T, "",
+    "Contains", "contains_IM", "syntax2", F, T, "",
     "Keys", "names", "syntax2", F, T, "",
     "Values", "unname", "syntax2", F, T, "",
     # Map() and Filter() have syntax 2 ({}.Map(), but need an additional edit. First apply syntax 2 and then syntax 3
@@ -1357,7 +1355,7 @@ get_syntax_IM = function(){
 #' @importFrom rlang .data
 #' @noRd
 #'
-convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
+convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 
   # If there are no letters in the eqn, don't run function
   translated_func = c()
@@ -1367,34 +1365,15 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 
     # Dataframe with regular expressions for each built-in Insight Maker function
     out = get_syntax_IM()
-    syntax_df = out$syntax_df
-    conv_df = out$conv_df
+    syntax_df = out[["syntax_df"]]
+    conv_df = out[["conv_df"]]
 
     done = FALSE
     i = 1
-    IM_regex = syntax_df$insightmaker_regex_first_iter
+    IM_regex = syntax_df[["insightmaker_regex_first_iter"]]
     ignore_case_arg = TRUE
 
   while (!done) {
-
-    # idx_df <- lapply(1:nrow(syntax_df), function(i) {
-    #   matches <- gregexpr(IM_regex[i], eqn, ignore.case = ignore_case_arg)[[1]]
-    #
-    #   if (matches[1] == -1) {
-    #     return(data.frame(start = integer(), end = integer()))
-    #   } else {
-    #     dplyr::bind_cols(syntax_df[i, ],
-    #           data.frame(
-    #             start = as.integer(matches),
-    #             end = as.integer(matches + attr(matches, "match.length") - 1)
-    #           ))
-    #   }
-    # }) %>% do.call(rbind, .)
-    #
-    # if (nrow(idx_df) == 0){
-    #   done = TRUE
-    #   next
-    # }
 
     idx_df <- lapply(seq_along(IM_regex), function(i) {
       matches <- gregexpr(IM_regex[i], eqn, ignore.case = ignore_case_arg)[[1]]
@@ -1456,7 +1435,9 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
     } else {
 
       # To find the arguments within round brackets, find all indices of matching '', (), [], c()
-      paired_idxs = get_range_all_pairs(eqn, var_names, add_custom = "paste0()", names_with_brackets = TRUE)
+      paired_idxs = get_range_all_pairs(eqn, var_names,
+                                        add_custom = "paste0()",
+                                        names_with_brackets = TRUE)
       paired_idxs
 
       # If there are brackets in the eqn:
@@ -1581,7 +1562,11 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
       } else if (idx_func$syntax == "syntax3") {
 
         # If it's the first function of this kind, no id is needed
-        match_idx = length(translated_func[translated_func == idx_func[["insightmaker"]]]) + 1
+        if (length(translated_func) == 0){
+          match_idx = 1
+        } else {
+          match_idx = length(translated_func[translated_func == idx_func[["insightmaker"]]]) + 1
+        }
         match_idx = ifelse(match_idx == 1, "", match_idx)
 
         # Get environment and create list of arguments needed by the function
@@ -1604,17 +1589,16 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
         #     }
         #   })
 
-        call_args = lapply(seq_along(call_args), function(y) {
-          x = call_args[[y]]
-          if (is.name(x)) {
-            return(envir[[y]])
+        call_args2 = lapply(seq_along(call_args), function(y) {
+          if (is.name(call_args[[y]])) {
+            return(envir[[names(call_args)[y]]])
           } else {
-            return(x)
+            return(call_args[[y]])
           }
         })
 
         rm(envir)
-        call_args
+        call_args = stats::setNames(call_args2, names(call_args))
 
         out = do.call(idx_func[["R"]], call_args)
 
@@ -1631,7 +1615,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names, debug) {
 
       }
 
-      if (debug){
+      if (P[["debug"]]){
         print(stringr::str_sub(eqn, start_idx, end_idx))
         print(replacement)
         print("")
@@ -1768,7 +1752,7 @@ conv_IMFILTER <- function(func, arg) {
     replacement = sprintf("Filter(%s, function(x) %s)", arg[1], arg[2])
   } else {
     # In case "key" is a part of the filter statement, use custom function, as Filter does not accept two arguments
-    replacement = sprintf("IM_filter(%s, function(x,key) %s)", arg[1], arg[2])
+    replacement = sprintf("filter_IM(%s, function(x,key) %s)", arg[1], arg[2])
   }
 
   return(list(replacement = replacement))
@@ -2226,20 +2210,25 @@ conv_pulse = function(func,
   # Define interpolation function
   h_pulse = ifelse(is.na(arg[2]), h_pulse, arg[2])
   w_pulse = ifelse(is.na(arg[3]), w_pulse, arg[3])
+
+  if (w_pulse == "0"){
+    w_pulse = P[["timestep_name"]]
+  } else {
+    w_pulse = sprintf("%s(%s, %s)", P[["convert_u_func"]], w_pulse, P[["time_units_name"]])
+  }
+
   repeat_interval = ifelse(is.na(arg[4]), repeat_interval, arg[4])
 
   # Function definition to put at beginning of script
   func_def_str = sprintf(
-    "pulse(start = %s(%s, %s), height = %s, width = %s(%s, %s), repeat_interval = %s)",
+    "pulse(start = %s(%s, %s), height = %s, width = %s, repeat_interval = %s)",
     P[["convert_u_func"]],
     start_t_pulse, P[["time_units_name"]],
     h_pulse,
-    P[["convert_u_func"]],
-    w_pulse, P[["time_units_name"]],
+w_pulse,
     repeat_interval
   )
   add_Rcode = list(aux = list(list(eqn = func_def_str
-                                   # , source = P[["time_name"]]
                                    )) %>% stats::setNames(func_name_str))
 
   return(list(replacement = replacement,

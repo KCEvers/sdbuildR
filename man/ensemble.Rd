@@ -16,8 +16,7 @@ ensemble(
   keep_nonnegative_stock = FALSE,
   keep_unit = TRUE,
   only_stocks = TRUE,
-  verbose = TRUE,
-  debug = FALSE
+  verbose = TRUE
 )
 }
 \arguments{
@@ -44,8 +43,6 @@ ensemble(
 \item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.}
 
 \item{verbose}{If TRUE, update on progress. Defaults to FALSE.}
-
-\item{debug}{If TRUE, print output for debugging. Defaults to FALSE.}
 }
 \value{
 Object of class sdbuildR_ensemble, which is a list containing:
@@ -98,8 +95,7 @@ plot(sims, type = "sims")
 plot(sims, type = "sims", i = 1)
 
 # Plot the median with lighter individual trajectories
-plot(sims, central_tendency = "median",
-    type = "sims", alpha = 0.1)
+plot(sims, central_tendency = "median", type = "sims", alpha = 0.1)
 
 # Ensembles can also be run with exact values for the initial conditions
 # and parameters. Below, we vary the initial values of the predator and the
@@ -135,4 +131,12 @@ use_julia(stop = TRUE)
 }
 \seealso{
 \code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=sim_specs]{sim_specs()}}, \code{\link[=use_julia]{use_julia()}}
+
+Other simulate: 
+\code{\link{plot.sdbuildR_ensemble}()},
+\code{\link{plot.sdbuildR_sim}()},
+\code{\link{sim_specs}()},
+\code{\link{simulate}()},
+\code{\link{use_julia}()}
 }
+\concept{simulate}

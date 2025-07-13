@@ -24,4 +24,14 @@ build("b", "constant", eqn = "cos(drop_u(a))")
 }
 \seealso{
 \code{\link[=model_units]{model_units()}}, \code{\link[=unit_prefixes]{unit_prefixes()}}, \code{\link[=u]{u()}}, \code{\link[=convert_u]{convert_u()}}
+
+Other units: 
+\code{\link{convert_u}()},
+\code{\link{get_regex_time_units}()},
+\code{\link{get_regex_units}()},
+\code{\link{get_units}()},
+\code{\link{model_units}()},
+\code{\link{u}()},
+\code{\link{unit_prefixes}()}
 }
+\concept{units}

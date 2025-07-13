@@ -19,3 +19,13 @@ List with comparison results
 \description{
 Compare two simulations
 }
+\seealso{
+Other internal: 
+\code{\link{compute_delayN}()},
+\code{\link{compute_smoothN}()},
+\code{\link{nonnegative}()},
+\code{\link{saveat_func}()},
+\code{\link{setup_delayN}()},
+\code{\link{setup_smoothN}()}
+}
+\concept{internal}

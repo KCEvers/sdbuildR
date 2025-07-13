@@ -19,3 +19,10 @@ Past value
 \description{
 Also known as a pipeline or fixed delay. Note that this function is only usable for simulations run with Julia.
 }
+\seealso{
+Other delay: 
+\code{\link{delayN}()},
+\code{\link{past}()},
+\code{\link{smoothN}()}
+}
+\concept{delay}

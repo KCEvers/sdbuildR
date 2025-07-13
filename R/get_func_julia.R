@@ -118,6 +118,18 @@ end
 
       "pulse" = "# Make pulse signal
 function pulse(times, time_units, start, height = 1.0, width = 1.0 * time_units, repeat_interval = nothing)
+
+    # Width of pulse cannot be zero
+    if eltype(width) <: Unitful.Quantity
+        if Unitful.ustrip(convert_u(width, time_units)) <= 0.0
+            throw(ArgumentError(\"The width of the pulse cannot be equal to or less than 0; to indicate an 'instantaneous' pulse, specify the simulation step size (dt).\"))
+        end
+    else
+        if width <= 0.0
+            throw(ArgumentError(\"The width of the pulse cannot be equal to or less than 0; to indicate an 'instantaneous' pulse, specify the simulation step size (dt).\"))
+        end
+    end
+
     # If times has units, but the pulse times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
         if !(eltype(start) <: Unitful.Quantity)
@@ -193,7 +205,7 @@ end",
     return(func)
 end",
 
-      "IM_round" = "# Convert Insight Maker's Round() function to R\n# Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in julia, round(.5) = 0.0\nfunction IM_round(x::Real, digits::Int=0)
+      "round_IM" = "# Convert Insight Maker's Round() function to R\n# Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in julia, round(.5) = 0.0\nfunction round_IM(x::Real, digits::Int=0)
     # Compute the fractional part after scaling by 10^digits
     scaled_x = x * 10.0^digits
     frac = scaled_x % 1
@@ -256,7 +268,7 @@ end",
     end
 end",
 
-      "IM_contains" = "function IM_contains(haystack, needle)
+      "contains_IM" = "function contains_IM(haystack, needle)
     if isa(haystack, AbstractString) && isa(needle, AbstractString)
         return occursin(needle, haystack)
     else
@@ -267,7 +279,7 @@ end",
     chars = collect(string)
     return join(chars[idxs])
 end",
-      "IM_filter" = "function IM_filter(y::Vector{T}, condition_func::Function) where T
+      "filter_IM" = "function filter_IM(y::Vector{T}, condition_func::Function) where T
     names_y = string.(1:length(y))
     result = Dict{String,T}()
     for (key, val) in zip(names_y, y)
@@ -332,7 +344,7 @@ end
 ")
     ),
 
-    "past" = list(
+    "delay" = list(
       "retrieve_delay" = "function retrieve_delay(var_value, delay_time, default_value, t, var_name, intermediaries, intermediary_names)
     # Handle empty intermediaries
     if isempty(intermediaries.saveval)
@@ -459,18 +471,18 @@ end",
     # Create a dictionary with names like \"name_acc1\", \"name_acc2\", ...
     #return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
     return Dict(Symbol(name, \"%s\", i) => value for i in 1:order_delay)
-end",P[["delayN_acc_suffix"]]),
+end",P[["acc_suffix"]]),
 
       "setup_smoothN" = sprintf("function setup_smoothN(initial_value, length_delay, order_delay::Float64, name::Symbol)
     # Compute the initial value for each accumulator
     # from https://www.simulistics.com/help/equations/functions/delay.htm
     order_delay = round(Int, order_delay) # Turn order into integer
-    value = initial_value * length_delay / order_delay # same initialization for smoothN() as delayN() as verified by Insight Maker
+    value = initial_value #* length_delay / order_delay
 
     # Create a dictionary with names like \"name_acc1\", \"name_acc2\", ...
     #return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
     return Dict(Symbol(name, \"%s\", i) => value for i in 1:order_delay)
-end",P[["smoothN_acc_suffix"]])),
+end",P[["acc_suffix"]])),
 
     "clean" = list(
       "saveat_func" = "# Function to save dataframe at specific times

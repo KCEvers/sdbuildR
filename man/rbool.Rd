@@ -18,3 +18,21 @@ Equivalent of RandBoolean() in Insight Maker
 \examples{
 rbool(.5)
 }
+\seealso{
+Other custom: 
+\code{\link{\%REM\%}()},
+\code{\link{contains_IM}()},
+\code{\link{expit}()},
+\code{\link{filter_IM}()},
+\code{\link{indexof}()},
+\code{\link{length_IM}()},
+\code{\link{logistic}()},
+\code{\link{logit}()},
+\code{\link{mod}()},
+\code{\link{rdist}()},
+\code{\link{rem}()},
+\code{\link{round_IM}()},
+\code{\link{shuffle}()},
+\code{\link{substr_i}()}
+}
+\concept{custom}

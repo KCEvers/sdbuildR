@@ -10,9 +10,6 @@
 #'
 template = function(name){
 
-  # ** to do:
-  # https://github.com/SDXorg/test-models/tree/master/samples
-
   model_names = c("logistic_model", "SIR", "predator-prey", "Crielaard2022",
                   # Meadows
                   "coffee_cup", "bank_account",

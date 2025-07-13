@@ -194,7 +194,7 @@ end
 
 # Convert Insight Maker's Round() function to R
 # Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in julia, round(.5) = 0.0
-function IM_round(x::Real, digits::Int=0)
+function round_IM(x::Real, digits::Int=0)
     # Compute the fractional part after scaling by 10^digits
     scaled_x = x * 10.0^digits
     frac = scaled_x % 1
@@ -265,7 +265,7 @@ function indexof(haystack, needle)
     end
 end
 
-function IM_contains(haystack, needle)
+function contains_IM(haystack, needle)
     if isa(haystack, AbstractString) && isa(needle, AbstractString)
         return occursin(needle, haystack)
     else
@@ -278,7 +278,7 @@ function substr_i(string::AbstractString, idxs::Union{Int, Vector{Int}})
     return join(chars[idxs])
 end
 
-function IM_filter(y::Vector{T}, condition_func::Function) where T
+function filter_IM(y::Vector{T}, condition_func::Function) where T
     names_y = string.(1:length(y))
     result = Dict{String,T}()
     for (key, val) in zip(names_y, y)

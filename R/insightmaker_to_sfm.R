@@ -9,28 +9,31 @@
 #' @param keep_nonnegative_flow If TRUE, keeps original non-negativity setting of flows. Defaults to TRUE.
 #' @param keep_nonnegative_stock If TRUE, keeps original non-negativity setting of stocks Defaults to TRUE.
 #' @param keep_solver If TRUE, keep the ODE solver as it is. If FALSE, switch to Euler integration in case of non-negative stocks to reproduce the Insight Maker data exactly. Defaults to FALSE.
-#' @param debug If TRUE, print all conversion output. Defaults to FALSE.
 #'
 #' @return Stock-and-flow model of class xmile.
 #' @export
+#' @family insightmaker
 #' @seealso [build()], [xmile()]
 #'
 #' @examples
+#' # Load a model from Insight Maker
 #' sfm = insightmaker_to_sfm(URL =
 #'  'https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022')
 #' plot(sfm)
+#'
+#' # Simulate the model
 #' sim = simulate(sfm)
 #' plot(sim)
+#'
 insightmaker_to_sfm = function(URL,
                              filepath_IM,
                              directory = tempdir(),
                              keep_nonnegative_flow = TRUE,
                              keep_nonnegative_stock = FALSE,
-                             keep_solver = FALSE,
-                             debug = FALSE
+                             keep_solver = FALSE
                              ){
 
-  if (debug){
+  if (P[["debug"]]){
     print(URL)
     print(filepath_IM)
   }
@@ -70,7 +73,7 @@ insightmaker_to_sfm = function(URL,
   }
 
   # Create model structure
-  sfm = IM_to_xmile(filepath_IM, debug = debug)
+  sfm = IM_to_xmile(filepath_IM)
 
   # Add header information
   if (length(header_info) > 0){
@@ -82,7 +85,7 @@ insightmaker_to_sfm = function(URL,
   }
 
   # Clean up units
-  if (debug){
+  if (P[["debug"]]){
     print("Cleaning units...")
   }
   # Get regular expressions to convert units to Julia
@@ -93,22 +96,22 @@ insightmaker_to_sfm = function(URL,
   sfm = check_nonnegativity(sfm, keep_nonnegative_flow, keep_nonnegative_stock, keep_solver)
 
   # Convert Insight Maker equation to R, including macros
-  if (debug){
+  if (P[["debug"]]){
     print("Converting equations from Insight Maker to R...")
   }
 
   # Convert macros - important to do before equations, as some macros may have
   # syntactically invalid names
-  sfm = convert_macros_IM_wrapper(sfm, regex_units = regex_units, debug = debug)
+  sfm = convert_macros_IM_wrapper(sfm, regex_units = regex_units)
 
   # Convert equations in model variables
-  sfm = convert_equations_IM_wrapper(sfm, regex_units = regex_units, debug = debug)
+  sfm = convert_equations_IM_wrapper(sfm, regex_units = regex_units)
 
   # Finalize equations by removing brackets from names
   sfm = remove_brackets_from_names(sfm)
 
   # Convert equations and macros to Julia
-  sfm = convert_equations_julia_wrapper(sfm, regex_units = regex_units, debug = debug)
+  sfm = convert_equations_julia_wrapper(sfm, regex_units = regex_units)
 
   # As a last step in the translation, split auxiliaries into constants and auxiliaries
   sfm = split_aux_wrapper(sfm)
@@ -120,9 +123,8 @@ insightmaker_to_sfm = function(URL,
   df = as.data.frame(sfm, type = c("stock", "aux", "constant", "gf"))
 
   if (length(delayN_smoothN) > 0 | length(delay_past) > 0 | length(unit_strings) > 0 | length(sfm$model_units) > 0 | any(df$units != "1")){
-    sfm$sim$specs$language = "Julia"
+    sfm = sfm %>% sim_specs(language = "Julia")
   }
-
 
   return(sfm)
 }

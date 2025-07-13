@@ -7,7 +7,7 @@
 xmile(name = NULL)
 }
 \arguments{
-\item{name}{Name of the template to load. If NULL, an empty stock-and-flow model will be created with default simulation parameters and a default header.}
+\item{name}{Name of the template to load. If NULL, an empty stock-and-flow model will be created with default simulation parameters and a default header. If specified, the name should be one of "logistic_model", "SIR", "predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua", "spruce_budworm".}
 }
 \value{
 Stock-and-flow model of class sdbuildR_xmile.
@@ -26,4 +26,16 @@ plot(sim)
 }
 \seealso{
 \code{\link[=build]{build()}}
+
+Other build: 
+\code{\link{as.data.frame.sdbuildR_sim}()},
+\code{\link{as.data.frame.sdbuildR_xmile}()},
+\code{\link{build}()},
+\code{\link{debugger}()},
+\code{\link{get_build_code}()},
+\code{\link{header}()},
+\code{\link{macro}()},
+\code{\link{plot.sdbuildR_xmile}()},
+\code{\link{summary.sdbuildR_xmile}()}
 }
+\concept{build}

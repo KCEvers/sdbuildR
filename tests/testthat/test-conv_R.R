@@ -15,34 +15,33 @@ test_that("convert_builtin_functions_IM assignment", {
   regex_units = get_regex_units()
   name = "test"
   type = "stock"
-  debug = FALSE
 
   eqn = "0.1"
-  result = convert_builtin_functions_IM(type, name, eqn, var_names, debug)$eqn
+  result = convert_builtin_functions_IM(type, name, eqn, var_names)$eqn
   expected = "0.1"
   expect_equal(result, expected)
 
   # Insight Maker is case-insensitive
   eqn = "MIN(3,4,5)"
-  result = convert_builtin_functions_IM(type, name, eqn, var_names, debug)$eqn
+  result = convert_builtin_functions_IM(type, name, eqn, var_names)$eqn
   expected = "min(c(3, 4, 5))"
   expect_equal(result, expected)
 
 
   eqn = "min(3,4,5)"
-  result = convert_builtin_functions_IM(type, name, eqn, var_names, debug)$eqn
+  result = convert_builtin_functions_IM(type, name, eqn, var_names)$eqn
   expected = "min(c(3, 4, 5))"
   expect_equal(result, expected)
 
   # Nesting
   eqn = "MIN(max(3,4,5), median(7,8,9))"
-  result = convert_builtin_functions_IM(type, name, eqn, var_names, debug)$eqn
+  result = convert_builtin_functions_IM(type, name, eqn, var_names)$eqn
   expected = "min(c(max(c(3, 4, 5)), median(c(7, 8, 9))))"
   expect_equal(result, expected)
 
 
   eqn = "Rand + Rand"
-  result = convert_builtin_functions_IM(type, name, eqn, var_names, debug)$eqn
+  result = convert_builtin_functions_IM(type, name, eqn, var_names)$eqn
   expected = "runif(1) + runif(1)"
   expect_equal(result, expected)
 
@@ -54,7 +53,7 @@ test_that("convert_builtin_functions_IM assignment", {
 
   # result = convert_equations_IM(eqn,
   #                                 var_names,
-  #                                 name, type, regex_units, debug)
+  #                                 name, type, regex_units)
   # expect_equal(result[[type]][[name]]$eqn, "{\nmin(c(3, 4, 5))\nmax(c(3, 4, 5))\n}")
   # expect_equal(result[[type]][[name]]$doc, "# A Test# Another Test")
 

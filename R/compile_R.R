@@ -12,8 +12,7 @@ simulate_R = function(sfm,
                       keep_nonnegative_flow,
                       keep_nonnegative_stock,
                       verbose,
-                      only_stocks,
-                      debug){
+                      only_stocks){
 
   # Collect arguments
   argg <- c(
@@ -26,8 +25,7 @@ simulate_R = function(sfm,
                      format_code=format_code,
                      keep_nonnegative_flow = keep_nonnegative_flow,
                      keep_nonnegative_stock = keep_nonnegative_stock,
-                     only_stocks = only_stocks,
-                     debug = debug)
+                     only_stocks = only_stocks)
   # filepath = write_script(script, fileext = ".R")
 
   # Evaluate script
@@ -107,8 +105,7 @@ compile_R = function(sfm,
                      keep_nonnegative_flow,
                      keep_nonnegative_stock,
                      only_stocks,
-                     verbose,
-                     debug){
+                     verbose){
 
   # Get flows and connections
   flow_df = get_flow_df(sfm)

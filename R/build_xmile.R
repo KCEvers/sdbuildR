@@ -3,10 +3,11 @@
 #'
 #' Initialize an empty stock-and-flow model of class sdbuildR_xmile. You can either create an empty stock-and-flow model or load a template from the model library.
 #'
-#' @param name Name of the template to load. If NULL, an empty stock-and-flow model will be created with default simulation parameters and a default header.
+#' @param name Name of the template to load. If NULL, an empty stock-and-flow model will be created with default simulation parameters and a default header. If specified, the name should be one of "logistic_model", "SIR", "predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua", "spruce_budworm".
 #'
 #' @return Stock-and-flow model of class sdbuildR_xmile.
 #' @export
+#' @family build
 #' @seealso [build()]
 #'
 #' @examples sfm = xmile()
@@ -74,12 +75,14 @@ xmile <- function(name = NULL){
 #'
 #' @return Stock-and-flow diagram plotted with DiagrammeR()
 #' @export
+#' @family build
 #' @method plot sdbuildR_xmile
 #' @seealso [insightmaker_to_sfm()], [xmile()], [plot.sdbuildR_sim()]
 #'
 #' @examples
 #' sfm = xmile("SIR")
 #' plot(sfm)
+#'
 plot.sdbuildR_xmile = function(x, format_label = TRUE,
                                wrap_width = 20,
                                center_stocks = FALSE,
@@ -229,6 +232,7 @@ get_flow_df = function(sfm){
 #'
 #' @return Plot object
 #' @export
+#' @family simulate
 #' @seealso [simulate()], [as.data.frame.sdbuildR_sim()], [plot.sdbuildR_xmile()]
 #' @method plot sdbuildR_sim
 #'
@@ -239,6 +243,13 @@ get_flow_df = function(sfm){
 #'
 #' # The default plot title and axis labels can be changed like so:
 #' plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
+#'
+#' # If you want to add constants to the plot, set `add_constants = TRUE`
+#' plot(sim, add_constants = TRUE)
+#'
+#' # To plot all model variables, run the simulation with `only_stocks = FALSE`
+#' sim = simulate(sfm, only_stocks = FALSE)
+#' plot(sim, add_constants = TRUE)
 #'
 plot.sdbuildR_sim = function(x,
                              add_constants = FALSE,
@@ -315,7 +326,7 @@ plot.sdbuildR_sim = function(x,
     }
   }
 
-  nonstock_names = nonstock_names[unname(nonstock_names) %in% colnames(x[["df"]])]
+  nonstock_names = nonstock_names[unname(nonstock_names) %in% unique(x[["df"]][["variable"]])]
 
   if (requireNamespace("plotly", quietly = TRUE)){
 
@@ -492,6 +503,7 @@ plot.sdbuildR_sim = function(x,
 #'
 #' @return Plot of ensemble simulation.
 #' @export
+#' @family simulate
 #' @seealso [ensemble()]
 #' @method plot sdbuildR_ensemble
 #'
@@ -1109,6 +1121,7 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
 #' @returns Dataframe with simulation results
 #' @export
 #' @seealso [simulate()], [xmile()]
+#' @family build
 #' @method as.data.frame sdbuildR_sim
 #'
 #' @examples
@@ -1136,6 +1149,7 @@ as.data.frame.sdbuildR_sim = function(x, ...){
 #' @inheritParams plot.sdbuildR_xmile
 #'
 #' @return NULL
+#' @family build
 #' @export
 #' @seealso [build()]
 #'
@@ -1543,6 +1557,7 @@ switch_list = function(x){
 #' @return The modified stock-and-flow object with the specified unit(s) added or removed.
 #'
 #' @export
+#' @family units
 #' @seealso [unit_prefixes()]
 #'
 #' @examples
@@ -1693,8 +1708,7 @@ model_units = function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_nam
                                               x[["eqn_julia"]] = convert_equations_julia(sfm, x[["type"]],
                                                                                x[["name"]], x[["eqn"]],
                                                                                var_names,
-                                                                               regex_units = dict,
-                                                                               debug = FALSE)
+                                                                               regex_units = dict)
                                            }
                                          }
                                          return(x)
@@ -1756,12 +1770,13 @@ model_units = function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_nam
 #' @param erase If TRUE, remove macro from the model. Defaults to FALSE.
 #'
 #' @return Updated stock-and-flow model
+#' @family build
 #' @export
 #'
 #' @examples
 #' # If the logistic() function did not exist, you could create it yourself:
 #' sfm = xmile() %>%
-#' macro("logistic", eqn = "function(x, slope = 1, midpoint = .5) 1 / (1 + exp(-slope*(x-midpoint)))")
+#' macro("func", eqn = "function(x, slope = 1, midpoint = .5) 1 / (1 + exp(-slope*(x-midpoint)))")
 #'
 macro = function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = FALSE){
 
@@ -1911,8 +1926,7 @@ macro = function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = F
       x = paste0(name[i], " = ", eqn[i])
 
       convert_equations_julia(sfm, type = "macro", name = name[i], eqn = x, var_names = var_names,
-                                                                regex_units = regex_units,
-                                                                debug = FALSE)[["eqn_julia"]]
+                                                                regex_units = regex_units)[["eqn_julia"]]
       # No need to save $func because delay family cannot be used for macros
       }, USE.NAMES = FALSE)
 
@@ -1960,6 +1974,7 @@ macro = function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = F
 #' @param ... Optional other entries to add to the header.
 #'
 #' @return Updated stock-and-flow model.
+#' @family build
 #' @export
 #'
 #' @examples
@@ -2026,6 +2041,7 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 #' @param language Coding language in which to simulate model. Either "R" or "Julia". Julia is necessary for using units or delay functions. Defaults to "R".
 #'
 #' @return Updated stock-and-flow model with new simulation specifications
+#' @family simulate
 #' @export
 #'
 #' @examples sfm = xmile("predator-prey") %>%
@@ -2040,7 +2056,7 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 #'sfm = sfm %>% sim_specs(time_units = "years")
 #'
 #'# To save storage but not affect accuracy, use save_at and save_from
-#'sfm = sfm %>% sim_specs(dt = 0.001, save_at = 1, save_from = 2000)
+#'sfm = sfm %>% sim_specs(dt = 0.001, save_at = .1, save_from = 2000)
 #'sim = simulate(sfm)
 #'head(as.data.frame(sim))
 #'
@@ -2456,7 +2472,7 @@ report_name_change = function(old_names, new_names){
 
 #' Create, modify or remove variables
 #'
-#' Variables in stock-and-flow models may be stocks, flows, constants, auxiliaries, or graphical functions. Add, change, or erase a variable in a stock-and-flow model.
+#' Add, change, or erase variables in a stock-and-flow model. Variables may be stocks, flows, constants, auxiliaries, or graphical functions.
 #'
 #' @section Stocks: Stocks define the state of the system. They accumulate material or information over time, such as people, products, or beliefs, which creates memory and inertia in the system. As such, stocks need not be tangible. Stocks are variables that can increase and decrease, and can be measured at a single moment in time. The value of a stock is increased or decreased by flows. A stock may have multiple inflows and multiple outflows. The net change in a stock is the sum of its inflows minus the sum of its outflows.
 #'
@@ -2501,6 +2517,7 @@ report_name_change = function(old_names, new_names){
 #'
 #' @return Updated stock-and-flow model.
 #' @seealso [xmile()]
+#' @family build
 #' @export
 #'
 #' @examples
@@ -2516,7 +2533,9 @@ report_name_change = function(old_names, new_names){
 #'  build("prey", "stock", eqn = 50, label = "Prey")
 #'
 #'# Plot the stock-and-flow diagram
-#'plot(sfm)
+#'plot(sfm, center_stocks = TRUE)
+#'
+#'
 #'
 #'# Add four flows: the births and deaths of both the predators and prey. The
 #'# "eqn" property of flows represents the rate of the flow. In addition, we
@@ -2560,7 +2579,6 @@ build = function(sfm, name, type,
                  to = NULL, from = NULL,
                  # Rarely used arguments
                  non_negative = FALSE,
-                 # min = NULL, max = NULL,
                  # Graphical function arguments
                  xpts = NULL, ypts = NULL,
                  source = NULL,
@@ -2961,8 +2979,7 @@ build = function(sfm, name, type,
 
     # Convert to julia - note that with delay() and past(), an intermediary property is added; with delayN() and smoothN(), a func property (nested list) is added
     eqn_julia = lapply(1:length(name), function(i){convert_equations_julia(sfm, type[i], name[i], eqn[i], var_names,
-                                                                           regex_units = regex_units,
-                                                                           debug = FALSE)}) %>% unname()
+                                                                           regex_units = regex_units)}) %>% unname()
 
     # Remove old func list
     for (i in length(name)){
@@ -3238,9 +3255,9 @@ create_R_names = function(create_names, names_df, protected = c()){
                    P[["fix_length_suffix"]], "$|",
                    P[["conveyor_suffix"]], "$|",
                    P[["delayN_suffix"]], "[0-9]+",
-                   P[["delayN_acc_suffix"]], "[0-9]+$|",
+                   P[["acc_suffix"]], "[0-9]+$|",
                    P[["smoothN_suffix"]], "[0-9]+",
-                   P[["smoothN_acc_suffix"]], "[0-9]+$")
+                   P[["acc_suffix"]], "[0-9]+$")
 
   idx = grepl(new_names, pattern = pattern)
   new_names[idx] = paste0(new_names[idx], "_")
@@ -3261,6 +3278,7 @@ create_R_names = function(create_names, names_df, protected = c()){
 #' @inheritParams simulate
 #'
 #' @return String with code to build stock-and-flow model from scratch.
+#' @family build
 #' @export
 #'
 #' @examples
@@ -3377,9 +3395,9 @@ get_build_code = function(sfm, format_code = TRUE){
 #' - An absence of stocks
 #' - Flows without a source (`from`) or target (`to`)
 #' - Flows connected to a stock that does not exist
-#' - Connected stocks and flows without both having units or no units
 #' - Undefined variable references in equations
 #' - Circularities in equations
+#' - Connected stocks and flows without both having units or no units
 #' - Missing unit definitions
 #'
 #' The following potential problems are detected:
@@ -3391,6 +3409,7 @@ get_build_code = function(sfm, format_code = TRUE){
 #' @param quietly If TRUE, don't print problems. Defaults to FALSE.
 #'
 #' @returns Logical value indicating whether any problems were detected.
+#' @family build
 #' @export
 #'
 #' @examples
@@ -3613,6 +3632,7 @@ static_depend_on_dyn = function(sfm){
 #'
 #' @returns Dataframe with properties of all model variables, model units, and macros.
 #' @export
+#' @family build
 #' @method as.data.frame sdbuildR_xmile
 #'
 #' @examples as.data.frame(xmile("SIR"))

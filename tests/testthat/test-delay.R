@@ -173,3 +173,39 @@ test_that("mixing delay family functions works", {
 
 })
 
+
+test_that("delay functions correspond to Insight Maker", {
+
+  # Where to put data for automated tests:
+  # https://stackoverflow.com/questions/32328802/where-should-i-put-data-for-automated-tests-with-testthat
+
+  # Model containing delay, delayN, smoothN
+  URL = "https://insightmaker.com/insight/2QkDnwi3QByFEOGV8Tdxi2/Test-delay-functions"
+  sfm = expect_no_error(insightmaker_to_sfm(URL))
+  expect_no_error(summary(sfm))
+  df = expect_no_error(as.data.frame(sfm))
+  sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
+
+  filepath = testthat::test_path("testdata", "delay_data_2025_07_12.csv")
+  sim_IM = read.csv(filepath)
+
+  # Rename column F to F_1 because F is a syntactically invalid name in R
+  colnames(sim_IM)[colnames(sim_IM) == "F"] = "F_1"
+
+  s1 = unique(sim$df$variable)
+  s2 = setdiff(colnames(sim_IM), c("Time", df[df[["type"]] %in% c("constant"), "name"], "input") )
+  expect_equal(all(s2 %in% s1), TRUE)
+  expect_equal(names(sim$constants), "tau_fixed")
+#
+# #   # Check that all variables match
+#   for (var in unique(sim$df$variable)){
+#     print(var)
+#     expect_equal(sim$df[sim$df$variable == var, "value"], sim_IM[[var]])
+#   }
+
+
+  # ** test with saveat...
+
+
+})
+

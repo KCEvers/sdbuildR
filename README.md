@@ -31,6 +31,8 @@ All package capabilities are described in the vignettes:
 
 - `vignette("build")` Learn how to build, modify, and debug
   stock-and-flow models.
+- `vignette("ensemble")` Learn how to assess a model’s sensitivity,
+  uncertainty and robustness with ensemble simulations.
 - `vignette("units")` Learn why and how to use (custom) units.
   <!-- 3. **Delays**: Not all dynamics are instantaneous. Learn about delays (fixed, smooth, material and information) and how to implement them with sdbuildR. -->
   <!-- 4. **Sensitivity**:  -->
@@ -45,9 +47,10 @@ remotes::install_github("KCEvers/sdbuildR")
 ```
 
 sdbuildR offers two simulation engines: R and Julia. If you would like
-to use units and delay functions, you will need to set up the Julia
-environment. Run `use_julia()` to install Julia and required packages
-(initial setup may take 5–15 minutes):
+to run ensemble simulations, use units and implement delay functions,
+you will need to set up the Julia environment. Run `use_julia()` to
+install Julia and required packages (initial setup may take 5–15
+minutes):
 
 ``` r
 sdbuildR::use_julia()
@@ -57,13 +60,15 @@ sdbuildR::use_julia()
 
 <!-- Unlike other System Dynamics software, sdbuildR makes a distinction between static and dynamic variables. This means that static variables - the initial values of stocks, constants, and graphical functions - cannot depend on dynamic variables - auxiliaries and flows. If this is the case, an error will be thrown with the problematic dependencies and the model will not be simulated.  -->
 
-Non-negative stocks and flows are minimally supported, Setting stocks to
-non-negative will not adjust flows. Hard-coding non-negativity is not
-recommended, as it may mask model misspecification. Stocks and flows
-that logically cannot be negative (e.g., animals or deaths) should
-remain non-negative through appropriate model equations and parameters
-to avoid unexpected results. In addition, sdbuildR does not support
-vectorized operations.
+Unlike in other System Dynamics software, sdbuildR minimally supports
+non-negative stocks and flows. Setting stocks to non-negative will not
+adjust flows. In any case, enforcing either stocks or flows to be
+non-negative is not recommended, as it may mask model misspecification.
+Stocks and flows that logically cannot be negative (e.g., animals or
+deaths) should ideally remain non-negative as a result of the model’s
+equations and parameters, rather than by forcing them to be
+non-negative. In addition, sdbuildR does not support vectorized
+operations.
 
 ## Other System Dynamics software
 

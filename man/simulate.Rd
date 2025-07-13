@@ -12,7 +12,6 @@ simulate(
   keep_unit = TRUE,
   only_stocks = TRUE,
   verbose = FALSE,
-  debug = FALSE,
   ...
 )
 }
@@ -30,8 +29,6 @@ simulate(
 \item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.}
 
 \item{verbose}{If TRUE, update on progress. Defaults to FALSE.}
-
-\item{debug}{If TRUE, print output for debugging. Defaults to FALSE.}
 
 \item{...}{Optional arguments}
 }
@@ -53,17 +50,17 @@ Simulate a stock-and-flow model with simulation specifications defined by \code{
 \examples{
 sfm = xmile("SIR")
 sim = simulate(sfm)
-plot(sfm)
+plot(sim)
 
 # Obtain all model variables
 sim = simulate(sfm, only_stocks = FALSE)
-plot(sfm, add_constants = TRUE)
+plot(sim, add_constants = TRUE)
 
 # Use Julia for models with units or delay functions
 sfm = xmile("coffee_cup") \%>\% sim_specs(language = "Julia")
 use_julia()
 sim = simulate(sfm)
-plot(sfm)
+plot(sim)
 
 # Close Julia session
 use_julia(stop = TRUE)
@@ -71,4 +68,12 @@ use_julia(stop = TRUE)
 }
 \seealso{
 \code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=debugger]{debugger()}}, \code{\link[=sim_specs]{sim_specs()}}, \code{\link[=use_julia]{use_julia()}}
+
+Other simulate: 
+\code{\link{ensemble}()},
+\code{\link{plot.sdbuildR_ensemble}()},
+\code{\link{plot.sdbuildR_sim}()},
+\code{\link{sim_specs}()},
+\code{\link{use_julia}()}
 }
+\concept{simulate}

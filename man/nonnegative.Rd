@@ -20,3 +20,13 @@ nonnegative(NA)
 nonnegative(-1)
 
 }
+\seealso{
+Other internal: 
+\code{\link{compare_sim}()},
+\code{\link{compute_delayN}()},
+\code{\link{compute_smoothN}()},
+\code{\link{saveat_func}()},
+\code{\link{setup_delayN}()},
+\code{\link{setup_smoothN}()}
+}
+\concept{internal}

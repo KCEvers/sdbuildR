@@ -44,3 +44,16 @@ as.data.frame(xmile("SIR"), type = "stock")
 # Only show equation and label
 as.data.frame(xmile("SIR"), properties = c("eqn", "label"))
 }
+\seealso{
+Other build: 
+\code{\link{as.data.frame.sdbuildR_sim}()},
+\code{\link{build}()},
+\code{\link{debugger}()},
+\code{\link{get_build_code}()},
+\code{\link{header}()},
+\code{\link{macro}()},
+\code{\link{plot.sdbuildR_xmile}()},
+\code{\link{summary.sdbuildR_xmile}()},
+\code{\link{xmile}()}
+}
+\concept{build}

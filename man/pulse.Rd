@@ -29,17 +29,27 @@ Equivalent of Pulse() in Insight Maker
 # that starts at time 5, jumps to a height of 2
 # with a width of 1, and does not repeat
 sfm = xmile() \%>\%
-build("a", "stock") \%>\%
-build("input", "constant", eqn = "pulse(5, 2, 1)") \%>\%
-build("inflow", "flow", eqn = "input(t)", to = "a")
+  build("a", "stock") \%>\%
+  build("input", "constant", eqn = "pulse(5, 2, 1)") \%>\%
+  build("inflow", "flow", eqn = "input(t)", to = "a")
 
-sim = simulate(sfm)
+sim = simulate(sfm, only_stocks = FALSE)
 plot(sim)
 
 # Create a pulse that repeats every 5 time units
 sfm = sfm \%>\%
-build("input", eqn = "pulse(5, 2, 1, 5)")
+  build("input", eqn = "pulse(5, 2, 1, 5)")
 
-sim = simulate(sfm)
+sim = simulate(sfm, only_stocks = FALSE)
 plot(sim)
+
 }
+\seealso{
+\code{\link[=step]{step()}}, \code{\link[=ramp]{ramp()}}, \code{\link[=seasonal]{seasonal()}}
+
+Other input: 
+\code{\link{ramp}()},
+\code{\link{seasonal}()},
+\code{\link{step}()}
+}
+\concept{input}

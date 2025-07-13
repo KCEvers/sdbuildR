@@ -21,3 +21,16 @@ Create R code to rebuild an existing stock-and-flow model. This may help to unde
 sfm = xmile("SIR")
 get_build_code(sfm)
 }
+\seealso{
+Other build: 
+\code{\link{as.data.frame.sdbuildR_sim}()},
+\code{\link{as.data.frame.sdbuildR_xmile}()},
+\code{\link{build}()},
+\code{\link{debugger}()},
+\code{\link{header}()},
+\code{\link{macro}()},
+\code{\link{plot.sdbuildR_xmile}()},
+\code{\link{summary.sdbuildR_xmile}()},
+\code{\link{xmile}()}
+}
+\concept{build}
