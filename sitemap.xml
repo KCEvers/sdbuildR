@@ -9,15 +9,13 @@
 <url><loc>https://kcevers.github.io/sdbuildR/articles/units.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/authors.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/index.html</loc></url>
-<url><loc>https://kcevers.github.io/sdbuildR/reference/IM_contains.html</loc></url>
-<url><loc>https://kcevers.github.io/sdbuildR/reference/IM_filter.html</loc></url>
-<url><loc>https://kcevers.github.io/sdbuildR/reference/IM_length.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/as.data.frame.sdbuildR_sim.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/as.data.frame.sdbuildR_xmile.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/build.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/compare_sim.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/compute_delayN.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/compute_smoothN.html</loc></url>
+<url><loc>https://kcevers.github.io/sdbuildR/reference/contains_IM.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/convert_u.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/debugger.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/delay.html</loc></url>
@@ -25,6 +23,7 @@
 <url><loc>https://kcevers.github.io/sdbuildR/reference/drop_u.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/ensemble.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/expit.html</loc></url>
+<url><loc>https://kcevers.github.io/sdbuildR/reference/filter_IM.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/get_build_code.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/get_regex_time_units.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/get_regex_units.html</loc></url>
@@ -34,6 +33,7 @@
 <url><loc>https://kcevers.github.io/sdbuildR/reference/index.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/indexof.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/insightmaker_to_sfm.html</loc></url>
+<url><loc>https://kcevers.github.io/sdbuildR/reference/length_IM.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/logistic.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/logit.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/macro.html</loc></url>

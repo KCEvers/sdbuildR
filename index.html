@@ -79,6 +79,8 @@
 <li>
 <code><a href="articles/build.html">vignette("build")</a></code> Learn how to build, modify, and debug stock-and-flow models.</li>
 <li>
+<code><a href="articles/ensemble.html">vignette("ensemble")</a></code> Learn how to assess a model’s sensitivity, uncertainty and robustness with ensemble simulations.</li>
+<li>
 <code><a href="articles/units.html">vignette("units")</a></code> Learn why and how to use (custom) units. <!-- 3. **Delays**: Not all dynamics are instantaneous. Learn about delays (fixed, smooth, material and information) and how to implement them with sdbuildR. --> <!-- 4. **Sensitivity**:  -->
 </li>
 </ul>
@@ -90,7 +92,7 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"KCEvers/sdbuildR"</span><span class="op">)</span></span></code></pre></div>
-<p>sdbuildR offers two simulation engines: R and Julia. If you would like to use units and delay functions, you will need to set up the Julia environment. Run <code><a href="reference/use_julia.html">use_julia()</a></code> to install Julia and required packages (initial setup may take 5–15 minutes):</p>
+<p>sdbuildR offers two simulation engines: R and Julia. If you would like to run ensemble simulations, use units and implement delay functions, you will need to set up the Julia environment. Run <code><a href="reference/use_julia.html">use_julia()</a></code> to install Julia and required packages (initial setup may take 5–15 minutes):</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">sdbuildR</span><span class="fu">::</span><span class="fu"><a href="reference/use_julia.html">use_julia</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -98,7 +100,7 @@
 <h2 id="limitations">Limitations<a class="anchor" aria-label="anchor" href="#limitations"></a>
 </h2>
 <!-- Unlike other System Dynamics software, sdbuildR makes a distinction between static and dynamic variables. This means that static variables - the initial values of stocks, constants, and graphical functions - cannot depend on dynamic variables - auxiliaries and flows. If this is the case, an error will be thrown with the problematic dependencies and the model will not be simulated.  -->
-<p>Non-negative stocks and flows are minimally supported, Setting stocks to non-negative will not adjust flows. Hard-coding non-negativity is not recommended, as it may mask model misspecification. Stocks and flows that logically cannot be negative (e.g., animals or deaths) should remain non-negative through appropriate model equations and parameters to avoid unexpected results. In addition, sdbuildR does not support vectorized operations.</p>
+<p>Unlike in other System Dynamics software, sdbuildR minimally supports non-negative stocks and flows. Setting stocks to non-negative will not adjust flows. In any case, enforcing either stocks or flows to be non-negative is not recommended, as it may mask model misspecification. Stocks and flows that logically cannot be negative (e.g., animals or deaths) should ideally remain non-negative as a result of the model’s equations and parameters, rather than by forcing them to be non-negative. In addition, sdbuildR does not support vectorized operations.</p>
 </div>
 <div class="section level2">
 <h2 id="other-system-dynamics-software">Other System Dynamics software<a class="anchor" aria-label="anchor" href="#other-system-dynamics-software"></a>
