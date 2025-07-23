@@ -150,7 +150,6 @@ compile_julia = function(sfm, filepath_sim,
   #   # Ensure all units are defined
   #   add_model_units = detect_undefined_units(sfm,
   #                                      new_eqns = c(sfm[["model"]][["variables"]] %>% lapply(function(x){lapply(x, `[[`, "eqn_julia")}) %>% unlist(),
-  #                                                   sfm$global$eqn_julia,
   #                                                   unlist(lapply(sfm[["macro"]], `[[`, "eqn_julia"))),
   #                                      new_units = sfm[["model"]][["variables"]] %>% lapply(function(x){lapply(x, `[[`, "units")}) %>% unlist())
   #   sfm[["model_units"]] = add_model_units %>% utils::modifyList(sfm[["model_units"]])
@@ -899,11 +898,6 @@ prep_intermediary_variables_julia = function(sfm, ordering){
     intermediary_var_values = intermediary_var_values[idx]
   }
 
-  # # Sometimes, step/pulse/ramp/seasonal functions are in auxiliaries. Exclude these from intermediary_var
-  # idx = grepl("_step$|_pulse$|_ramp$|_seasonal$", intermediary_var)
-  # intermediary_var = intermediary_var[!idx]
-  # intermediary_var_values = intermediary_var_values[!idx]
-
   return(list(
     names = intermediary_var,
     values = intermediary_var_values
@@ -1282,9 +1276,6 @@ compile_ode_julia = function(sfm, ensemble_pars, ordering, intermediaries,
 
     delay_names = names(unlist(unname(delayN_smoothN), recursive = FALSE))
 
-    #     intermediary_var = setdiff(intermediary_var, delay_names)
-    #     intermediary_var_values = setdiff(intermediary_var_values, delay_names)
-
     # Unpack non delayN stocks
     unpack_nondelayN = paste0(paste0(setdiff(names(stock_change), delay_names), collapse = ", "), ", = ", P[["state_name"]], "[findall(n -> !occursin(r\"", P[["delayN_suffix"]], "[0-9]+", P[["acc_suffix"]], "[0-9]+$|",
                               P[["smoothN_suffix"]], "[0-9]+", P[["acc_suffix"]], "[0-9]+$\", string(n)), ", P[["model_setup_name"]], ".", P[["initial_value_names"]], ")]")
@@ -1302,13 +1293,6 @@ compile_ode_julia = function(sfm, ensemble_pars, ordering, intermediaries,
   } else {
     unpack_state_str = paste0(paste0(names(stock_change), collapse = ", "), ", = ", P[["state_name"]])
   }
-
-
-  #   # Sometimes, step/pulse/ramp/seasonal functions are in auxiliaries. Exclude these from intermediary_var
-  #   idx = grepl("_step$|_pulse$|_ramp$|_seasonal$", intermediary_var)
-  #   intermediary_var = intermediary_var[!idx]
-  #   intermediary_var_values = intermediary_var_values[!idx]
-  #
 
   # Compile
   script_ode = paste0(

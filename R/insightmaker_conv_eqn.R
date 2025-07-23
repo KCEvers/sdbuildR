@@ -386,11 +386,6 @@ curly_to_vector_brackets = function(eqn, var_names) {
           "\\b[\\w\\.\\\\]+$"# All word characters, periods . and slashes \\
         )
         paired_idxs_prop[["is_start_of_string"]] = paired_idxs_prop[["start"]] == 1
-        # string =  stringr::str_sub(eqn, .data$start - 10, .data$start + 10),
-        # right_adjacent_char = stringr::str_sub(eqn, .data$end - 1, .data$end - 1),
-        # is_end_of_string = .data$end == stringr::str_length(eqn)
-
-
 
       if (any(paired_idxs_prop[["type"]] == "curly")) {
         # Start with most nested string
@@ -428,7 +423,7 @@ curly_to_vector_brackets = function(eqn, var_names) {
         # It is an indexer if...
         x_is_indexer = stringr::str_detect(chosen_pair[["left_adjacent_char"]],
                                            "[a-zA-Z0-9._\\}\\)]") &
-          (!chosen_pair$is_start_of_string) &
+          (!chosen_pair[["is_start_of_string"]]) &
           !(grepl("\\n", chosen_pair[["preceding_str"]], fixed = TRUE))
 
         start_idx = chosen_pair[["start"]]
@@ -501,37 +496,37 @@ replace_op_IM <- function(eqn, var_names) {
 
     # Get match and replacement
     df_logical_op = as.data.frame(do.call(rbind, idxs_logical_op))
-    df_logical_op$match = stringr::str_sub(eqn, df_logical_op$start, df_logical_op$end)
-    df_logical_op$replacement = rep(unname(logical_op), sapply(idxs_logical_op, nrow))
-    df_logical_op = df_logical_op[order(df_logical_op$start), ]
+    df_logical_op[["match"]] = stringr::str_sub(eqn, df_logical_op[["start"]], df_logical_op[["end"]])
+    df_logical_op[["replacement"]] = rep(unname(logical_op), sapply(idxs_logical_op, nrow))
+    df_logical_op = df_logical_op[order(df_logical_op[["start"]]), ]
 
     # Remove those that are in quotation marks or names
     idxs_exclude = get_seq_exclude(eqn, var_names, names_with_brackets = TRUE)
-    if (nrow(df_logical_op) > 0) df_logical_op = df_logical_op[!(df_logical_op$start %in% idxs_exclude | df_logical_op$end %in% idxs_exclude), ]
+    if (nrow(df_logical_op) > 0) df_logical_op = df_logical_op[!(df_logical_op[["start"]] %in% idxs_exclude | df_logical_op[["end"]] %in% idxs_exclude), ]
 
     # Remove matches that are the same as the logical operator
-    if (nrow(df_logical_op) > 0) df_logical_op = df_logical_op[df_logical_op$replacement != df_logical_op$match, ]
+    if (nrow(df_logical_op) > 0) df_logical_op = df_logical_op[df_logical_op[["replacement"]] != df_logical_op[["match"]], ]
 
     if (nrow(df_logical_op) > 0){
 
       # In case of "=", remove those that are in function(...), as these are for default assignment of arguments and should stay as =
       paired_idxs = get_range_all_pairs(eqn, var_names, type = "round", names_with_brackets = TRUE)
       end_function_words = get_words(eqn)
-      end_function_words = end_function_words[end_function_words$word == "function", "end"]
+      end_function_words = end_function_words[end_function_words[["word"]] == "function", "end"]
 
       if (nrow(paired_idxs) > 0 & length(end_function_words) > 0){
         function_brackets = paired_idxs
-        function_brackets = function_brackets[function_brackets$start %in% (end_function_words + 1), ]
-        idxs_exclude <- unlist(mapply(seq, function_brackets$start, function_brackets$end, SIMPLIFY = FALSE))
+        function_brackets = function_brackets[function_brackets[["start"]] %in% (end_function_words + 1), ]
+        idxs_exclude <- unlist(mapply(seq, function_brackets[["start"]], function_brackets[["end"]], SIMPLIFY = FALSE))
 
-        if (nrow(df_logical_op) > 0) df_logical_op = df_logical_op[!(df_logical_op$start %in% idxs_exclude | df_logical_op$end %in% idxs_exclude), ]
+        if (nrow(df_logical_op) > 0) df_logical_op = df_logical_op[!(df_logical_op[["start"]] %in% idxs_exclude | df_logical_op[["end"]] %in% idxs_exclude), ]
       }
 
       if (nrow(df_logical_op) > 0){
 
         # Replace in reverse order; no nested functions, so we can replace them in one go
         for (i in rev(1:nrow(df_logical_op))){
-          stringr::str_sub(eqn, df_logical_op[i, ]$start, df_logical_op[i, ]$end) = df_logical_op[i, ]$replacement
+          stringr::str_sub(eqn, df_logical_op[i, ][["start"]], df_logical_op[i, ][["end"]]) = df_logical_op[i, ][["replacement"]]
         }
         # Remove double spaces
         eqn = stringr::str_replace_all(eqn, "[ ]+", " ")
@@ -548,12 +543,12 @@ replace_op_IM <- function(eqn, var_names) {
 
     # Remove those that are in quotation marks or names
     idxs_exclude = get_seq_exclude(eqn, var_names, names_with_brackets = TRUE)
-    df_logical_op = df_logical_op[!(df_logical_op$start %in% idxs_exclude | df_logical_op$end %in% idxs_exclude), ]
+    df_logical_op = df_logical_op[!(df_logical_op[["start"]] %in% idxs_exclude | df_logical_op[["end"]] %in% idxs_exclude), ]
 
     if (nrow(df_logical_op) > 0){
       # Replace in reverse order; no nested functions, so we can replace them in one go
       for (i in rev(1:nrow(df_logical_op))){
-        stringr::str_sub(eqn, df_logical_op[i, ]$start, df_logical_op[i, ]$end) = "="
+        stringr::str_sub(eqn, df_logical_op[i, ][["start"]], df_logical_op[i, ][["end"]]) = "="
       }
     }
   }
@@ -576,7 +571,7 @@ get_words = function(eqn){
   # An existing function stringr::word() extracts words but treats e.g. "return(a)" as one word
   idxs_word = stringr::str_locate_all(eqn, "([a-zA-Z_\\.0-9]+)")[[1]] %>% as.data.frame()
 
-  if (nrow(idxs_word) > 0) idxs_word$word = stringr::str_sub(eqn, idxs_word$start, idxs_word$end)
+  if (nrow(idxs_word) > 0) idxs_word[["word"]] = stringr::str_sub(eqn, idxs_word[["start"]], idxs_word[["end"]])
 
   return(idxs_word)
 }
@@ -692,7 +687,7 @@ convert_statement = function(line, var_names){
   # Left-over: Make sure all functions are in the right lower case; don't do this with simple replacement as "function" might be part of a variable name
   words = get_words(equation)
   words_function = words
-  words_function = words_function[tolower(words_function$word) == "function", ]
+  words_function = words_function[tolower(words_function[["word"]]) == "function", ]
 
   if (nrow(words_function) > 0){
     for (i in 1:nrow(words_function)){
@@ -705,10 +700,10 @@ convert_statement = function(line, var_names){
   if (nrow(paired_idxs) > 0 & nrow(words) > 0){
     # Pick bracket that ends the string
     start_bracket = paired_idxs
-    start_bracket = start_bracket[start_bracket$end == stringr::str_length(equation), "start"]
+    start_bracket = start_bracket[start_bracket[["end"]] == stringr::str_length(equation), "start"]
     # Get last word before vector brackets
     last_word = words
-    last_word = last_word[(last_word$end + 1) == ifelse(length(start_bracket), start_bracket, 0), "word"]
+    last_word = last_word[(last_word[["end"]] + 1) == ifelse(length(start_bracket), start_bracket, 0), "word"]
     last_word = ifelse(length(last_word) > 0, last_word, "")
     if (last_word == "function") {
       closing_statement = "{"
@@ -847,9 +842,9 @@ get_range_pairs <- function(eqn, var_names,
   # Filter for specific opening (e.g., "c(" instead of just "(")
   if (opening != opening_bare) {
     opening_strip <- substr(opening, 1, nchar(opening) - 1)
-    matches <- stringr::str_sub(eqn, pair_df$start - nchar(opening_strip), pair_df$start - 1) == opening_strip
+    matches <- stringr::str_sub(eqn, pair_df[["start"]] - nchar(opening_strip), pair_df[["start"]] - 1) == opening_strip
     pair_df <- pair_df[matches, ]
-    pair_df$start <- pair_df$start - nchar(opening_strip)
+    pair_df[["start"]] <- pair_df[["start"]] - nchar(opening_strip)
   }
 
   # Return empty data frame if no valid pairs
@@ -859,13 +854,13 @@ get_range_pairs <- function(eqn, var_names,
   }
 
   # Add nesting information
-  pair_df$id <- seq_len(nrow(pair_df))
-  pair_df$match <- stringr::str_sub(eqn, pair_df$start, pair_df$end)
-  pair_df$nested_around <- vapply(seq_len(nrow(pair_df)), function(i) {
-    paste(which(pair_df$start < pair_df$start[i] & pair_df$end > pair_df$end[i]), collapse = ",")
+  pair_df[["id"]] <- seq_len(nrow(pair_df))
+  pair_df[["match"]] <- stringr::str_sub(eqn, pair_df[["start"]], pair_df[["end"]])
+  pair_df[["nested_around"]] <- vapply(seq_len(nrow(pair_df)), function(i) {
+    paste(which(pair_df[["start"]] < pair_df[["start"]][i] & pair_df[["end"]] > pair_df[["end"]][i]), collapse = ",")
   }, character(1))
-  pair_df$nested_within <- vapply(seq_len(nrow(pair_df)), function(i) {
-    paste(which(pair_df$start > pair_df$start[i] & pair_df$end < pair_df$end[i]), collapse = ",")
+  pair_df[["nested_within"]] <- vapply(seq_len(nrow(pair_df)), function(i) {
+    paste(which(pair_df[["start"]] > pair_df[["start"]][i] & pair_df[["end"]] < pair_df[["end"]][i]), collapse = ",")
   }, character(1))
 
   return(pair_df)
@@ -944,31 +939,31 @@ get_range_all_pairs = function(eqn, var_names,
   # Get start and end indices of paired []
   if ("square" %in% type){
     pair_square_brackets = get_range_pairs(eqn, var_names, opening = "[", closing = "]", names_with_brackets = names_with_brackets)
-    if (nrow(pair_square_brackets) > 0) pair_square_brackets$type = "square"
+    if (nrow(pair_square_brackets) > 0) pair_square_brackets[["type"]] = "square"
   }
 
   # Get start and end indices of paired {}
   if ("curly" %in% type){
     pair_curly_brackets = get_range_pairs(eqn, var_names, opening = "{", closing = "}", names_with_brackets = names_with_brackets)
-    if (nrow(pair_curly_brackets) > 0) pair_curly_brackets$type = "curly"
+    if (nrow(pair_curly_brackets) > 0) pair_curly_brackets[["type"]] = "curly"
   }
 
   # Get start and end indices of ()
   if ("round" %in% type){
     pair_round_brackets = get_range_pairs(eqn, var_names, opening = "(", closing = ")", names_with_brackets = names_with_brackets)
-    if (nrow(pair_round_brackets) > 0) pair_round_brackets$type = "round"
+    if (nrow(pair_round_brackets) > 0) pair_round_brackets[["type"]] = "round"
   }
 
   # Get start and end indices of paired c()
   if ("vector" %in% type){
     pair_vector_brackets = get_range_pairs(eqn, var_names, opening = "c(", closing = ")", names_with_brackets = names_with_brackets)
-    if (nrow(pair_vector_brackets) > 0) pair_vector_brackets$type = "vector"
+    if (nrow(pair_vector_brackets) > 0) pair_vector_brackets[["type"]] = "vector"
   }
 
   # Get start and end indices of paired ''
   if ("quot" %in% type){
     pair_quotation_marks = get_range_quot(eqn)
-    if (nrow(pair_quotation_marks) > 0) pair_quotation_marks$type = "quot"
+    if (nrow(pair_quotation_marks) > 0) pair_quotation_marks[["type"]] = "quot"
   }
 
   # Custom element to look for, e.g. add_custom = "paste0()"
@@ -979,7 +974,7 @@ get_range_all_pairs = function(eqn, var_names,
     closing = substr(add_custom, l, l) # Extract last character
     type = c(type, name_custom)
     pair_custom = get_range_pairs(eqn, var_names, opening = opening, closing = closing)
-    if (nrow(pair_custom) > 0) pair_custom$type = name_custom
+    if (nrow(pair_custom) > 0) pair_custom[["type"]] = name_custom
 
   } else {
     pair_custom = data.frame()
@@ -997,7 +992,7 @@ get_range_all_pairs = function(eqn, var_names,
   if (nrow(paired_idxs) > 0) {
 
     # Filter by type
-    paired_idxs <- paired_idxs[paired_idxs$type %in% type, ]
+    paired_idxs <- paired_idxs[paired_idxs[["type"]] %in% type, ]
 
     # Arrange by start
     paired_idxs <- paired_idxs[order(paired_idxs[["start"]]), ]
@@ -1008,7 +1003,7 @@ get_range_all_pairs = function(eqn, var_names,
 
     # Keep the row with the minimum start for each end
     paired_idxs <- do.call(rbind, lapply(split_by_end, function(group) {
-      group[which.min(group$start), ]
+      group[which.min(group[["start"]]), ]
     }))
 
     # 4. Reset row names and ensure it's a data frame
@@ -1049,13 +1044,13 @@ get_seq_exclude = function(eqn,
   if ("quot" %in% type) {
     # Get start and end indices of paired ''
     pair_quotation_marks = get_range_quot(eqn)
-    if (nrow(pair_quotation_marks) > 0) pair_quotation_marks$type = "quot"
+    if (nrow(pair_quotation_marks) > 0) pair_quotation_marks[["type"]] = "quot"
   }
 
   if ("names" %in% type) {
     # Get start and end indices of variable names
     pair_names = get_range_names(eqn, var_names, names_with_brackets = names_with_brackets)
-    if (nrow(pair_names) > 0) pair_names$type = "names"
+    if (nrow(pair_names) > 0) pair_names[["type"]] = "names"
   }
 
   comb = dplyr::bind_rows(pair_quotation_marks, pair_names)
@@ -1106,12 +1101,12 @@ get_range_names = function(eqn, var_names, names_with_brackets = FALSE) {
 
       # Create indices dataframe with detected variable names
       idxs_df = as.data.frame(do.call(rbind, idxs_names))
-      idxs_df$name = rep(original_names, sapply(idxs_names, nrow))
+      idxs_df[["name"]] = rep(original_names, sapply(idxs_names, nrow))
 
       # Remove matches in characters
       idxs_exclude = get_seq_exclude(eqn, type = "quot", names_with_brackets = names_with_brackets)
 
-      if (nrow(idxs_df) > 0) idxs_df = idxs_df[!(idxs_df$start %in% idxs_exclude | idxs_df$end %in% idxs_exclude), ]
+      if (nrow(idxs_df) > 0) idxs_df = idxs_df[!(idxs_df[["start"]] %in% idxs_exclude | idxs_df[["end"]] %in% idxs_exclude), ]
 
     }
   }
@@ -1312,27 +1307,27 @@ get_syntax_IM = function(){
   df <- conv_df[conv_df[["syntax"]] != "syntax4", ]
 
   # Initialize new columns
-  df$insightmaker_first_iter <- df$insightmaker
-  df$insightmaker_regex_first_iter <- ifelse(
-    df$syntax %in% c("syntax0", "syntax1", "syntax3"),
-    paste0("\\b", df$insightmaker, "\\("),
-    paste0("\\.", df$insightmaker, "\\(")
+  df[["insightmaker_first_iter"]] <- df[["insightmaker"]]
+  df[["insightmaker_regex_first_iter"]] <- ifelse(
+    df[["syntax"]] %in% c("syntax0", "syntax1", "syntax3"),
+    paste0("\\b", df[["insightmaker"]], "\\("),
+    paste0("\\.", df[["insightmaker"]], "\\(")
   )
-  df$insightmaker <- paste0(df$insightmaker, "_replace")
-  df$insightmaker_regex <- ifelse(
-    df$syntax %in% c("syntax0", "syntax1", "syntax3"),
-    paste0("\\b", df$insightmaker, "\\("),
-    paste0("\\.", df$insightmaker, "\\(")
+  df[["insightmaker"]] <- paste0(df[["insightmaker"]], "_replace")
+  df[["insightmaker_regex"]] <- ifelse(
+    df[["syntax"]] %in% c("syntax0", "syntax1", "syntax3"),
+    paste0("\\b", df[["insightmaker"]], "\\("),
+    paste0("\\.", df[["insightmaker"]], "\\(")
   )
 
   # Create additional rows for syntax0b and syntax1b
-  additional_rows <- conv_df[conv_df[["syntax"]] %in% c("syntax0", "syntax1") & !as.logical(conv_df$needs_brackets), ]
+  additional_rows <- conv_df[conv_df[["syntax"]] %in% c("syntax0", "syntax1") & !as.logical(conv_df[["needs_brackets"]]), ]
   if (nrow(additional_rows) > 0) {
-    additional_rows$insightmaker_first_iter <- additional_rows$insightmaker
-    additional_rows$insightmaker_regex_first_iter <- paste0("\\b", additional_rows$insightmaker, "\\b")
-    additional_rows$insightmaker <- paste0(additional_rows$insightmaker, "_replace")
-    additional_rows$insightmaker_regex <- paste0("\\b", additional_rows$insightmaker, "\\b")
-    additional_rows$syntax <- paste0(additional_rows$syntax, "b")
+    additional_rows[["insightmaker_first_iter"]] <- additional_rows[["insightmaker"]]
+    additional_rows[["insightmaker_regex_first_iter"]] <- paste0("\\b", additional_rows[["insightmaker"]], "\\b")
+    additional_rows[["insightmaker"]] <- paste0(additional_rows[["insightmaker"]], "_replace")
+    additional_rows[["insightmaker_regex"]] <- paste0("\\b", additional_rows[["insightmaker"]], "\\b")
+    additional_rows[["syntax"]] <- paste0(additional_rows[["syntax"]], "b")
 
     # Combine rows
     syntax_df <- rbind(df, additional_rows)
@@ -1400,31 +1395,31 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
     idx_df <- as.data.frame(do.call(rbind, idx_df))
 
   # Double matches in case of functions that don't need brackets, e.g. Days() -> select one with longest end, as we want to match Days() over Days
-    idx_df <- idx_df[order(idx_df$insightmaker, idx_df$start, -idx_df$end), ]
+    idx_df <- idx_df[order(idx_df[["insightmaker"]], idx_df[["start"]], -idx_df[["end"]]), ]
     idx_df <- idx_df[!duplicated(idx_df[, c("insightmaker", "start")]), ]
     rownames(idx_df) <- NULL
 
     # Remove those matches that are in quotation marks or names
     idxs_exclude = get_seq_exclude(eqn, var_names, names_with_brackets = TRUE)
 
-    if (nrow(idx_df) > 0) idx_df = idx_df[!(idx_df$start %in% idxs_exclude | idx_df$end %in% idxs_exclude), ]
+    if (nrow(idx_df) > 0) idx_df = idx_df[!(idx_df[["start"]] %in% idxs_exclude | idx_df[["end"]] %in% idxs_exclude), ]
 
     # For the first iteration, add _replace to all detected functions, so we don't end in an infinite loop (some insightmaker and R functions have the same name)
     if (i == 1 & nrow(idx_df) > 0){
 
-      idx_df <- idx_df[order(idx_df$start), ]
-      idx_df$insightmaker_regex <- stringr::str_replace_all(idx_df$insightmaker_regex,
+      idx_df <- idx_df[order(idx_df[["start"]]), ]
+      idx_df[["insightmaker_regex"]] <- stringr::str_replace_all(idx_df[["insightmaker_regex"]],
                                                  stringr::fixed(c("\\b" = "", "\\(" = "(", "\\)" = ")")))
 
       for (j in rev(1:nrow(idx_df))){
-          stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) = idx_df[j, ]$insightmaker_regex #%>%
+          stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) = idx_df[j, ][["insightmaker_regex"]]
       }
     }
 
     if (i == 1){
       # print(eqn)
       ignore_case_arg = FALSE
-      IM_regex = syntax_df$insightmaker_regex
+      IM_regex = syntax_df[["insightmaker_regex"]]
       i = i + 1
       # Stop first iteration
       next
@@ -1442,18 +1437,6 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 
       # If there are brackets in the eqn:
       if (nrow(paired_idxs) > 0){
-        # # Match the opening bracket of each function to round brackets in paired_idxs
-        # idx_funcs = merge(
-        #   paired_idxs[paired_idxs$type == "round", ],
-        #   idx_df,
-        #   by.x = "start",
-        #   by.y = "end"
-        # ) %>% dplyr::rename(start_bracket = "start", start = "start.y") %>%
-        #   # Add back syntax1b which does not need brackets
-        #   dplyr::bind_rows(idx_df[idx_df$syntax %in% c("syntax0b", "syntax1b"), ] %>%
-        #                      # Add start_bracket column to prevent errors
-        #                      dplyr::mutate(start_bracket = .data$start)) %>%
-        #   dplyr::arrange(.data$end)
 
         # Match the opening bracket of each function to round brackets in paired_idxs
         idx_funcs = merge(
@@ -1478,35 +1461,29 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
       }
 
       # Start with most nested function
-      # idx_funcs_ordered = idx_funcs %>% dplyr::rowwise() %>%
-      #   dplyr::mutate(is_nested_around = any(.data$start < idx_funcs$start &
-      #                                          .data$end > idx_funcs$end)) %>% dplyr::ungroup() %>%
-      #   dplyr::arrange(.data$is_nested_around) %>% as.data.frame()
       idx_funcs_ordered = idx_funcs
-      idx_funcs_ordered$is_nested_around = any(idx_funcs_ordered$start < idx_funcs$start & idx_funcs_ordered$end > idx_funcs$end)
-      idx_funcs_ordered = idx_funcs_ordered[order(idx_funcs_ordered$is_nested_around), ]
-
+      idx_funcs_ordered[["is_nested_around"]] = any(idx_funcs_ordered[["start"]] < idx_funcs[["start"]] & idx_funcs_ordered[["end"]] > idx_funcs[["end"]])
+      idx_funcs_ordered = idx_funcs_ordered[order(idx_funcs_ordered[["is_nested_around"]]), ]
 
       # Select first match
       idx_func = idx_funcs_ordered[1, ]
 
       # Remove _replace in replacement function
       idx_func[["insightmaker"]] = stringr::str_replace(idx_func[["insightmaker"]], "_replace$", "")
-      idx_func
 
       # Extract argument between brackets (excluding brackets)
-      bracket_arg = stringr::str_sub(eqn, idx_func$start_bracket + 1, idx_func[["end"]] - 1)
+      bracket_arg = stringr::str_sub(eqn, idx_func[["start_bracket"]] + 1, idx_func[["end"]] - 1)
       arg = parse_args(bracket_arg)
 
       # Replace entire string, no arguments
-      if (idx_func$syntax %in% c("syntax0", "syntax0b")) {
+      if (idx_func[["syntax"]] %in% c("syntax0", "syntax0b")) {
         replacement = idx_func[["R"]]
 
         # Indices of replacement in eqn
         start_idx = idx_func[["start"]]
         end_idx = idx_func[["end"]]
 
-      } else if (idx_func$syntax == "syntax1") {
+      } else if (idx_func[["syntax"]] == "syntax1") {
 
         # Add vector brackets if needed
         if (as.logical(idx_func[["add_c()"]]) & length(arg) > 1) {
@@ -1527,7 +1504,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
         start_idx = idx_func[["start"]]
         end_idx = idx_func[["end"]]
 
-      } else if (idx_func$syntax == "syntax1b"){
+      } else if (idx_func[["syntax"]] == "syntax1b"){
 
         replacement = sprintf(
           "%s(%s)",
@@ -1538,7 +1515,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
         start_idx = idx_func[["start"]]
         end_idx = idx_func[["end"]]
 
-      } else if (idx_func$syntax == "syntax2") {
+      } else if (idx_func[["syntax"]] == "syntax2") {
 
         # Extract argument before function
         prefunc_arg = extract_prefunc_args(eqn, var_names,
@@ -1559,7 +1536,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
         # End index of replacement in eqn
         end_idx = idx_func[["end"]]
 
-      } else if (idx_func$syntax == "syntax3") {
+      } else if (idx_func[["syntax"]] == "syntax3") {
 
         # If it's the first function of this kind, no id is needed
         if (length(translated_func) == 0){
@@ -1579,15 +1556,6 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
             func = tolower(idx_func[["insightmaker"]]),
             arg = arg
           ))
-        # %>%
-        #   # Add other arguments from environment
-        #   purrr::imap(function(x, y) {
-        #     if (is.name(x)) {
-        #       return(envir[[y]])
-        #     } else {
-        #       return(x)
-        #     }
-        #   })
 
         call_args2 = lapply(seq_along(call_args), function(y) {
           if (is.name(call_args[[y]])) {
@@ -1667,7 +1635,7 @@ parse_args = function(bracket_arg){
 
     # Create sequence of indices between brackets/quotation marks, and check whether comma is between them
     paired_idxs = get_range_all_pairs(bracket_arg, var_names = NULL)
-    paired_idxs_seq <- unlist(mapply(seq,paired_idxs[["start"]], paired_idxs[["end"]], SIMPLIFY = FALSE))
+    paired_idxs_seq <- unlist(mapply(seq, paired_idxs[["start"]], paired_idxs[["end"]], SIMPLIFY = FALSE))
 
     idxs_commas = idxs_commas[!idxs_commas %in% paired_idxs_seq]
 
@@ -1700,15 +1668,15 @@ extract_prefunc_args = function(eqn, var_names, start_func, names_with_brackets)
   # Get all enclosing elements before start of function
   prefunc_brackets = get_range_all_pairs(eqn, var_names, add_custom = "paste0()", names_with_brackets = names_with_brackets)
 
-  prefunc_brackets = prefunc_brackets[prefunc_brackets$type != "square",
-                                      prefunc_brackets$end == (start_func - 1), ]
+  prefunc_brackets = prefunc_brackets[prefunc_brackets[["type"]] != "square",
+                                      prefunc_brackets[["end"]] == (start_func - 1), ]
 
   if (nrow(prefunc_brackets) > 0) {
     # Second argument is whatever is between brackets
     prefunc_arg = stringr::str_sub(eqn,
-                                   prefunc_brackets$start,
+                                   prefunc_brackets[["start"]],
                                    # Keep c()
-                                   prefunc_brackets$end)
+                                   prefunc_brackets[["end"]])
 
   } else {
 
@@ -1801,7 +1769,8 @@ conv_IMMAP <- function(func, arg) {
 conv_repeat <- function(func, arg) {
   x_in_function = stringr::str_detect(arg[1], "\\bx\\b")
   key_in_function = stringr::str_detect(arg[1], "\\bkey\\b")
-  names_second_arg = try(eval(parse(text = sprintf("names(%s)", arg[2]))), silent = T)
+  names_second_arg = try(eval(parse(text = sprintf("names(%s)", arg[2]))),
+                         silent = TRUE)
   named_second_arg = !(is.null(names_second_arg) |
                          "try-error" %in% class(names_second_arg))
 
@@ -1906,8 +1875,8 @@ convert_addition_of_strings = function(eqn, var_names) {
       if (is.na(idxs_plus_adj)) {
         done = T
       } else {
-        left_arg = stringr::str_sub(eqn, paired_idxs[right_adjacent, ]$start, paired_idxs[right_adjacent, ]$end)
-        right_arg = stringr::str_sub(eqn, paired_idxs[left_adjacent, ]$start, paired_idxs[left_adjacent, ]$end)
+        left_arg = stringr::str_sub(eqn, paired_idxs[right_adjacent, ][["start"]], paired_idxs[right_adjacent, ][["end"]])
+        right_arg = stringr::str_sub(eqn, paired_idxs[left_adjacent, ][["start"]], paired_idxs[left_adjacent, ][["end"]])
 
         # In case left or right argument is in paste0() already, remove paste0()
         l = stringr::str_length("paste0(")
@@ -1919,7 +1888,7 @@ convert_addition_of_strings = function(eqn, var_names) {
         }
 
         # Overwrite eqn
-        stringr::str_sub(eqn, paired_idxs[right_adjacent, ]$start, paired_idxs[left_adjacent, ]$end) = sprintf("paste0(%s, %s)", left_arg, right_arg)
+        stringr::str_sub(eqn, paired_idxs[right_adjacent, ][["start"]], paired_idxs[left_adjacent, ][["end"]]) = sprintf("paste0(%s, %s)", left_arg, right_arg)
 
       }
     }

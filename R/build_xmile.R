@@ -321,11 +321,25 @@ plot.sdbuildR_sim = function(x,
       # Remove from names
       nonstock_names = nonstock_names[!nonstock_names %in% names(idx_func[idx_func])]
 
-      if (length(x[["constants"]]) > 0) x[["df"]] = cbind(x[["df"]],
-                                                          as.list(unclass(x[["constants"]])))
+      # if (length(x[["constants"]]) > 0) x[["df"]] = cbind(x[["df"]],
+      #                                                     as.list(unclass(x[["constants"]])))
+
+      # Duplicate long format for each constant
+      if (length(x[["constants"]]) > 0){
+        # Find time vector from first stock variable
+        times = x[["df"]][x[["df"]][["variable"]] == stock_names[1], "time"]
+        temp = lapply(names(x[["constants"]]), function(y){
+          data.frame(time = times, variable = y,
+                     value = x[["constants"]][[y]])
+        }) %>% do.call(rbind, .) %>% as.data.frame()
+        x[["df"]] = dplyr::bind_rows(x[["df"]], temp)
+
+
+      }
     }
   }
 
+  # Use colnames because the constants have been added as columns
   nonstock_names = nonstock_names[unname(nonstock_names) %in% unique(x[["df"]][["variable"]])]
 
   if (requireNamespace("plotly", quietly = TRUE)){
@@ -366,29 +380,53 @@ plot.sdbuildR_sim = function(x,
     #   times = colnames(x[["df"]])[colnames(x[["df"]]) != "time"]
     # ) %>% magrittr::set_rownames(NULL)
 
-    nr_var = length(unique(df_long[["variable"]]))
+    # nr_var = length(unique(df_long[["variable"]]))
+    nr_var = length(c(stock_names, nonstock_names))
 
-    # Minimum number of variables needed for colour palette generation
-    if (nr_var < 3){
-      nr_var = 3
-    }
+    # # Minimum number of variables needed for colour palette generation
+    # if (nr_var < 3){
+    #   nr_var = 3
+    # }
+    #
+    # # Don't add check for template in hcl.pals(), because hcl is more flexible in palette names matching.
+    # if (is.null(colors)){
+    #   colors = grDevices::hcl.colors(n = nr_var, palette = palette)
+    # } else {
+    #   # Ensure there are enough colors
+    #   if (length(colors) < nr_var){
+    #     stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing template instead..."))
+    #     colors = grDevices::hcl.colors(n = nr_var, palette = palette)
+    #   }
+    # }
+    #
+    #
+    # nr_var = length(unique(summary_df[["variable"]]))
 
-    # Don't add check for template in hcl.pals(), because hcl is more flexible in palette names matching.
-    if (is.null(colors)){
-      colors = grDevices::hcl.colors(n = nr_var, palette = palette)
-    } else {
-      # Ensure there are enough colors
+    gen_colors = FALSE
+    if (!is.null(colors)){
       if (length(colors) < nr_var){
-        stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing template instead..."))
-        colors = grDevices::hcl.colors(n = nr_var, palette = palette)
+        stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing palette instead..."))
+        gen_colors = TRUE
       }
+    } else {
+        gen_colors = TRUE
     }
 
-    # Cut number of colors to number of variables
-    colors = colors[1:nr_var]
+    if (gen_colors){
+        # Minimum number of variables needed for colour palette generation
+        if (nr_var < 3){
+          nr_var = 3
+        }
+
+        colors = grDevices::hcl.colors(n = nr_var, palette = palette)
+
+    }
 
     # The colors are unintuitively plotted from back to front
     colors = rev(colors)
+
+    # Cut number of colors to number of variables
+    colors = colors[1:nr_var]
 
     # Initialize plotly object
     pl <- plotly::plot_ly()
@@ -499,6 +537,7 @@ plot.sdbuildR_sim = function(x,
 #' @param font_size Font size. Defaults to 16.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
 #' @param central_tendency Central tendency to use for the mean line. Either "mean" or "median". Defaults to "mean".
+#' @param central_tendency_width Line width of central tendency. Defaults to 3.
 #' @param ... Optional parameters
 #'
 #' @return Plot of ensemble simulation.
@@ -520,6 +559,7 @@ plot.sdbuildR_ensemble = function(x,
                                   font_size = 16,
                                   wrap_width = 25,
                                   central_tendency = c("mean", "median")[1],
+                                  central_tendency_width = 3,
                                   ...){
 
   if (missing(x)){
@@ -565,13 +605,7 @@ plot.sdbuildR_ensemble = function(x,
   }
 
   main <- if (!"main" %in% names(dots)) {
-    # paste0(x[["sfm"]][["header"]][["name"]], " (", x[["n"]], " simulations",
-    # ifelse(length(cond_nrs) > 1, paste0(" of condition ", j, ")"), ")"))
 
-    # paste0(x[["sfm"]][["header"]][["name"]], " (", x[["n"]], " simulations",
-           # ifelse(length(j) == 1, paste0(" of condition ", j, ")"), ")"))
-
-    # paste0(x[["n"]], " simulations with [", x[["qs"]][1], ", ", x[["qs"]][2], "] confidence interval")
     paste0("Ensemble of ", x[["sfm"]][["header"]][["name"]],
            "\n<span style='font-size:", font_size, "px;'>", subtitle, "</span>")
 
@@ -698,26 +732,32 @@ plot.sdbuildR_ensemble = function(x,
     # Don't add check for template in hcl.pals(), because hcl is more flexible in palette names matching.
     nr_var = length(unique(summary_df[["variable"]]))
 
-    # Minimum number of variables needed for colour palette generation
-    if (nr_var < 3){
-      nr_var = 3
-    }
-
-    if (is.null(colors)){
-      colors = grDevices::hcl.colors(n = nr_var, palette = palette)
-    } else {
-      # Ensure there are enough colors
+    gen_colors = FALSE
+    if (!is.null(colors)){
       if (length(colors) < nr_var){
         stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing palette instead..."))
-        colors = grDevices::hcl.colors(n = nr_var, palette = palette)
+        gen_colors = TRUE
       }
+    } else {
+      gen_colors = TRUE
     }
 
-    # Cut number of colors to number of variables
-    colors = colors[1:nr_var]
+    if (gen_colors){
+      # Minimum number of variables needed for colour palette generation
+      if (nr_var < 3){
+        nr_var = 3
+      }
+
+     colors = grDevices::hcl.colors(n = nr_var, palette = palette)
+
+    }
+
 
     # The colors are unintuitively plotted from back to front
     colors = rev(colors)
+
+    # Cut number of colors to number of variables
+    colors = colors[1:nr_var]
 
     # Plot
     if (!create_subplots){
@@ -732,6 +772,7 @@ plot.sdbuildR_ensemble = function(x,
                                 summary_df = summary_df,
                                 df = df,
                                 central_tendency = central_tendency,
+                                central_tendency_width = central_tendency_width,
                                 q_low = q_low,
                                 q_high = q_high,
                                 colors = colors,
@@ -760,6 +801,7 @@ plot.sdbuildR_ensemble = function(x,
                                                 summary_df = summary_df,
                                                 df = df,
                                                 central_tendency = central_tendency,
+                                                central_tendency_width = central_tendency_width,
                                                 q_low = q_low,
                                                 q_high = q_high,
                                                 colors = colors,
@@ -851,6 +893,7 @@ plot.sdbuildR_ensemble = function(x,
 plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
                                 summary_df, df,
                                 central_tendency,
+                                central_tendency_width,
                                 q_low, q_high,
                                 colors, dots,
                                 main, xlab, ylab,
@@ -1011,7 +1054,7 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
         mode = "lines",
         colors = colors,
         showlegend = showlegend,
-        line = list(width = 3),  # thicker line for mean
+        line = list(width = central_tendency_width),  # thicker line for mean
         visible = "legendonly"
       )
   }
@@ -1027,7 +1070,7 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
         legendgroup = ~variable,
         type = "scatter",
         mode = "lines",
-        line = list(width = 3),  # thicker line for mean
+        line = list(width = central_tendency_width),  # thicker line for mean
         showlegend = showlegend,
         colors = colors,
         visible = TRUE
@@ -1473,46 +1516,6 @@ validate_xmile = function(sfm){
 
   # Ensure names are the same as names properties
   names(sfm[["macro"]]) = unname(unlist(lapply(sfm[["macro"]], `[[`, "name")))
-
-
-  # ** Don't do the following, because the simulation time unit may change, leading to unexpected results. you can do this in compile()
-  # # Dimensional consistency: Units of Flows need to be units of corresponding Stocks divided by sfm$sim_specs$time_units or some time unit
-  # names_df = get_names(sfm)
-  # sfm[["model"]][["variables"]][["flow"]] = sfm[["model"]][["variables"]][["flow"]] %>%
-  #   purrr::map(function(x, name){
-  #
-  #   if (is_defined(x[["to"]])){
-  #     stock_name = x[["to"]]
-  #
-  #   } else if (is_defined(x[["from"]])){
-  #     stock_name = x[["from"]]
-  #
-  #   } else {
-  #     return(x)
-  #   }
-  #
-  #   # Get unit of Stock and define unit for Flow
-  #   stock_unit = names_df[names_df[["name"]] == stock_name, "units"]
-  #   target_unit = paste0(stock_unit, "/", sfm$sim_specs$time_units)
-  #
-  #   if (!is_defined(x[["units"]]) | x[["units"]] == "1"){
-  #     x[["units"]] = target_unit
-  #   }
-  #   # # Is x[["units"]] the units of the Stock divided by some time unit? If not, add units of the Stock divided by simulation time unit
-  #   #
-  #   # #** add custom units to julia for valid comparison
-  #   # same_unit = juliaCall::julia_eval(paste0("using Unitful; ", x[["units"]], "==",target_unit))
-  #   #
-  #   # if (!same_unit){
-  #   #   #** compare to all other time units
-  #   #   print(paste0("Overwriting unit of ", name, " to match corresponding Stock ", stock_name))
-  #   #   x[["units"]] = target_unit
-  #   # }
-  #   # # if (Ryacas::yac_str(paste0("Simplify(", x[["units"]], " == ", eq, ")")))
-  #
-  #   return(x)
-  #
-  # })
 
   # To prevent downstream errors, don't:
   # - add inflows and outflows to stocks
@@ -3050,28 +3053,30 @@ build = function(sfm, name, type,
   # Create nested 3-level list with all model entries
   new_element = argg %>%
     purrr::transpose() %>%
-    lapply(list) %>%
-    # Create three named levels: type, name, properties
-    purrr::imap(function(x, y){
-      # Make sure each model element only has appropriate entries
+    lapply(list)
+
+  new_element = lapply(seq_along(new_element), function(y){
+    # # Create three named levels: type, name, properties
+    # purrr::imap(function(x, y){
+
+    # Make sure each model element only has appropriate entries
+    x = new_element[[y]]
 
       keep_prop_y = keep_prop[[type[y]]]
       keep_x = x[[1]][names(x[[1]]) %in% keep_prop_y]
 
-      # Add converted julia equation
+      # Add converted Julia equation
       if ("eqn" %in% passed_arg){
-
         keep_x = keep_x %>% utils::modifyList(eqn_julia[[y]])
       }
 
-      list(keep_x) %>% stats::setNames(name[y])
+      stats::setNames(list(keep_x), name[y])
 
       }) %>% stats::setNames(type)
 
   # Add elements to model (in for-loop, as otherwise not all elements are added)
   for (i in seq_along(name)){
-    sfm[["model"]][["variables"]] = sfm[["model"]][["variables"]] %>%
-      utils::modifyList(new_element[i])
+    sfm[["model"]][["variables"]] = utils::modifyList(sfm[["model"]][["variables"]], new_element[i])
   }
 
   sfm = validate_xmile(sfm)
@@ -3224,8 +3229,12 @@ create_R_names = function(create_names, names_df, protected = c()){
     # Add julia custom functions
     names(get_func_julia()),
     # These are variables in the ode and cannot be model element names
-    unname(unlist(P[!names(P) %in% c("sim_df_name", "change_prefix", "conveyor_suffix", "delayN_suffix",
-                                     "smoothN_suffix", "delay_suffix", "delay_order_suffix", "delay_length_suffix", "past_suffix", "past_length_suffix", "fix_suffix", "fix_length_suffix")])), protected,
+    # unname(unlist(P[!names(P) %in% c("sim_df_name", "change_prefix", "conveyor_suffix", "delayN_suffix",
+    #                                  "smoothN_suffix", "delay_suffix", "delay_order_suffix", "delay_length_suffix", "past_suffix", "past_length_suffix", "fix_suffix", "fix_length_suffix")])),
+    unname(unlist(P[names(P) %in% c("jl_pkg_name", "model_setup_name", "macro_name", "initial_value_name", "initial_value_names", "parameter_name", "parameter_names",
+
+                          "state_name", "time_name", "change_state_name", "times_name", "timestep_name",  "saveat_name", "time_units_name", "ensemble_iter", "ode_func_name",        "callback_func_name", "callback_name", "intermediaries",  "rootfun_name", "eventfun_name", "convert_u_func", "sdbuildR_units", "MyCustomUnits", "init_sdbuildR")])),
+    protected,
     as.character(stats::na.omit(names_df[["name"]]))
   ) %>% unique()
 
@@ -3308,7 +3317,6 @@ get_build_code = function(sfm, format_code = TRUE){
   # Model units
   if (length(sfm[["model_units"]]) > 0){
     model_units_str = lapply(sfm[["model_units"]], function(x){
-        # x = x %>% purrr::map_if(is.character, function(z){paste0("'", z, "'")})
 
         x = lapply(x, function(z) if (is.character(z)) paste0("'", z, "'") else z)
 
@@ -3337,7 +3345,6 @@ get_build_code = function(sfm, format_code = TRUE){
 
   # Header string
   x = sfm[["header"]]
-  # x = x %>% purrr::map_if(function(y){is.character(y) | inherits(y, "POSIXt")}, \(z) paste0("'", z, "'"))
   x = lapply(x, function(z) if (is.character(z) | inherits(z, "POSIXt")) paste0("'", z, "'") else z)
 
   header_str = paste0(" %>%\n\t\theader(", paste0(names(x), " = ", unname(x), collapse = ", "), ")")
@@ -3360,7 +3367,6 @@ get_build_code = function(sfm, format_code = TRUE){
           # Remove properties containing "_julia"
           z[grepl("_julia", names(z))] = NULL
 
-          # z = z %>% purrr::map_if(is.character, \(a) paste0("'", a, "'"))
           z = lapply(z, function(a){ifelse(is.character(a), paste0("'", a, "'"), a)})
 
           sprintf("build('%s', '%s'%s)",

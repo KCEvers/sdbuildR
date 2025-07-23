@@ -1,5 +1,5 @@
 
-#' Convert Insight Maker's Round() function to R
+#' Equivalent of Insight Maker's Round() function to R
 #'
 #' This function ensures that rounding in R matches rounding in Insight Maker. R base's round() rounds .5 to 0, whereas round_IM() rounds .5 to 1.
 #'
@@ -311,7 +311,7 @@ ramp <- function(start, finish, height = 1){
 pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 
   if (width <= 0){
-    stop(paste0("The width of the pulse cannot be equal to or less than 0; to indicate an 'instantaneous' pulse, specify the simulation step size (", P$timestep_name, ")"))
+    stop(paste0("The width of the pulse cannot be equal to or less than 0; to indicate an 'instantaneous' pulse, specify the simulation step size (", P[["timestep_name"]], ")"))
   }
 
   # Define time and indices of pulses
@@ -337,7 +337,7 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
     signal = rbind(signal, data.frame(times = times[length(times)], y = 0))
   }
 
-  signal = signal[order(signal$times), ]
+  signal = signal[order(signal[["times"]]), ]
 
   # Create linear approximation function, use constant interpolation to get a block shape even at finer sampling times
   input = stats::approxfun(signal, rule = 2, method = 'constant')
@@ -430,7 +430,36 @@ seasonal = function(period = 1, shift = 0){
 
 
 
+#' Create a noise function
+#'
+#' Create a noise function.
+#'
+#'
+#' @return Noise function
+#' @family input
+#' @seealso [step()], [pulse()], [ramp()], [seasonal()]
+#' @export
+#'
+#' @examples
+#' # Create a simple model with a seasonal wave
+#' sfm = xmile() %>%
+#' build("a", "stock") %>%
+#' build("input", "constant", eqn = "noise()") %>%
+#' build("inflow", "flow", eqn = "input(t)", to = "a")
+#'
+#' sim = simulate(sfm, only_stocks = FALSE)
+#' plot(sim)
+#'
+noise = function(mean = 0, sd = 1, type = c("norm")[1]){
 
+  # Create linear approximation function - define noise in advance
+  if (type == "norm"){
+    signal = rnorm(n = length(times), mean = mean, sd = sd)
+  }
+  input = stats::approxfun(x = times, y = signal, rule = 2, method = "linear")
+  return(input)
+
+}
 
 
 
@@ -596,7 +625,7 @@ saveat_func <- function(df, time_col, new_times) {
 
   # Interpolate each column (except the first) at new_times
   interpolated <- lapply(cols_to_interpolate, function(col) {
-    stats::approx(x = time, y = df[[col]], xout = new_times, method = "linear")$y
+    stats::approx(x = time, y = df[[col]], xout = new_times, method = "linear")[["y"]]
   })
 
   # Combine results into a new data frame
