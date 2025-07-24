@@ -430,36 +430,6 @@ seasonal = function(period = 1, shift = 0){
 
 
 
-#' Create a noise function
-#'
-#' Create a noise function.
-#'
-#'
-#' @return Noise function
-#' @family input
-#' @seealso [step()], [pulse()], [ramp()], [seasonal()]
-#' @export
-#'
-#' @examples
-#' # Create a simple model with a seasonal wave
-#' sfm = xmile() %>%
-#' build("a", "stock") %>%
-#' build("input", "constant", eqn = "noise()") %>%
-#' build("inflow", "flow", eqn = "input(t)", to = "a")
-#'
-#' sim = simulate(sfm, only_stocks = FALSE)
-#' plot(sim)
-#'
-noise = function(mean = 0, sd = 1, type = c("norm")[1]){
-
-  # Create linear approximation function - define noise in advance
-  if (type == "norm"){
-    signal = rnorm(n = length(times), mean = mean, sd = sd)
-  }
-  input = stats::approxfun(x = times, y = signal, rule = 2, method = "linear")
-  return(input)
-
-}
 
 
 

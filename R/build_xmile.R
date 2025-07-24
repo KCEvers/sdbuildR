@@ -409,16 +409,18 @@ plot.sdbuildR_sim = function(x,
         gen_colors = TRUE
       }
     } else {
-        gen_colors = TRUE
+      gen_colors = TRUE
     }
 
     if (gen_colors){
-        # Minimum number of variables needed for colour palette generation
-        if (nr_var < 3){
-          nr_var = 3
-        }
+      # Minimum number of variables needed for colour palette generation
+      if (nr_var < 3){
+        nr_var_c = 3
+      } else {
+        nr_var_c = nr_var
+      }
 
-        colors = grDevices::hcl.colors(n = nr_var, palette = palette)
+      colors = grDevices::hcl.colors(n = nr_var_c, palette = palette)
 
     }
 
@@ -439,6 +441,7 @@ plot.sdbuildR_sim = function(x,
           x = ~get(x_col),
           y = ~value,
           color = ~variable,
+          colors = colors,
           type = "scatter",
           mode = "lines",
           visible = "legendonly"
@@ -745,10 +748,12 @@ plot.sdbuildR_ensemble = function(x,
     if (gen_colors){
       # Minimum number of variables needed for colour palette generation
       if (nr_var < 3){
-        nr_var = 3
+        nr_var_c = 3
+      } else {
+        nr_var_c = nr_var
       }
 
-     colors = grDevices::hcl.colors(n = nr_var, palette = palette)
+     colors = grDevices::hcl.colors(n = nr_var_c, palette = palette)
 
     }
 
@@ -1035,9 +1040,6 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
           visible = TRUE
         )
     }
-
-
-
   }
 
   # Always plot mean lines
