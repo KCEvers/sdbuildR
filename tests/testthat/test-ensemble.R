@@ -100,6 +100,37 @@ test_that("ensemble works", {
 })
 
 
+test_that("plotting ensemble also works with singular time point", {
+
+  # If you already have random elements in the model, no need to specify what to vary
+  sfm = xmile("predator-prey") %>% sim_specs(language = "Julia",
+                                             start = 0, stop = 50,
+                                             dt = .1,
+                                             save_from = 50) %>%
+    build(c("predator", "prey"), eqn = "runif(1)")
+  sims = ensemble(sfm)
+
+  expect_equal(length(unique(sims$summary$time)), 1)
+
+  expect_no_error(plot(sims))
+  expect_no_warning(plot(sims))
+  expect_no_message(plot(sims))
+
+  # with sims
+  sims = ensemble(sfm, return_sims = T)
+
+  expect_equal(length(unique(sims$summary$time)), 1)
+
+  expect_no_error(plot(sims))
+  expect_no_warning(plot(sims))
+  expect_no_message(plot(sims))
+
+  expect_no_error(plot(sims, type = "sims"))
+  expect_no_warning(plot(sims, type = "sims"))
+  expect_no_message(plot(sims, type = "sims"))
+})
+
+
 test_that("ensemble works with specified range", {
 
   # If you already have random elements in the model, no need to specify what to vary

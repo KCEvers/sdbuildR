@@ -548,11 +548,11 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #' @inheritParams build
 #' @inheritParams simulate
 #' @param n Number of simulations to run in the ensemble. When range is specified, n defines the number of simulations to run per condition. If each condition only needs to be run once, set n = 1. Defaults to 10.
-#' @param threaded If TRUE, run the simulation on multiple threads. The number of threads is taken from the use_julia() argument JULIA_NUM_THREADS, which defaults to four. Defaults to TRUE.
 #' @param return_sims If TRUE, return the individual simulations in the ensemble. Set to FALSE to save memory. Defaults to FALSE.
 #' @param range List of ranges to vary parameters in the ensemble. Only stocks and constants can be specified. All ranges have to be of the same length if cross = FALSE. Defaults to NULL.
 #' @param cross If TRUE, cross the parameters in the range list to generate all possible combinations of parameters. Defaults to TRUE.
 #' @param quantiles Quantiles to calculate in the summary, e.g. c(0.025, 0.975).
+#' @param threaded If TRUE, run the simulation on multiple threads. The number of threads is taken from the use_julia() argument JULIA_NUM_THREADS, which defaults to four. Defaults to TRUE.
 #'
 #' @returns Object of class sdbuildR_ensemble, which is a list containing:
 #' \describe{
@@ -634,15 +634,15 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #'
 ensemble = function(sfm,
                     n = 10,
-                    threaded = TRUE,
                     return_sims = FALSE,
                     range = NULL,
                     cross = TRUE,
                     quantiles = c(0.025, 0.975),
+                    threaded = TRUE,
+                    only_stocks = TRUE,
                     keep_nonnegative_flow = TRUE,
                     keep_nonnegative_stock = FALSE,
                     keep_unit = TRUE,
-                    only_stocks = TRUE,
                     verbose = TRUE
 ){
 

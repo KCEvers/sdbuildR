@@ -217,15 +217,17 @@ run_init = function(){
   env_path <- system.file(package = "sdbuildR")
 
   # Construct the Julia command to activate the environment and instantiate
-  julia_cmd <- sprintf("using Pkg; Pkg.activate(\"%s\"); Pkg.instantiate()", env_path)
+  # julia_cmd <- sprintf("using Pkg; Pkg.activate(\"%s\"); Pkg.instantiate()", env_path)
+  julia_cmd <- sprintf("using Pkg; Pkg.activate(\"%s\")", env_path)
 
   # Execute the command in Julia
   # JuliaCall::julia_command(julia_cmd)
   # JuliaCall::julia_source(file.path(env_path, "init.jl"))
 
+  # Source the init.jl script
   JuliaConnectoR::juliaEval(julia_cmd)
   JuliaConnectoR::juliaEval(paste0('include("', normalizePath(file.path(env_path, "init.jl"),
-                                                              winslash = "/", mustWork = FALSE), '")')) # Source the script
+                                                              winslash = "/", mustWork = FALSE), '")'))
 
   return(NULL)
 }

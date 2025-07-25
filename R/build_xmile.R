@@ -302,6 +302,16 @@ plot.sdbuildR_sim = function(x,
 
   # Get names of stocks and non-stock variables
   names_df = get_names(x[["sfm"]])
+
+  # Check labels are unique
+  if (nrow(names_df) != length(unique(names_df[["label"]]))){
+    labels = names_df[["label"]]
+    dup_indices <- which(labels %in% labels[duplicated(labels) | duplicated(labels, fromLast = TRUE)])
+
+    # Relabel, otherwise plotting will go wrong with recoded variables
+    names_df[dup_indices, "label"] = paste0(names_df[dup_indices, "label"], "(", names_df[dup_indices, "name"], ")")
+  }
+
   stock_names = names_df[names_df[["type"]] == "stock", ]
   stock_names = stats::setNames(stock_names[["name"]], stock_names[["label"]])
   nonstock_names = names_df[names_df[["type"]] != "stock", ]
@@ -701,7 +711,7 @@ plot.sdbuildR_ensemble = function(x,
     } else {
       stop("No simulation data available! Run ensemble() with return_sims = TRUE.")
     }
-  } else {
+  } else if (type == "summary"){
 
     if ("i" %in% passed_arg){
       message("i is not used when type = 'summary'. Set type = 'sims' to plot individual trajectories.")
@@ -712,6 +722,19 @@ plot.sdbuildR_ensemble = function(x,
 
   # Get names of stocks and non-stock variables
   names_df = get_names(x[["sfm"]])
+
+  # Only keep the ones that are in the summary_df
+  names_df = names_df[names_df[["name"]] %in% unique(summary_df[["variable"]]), ]
+
+  # Check labels are unique
+  if (nrow(names_df) != length(unique(names_df[["label"]]))){
+    labels = names_df[["label"]]
+    dup_indices <- which(labels %in% labels[duplicated(labels) | duplicated(labels, fromLast = TRUE)])
+
+    # Relabel, otherwise plotting will go wrong with recoded variables
+    names_df[dup_indices, "label"] = paste0(names_df[dup_indices, "label"], "(", names_df[dup_indices, "name"], ")")
+  }
+
   stock_names = names_df[names_df[["type"]] == "stock", ]
   stock_names = stats::setNames(stock_names[["name"]], stock_names[["label"]])
   nonstock_names = names_df[names_df[["type"]] != "stock", ]
@@ -727,10 +750,14 @@ plot.sdbuildR_ensemble = function(x,
     x_col = "time"
 
     # Find qlow and qhigh
-    q_cols = colnames(summary_df)[grepl("^q", colnames(summary_df))]
-    q_num = as.numeric(gsub("^q", "", q_cols))
-    q_low = q_cols[which.min(q_num)]
-    q_high = q_cols[which.max(q_num)]
+    if (type == "summary"){
+      q_cols = colnames(summary_df)[grepl("^q", colnames(summary_df))]
+      q_num = as.numeric(gsub("^q", "", q_cols))
+      q_low = q_cols[which.min(q_num)]
+      q_high = q_cols[which.max(q_num)]
+    } else if (type == "sims"){
+      q_low = q_high = NA
+    }
 
     # Don't add check for template in hcl.pals(), because hcl is more flexible in palette names matching.
     nr_var = length(unique(summary_df[["variable"]]))
@@ -864,6 +891,8 @@ plot.sdbuildR_ensemble = function(x,
     }
 
     return(pl)
+  } else {
+    stop("plotly is not installed!")
   }
 
 }
@@ -952,53 +981,56 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
     }
   }
 
-
+  # Check whether there are multiple time points
+  mode = ifelse(length(unique(summary_df[["time"]])) == 1, "markers", "lines")
 
   # Initialize plotly object
   pl <- plotly::plot_ly()
 
   if (type == "summary"){
 
-    if (length(nonstock_names) > 0) {
+    if (mode == "lines"){
+      if (length(nonstock_names) > 0) {
 
-      pl = pl %>% plotly::add_ribbons(
-        data = summary_df_nonstocks,
-        x = ~get(x_col),
-        ymin = ~get(q_low),
-        ymax = ~get(q_low),
-        color = ~variable,
-        legendgroup = ~variable,
-        fillcolor = ~variable,
-        opacity = alpha,
-        type = "scatter",
-        mode = "lines",
-        colors = colors,
-        # Add traces for non-stock variables (visible = "legendonly")
-        showlegend = showlegend,
-        visible = "legendonly"
-      )
-    }
-
-    # First plot confidence bands
-    if (length(stock_names) > 0) {
-
-      pl <- pl %>%
-        plotly::add_ribbons(
-          data = summary_df_stocks,
+        pl = pl %>% plotly::add_ribbons(
+          data = summary_df_nonstocks,
           x = ~get(x_col),
           ymin = ~get(q_low),
-          ymax = ~get(q_high),
+          ymax = ~get(q_low),
           color = ~variable,
           legendgroup = ~variable,
           fillcolor = ~variable,
           opacity = alpha,
           type = "scatter",
-          mode = "lines",
+          mode = mode,
           colors = colors,
+          # Add traces for non-stock variables (visible = "legendonly")
           showlegend = showlegend,
-          # Add traces for stock variables (visible = TRUE)
-          visible = TRUE
+          visible = "legendonly"
         )
+      }
+
+      # First plot confidence bands
+      if (length(stock_names) > 0) {
+
+        pl <- pl %>%
+          plotly::add_ribbons(
+            data = summary_df_stocks,
+            x = ~get(x_col),
+            ymin = ~get(q_low),
+            ymax = ~get(q_high),
+            color = ~variable,
+            legendgroup = ~variable,
+            fillcolor = ~variable,
+            opacity = alpha,
+            type = "scatter",
+            mode = mode,
+            colors = colors,
+            showlegend = showlegend,
+            # Add traces for stock variables (visible = TRUE)
+            visible = TRUE
+          )
+      }
     }
 
   } else if (type == "sims"){
@@ -1013,7 +1045,7 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
           color = ~variable,
           legendgroup = ~variable,
           type = "scatter",
-          mode = "lines",
+          mode = mode,
           opacity = alpha,
           colors = colors,
           split = ~interaction(variable, i),  # ensures each line is treated separately
@@ -1031,7 +1063,7 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
           color = ~variable,
           legendgroup = ~variable,
           type = "scatter",
-          mode = "lines",
+          mode = mode,
           opacity = alpha,
           colors = colors,
           split = ~interaction(variable, i),  # ensures each line is treated separately
@@ -1042,43 +1074,121 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
     }
   }
 
-  # Always plot mean lines
+  # Always plot mean points/lines
+  if (mode == "lines"){
+    if (length(nonstock_names) > 0) {
+      pl <- pl %>%
+        plotly::add_trace(
+          data = summary_df_nonstocks,
+          x = ~get(x_col),
+          y = ~get(central_tendency),
+          color = ~variable,
+          legendgroup = ~variable,
+          type = "scatter",
+          mode = mode,
+          colors = colors,
+          showlegend = showlegend,
+          line = list(width = central_tendency_width),  # thicker line for mean
+          visible = "legendonly"
+        )
+    }
 
-  if (length(nonstock_names) > 0) {
-    pl <- pl %>%
-      plotly::add_trace(
-        data = summary_df_nonstocks,
-        x = ~get(x_col),
-        y = ~get(central_tendency),
-        color = ~variable,
-        legendgroup = ~variable,
-        type = "scatter",
-        mode = "lines",
-        colors = colors,
-        showlegend = showlegend,
-        line = list(width = central_tendency_width),  # thicker line for mean
-        visible = "legendonly"
-      )
+    if (length(stock_names) > 0) {
+      pl <- pl %>%
+        plotly::add_trace(
+          data = summary_df_stocks,
+          x = ~get(x_col),
+          y = ~get(central_tendency),
+          color = ~variable,
+          legendgroup = ~variable,
+          type = "scatter",
+          mode = mode,
+          line = list(width = central_tendency_width),  # thicker line for mean
+          showlegend = showlegend,
+          colors = colors,
+          visible = TRUE
+        )
+    }
+  } else if (mode == "markers" & type == "summary"){
+
+    if (length(nonstock_names) > 0) {
+      pl <- pl %>%
+        plotly::add_trace(
+          data = summary_df_nonstocks,
+          x = ~get(x_col),
+          y = ~get(central_tendency),
+          color = ~variable,
+          legendgroup = ~variable,
+          type = "scatter",
+          error_y = ~list(
+            symmetric = FALSE,
+            arrayminus = get(central_tendency) - get(q_low),
+            array = get(q_high) - get(central_tendency),
+            color = colors),
+          mode = mode,
+          colors = colors,
+          showlegend = showlegend,
+          marker = list(size = central_tendency_width*3),  # thicker line for mean
+          visible = "legendonly"
+        )
+    }
+
+    if (length(stock_names) > 0) {
+      pl <- pl %>%
+        plotly::add_trace(
+          data = summary_df_stocks,
+          x = ~get(x_col),
+          y = ~get(central_tendency),
+          color = ~variable,
+          legendgroup = ~variable,
+          type = "scatter",
+          error_y = ~list(
+            symmetric = FALSE,
+            arrayminus = get(central_tendency) - get(q_low),
+            array = get(q_high) - get(central_tendency),
+            color = colors),
+          mode = mode,
+          marker = list(size = central_tendency_width*3),  # thicker line for mean
+          showlegend = showlegend,
+          colors = colors,
+          visible = TRUE
+        )
+    }
+  } else if (mode == "markers" & type == "sims"){
+    if (length(nonstock_names) > 0) {
+      pl <- pl %>%
+        plotly::add_trace(
+          data = summary_df_nonstocks,
+          x = ~get(x_col),
+          y = ~get(central_tendency),
+          color = ~variable,
+          legendgroup = ~variable,
+          type = "scatter",
+          mode = mode,
+          colors = colors,
+          showlegend = showlegend,
+          marker = list(size = central_tendency_width*3),  # thicker line for mean
+          visible = "legendonly"
+        )
+    }
+
+    if (length(stock_names) > 0) {
+      pl <- pl %>%
+        plotly::add_trace(
+          data = summary_df_stocks,
+          x = ~get(x_col),
+          y = ~get(central_tendency),
+          color = ~variable,
+          legendgroup = ~variable,
+          type = "scatter",
+          mode = mode,
+          marker = list(size = central_tendency_width*3),  # thicker line for mean
+          showlegend = showlegend,
+          colors = colors,
+          visible = TRUE
+        )
+    }
   }
-
-  if (length(stock_names) > 0) {
-
-    pl <- pl %>%
-      plotly::add_trace(
-        data = summary_df_stocks,
-        x = ~get(x_col),
-        y = ~get(central_tendency),
-        color = ~variable,
-        legendgroup = ~variable,
-        type = "scatter",
-        mode = "lines",
-        line = list(width = central_tendency_width),  # thicker line for mean
-        showlegend = showlegend,
-        colors = colors,
-        visible = TRUE
-      )
-  }
-
 
 
   # Customize layout
@@ -1110,11 +1220,6 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
 
   # Add subplot title
   if (create_subplots){
-
-    # # Choose position
-    # pos <- get_annotation_position(j_position)
-
-    # x_pos <- .5 + (j_idx - 1) / length(j) + 1/(2*length(j))
 
     pl = pl %>%
       plotly::layout(
@@ -2305,50 +2410,6 @@ sim_specs = function(sfm,
       save_from = start
       passed_arg = c(passed_arg, "save_from")
     }
-    # if (!"stop" %in% passed_arg){
-    #   stop = as.numeric(sfm[["sim_specs"]][["stop"]])
-    # }
-    #
-    # if (is_defined(sfm[["sim_specs"]][["save_from"]])){
-    #   save_from = as.numeric(sfm[["sim_specs"]][["save_from"]])
-    #
-    #   # Update save_from with start and stop if these were passed
-    #   if ("start" %in% passed_arg){
-    #
-    #   }
-    #
-    #
-    #   possible_range = c(start, stop)
-    #
-    #   print("save_from")
-    #   print(save_from)
-    #   print("possible_range")
-    #   print(possible_range)
-    #
-    #
-    #   if (save_from[1] < possible_range[1] | save_from[1] > possible_range[2]){
-    #     # warning("save_from must be within start and stop! Changing save_from...")
-    #
-    #     print("adjust start")
-    #
-    #     save_from[1] = start
-    #     passed_arg = c(passed_arg, "save_from")
-    #   }
-    #
-    #   if (save_from[2] < possible_range[1] | save_from[2] > possible_range[2]){
-    #     # warning("save_from must be within start and stop! Changing save_from...")
-    #
-    #     print("adjust stop")
-    #
-    #     save_from[2] = stop
-    #     passed_arg = c(passed_arg, "save_from")
-    #   }
-    #
-    #
-    #   print("save_from after adjustment")
-    #   print(save_from)
-    #
-    # }
 
   }
 
@@ -2372,7 +2433,8 @@ sim_specs = function(sfm,
 
   # Check coding language
   if ("language" %in% passed_arg){
-    if (!tolower(language) %in% c("r", "julia", "jl")){
+    language = trimws(tolower(language))
+    if (!language %in% c("r", "julia", "jl")){
       stop(sprintf("The language %s is not one of the languages available in sdbuildR. The available languages are 'Julia' (recommended) or 'R'.", language))
     } else {
 
@@ -2607,6 +2669,12 @@ build = function(sfm, name, type,
   if (!(all(nzchar(name)))){
     stop("All entries in name must have characters!")
   }
+  name = trimws(name)
+
+  if (!(all(nzchar(label)))){
+    stop("All entries in name must have characters!")
+  }
+  label = trimws(label)
 
   # Remove variable from model
   if (!is.null(erase)){
@@ -2623,6 +2691,11 @@ build = function(sfm, name, type,
   check_xmile(sfm)
   names_df = get_names(sfm)
   var_names = names_df[["name"]]
+
+  # Get names of passed arguments
+  passed_arg = names(as.list(match.call())[-1]) %>%
+    # Remove some arguments
+    setdiff(c("sfm", "erase", "change_name", "change_type"))
 
   # Find variables which already exist
   idx_exist = name %in% var_names
@@ -2721,21 +2794,19 @@ build = function(sfm, name, type,
   # Get properties per building block
   keep_prop = get_building_block_prop()
 
-  # Get names of passed arguments
-  passed_arg = names(as.list(match.call())[-1]) %>%
-    # Remove some arguments
-    setdiff(c("sfm",
-              # "name", "type",
-              "erase", "change_name", "change_type"))
-
   # Check whether appropriate properties were passed for this variable type; issue warning if not
-  appr_prop = Reduce(intersect, keep_prop[type])
+  if (is.null(change_type)){
+    type_ = type
+  } else {
+    type_ = change_type
+  }
+  appr_prop = Reduce(intersect, keep_prop[type_])
   idx_inappr = !(passed_arg %in% appr_prop)
   if (any(idx_inappr)){
     warning(sprintf("These properties are not appropriate for %s specified type%s (%s):\n- %s\nThese will be ignored.",
-                    ifelse(length(unique(type)) > 1, "all", "the"),
-                    ifelse(length(unique(type)) > 1, "s", ""),
-                    paste0(unique(type), collapse = ", "), paste0(passed_arg[idx_inappr], collapse = ", ")))
+                    ifelse(length(unique(type_)) > 1, "all", "the"),
+                    ifelse(length(unique(type_)) > 1, "s", ""),
+                    paste0(unique(type_), collapse = ", "), paste0(passed_arg[idx_inappr], collapse = ", ")))
   }
 
   # Flow properties
@@ -2845,10 +2916,6 @@ build = function(sfm, name, type,
     }
   }
 
-
-  # **if conveyor is specified len must be specified
-
-
   # If overwriting name with change_name
   if (!is.null(change_name)){
 
@@ -2864,10 +2931,13 @@ build = function(sfm, name, type,
     sfm[["model"]][["variables"]][[type]][[change_name]][["name"]] = change_name
 
     # Overwrite label in case it was the same as the old name
-    if (sfm[["model"]][["variables"]][[type]][[change_name]][["label"]] == name){
-      sfm[["model"]][["variables"]][[type]][[change_name]][["label"]] = change_name
+    if ("label" %in% passed_arg){
+      sfm[["model"]][["variables"]][[type]][[change_name]][["label"]] = label
+    } else {
+      if (sfm[["model"]][["variables"]][[type]][[change_name]][["label"]] == name){
+        sfm[["model"]][["variables"]][[type]][[change_name]][["label"]] = change_name
+      }
     }
-
 
     # Replace references to name with change_name everywhere (eqn, from, to)
     sfm[["model"]][["variables"]] = lapply(sfm[["model"]][["variables"]], function(y){
@@ -3017,10 +3087,6 @@ build = function(sfm, name, type,
   }
 
   if ("len" %in% passed_arg){
-    #** len can also be a unit
-    # if (!inherits(len, "numeric")){
-    #   stop("len must be a numeric!")
-    # }
     len = clean_unit_in_u(len, regex_units)
     len = ensure_length(len, name)
   }
@@ -3049,7 +3115,6 @@ build = function(sfm, name, type,
 
   # Collect all arguments in environment but only keep those that were passed
   argg <- c(as.list(environment()))[unique(passed_arg)]
-  # argg[["name"]] = name
   argg[["type"]] = type # Keep type for ease
 
   # Create nested 3-level list with all model entries
@@ -3058,23 +3123,22 @@ build = function(sfm, name, type,
     lapply(list)
 
   new_element = lapply(seq_along(new_element), function(y){
-    # # Create three named levels: type, name, properties
-    # purrr::imap(function(x, y){
+    # Create three named levels: type, name, properties
 
     # Make sure each model element only has appropriate entries
     x = new_element[[y]]
 
-      keep_prop_y = keep_prop[[type[y]]]
-      keep_x = x[[1]][names(x[[1]]) %in% keep_prop_y]
+    keep_prop_y = keep_prop[[type[y]]]
+    keep_x = x[[1]][names(x[[1]]) %in% keep_prop_y]
 
-      # Add converted Julia equation
-      if ("eqn" %in% passed_arg){
-        keep_x = keep_x %>% utils::modifyList(eqn_julia[[y]])
-      }
+    # Add converted Julia equation
+    if ("eqn" %in% passed_arg){
+      keep_x = keep_x %>% utils::modifyList(eqn_julia[[y]])
+    }
 
-      stats::setNames(list(keep_x), name[y])
+    stats::setNames(list(keep_x), name[y])
 
-      }) %>% stats::setNames(type)
+    }) %>% stats::setNames(type)
 
   # Add elements to model (in for-loop, as otherwise not all elements are added)
   for (i in seq_along(name)){
