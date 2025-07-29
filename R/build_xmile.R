@@ -25,6 +25,7 @@ xmile <- function(name = NULL){
 
   header_defaults <- as.list(formals(header))
   header_defaults <- header_defaults[!names(header_defaults) %in% c("sfm", "...")]
+  header_defaults[["created"]] = Sys.time() # manually overwrite
 
   spec_defaults <- as.list(formals(sim_specs))
   spec_defaults <- spec_defaults[!names(spec_defaults) %in% c("sfm", "...")]
@@ -549,7 +550,7 @@ plot.sdbuildR_sim = function(x,
 #' @param font_family Font family. Defaults to "Times New Roman".
 #' @param font_size Font size. Defaults to 16.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
-#' @param central_tendency Central tendency to use for the mean line. Either "mean" or "median". Defaults to "mean".
+#' @param central_tendency Central tendency to use for the mean line. Either "mean", "median", or FALSE to not plot the central tendency. Defaults to "mean".
 #' @param central_tendency_width Line width of central tendency. Defaults to 3.
 #' @param ... Optional parameters
 #'
@@ -571,7 +572,7 @@ plot.sdbuildR_ensemble = function(x,
                                   font_family = "Times New Roman",
                                   font_size = 16,
                                   wrap_width = 25,
-                                  central_tendency = c("mean", "median")[1],
+                                  central_tendency = c("mean", "median", FALSE)[1],
                                   central_tendency_width = 3,
                                   ...){
 
@@ -588,6 +589,10 @@ plot.sdbuildR_ensemble = function(x,
     stop("Ensemble simulation failed!")
   }
 
+  if (!requireNamespace("plotly", quietly = TRUE)){
+    stop("plotly is not installed!")
+  }
+
   # Check type
   type = trimws(tolower(type))
   type = ifelse(type == "sim", "sims", type)
@@ -596,9 +601,11 @@ plot.sdbuildR_ensemble = function(x,
   }
 
   # Check central tendency
-  central_tendency = trimws(tolower(central_tendency))
-  if (!central_tendency %in% c("mean", "median")){
-    stop("central_tendency must be one of 'mean' or 'median'.")
+  if (!isFALSE(central_tendency)){
+    central_tendency = trimws(tolower(central_tendency))
+    if (!central_tendency %in% c("mean", "median")){
+      stop("central_tendency must be 'mean', 'median', or FALSE.")
+    }
   }
 
   # Get passed arguments
@@ -607,13 +614,18 @@ plot.sdbuildR_ensemble = function(x,
   dots <- list(...)
 
   if (type == "summary"){
-    subtitle = paste0(stringr::str_to_title(central_tendency), " with [",
+
+
+      subtitle = paste0(ifelse(isFALSE(central_tendency), "",
+                               stringr::str_to_title(central_tendency)), " with [",
                       min(x[["quantiles"]]), ", ", max(x[["quantiles"]]),
                       "] confidence interval of ", x[["n"]], " simulation",
                       ifelse(x[["n"]] == 1, "", "s"))
 
   } else if (type == "sims"){
-    subtitle = paste0(stringr::str_to_title(central_tendency), " with ", length(i), "/", x[["n"]], " simulation",
+    subtitle = paste0(ifelse(isFALSE(central_tendency), "",
+                             stringr::str_to_title(central_tendency)),
+                      " with ", length(i), "/", x[["n"]], " simulation",
                       ifelse(x[["n"]] == 1, "", "s"))
   }
 
@@ -745,19 +757,18 @@ plot.sdbuildR_ensemble = function(x,
   names(nonstock_names) = stringr::str_wrap(names(nonstock_names), width = wrap_width)
 
 
-  if (requireNamespace("plotly", quietly = TRUE)){
 
     x_col = "time"
 
     # Find qlow and qhigh
-    if (type == "summary"){
       q_cols = colnames(summary_df)[grepl("^q", colnames(summary_df))]
       q_num = as.numeric(gsub("^q", "", q_cols))
       q_low = q_cols[which.min(q_num)]
       q_high = q_cols[which.max(q_num)]
-    } else if (type == "sims"){
-      q_low = q_high = NA
-    }
+
+      # Check whether there are multiple time points
+      mode = ifelse(length(unique(summary_df[["time"]])) == 1, "markers", "lines")
+
 
     # Don't add check for template in hcl.pals(), because hcl is more flexible in palette names matching.
     nr_var = length(unique(summary_df[["variable"]]))
@@ -791,6 +802,8 @@ plot.sdbuildR_ensemble = function(x,
     # Cut number of colors to number of variables
     colors = colors[1:nr_var]
 
+
+
     # Plot
     if (!create_subplots){
 
@@ -807,6 +820,7 @@ plot.sdbuildR_ensemble = function(x,
                                 central_tendency_width = central_tendency_width,
                                 q_low = q_low,
                                 q_high = q_high,
+                                mode = mode,
                                 colors = colors,
                                 dots = dots,
                                 main = main,
@@ -836,6 +850,7 @@ plot.sdbuildR_ensemble = function(x,
                                                 central_tendency_width = central_tendency_width,
                                                 q_low = q_low,
                                                 q_high = q_high,
+                                                mode = mode,
                                                 colors = colors,
                                                 dots = dots,
                                                 main = main,
@@ -891,10 +906,6 @@ plot.sdbuildR_ensemble = function(x,
     }
 
     return(pl)
-  } else {
-    stop("plotly is not installed!")
-  }
-
 }
 
 
@@ -911,6 +922,7 @@ plot.sdbuildR_ensemble = function(x,
 #' @param central_tendency Column name for the central tendency (e.g., "mean").
 #' @param q_low Column name for the lower bound of the confidence interval (e.g., "q0.025").
 #' @param q_high Column name for the upper bound of the confidence interval (e.g., "q0.975").
+#' @param mode Plotting mode. Either "lines" if there are multiple time points or "markers" for a single time point.
 #' @param colors Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
 #' @param dots List of additional parameters passed to the plotly functions.
 #' @param main Main title of the plot. Defaults to the name of the stock-and-flow model and the number of simulations.
@@ -929,6 +941,7 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
                                 central_tendency,
                                 central_tendency_width,
                                 q_low, q_high,
+                                mode,
                                 colors, dots,
                                 main, xlab, ylab,
                                 stock_names, nonstock_names,
@@ -980,9 +993,6 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
       )
     }
   }
-
-  # Check whether there are multiple time points
-  mode = ifelse(length(unique(summary_df[["time"]])) == 1, "markers", "lines")
 
   # Initialize plotly object
   pl <- plotly::plot_ly()
@@ -1074,7 +1084,30 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
     }
   }
 
-  # Always plot mean points/lines
+  # When central_tendency = FALSE, we still want a legend
+  if (isFALSE(central_tendency)){
+
+    # Overwrite with default
+    central_tendency = "mean"
+
+    # Same trick does not work for mode == "markers" to not plot central_tendency
+    if (mode == "markers"){
+
+      # When mode == "markers" and the only value available is Infinity, no trace is plotted but the legend still shows up, which is exactly what we want when central_tendency is FALSE
+
+      summary_df_stocks[[central_tendency]] = Inf
+      summary_df_nonstocks[[central_tendency]] = Inf
+
+    } else if (mode == "lines"){
+
+      # When only one time point is available and mode == "lines", no trace is plotted but the legend still shows up, which is exactly what we want when central_tendency is FALSE
+      summary_df_stocks = summary_df_stocks[summary_df_stocks[["time"]] == summary_df_stocks[["time"]][1], ]
+      summary_df_nonstocks = summary_df_nonstocks[summary_df_nonstocks[["time"]] == summary_df_nonstocks[["time"]][1], ]
+    }
+
+  }
+
+  # Plot mean/median points/lines
   if (mode == "lines"){
     if (length(nonstock_names) > 0) {
       pl <- pl %>%
@@ -1189,6 +1222,7 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
         )
     }
   }
+
 
 
   # Customize layout
@@ -2107,6 +2141,7 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
   passed_arg = names(as.list(match.call())[-1]) %>%
     # Remove some arguments
     setdiff(c("sfm", "..."))
+
   # Collect all arguments
   argg <- c(
     as.list(environment()),
@@ -2277,7 +2312,7 @@ sim_specs = function(sfm,
   # Check whether method is a valid deSolve method
   # ** https://docs.sciml.ai/DiffEqDocs/stable/solvers/ode_solve/
   if (!missing(method)){
-    method = tolower(method)
+    method = stringr::str_replace(tolower(method), "\\(\\)$", "")
     if (!method %in% c("euler", "rk4")){
       stop(sprintf("The method %s is not one of the methods available. Choose either 'euler' or 'rk4' (soon to be expanded)."))
     }
@@ -3161,19 +3196,19 @@ build = function(sfm, name, type,
 #'
 get_building_block_prop = function(){
   list(
-    "stock" = c("type", "name", "eqn", "units", "label", "doc",
+    "stock" = c("name", "type", "eqn", "units", "label", "doc",
                 "non_negative", "conveyor", "len",
                 "eqn_julia"),
-    "flow" = c("type", "name", "eqn", "to", "from", "units", "label", "doc",
+    "flow" = c("name", "type", "eqn", "to", "from", "units", "label", "doc",
                "non_negative",
                "eqn_julia"),
-    "constant" = c("type", "name", "eqn", "units", "label", "doc",
+    "constant" = c("name", "type", "eqn", "units", "label", "doc",
       "non_negative",
       "eqn_julia"),
-    "aux" = c("type", "name", "eqn", "units", "label", "doc",
+    "aux" = c("name", "type", "eqn", "units", "label", "doc",
               "non_negative",
               "eqn_julia"),
-    "gf" = c("type", "name", "units", "label",  "xpts", "ypts", "source", "interpolation", "extrapolation", "doc")
+    "gf" = c("name", "type", "units", "label",  "xpts", "ypts", "source", "interpolation", "extrapolation", "doc")
   ) %>% return()
 }
 
@@ -3362,21 +3397,18 @@ create_R_names = function(create_names, names_df, protected = c()){
 get_build_code = function(sfm, format_code = TRUE){
 
   check_xmile(sfm)
-  defaults = formals(build)
-  defaults = defaults[!names(defaults) %in% c("sfm", "name", "type", "label", "...")]
 
   # Simulation specifications - careful here. If a default is 100.0, this will be turned into 100. Need to have character defaults to preserve digits.
-  defaults_sim_specs = formals(sim_specs)
-  defaults_sim_specs = defaults_sim_specs[!names(defaults_sim_specs) %in% c("name", "caption", "created", "...")]
   sim_specs_list = sfm[["sim_specs"]]
 
-  # Remove defaults
-  default_elements = defaults_sim_specs[names(sim_specs_list)]
-  default_elements = default_elements[!lengths(default_elements) == 0]
-
-  idx = unlist(default_elements) == unlist(sim_specs_list[names(default_elements)])
-  sim_specs_list[names(which(idx))] = NULL
-  sim_specs_list <- lapply(sim_specs_list, function(z) if (is.character(z)) paste0("'", z, "'") else z)
+  # # Remove defaults
+  # defaults_sim_specs = formals(sim_specs)
+  # default_elements = defaults_sim_specs[names(sim_specs_list)]
+  # default_elements = default_elements[!lengths(default_elements) == 0]
+  #
+  # idx = unlist(default_elements) == unlist(sim_specs_list[names(default_elements)])
+  # sim_specs_list[names(which(idx))] = NULL
+  sim_specs_list <- lapply(sim_specs_list, function(z) if (is.character(z)) paste0("\"", z, "\"") else z)
   sim_specs_str = paste0(names(sim_specs_list), " = ", unname(sim_specs_list), collapse = ", ")
   sim_specs_str = paste0(" %>%\n\t\tsim_specs(", sim_specs_str, ")")
 
@@ -3384,7 +3416,7 @@ get_build_code = function(sfm, format_code = TRUE){
   if (length(sfm[["model_units"]]) > 0){
     model_units_str = lapply(sfm[["model_units"]], function(x){
 
-        x = lapply(x, function(z) if (is.character(z)) paste0("'", z, "'") else z)
+        x = lapply(x, function(z) if (is.character(z)) paste0("\"", z, "\"") else z)
 
 
         sprintf("model_units(%s)", paste0(names(x), " = ", unname(x), collapse = ", "))
@@ -3401,7 +3433,7 @@ get_build_code = function(sfm, format_code = TRUE){
         # Remove properties containing "_julia"
         x[grepl("_julia", names(x))] = NULL
 
-        x <- lapply(x, function(z) if (is.character(z)) paste0("'", z, "'") else z)
+        x <- lapply(x, function(z) if (is.character(z)) paste0("\"", z, "\"") else z)
         sprintf("macro(%s)", paste0(names(x), " = ", unname(x), collapse = ", "))
       }) %>% unlist() %>% paste0(., collapse = "%%>%%\n\t\t")
     macro_str = paste0(" %>%\n\t\t", macro_str)
@@ -3410,33 +3442,55 @@ get_build_code = function(sfm, format_code = TRUE){
   }
 
   # Header string
-  x = sfm[["header"]]
-  x = lapply(x, function(z) if (is.character(z) | inherits(z, "POSIXt")) paste0("'", z, "'") else z)
+  h = sfm[["header"]]
+  defaults_header = formals(header)
+  defaults_header = defaults_header[!names(defaults_header) %in% c("sfm", "created", "...")]
 
-  header_str = paste0(" %>%\n\t\theader(", paste0(names(x), " = ", unname(x), collapse = ", "), ")")
+  # Find which elements in h are identical to those in defaults_header
+  h <- h[sapply(names(h), function(name) {
+    !name %in% names(defaults_header) || !identical(h[[name]], defaults_header[[name]])
+  })]
+
+  h = lapply(h, function(z) if (is.character(z) | inherits(z, "POSIXt")) paste0("\"", z, "\"") else z)
+
+  header_str = paste0(" %>%\n\t\theader(", paste0(names(h), " = ", unname(h), collapse = ", "), ")")
 
   # Variables
   if (length(unlist(sfm[["model"]][["variables"]])) > 0){
+
+    defaults = formals(build)
+    defaults = defaults[!names(defaults) %in% c("sfm", "name", "type", "label", "...")]
+
+    # Get properties per building block
+    keep_prop = get_building_block_prop()
+
+
     var_str = lapply(sfm[["model"]][["variables"]], function(x){
         lapply(x, function(y){
           z = y
-          z[["name"]] = NULL
-          z[["type"]] = NULL
           z[["func"]] = NULL
-
-          # Remove defaults
-          default_elements = defaults[names(z)]
-          default_elements = default_elements[!lengths(default_elements) == 0]
-          idx = unlist(default_elements) != unlist(z[names(default_elements)])
-          z = z[names(which(idx))]
 
           # Remove properties containing "_julia"
           z[grepl("_julia", names(z))] = NULL
 
-          z = lapply(z, function(a){ifelse(is.character(a), paste0("'", a, "'"), a)})
+          # Find which elements in h are identical to those in defaults_header
+          z <- z[sapply(names(z), function(name) {
+            !name %in% names(defaults) || !identical(z[[name]], defaults[[name]])
+          })]
 
-          sprintf("build('%s', '%s'%s)",
-                  y[["name"]], y[["type"]], ifelse(length(z) > 0, paste0(", ", paste0(names(z), " = ", unname(z), collapse = ", ")), "") )
+          # Order z according to default
+          order_names = intersect(keep_prop[[z[["type"]]]], names(z))
+          z = z[order_names]
+
+          z = lapply(z, function(a){ifelse(is.character(a), paste0("\"", a, "\""), a)})
+
+          paste0("build(",
+                  paste0(names(z), " = ", unname(z),
+                         collapse = ", "), ")")
+          # sprintf("build('%s', '%s'%s)",
+          #         y[["name"]], y[["type"]], ifelse(length(z) > 0,
+          #                                          paste0(", ", paste0(names(z), " = ", unname(z),
+          #                                                              collapse = ", ")), "") )
         })
       })
     var_str = var_str[lengths(var_str) > 0]
@@ -3658,7 +3712,7 @@ static_depend_on_dyn = function(sfm){
   dependencies = sfm[["model"]][["variables"]][c("stock", "constant")] %>%
     unname() %>% purrr::list_flatten() %>%
     lapply(., `[[`, "eqn") %>%
-    find_dependencies(sfm, ., only_model_var = TRUE)
+    find_dependencies_(sfm, ., only_model_var = TRUE)
 
   names_df = get_names(sfm)
   dynamic_var = names_df[names_df[["type"]] %in% c("aux", "flow"), "name"]

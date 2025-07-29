@@ -67,7 +67,7 @@ $$
 \frac{\text{people}}{\text{people}} = 1
 $$
 
-In summary, units help ensure equations are correctly formulated. If equations are not dimensionally consistent, this exposes an error in the model. Variables may be missing or ill-conceptualized. For instance, a variable such as sleep does not have the unit of hours, but hours over a certain period of time, such as hours per day. Savings in your bank account do not have the unit euros per month, but simply euros, as they can be counted at a single moment in time. As such, units additionally help to distinguish between stocks and flows and understand how variables relate to one another.
+In summary, units help ensure equations are correctly formulated. If equations are not dimensionally consistent, this exposes an error in the model. Variables may be missing or ill-conceptualized. For instance, a variable such as sleep does not have the unit of hours, but hours over a certain period of time, such as hours per day. Savings in your bank account do not have the unit euros per month, but simply euros, as they can be counted at a single moment in time. Units additionally help to distinguish between stocks and flows and understand how variables relate to one another.
 
 <!-- Equations need to be dimensionally consistent without the use of ``fudge'' factors that are uninterpretable.  -->
 

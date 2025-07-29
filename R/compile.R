@@ -119,7 +119,7 @@ detect_undefined_var = function(sfm){
 
       A = sapply(y, function(z){
 
-        dependencies = find_dependencies(sfm, z, only_var = TRUE, only_model_var = FALSE)
+        dependencies = find_dependencies_(sfm, z, only_var = TRUE, only_model_var = FALSE)
 
         # # Check whether the function exists
         # set only_var = FALSE
@@ -319,8 +319,27 @@ find_newly_defined_var = function(eqn){
 
 
 
+#' Find dependencies
+#'
+#' Find which other variables each variable is dependent on.
+#'
+#' @inheritParams build
+#'
+#' @return Vector of dependencies (variable names in equation)
+#' @family build
+#' @export
+#'
+#' @examples
+#' sfm = xmile("SIR")
+#' find_dependencies(sfm)
+#'
+find_dependencies = function(sfm){
+  find_dependencies_(sfm, eqns = NULL, only_var = TRUE, only_model_var = TRUE)
+}
 
-#' Find dependencies in equation
+
+
+#' Find dependencies in equation (only for package)
 #'
 #' @param eqns String with equation to find dependencies in; defaults to NULL to find dependencies of all variables.
 #' @inheritParams build
@@ -330,7 +349,7 @@ find_newly_defined_var = function(eqn){
 #' @return Vector of dependencies (variable names in equation)
 #' @noRd
 #'
-find_dependencies = function(sfm, eqns = NULL, only_var = TRUE, only_model_var = TRUE){
+find_dependencies_ = function(sfm, eqns = NULL, only_var = TRUE, only_model_var = TRUE){
 
   var_names = unique(get_model_var(sfm))
 
@@ -405,7 +424,7 @@ order_equations <- function(sfm, print_msg = TRUE){
 
       if (is_defined(x[["eqn"]])){
 
-        d = unlist(find_dependencies(sfm, x[["eqn"]],
+        d = unlist(find_dependencies_(sfm, x[["eqn"]],
                                      only_var = TRUE, only_model_var = TRUE))
 
         # For delay family variables, find .outflow in eqn_julia

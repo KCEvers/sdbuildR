@@ -247,8 +247,7 @@ IM_to_xmile <- function(filepath_IM) {
                                                                    toupper(IM_func_names)))
 
   # Add to which ids it has access
-  model_elements = children_attrs[keep_idx] %>%
-    lapply(., function(x){
+  model_elements = lapply(children_attrs[keep_idx], function(x){
 
       x[["access_ids"]] = sources[targets == x[["id"]]]
       x[["access"]] = new_names[match(x[["access_ids"]], ids)]
@@ -272,6 +271,7 @@ IM_to_xmile <- function(filepath_IM) {
       if (length(idx) != 0){
         x[["eqn_insightmaker"]] = x[[idx]]
 
+        # Default is zero
         if (!nzchar(x[["eqn_insightmaker"]])){
           x[["eqn_insightmaker"]] = "0.0"
         }
@@ -334,14 +334,15 @@ IM_to_xmile <- function(filepath_IM) {
       }
       return(x)
     })
+  model_elements
 
   # Converters
   converter_prop = c("doc", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "xpts", "ypts", "interpolation", "source", "extrapolation",
                      # "access", "access_ids",
                      "id_insightmaker"
                      )
-  model_elements[model_element_names == "Converter"] = model_elements[model_element_names == "Converter"] %>%
-    lapply(., function(x){
+  model_elements[model_element_names == "Converter"] =
+    lapply(model_elements[model_element_names == "Converter"], function(x){
 
       # Get x and y data for interpolation function
       data_split = strsplit(x[["Data"]], ";")[[1]] %>%
@@ -369,9 +370,8 @@ IM_to_xmile <- function(filepath_IM) {
                     # "access", "access_ids",
                     "id_insightmaker"
                     )
-
-  model_elements["Variable" == model_element_names] =
-    lapply(model_elements["Variable" == model_element_names], function(x){
+  model_elements["Variable" == model_element_names] = model_elements["Variable" == model_element_names] %>%
+    lapply(., function(x){
       x[["units_insightmaker"]] = x[["Units"]]
       x[["id_insightmaker"]] = x[["id"]]
 
@@ -397,11 +397,10 @@ IM_to_xmile <- function(filepath_IM) {
   flow_sources = flows %>% get_map("source")
   flow_targets = flows %>% get_map("target")
 
+  # Only keep selected properties and rename
   model_elements["Stock" == model_element_names] =
-    # Only keep selected properties and rename
-    lapply(model_elements["Stock" == model_element_names],
-           function(x){
-      x[["non_negative"]] = ifelse(x[["NonNegative"]] == "true", TRUE, FALSE)
+    lapply(model_elements["Stock" == model_element_names], function(x){
+      x[["non_negative"]] = ifelse(tolower(x[["NonNegative"]]) == "true", TRUE, FALSE)
       x[["units_insightmaker"]] = x[["Units"]]
       x[["type"]] = "stock"
       x[["id_insightmaker"]] = x[["id"]]
@@ -424,8 +423,9 @@ IM_to_xmile <- function(filepath_IM) {
                 # "access", "access_ids",
                 "id_insightmaker"
                 )
+
+  # Only keep selected properties and rename
   model_elements["Flow" == model_element_names] =
-    # Only keep selected properties and rename
     lapply(model_elements["Flow" == model_element_names], function(x){
 
       x[["id_insightmaker"]] = x[["id"]]
@@ -438,7 +438,7 @@ IM_to_xmile <- function(filepath_IM) {
       # Flows can use [Alpha] and [Omega] to refer to the stock they flow from and to, respectively. Change to new variable names
       x[["eqn_insightmaker"]] = stringr::str_replace_all(x[["eqn_insightmaker"]],
                                                 stringr::regex(c("\\[Alpha\\]" = paste0("[", x[["from"]], "]"),
-                                                                 "\\[Omega\\]" = paste0("[", x[["to"]], "]")), ignore_case = TRUE))
+                                                                 "\\[Omega\\]" = paste0("[", x[["to"]], "]")), ignore_case = T))
 
       x[["non_negative"]] = ifelse(x[["OnlyPositive"]] == "true", TRUE, FALSE)
 
@@ -446,7 +446,7 @@ IM_to_xmile <- function(filepath_IM) {
 
       # Only keep selected properties
       x = x[names(x) %in% flow_prop]
-      x
+      return(x)
     })
 
 
@@ -463,7 +463,7 @@ IM_to_xmile <- function(filepath_IM) {
   display_ids = display[grepl("^Primitives", names(display))] %>% unlist() %>% unname() %>% Filter(nzchar, .) %>%
     paste0(collapse = ",")
   display_ids_split = trimws(strsplit(display_ids, ",")[[1]])
-  # If display ids is empty, use stocks
+  # If display ids is empty, use Stocks
   if (length(display_ids_split) > 0){
     display_var = new_names[match(display_ids_split, ids)]
   } else {
@@ -488,6 +488,7 @@ IM_to_xmile <- function(filepath_IM) {
               save_from = settings[["TimeStart"]])
 
   # Header
+  # header_list = list(insightmaker_version = settings[["Version"]]) %>% utils::modifyList(header_info)
   header_list[["method_insightmaker"]] = settings[["SolutionAlgorithm"]]
   sfm[["header"]] = sfm[["header"]] %>% utils::modifyList(header_list)
 
@@ -530,9 +531,6 @@ IM_to_xmile <- function(filepath_IM) {
       print("No user-defined macros and globals detected")
     }
   }
-
-  # ** add detected nonnegative and constraints
-
 
   # Conveyors Stocks have a fixed delay with a specified delay length. If a stock "A" is referred to as [A], it refers to the delayed value of A, whereas [[A]] refers to the accumulated value to the 'true' current value of A. If the stock is of StockMode Conveyor, any reference to [A] refers to the delayed value of A.
   # In short:
@@ -869,11 +867,11 @@ clean_units_IM = function(sfm, regex_units) {
 check_nonnegativity = function(sfm, keep_nonnegative_flow, keep_nonnegative_stock, keep_solver){
 
   # Non-negative Stocks and Flows
-  if (length(sfm[["model"]][["variables"]][["stock"]]) > 0){
-    nonneg_stock = which(unlist(lapply(sfm[["model"]][["variables"]][["stock"]], `[[`, "non_negative")))
-  } else {
-    nonneg_stock = list()
+  if (length(sfm[["model"]][["variables"]][["stock"]]) == 0){
+    return(sfm)
   }
+
+  nonneg_stock = which(unlist(lapply(sfm[["model"]][["variables"]][["stock"]], `[[`, "non_negative")))
 
   if (keep_nonnegative_stock & length(nonneg_stock) > 0){
 
@@ -1230,8 +1228,7 @@ convert_equations_IM_wrapper = function(sfm, regex_units){
   # Convert each equation and create list of model elements to add
   var_names = get_model_var(sfm)
 
-  add_model_elements = unlist(unname(sfm[["model"]][["variables"]][c("stock", "aux", "flow")]),
-                              recursive = FALSE) %>%
+  add_model_elements = unlist(unname(sfm[["model"]][["variables"]][c("stock", "aux", "flow")]), recursive = FALSE) %>%
     lapply(., function(x){
 
       if (P[["debug"]]){
@@ -1245,28 +1242,28 @@ convert_equations_IM_wrapper = function(sfm, regex_units){
         name = x[["name"]],
         eqn = x[["eqn"]],
         var_names = var_names,
-                         regex_units = regex_units)
+        regex_units = regex_units)
 
       if (P[["debug"]]){
         print(out)
       }
+
+
+
       return(out)
 
     }) %>% purrr::flatten()
 
-  # Add names
   add_model_elements = lapply(add_model_elements, function(x){
-      # purrr::imap(x, function(y, name){
-
-    vec = names(x)
-    z = lapply(seq_along(x), function(i){
-        y = x[[i]]
-        name = names(x)[i]
-        y[["name"]] = name
-        return(y)
-      })
-    return(stats::setNames(z, vec))
+    z = names(x)
+    lapply(1:length(x), function(i){
+      y = x[[i]]
+      name = names(x)[i]
+      y[["name"]] = name
+      return(y)
+    }) %>% stats::setNames(., z)
   })
+
 
   # Add to sfm
   for (i in 1:length(add_model_elements)){
@@ -1333,17 +1330,12 @@ split_aux_wrapper = function(sfm){
   # Get names
   var_names = get_model_var(sfm)
 
-  if (length(sfm[["model"]][["variables"]][["aux"]]) == 0){
-    # No auxiliaries, nothing to do
-    return(sfm)
-  }
-
   # Separate auxiliary variables into static parameters and dynamically updated auxiliaries
   dependencies = lapply(sfm[["model"]][["variables"]][["aux"]], `[[`, "eqn") %>%
-    find_dependencies(sfm, ., only_model_var = FALSE)
+    find_dependencies_(sfm, ., only_model_var = FALSE)
 
   # Constants are not dependent on time, have no dependencies in names, or are only dependent on constants
-  temp = dependencies
+  temp  = dependencies
   temp = temp[sapply(temp, function(x){(!P[["time_name"]] %in% x) & (length(intersect(x, var_names)) == 0)})]
   constants = names(temp)
   rm(temp)

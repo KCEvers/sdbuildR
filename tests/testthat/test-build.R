@@ -630,6 +630,14 @@ test_that("model_units() works", {
 })
 
 
+test_that("find_dependencies works", {
+
+  sfm = xmile("SIR")
+  expect_no_error(find_dependencies(sfm))
+  expect_no_message(find_dependencies(sfm))
+
+})
+
 
 test_that("unique unit names in model_units()", {
 
@@ -853,11 +861,28 @@ test_that("get_build_code() works", {
   expect_no_error(get_build_code(xmile()))
   expect_no_message(get_build_code(xmile()))
 
-  expect_no_error(get_build_code(xmile("SIR")))
-  expect_no_message(get_build_code(xmile("SIR")))
+  for (s in c("SIR", "Crielaard2022")){
 
-  expect_no_error(get_build_code(xmile("Crielaard2022")))
-  expect_no_message(get_build_code(xmile("Crielaard2022")))
+    # Replicate with get_build_code
+    sfm = xmile(s)
+
+    if (s == "Crielaard2022"){
+      sfm = sfm %>%
+        build(c("Food_intake", "Hunger", "Compensatory_behaviour"), eqn = c(.5, .3, .1))
+    }
+
+    sim1 = simulate(sfm)
+    script = expect_no_error(get_build_code(sfm))
+    script = expect_no_message(get_build_code(sfm))
+
+    # Create a new environment to collect variables
+    envir <- new.env()
+    expect_no_error(eval(parse(text = script), envir = envir))
+    expect_no_message(eval(parse(text = script), envir = envir))
+    sfm2 = envir[["sfm"]]
+    sim2 = simulate(sfm2)
+    expect_identical(sim1$df$value, sim2$df$value)
+  }
 
 })
 

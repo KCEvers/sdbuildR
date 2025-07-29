@@ -17,7 +17,7 @@
   font_family = "Times New Roman",
   font_size = 16,
   wrap_width = 25,
-  central_tendency = c("mean", "median")[1],
+  central_tendency = c("mean", "median", FALSE)[1],
   central_tendency_width = 3,
   ...
 )
@@ -47,7 +47,7 @@
 
 \item{wrap_width}{Width of text wrapping for labels. Must be an integer. Defaults to 25.}
 
-\item{central_tendency}{Central tendency to use for the mean line. Either "mean" or "median". Defaults to "mean".}
+\item{central_tendency}{Central tendency to use for the mean line. Either "mean", "median", or FALSE to not plot the central tendency. Defaults to "mean".}
 
 \item{central_tendency_width}{Line width of central tendency. Defaults to 3.}
 

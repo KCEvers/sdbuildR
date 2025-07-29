@@ -68,7 +68,7 @@ test_that("ensemble works", {
   expect_no_error(plot(sims, type = "sims", i = nr_sims - 1))
   expect_no_error(plot(sims, type = "sims"))
   expect_no_error(plot(sims, central_tendency = "median"))
-  expect_error(plot(sims, central_tendency = "medians"), "central_tendency must be one of 'mean' or 'median'")
+  expect_error(plot(sims, central_tendency = "medians"), "central_tendency must be 'mean', 'median', or FALSE")
 
 
   # Message printed

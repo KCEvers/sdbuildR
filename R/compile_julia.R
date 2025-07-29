@@ -1313,7 +1313,7 @@ function %s!(%s, %s%s, %s)",
                          ", = ", P[["parameter_name"]])), ""),
     "\n\n\t# Update auxiliaries\n\t",
     dynamic_eqn_str,
-    "\n\n\t# Collect inflows and outflows for each Stock\n\t",
+    "\n\n\t# Collect inflows and outflows for each stock\n\t",
     stock_change_str,
 
     "\n\tnothing\nend\n")

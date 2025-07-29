@@ -41,9 +41,6 @@ simulate_R = function(sfm,
 
     end_t = Sys.time()
 
-    # # Delete file
-    # unlink(filepath)
-
     if (verbose){
       message(paste0("Simulation took ", round(end_t - start_t, 4), " seconds"))
     }
