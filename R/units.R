@@ -110,19 +110,19 @@ split_units = function(x){
     x_split = list(x)
   } else {
     split_df = rbind(idxs_word_df,
-                     data.frame(start = idxs_word_df$end[-nrow(idxs_word_df)] + 1,
-                                end = idxs_word_df$start[-1] - 1))
+                     data.frame(start = idxs_word_df[["end"]][-nrow(idxs_word_df)] + 1,
+                                end = idxs_word_df[["start"]][-1] - 1))
     split_df = split_df[order(split_df[["start"]]), ]
 
     # Make sure beginning characters are included
-    if (split_df$start[1] > 1){
-      split_df = rbind(data.frame(start = 1, end = split_df$start[1] - 1),
+    if (split_df[["start"]][1] > 1){
+      split_df = rbind(data.frame(start = 1, end = split_df[["start"]][1] - 1),
                        split_df) %>% as.data.frame()
     }
 
     # Make sure final characters are included
-    if (split_df$end[nrow(split_df)] < nchar(x)){
-      split_df = rbind(split_df, data.frame(start = split_df$end[nrow(split_df)] + 1, end = nchar(x))) %>% as.data.frame()
+    if (split_df[["end"]][nrow(split_df)] < nchar(x)){
+      split_df = rbind(split_df, data.frame(start = split_df[["end"]][nrow(split_df)] + 1, end = nchar(x))) %>% as.data.frame()
     }
 
     # Split string
@@ -200,31 +200,6 @@ replace_written_powers = function(x){
   }
   return(x)
 
-  # regex_replacement = stringr::regex(c("^square[d]? (.*?)$" = "\\1\\^2",
-  #                                      "^(.*?) square[d]?$" = "\\1\\^2",
-  #                                      "^cubic (.*?)$" = "\\1\\^3",
-  #                                      "^cube[d]? (.*?)$" = "\\1\\^3"), ignore_case = TRUE)
-  #
-  #
-  # idxs_written_power = stringr::str_locate_all(x, regex_written_powers)
-
-  # # while ( any(stringr::str_detect(x, regex_written_powers))){
-  #
-  #   # Find indices of words
-  #   # idxs_words = stringr::str_locate_all(x, "[a-zA-Z][a-zA-Z 0-9\\._]*")[[1]]
-  #
-  #   # Find indices of powers
-  #   idxs_power = do.call(rbind, stringr::str_locate_all(x, regex_written_powers))
-  #
-  #   # Get first word with powers
-  #   keep_idx = idxs_words[idxs_words[, "start"] <= idxs_power[1, "start"] & idxs_words[, "end"] > idxs_power[1, "start"], ]
-  #
-  #   sub_string = stringr::str_sub(x, keep_idx["start"], keep_idx["end"])
-  #   replacement = stringr::str_replace_all(sub_string, regex_replacement)
-  #   stringr::str_sub(x, keep_idx["start"], keep_idx["end"]) = replacement
-  #
-  # }
-  # return(x)
 }
 
 
@@ -372,7 +347,7 @@ clean_unit <- function(x, regex_units, ignore_case = FALSE, include_translation 
 detect_undefined_units = function(sfm, new_eqns, new_units, regex_units, R_or_Julia = "Julia"){
 
   # Add undefined units to custom units
-  units_in_model = c(sfm$sim_specs$time_units,
+  units_in_model = c(sfm[["sim_specs"]][["time_units"]],
                      new_units,
                      # Extract units from equations
                      new_eqns %>%
@@ -388,7 +363,7 @@ detect_undefined_units = function(sfm, new_eqns, new_units, regex_units, R_or_Ju
     Filter(function(x){stringr::str_detect(x, "[a-zA-Z]")}, .)
 
   # Find units to define: ones not already included in Julia
-  existing_units = names(sfm$model_units)
+  existing_units = names(sfm[["model_units"]])
   units_to_define = setdiff(units_in_model,
                             c(existing_units,
                               unname(regex_units)
@@ -793,11 +768,11 @@ get_regex_units = function(sfm = NULL){
 
   # If there are custom units added with power of ten prefixes enabled, add regular expressions
   if (!is.null(sfm)){
-    if (length(sfm$model_units) > 0){
+    if (length(sfm[["model_units"]]) > 0){
       # Only if there are any units with power-of-ten
-      prefix = unlist(lapply(sfm$model_units, `[[`, "prefix"))
+      prefix = unlist(lapply(sfm[["model_units"]], `[[`, "prefix"))
       if (any(prefix)){
-        unit_names = names(sfm$model_units)
+        unit_names = names(sfm[["model_units"]])
         add_custom_regex = lapply(unit_names[prefix], function(unit_name){
 
           stats::setNames(

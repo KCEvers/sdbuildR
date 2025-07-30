@@ -54,6 +54,7 @@ Other build:
 \code{\link{as.data.frame.sdbuildR_xmile}()},
 \code{\link{build}()},
 \code{\link{debugger}()},
+\code{\link{find_dependencies}()},
 \code{\link{get_build_code}()},
 \code{\link{macro}()},
 \code{\link{plot.sdbuildR_xmile}()},

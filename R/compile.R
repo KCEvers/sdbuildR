@@ -110,17 +110,16 @@ detect_undefined_var = function(sfm){
                     "pi", "letters", "LETTERS",
                     "month.abb", "month.name")
 
-  # Find references to variables which are not in names_df$name
+  # Find references to variables which are not in names_df[["name"]]
   missing_ref = unlist(sfm[["model"]][["variables"]], recursive = FALSE, use.names = FALSE) %>%
     lapply(., function(x){
 
-      # Find dependencies, and find which ones are not in names_df$name
       y = x[names(x) %in% c("eqn", "to", "from")]
       y = y[sapply(y, is_defined)]
 
       A = sapply(y, function(z){
 
-        dependencies = find_dependencies(sfm, z, only_var = TRUE, only_model_var = FALSE)
+        dependencies = find_dependencies_(sfm, z, only_var = TRUE, only_model_var = FALSE)
 
         # # Check whether the function exists
         # set only_var = FALSE
@@ -140,7 +139,7 @@ detect_undefined_var = function(sfm){
       if (length(A) == 0){
         return(NULL)
       } else {
-        return(stats::setNames(list(A), x$name))
+        return(stats::setNames(list(A), x[["name"]]))
       }
     })
 
@@ -148,12 +147,22 @@ detect_undefined_var = function(sfm){
 
   if (length(missing_ref) > 0){
 
-    missing_ref_format = missing_ref %>%
-      purrr::imap(function(x, name){
-      purrr::imap(x, function(y, prop){
+    missing_ref_format = lapply(seq_along(missing_ref), function(i){
+      x = missing_ref[[i]]
+      name = names(missing_ref)[i]
+      lapply(seq_along(x), function(j){
+        y = x[[j]]
+        prop = names(x)[j]
         paste0("- ", name, "$", prop, ": ", paste0(unname(y), collapse = ", "))
       })
     }) %>% unlist() %>% unname()
+
+    # missing_ref_format = missing_ref %>%
+    #   purrr::imap(function(x, name){
+    #   purrr::imap(x, function(y, prop){
+    #     paste0("- ", name, "$", prop, ": ", paste0(unname(y), collapse = ", "))
+    #   })
+    # }) %>% unlist() %>% unname()
 
     return(list(issue = TRUE,
                 msg = paste0(c("The properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes.",
@@ -227,7 +236,7 @@ topological_sort = function(dependencies_dict){
       # print("Something went wrong when attempting to order the equations in your ODE, which may be because of circular definition (e.g. x = y, y = x). The correct order is important as e.g. for x = 1/a, a needs to be defined before x. Please check the order manually.")
       out = circularity(g)
 
-      list(order = eq_names, issue = out$issue, msg = out$msg)
+      list(order = eq_names, issue = out[["issue"]], msg = out[["msg"]])
     })
 
   return(out)
@@ -245,9 +254,9 @@ topological_sort = function(dependencies_dict){
 circularity = function(g){
   # Check for cycles by finding strongly connected components
   scc <- igraph::components(g, mode = "strong")
-  if (any(scc$csize > 1)) {
+  if (any(scc[["csize"]] > 1)) {
     # Identify vertices in cycles (strongly connected components with more than one node)
-    cycle_nodes <- names(scc$membership)[scc$membership %in% which(scc$csize > 1)]
+    cycle_nodes <- names(scc[["membership"]])[scc[["membership"]] %in% which(scc[["csize"]] > 1)]
     cycle_message <- paste("Circular dependencies detected involving variables:",
                            paste(cycle_nodes, collapse = ", "))
 
@@ -310,8 +319,27 @@ find_newly_defined_var = function(eqn){
 
 
 
+#' Find dependencies
+#'
+#' Find which other variables each variable is dependent on.
+#'
+#' @inheritParams build
+#'
+#' @return Vector of dependencies (variable names in equation)
+#' @family build
+#' @export
+#'
+#' @examples
+#' sfm = xmile("SIR")
+#' find_dependencies(sfm)
+#'
+find_dependencies = function(sfm){
+  find_dependencies_(sfm, eqns = NULL, only_var = TRUE, only_model_var = TRUE)
+}
 
-#' Find dependencies in equation
+
+
+#' Find dependencies in equation (only for package)
 #'
 #' @param eqns String with equation to find dependencies in; defaults to NULL to find dependencies of all variables.
 #' @inheritParams build
@@ -321,17 +349,13 @@ find_newly_defined_var = function(eqn){
 #' @return Vector of dependencies (variable names in equation)
 #' @noRd
 #'
-find_dependencies = function(sfm, eqns = NULL, only_var = TRUE, only_model_var = TRUE){
+find_dependencies_ = function(sfm, eqns = NULL, only_var = TRUE, only_model_var = TRUE){
 
   var_names = unique(get_model_var(sfm))
 
-  # # Add .outflow to also detect delayed variables
-  # var_names = c(var_names, paste0(var_names[grepl(paste0(P$delayN_suffix, "[0-9]+$|",
-  # P$smoothN_suffix, "[0-9]+$"), var_names)], P$outflow_suffix))
-
   # Macros and graphical functions can be functions
-  possible_func_in_model = c(names(sfm$macro),
-                             names(sfm[["model"]][["variables"]]$gf),
+  possible_func_in_model = c(names(sfm[["macro"]]),
+                             names(sfm[["model"]][["variables"]][["gf"]]),
                              var_names) # Some aux are also functions, such as pulse/step/ramp/seasonal
 
   # If no equations are provided, use all equations in the model
@@ -389,10 +413,10 @@ order_equations <- function(sfm, print_msg = TRUE){
 
   # Add .outflow to detect delayed variables
   var_names = unique(get_model_var(sfm))
-  idx_delay = grepl(paste0(P$delayN_suffix, "[0-9]+$|",
-                           P$smoothN_suffix, "[0-9]+$"), var_names)
+  idx_delay = grepl(paste0(P[["delayN_suffix"]], "[0-9]+$|",
+                           P[["smoothN_suffix"]], "[0-9]+$"), var_names)
   delay_var = var_names[idx_delay]
-  delay_pattern = paste0(var_names[idx_delay], stringr::str_escape(P$outflow_suffix))
+  delay_pattern = paste0(var_names[idx_delay], stringr::str_escape(P[["outflow_suffix"]]))
 
   # Separate auxiliary variables into static parameters and dynamically updated auxiliaries
   dependencies = lapply(sfm[["model"]][["variables"]], function(y){
@@ -400,7 +424,7 @@ order_equations <- function(sfm, print_msg = TRUE){
 
       if (is_defined(x[["eqn"]])){
 
-        d = unlist(find_dependencies(sfm, x[["eqn"]],
+        d = unlist(find_dependencies_(sfm, x[["eqn"]],
                                      only_var = TRUE, only_model_var = TRUE))
 
         # For delay family variables, find .outflow in eqn_julia
@@ -424,24 +448,24 @@ order_equations <- function(sfm, print_msg = TRUE){
   static_and_dynamic = topological_sort(dependencies_dict)
 
   # Topological sort of static equations
-  static_dependencies_dict = c(dependencies$gf,
-                               dependencies$constant,
-                               dependencies$stock) %>%
+  static_dependencies_dict = c(dependencies[["gf"]],
+                               dependencies[["constant"]],
+                               dependencies[["stock"]]) %>%
     purrr::list_flatten()
 
   static = topological_sort(static_dependencies_dict)
-  if (print_msg & static$issue){
-    message(paste0("Ordering static equations failed. ", static$msg, collapse = ""))
+  if (print_msg & static[["issue"]]){
+    message(paste0("Ordering static equations failed. ", static[["msg"]], collapse = ""))
   }
 
 
   # Topological ordering
-  dependencies_dict = c(dependencies$aux,
-                        dependencies$flow) %>%
+  dependencies_dict = c(dependencies[["aux"]],
+                        dependencies[["flow"]]) %>%
     purrr::list_flatten()
   dynamic = topological_sort(dependencies_dict)
-  if (print_msg & dynamic$issue){
-    message(paste0("Ordering dynamic equations failed. ", dynamic$msg, collapse = ""))
+  if (print_msg & dynamic[["issue"]]){
+    message(paste0("Ordering dynamic equations failed. ", dynamic[["msg"]], collapse = ""))
   }
 
   return(list(static = static, dynamic = dynamic,
@@ -463,32 +487,32 @@ order_equations <- function(sfm, print_msg = TRUE){
 #'
 compare_sim = function(sim1, sim2, tolerance = .00001){
 
-  if (sim1$success & !sim2$success){
+  if (sim1[["success"]] & !sim2[["success"]]){
     return(c(equal = FALSE,
              msg = "Simulation 1 was successful, but simulation 2 failed."))
   }
 
-  if (!sim1$success & sim2$success){
+  if (!sim1[["success"]] & sim2[["success"]]){
     return(c(equal = FALSE,
              msg = "Simulation 2 was successful, but simulation 1 failed."))
   }
 
   get_prop = function(sim){
-    list(colnames = colnames(sim[[P$sim_df_name]]),
-         var_names = unique(sim[[P$sim_df_name]][["variable"]]),
-         nrow = nrow(sim[[P$sim_df_name]]),
-         ncol = ncol(sim[[P$sim_df_name]]),
+    list(colnames = colnames(sim[[P[["sim_df_name"]]]]),
+         var_names = unique(sim[[P[["sim_df_name"]]]][["variable"]]),
+         nrow = nrow(sim[[P[["sim_df_name"]]]]),
+         ncol = ncol(sim[[P[["sim_df_name"]]]]),
          n_pars = length(sim[[P[["parameter_name"]]]]),
-         language = sim$sfm[["sim_specs"]][["language"]],
-         method = sim$sfm$sim_specs$method
+         language = sim[["sfm"]][["sim_specs"]][["language"]],
+         method = sim[["sfm"]][["sim_specs"]][["method"]]
     )
   }
 
   prop1 = get_prop(sim1)
   prop2 = get_prop(sim2)
 
-  overlapping_var_names = intersect(prop1$var_names, prop2$var_names)
-  nonoverlapping_var_names = setdiff(union(prop1$var_names, prop2$var_names), overlapping_var_names)
+  overlapping_var_names = intersect(prop1[["var_names"]], prop2[["var_names"]])
+  nonoverlapping_var_names = setdiff(union(prop1[["var_names"]], prop2[["var_names"]]), overlapping_var_names)
 
   check_diff = function(col1, col2){
 
@@ -511,17 +535,17 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 
   df = lapply(overlapping_var_names,
               function(name){c(name = name,
-                               check_diff(sim1$df[sim1$df$variable == name, "value"],
-                                          sim2$df[sim2$df$variable == name, "value"]))}) %>%
+                               check_diff(sim1[["df"]][sim1[["df"]][["variable"]] == name, "value"],
+                                          sim2[["df"]][sim2[["df"]][["variable"]] == name, "value"]))}) %>%
     do.call(dplyr::bind_rows, .) %>%
     as.data.frame()
 
   return(list(
-    equal = all(as.logical(as.numeric(df$equal))),
+    equal = all(as.logical(as.numeric(df[["equal"]]))),
     overlapping_var_names = overlapping_var_names,
     nonoverlapping_var_names = nonoverlapping_var_names,
     msg = paste0("The following columns are not equal:\n",
-                 paste0(df$name, ": ", df$first_diff, " (", df$nr_diff, " differences, max diff: ", df$max_diff, ")\n", collapse = ""),
+                 paste0(df[["name"]], ": ", df[["first_diff"]], " (", df[["nr_diff"]], " differences, max diff: ", df[["max_diff"]], ")\n", collapse = ""),
                  "\n"),
     prop1 = prop1,
     prop2 = prop2,
@@ -543,11 +567,11 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #' @inheritParams build
 #' @inheritParams simulate
 #' @param n Number of simulations to run in the ensemble. When range is specified, n defines the number of simulations to run per condition. If each condition only needs to be run once, set n = 1. Defaults to 10.
-#' @param threaded If TRUE, run the simulation on multiple threads. The number of threads is taken from the use_julia() argument JULIA_NUM_THREADS, which defaults to four. Defaults to TRUE.
 #' @param return_sims If TRUE, return the individual simulations in the ensemble. Set to FALSE to save memory. Defaults to FALSE.
 #' @param range List of ranges to vary parameters in the ensemble. Only stocks and constants can be specified. All ranges have to be of the same length if cross = FALSE. Defaults to NULL.
 #' @param cross If TRUE, cross the parameters in the range list to generate all possible combinations of parameters. Defaults to TRUE.
 #' @param quantiles Quantiles to calculate in the summary, e.g. c(0.025, 0.975).
+#' @param threaded If TRUE, run the simulation on multiple threads. The number of threads is taken from the use_julia() argument JULIA_NUM_THREADS, which defaults to four. Defaults to TRUE.
 #'
 #' @returns Object of class sdbuildR_ensemble, which is a list containing:
 #' \describe{
@@ -629,15 +653,15 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #'
 ensemble = function(sfm,
                     n = 10,
-                    threaded = TRUE,
                     return_sims = FALSE,
                     range = NULL,
                     cross = TRUE,
                     quantiles = c(0.025, 0.975),
+                    threaded = TRUE,
+                    only_stocks = TRUE,
                     keep_nonnegative_flow = TRUE,
                     keep_nonnegative_stock = FALSE,
                     keep_unit = TRUE,
-                    only_stocks = TRUE,
                     verbose = TRUE
 ){
 
@@ -718,7 +742,7 @@ ensemble = function(sfm,
     # All varied elements must exist in the model
     names_df = get_names(sfm)
     names_range = names(range)
-    idx = names_range %in% names_df$name
+    idx = names_range %in% names_df[["name"]]
     if (any(!idx)){
       stop(paste0("The following names in range do not exist in the model: ",
                   paste0(names_range[!idx], collapse = ", ")))

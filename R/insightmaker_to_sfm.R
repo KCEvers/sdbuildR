@@ -53,8 +53,8 @@ insightmaker_to_sfm = function(URL,
     if (is_valid_URL){
       # URL to .InsightMaker file
       URL_XML = url_to_IM(URL, filepath_IM, directory)
-      header_info = URL_XML$header_info
-      filepath_IM = URL_XML$filepath_IM # File path may have been overwritten
+      header_info = URL_XML[["header_info"]]
+      filepath_IM = URL_XML[["filepath_IM"]] # File path may have been overwritten
     } else {
       stop("This is not a URL to an Insight Maker model!")
     }
@@ -77,11 +77,11 @@ insightmaker_to_sfm = function(URL,
 
   # Add header information
   if (length(header_info) > 0){
-    sfm$header$author = header_info[["model_author_name"]]
-    sfm$header$name = header_info[["model_title"]]
-    sfm$header$caption = header_info[["model_description"]]
-    sfm$header$version = header_info[["model_version"]]
-    sfm$header$InsightMaker_id = header_info[["model_id"]]
+    sfm[["header"]][["author"]] = header_info[["model_author_name"]]
+    sfm[["header"]][["name"]] = header_info[["model_title"]]
+    sfm[["header"]][["caption"]] = header_info[["model_description"]]
+    sfm[["header"]][["version"]] = header_info[["model_version"]]
+    sfm[["header"]][["InsightMaker_id"]] = header_info[["model_id"]]
   }
 
   # Clean up units
@@ -122,7 +122,7 @@ insightmaker_to_sfm = function(URL,
   unit_strings = find_unit_strings(sfm)
   df = as.data.frame(sfm, type = c("stock", "aux", "constant", "gf"))
 
-  if (length(delayN_smoothN) > 0 | length(delay_past) > 0 | length(unit_strings) > 0 | length(sfm$model_units) > 0 | any(df$units != "1")){
+  if (length(delayN_smoothN) > 0 | length(delay_past) > 0 | length(unit_strings) > 0 | length(sfm[["model_units"]]) > 0 | any(df[["units"]] != "1")){
     sfm = sfm %>% sim_specs(language = "Julia")
   }
 

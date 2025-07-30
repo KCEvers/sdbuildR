@@ -68,7 +68,7 @@ test_that("ensemble works", {
   expect_no_error(plot(sims, type = "sims", i = nr_sims - 1))
   expect_no_error(plot(sims, type = "sims"))
   expect_no_error(plot(sims, central_tendency = "median"))
-  expect_error(plot(sims, central_tendency = "medians"), "central_tendency must be one of 'mean' or 'median'")
+  expect_error(plot(sims, central_tendency = "medians"), "central_tendency must be 'mean', 'median', or FALSE")
 
 
   # Message printed
@@ -97,6 +97,37 @@ test_that("ensemble works", {
   expect_equal(as.data.frame(sims$constants)$j, rep(1:3, each = 10))
 
 
+})
+
+
+test_that("plotting ensemble also works with singular time point", {
+
+  # If you already have random elements in the model, no need to specify what to vary
+  sfm = xmile("predator-prey") %>% sim_specs(language = "Julia",
+                                             start = 0, stop = 50,
+                                             dt = .1,
+                                             save_from = 50) %>%
+    build(c("predator", "prey"), eqn = "runif(1)")
+  sims = ensemble(sfm)
+
+  expect_equal(length(unique(sims$summary$time)), 1)
+
+  expect_no_error(plot(sims))
+  expect_no_warning(plot(sims))
+  expect_no_message(plot(sims))
+
+  # with sims
+  sims = ensemble(sfm, return_sims = T)
+
+  expect_equal(length(unique(sims$summary$time)), 1)
+
+  expect_no_error(plot(sims))
+  expect_no_warning(plot(sims))
+  expect_no_message(plot(sims))
+
+  expect_no_error(plot(sims, type = "sims"))
+  expect_no_warning(plot(sims, type = "sims"))
+  expect_no_message(plot(sims, type = "sims"))
 })
 
 

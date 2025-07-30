@@ -2,7 +2,7 @@
 % Please edit documentation in R/custom_func.R
 \name{round_IM}
 \alias{round_IM}
-\title{Convert Insight Maker's Round() function to R}
+\title{Equivalent of Insight Maker's Round() function to R}
 \usage{
 round_IM(x, digits = 0)
 }

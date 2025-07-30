@@ -136,6 +136,20 @@ test_that("flow cannot have same stock as to and from", {
 })
 
 
+test_that("add and change variable with build() simultaneously", {
+  sfm = xmile() %>%
+    build("a", "stock")
+
+  expect_error(sfm %>% build(c("a", "b"), eqn = 10), "The variable b does not exist in your model")
+  sfm = expect_no_error(sfm %>% build(c("a", "b"), "stock", eqn = 10))
+  expect_equal(sort(get_names(sfm)[["name"]]), c("a", "b"))
+  expect_equal(sfm$model$variables$stock$a$eqn, "10")
+  expect_equal(sfm$model$variables$stock$b$eqn, "10")
+
+})
+
+
+
 test_that("overwriting to and from of a flow works", {
 
   sfm = xmile() %>% build("a", "stock") %>%
@@ -219,7 +233,6 @@ test_that("change_name and change_type in build()", {
   sfm = xmile() %>% build("abc", "aux", eqn = "def") %>% build("abc", "aux")
   expect_equal(sfm$model$variables$aux$abc$eqn, "def")
 
-
   # Check that change_name updates delay equation -> also important for change_type!
   sfm = xmile() %>% build("abc", "aux", eqn = "delayN(a, 10, 2)") %>% build("abc", change_name = "xyz")
   expect_equal(sfm$model$variables$aux$abc, NULL)
@@ -269,10 +282,22 @@ test_that("change_name and change_type in build()", {
   expect_equal(grepl("predator", df[df$name == "prey_deaths", "eqn"]), FALSE)
 
 
+  # Check that no message or warning is thrown
+  sfm = xmile() %>%
+    build("a", "aux")
+
+  expect_no_error(sfm %>% build("a", change_type = "flow", from = "b"))
+  expect_no_warning(sfm %>% build("a", change_type = "flow", from = "b"))
+  expect_no_message(sfm %>% build("a", change_type = "flow", from = "b"))
+
+  # Check that label is retained
+  sfm = sfm %>% build("a", change_type = "flow", label = "B")
+  expect_equal(sfm$model$variables$flow$a$label, "B")
+
 })
 
 
-#
+
 # test_that("units in eqn, min, max are cleaned in build()", {
 #
 #   # Check whether units in u() are cleaned
@@ -605,6 +630,14 @@ test_that("model_units() works", {
 })
 
 
+test_that("find_dependencies works", {
+
+  sfm = xmile("SIR")
+  expect_no_error(find_dependencies(sfm))
+  expect_no_message(find_dependencies(sfm))
+
+})
+
 
 test_that("unique unit names in model_units()", {
 
@@ -828,11 +861,28 @@ test_that("get_build_code() works", {
   expect_no_error(get_build_code(xmile()))
   expect_no_message(get_build_code(xmile()))
 
-  expect_no_error(get_build_code(xmile("SIR")))
-  expect_no_message(get_build_code(xmile("SIR")))
+  for (s in c("SIR", "Crielaard2022")){
 
-  expect_no_error(get_build_code(xmile("Crielaard2022")))
-  expect_no_message(get_build_code(xmile("Crielaard2022")))
+    # Replicate with get_build_code
+    sfm = xmile(s)
+
+    if (s == "Crielaard2022"){
+      sfm = sfm %>%
+        build(c("Food_intake", "Hunger", "Compensatory_behaviour"), eqn = c(.5, .3, .1))
+    }
+
+    sim1 = simulate(sfm)
+    script = expect_no_error(get_build_code(sfm))
+    script = expect_no_message(get_build_code(sfm))
+
+    # Create a new environment to collect variables
+    envir <- new.env()
+    expect_no_error(eval(parse(text = script), envir = envir))
+    expect_no_message(eval(parse(text = script), envir = envir))
+    sfm2 = envir[["sfm"]]
+    sim2 = simulate(sfm2)
+    expect_identical(sim1$df$value, sim2$df$value)
+  }
 
 })
 

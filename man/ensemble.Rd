@@ -7,15 +7,15 @@
 ensemble(
   sfm,
   n = 10,
-  threaded = TRUE,
   return_sims = FALSE,
   range = NULL,
   cross = TRUE,
   quantiles = c(0.025, 0.975),
+  threaded = TRUE,
+  only_stocks = TRUE,
   keep_nonnegative_flow = TRUE,
   keep_nonnegative_stock = FALSE,
   keep_unit = TRUE,
-  only_stocks = TRUE,
   verbose = TRUE
 )
 }
@@ -23,8 +23,6 @@ ensemble(
 \item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
 
 \item{n}{Number of simulations to run in the ensemble. When range is specified, n defines the number of simulations to run per condition. If each condition only needs to be run once, set n = 1. Defaults to 10.}
-
-\item{threaded}{If TRUE, run the simulation on multiple threads. The number of threads is taken from the use_julia() argument JULIA_NUM_THREADS, which defaults to four. Defaults to TRUE.}
 
 \item{return_sims}{If TRUE, return the individual simulations in the ensemble. Set to FALSE to save memory. Defaults to FALSE.}
 
@@ -34,13 +32,15 @@ ensemble(
 
 \item{quantiles}{Quantiles to calculate in the summary, e.g. c(0.025, 0.975).}
 
+\item{threaded}{If TRUE, run the simulation on multiple threads. The number of threads is taken from the use_julia() argument JULIA_NUM_THREADS, which defaults to four. Defaults to TRUE.}
+
+\item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.}
+
 \item{keep_nonnegative_flow}{If TRUE, keeps original non-negativity setting of flows. Defaults to TRUE.}
 
 \item{keep_nonnegative_stock}{If TRUE, keeps original non-negativity setting of stocks Defaults to TRUE.}
 
 \item{keep_unit}{If TRUE, keeps units of variables. Defaults to TRUE.}
-
-\item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.}
 
 \item{verbose}{If TRUE, update on progress. Defaults to FALSE.}
 }
