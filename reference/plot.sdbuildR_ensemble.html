@@ -58,7 +58,8 @@
 <span>  font_family <span class="op">=</span> <span class="st">"Times New Roman"</span>,</span>
 <span>  font_size <span class="op">=</span> <span class="fl">16</span>,</span>
 <span>  wrap_width <span class="op">=</span> <span class="fl">25</span>,</span>
-<span>  central_tendency <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"median"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span>
+<span>  central_tendency <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"median"</span>, <span class="cn">FALSE</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span>
+<span>  central_tendency_width <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -116,7 +117,11 @@
 
 
 <dt id="arg-central-tendency">central_tendency<a class="anchor" aria-label="anchor" href="#arg-central-tendency"></a></dt>
-<dd><p>Central tendency to use for the mean line. Either "mean" or "median". Defaults to "mean".</p></dd>
+<dd><p>Central tendency to use for the mean line. Either "mean", "median", or FALSE to not plot the central tendency. Defaults to "mean".</p></dd>
+
+
+<dt id="arg-central-tendency-width">central_tendency_width<a class="anchor" aria-label="anchor" href="#arg-central-tendency-width"></a></dt>
+<dd><p>Line width of central tendency. Defaults to 3.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

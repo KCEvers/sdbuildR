@@ -70,6 +70,7 @@
 <code><a href="as.data.frame.sdbuildR_xmile.html">as.data.frame.sdbuildR_xmile</a>()</code>,
 <code><a href="build.html">build</a>()</code>,
 <code><a href="debugger.html">debugger</a>()</code>,
+<code><a href="find_dependencies.html">find_dependencies</a>()</code>,
 <code><a href="header.html">header</a>()</code>,
 <code><a href="macro.html">macro</a>()</code>,
 <code><a href="plot.sdbuildR_xmile.html">plot.sdbuildR_xmile</a>()</code>,
@@ -85,18 +86,18 @@
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Please install it if you want to see colored output or see</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> `?styler::print.vertical()` for more information.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> sfm &lt;- xmile() %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   sim_specs(stop = "20.0", save_at = "0.01", save_from = "0.0", seed = NULL) %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   header(name = "Susceptible-Infected-Recovered (SIR)", caption = "My Model Description", created = Sys.time(), author = "Me", version = "1.0", URL = "", doi = "") %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   build("Susceptible", "stock", eqn = "99999") %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   build("Infected", "stock", eqn = "1") %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   build("Recovered", "stock") %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   build("Total_Population", "constant", eqn = "100000") %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   build("Effective_Contact_Rate", "constant", eqn = "2") %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   build("Delay", "constant", eqn = "2") %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   build("Beta", "aux", eqn = "Effective_Contact_Rate / Total_Population") %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   build("Lambda", "aux", eqn = "Beta * Infected") %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   build("Infection_Rate", "flow", eqn = "Susceptible * Lambda") %&gt;%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   build("Recovery_Rate", "flow", eqn = "Infected / Delay")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   sim_specs(method = "euler", start = "0.0", stop = "20.0", dt = "0.01", save_at = "0.01", save_from = "0.0", seed = NULL, time_units = "s", language = "R") %&gt;%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   header(name = "Susceptible-Infected-Recovered (SIR)", created = "2025-07-30 07:28:06.750176") %&gt;%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Susceptible", type = "stock", eqn = "99999", label = "Susceptible") %&gt;%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Infected", type = "stock", eqn = "1", label = "Infected") %&gt;%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Recovered", type = "stock", label = "Recovered") %&gt;%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Total_Population", type = "constant", eqn = "100000", label = "Total_Population") %&gt;%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Effective_Contact_Rate", type = "constant", eqn = "2", label = "Effective_Contact_Rate") %&gt;%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Delay", type = "constant", eqn = "2", label = "Delay") %&gt;%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Beta", type = "aux", eqn = "Effective_Contact_Rate / Total_Population", label = "Beta") %&gt;%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Lambda", type = "aux", eqn = "Beta * Infected", label = "Lambda") %&gt;%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Infection_Rate", type = "flow", eqn = "Susceptible * Lambda", to = "Infected", from = "Susceptible", label = "Infection_Rate") %&gt;%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Recovery_Rate", type = "flow", eqn = "Infected / Delay", to = "Recovered", from = "Infected", label = "Recovery_Rate")</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
