@@ -66,22 +66,21 @@ Object of class sdbuildR_ensemble, which is a list containing:
 Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in \code{range}. By default, the ensemble is run in parallel using multiple threads. The results are returned as a dataframe with summary statistics and optionally individual simulations.
 }
 \details{
-To run large simulations, it is recommended to limit the output size by saving fewer values. Note that if specified, the seed in sim_specs() is ignored for ensemble simulations.
+To run large simulations, it is recommended to limit the output size by saving fewer values. To create a reproducible ensemble simulation, set a seed using sim_specs().
 
-If you do not see any variation within one condition of the ensemble (i.e. the confidence bands are very narrow), there are likely no random elements in your model. Without these, there can be no variability within a condition. Try specifying a random initial condition or adding randomness to other model elements.
+If you do not see any variation within a condition of the ensemble (i.e. the confidence bands are virtually non-existent), there are likely no random elements in your model. Without these, there can be no variability in the model. Try specifying a random initial condition or adding randomness to other model elements.
 }
 \examples{
 # Load example and set simulation language to Julia
-sfm = xmile("predator-prey") \%>\% sim_specs(language = "Julia")
+sfm = sim_specs(xmile("predator-prey"), language = "Julia")
 
 # Set random initial conditions
-sfm = sfm \%>\%
- build(c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
+sfm = build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
 
 # For ensemble simulations, it is highly recommended to reduce the
 # returned output. For example, to save only every 1 time units and discard
 # the first 100 time units, use:
-sfm = sfm \%>\% sim_specs(save_at = 1, save_from = 100)
+sfm = sim_specs(sfm, save_at = 1, save_from = 100)
 
 # Run ensemble simulation with 100 simulations
 sims = ensemble(sfm, n = 100)

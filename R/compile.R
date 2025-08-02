@@ -35,7 +35,7 @@
 #' plot(sim, add_constants = TRUE)
 #'
 #' # Use Julia for models with units or delay functions
-#' sfm = xmile("coffee_cup") %>% sim_specs(language = "Julia")
+#' sfm = sim_specs(xmile("coffee_cup"), language = "Julia")
 #' use_julia()
 #' sim = simulate(sfm)
 #' plot(sim)
@@ -44,7 +44,7 @@
 #' use_julia(stop = TRUE)
 #'
 simulate = function(sfm,
-                    format_code=TRUE,
+                    format_code = TRUE,
                     keep_nonnegative_flow = TRUE,
                     keep_nonnegative_stock = FALSE,
                     keep_unit = TRUE,
@@ -69,7 +69,7 @@ simulate = function(sfm,
 
     # Remove - deSolve is now a required installation
     # if (!requireNamespace("deSolve", quietly = TRUE)){
-    #   stop("deSolve is not installed! Please install deSolve to simulate in R,\nor simulate in Julia by setting\nsfm %>% sim_specs(language = 'Julia')")
+    #   stop("deSolve is not installed! Please install deSolve to simulate in R,\nor simulate in Julia by setting\nsfm |> sim_specs(language = 'Julia')")
     # }
 
     return(simulate_R(sfm,
@@ -79,7 +79,7 @@ simulate = function(sfm,
                       only_stocks = only_stocks,
                       verbose = verbose))
   } else {
-    stop("Language not supported.\nPlease run either sfm %>% sim_specs(language = 'Julia') (recommended) or sfm %>% sim_specs(language = 'R') (no unit support).")
+    stop("Language not supported.\nPlease run either sfm |> sim_specs(language = 'Julia') (recommended) or sfm |> sim_specs(language = 'R') (no unit support).")
   }
 
 }
@@ -105,14 +105,14 @@ detect_undefined_var = function(sfm){
 
   possible_func = c(possible_func_in_model,
                     get_syntax_julia()[["syntax_df"]][["R_first_iter"]],
-                    unlist(P),
+                    unlist(.sdbuildR_env[["P"]]),
                     # Remove base R names
                     "pi", "letters", "LETTERS",
                     "month.abb", "month.name")
 
   # Find references to variables which are not in names_df[["name"]]
-  missing_ref = unlist(sfm[["model"]][["variables"]], recursive = FALSE, use.names = FALSE) %>%
-    lapply(., function(x){
+  missing_ref = unlist(sfm[["model"]][["variables"]], recursive = FALSE, use.names = FALSE) |>
+    lapply(function(x){
 
       y = x[names(x) %in% c("eqn", "to", "from")]
       y = y[sapply(y, is_defined)]
@@ -155,14 +155,7 @@ detect_undefined_var = function(sfm){
         prop = names(x)[j]
         paste0("- ", name, "$", prop, ": ", paste0(unname(y), collapse = ", "))
       })
-    }) %>% unlist() %>% unname()
-
-    # missing_ref_format = missing_ref %>%
-    #   purrr::imap(function(x, name){
-    #   purrr::imap(x, function(y, prop){
-    #     paste0("- ", name, "$", prop, ": ", paste0(unname(y), collapse = ", "))
-    #   })
-    # }) %>% unlist() %>% unname()
+    }) |> unlist() |> unname()
 
     return(list(issue = TRUE,
                 msg = paste0(c("The properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes.",
@@ -217,11 +210,11 @@ topological_sort = function(dependencies_dict){
       edge <- cbind(dependencies[[i]], rep(eq_names[i], length(dependencies[[i]])))
     }
     return(edge)
-  }) %>% do.call(rbind, .) %>% magrittr::set_rownames(NULL) %>%
+  }) |> do.call(rbind, args = _) |> magrittr::set_rownames(NULL) |>
     # Turn into vector by row
     as.data.frame()
   edges = edges[!duplicated(edges), ] # Remove duplicates
-  edges = as.matrix(edges) %>% t() %>% c()
+  edges = as.matrix(edges) |> t() |> c()
 
   edges
 
@@ -231,7 +224,7 @@ topological_sort = function(dependencies_dict){
   # Get correct order using topological sort
   out = tryCatch(
     {
-      list(order = igraph::topo_sort(g, mode = "out") %>% names(.), issue = FALSE, msg = "")
+      list(order = igraph::topo_sort(g, mode = "out") |> names(), issue = FALSE, msg = "")
     }, error = function(msg){
       # print("Something went wrong when attempting to order the equations in your ODE, which may be because of circular definition (e.g. x = y, y = x). The correct order is important as e.g. for x = 1/a, a needs to be defined before x. Please check the order manually.")
       out = circularity(g)
@@ -413,10 +406,10 @@ order_equations <- function(sfm, print_msg = TRUE){
 
   # Add .outflow to detect delayed variables
   var_names = unique(get_model_var(sfm))
-  idx_delay = grepl(paste0(P[["delayN_suffix"]], "[0-9]+$|",
-                           P[["smoothN_suffix"]], "[0-9]+$"), var_names)
+  idx_delay = grepl(paste0(.sdbuildR_env[["P"]][["delayN_suffix"]], "[0-9]+$|",
+                           .sdbuildR_env[["P"]][["smoothN_suffix"]], "[0-9]+$"), var_names)
   delay_var = var_names[idx_delay]
-  delay_pattern = paste0(var_names[idx_delay], stringr::str_escape(P[["outflow_suffix"]]))
+  delay_pattern = paste0(var_names[idx_delay], stringr::str_escape(.sdbuildR_env[["P"]][["outflow_suffix"]]))
 
   # Separate auxiliary variables into static parameters and dynamically updated auxiliaries
   dependencies = lapply(sfm[["model"]][["variables"]], function(y){
@@ -450,7 +443,7 @@ order_equations <- function(sfm, print_msg = TRUE){
   # Topological sort of static equations
   static_dependencies_dict = c(dependencies[["gf"]],
                                dependencies[["constant"]],
-                               dependencies[["stock"]]) %>%
+                               dependencies[["stock"]]) |>
     purrr::list_flatten()
 
   static = topological_sort(static_dependencies_dict)
@@ -461,7 +454,7 @@ order_equations <- function(sfm, print_msg = TRUE){
 
   # Topological ordering
   dependencies_dict = c(dependencies[["aux"]],
-                        dependencies[["flow"]]) %>%
+                        dependencies[["flow"]]) |>
     purrr::list_flatten()
   dynamic = topological_sort(dependencies_dict)
   if (print_msg & dynamic[["issue"]]){
@@ -498,11 +491,11 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
   }
 
   get_prop = function(sim){
-    list(colnames = colnames(sim[[P[["sim_df_name"]]]]),
-         var_names = unique(sim[[P[["sim_df_name"]]]][["variable"]]),
-         nrow = nrow(sim[[P[["sim_df_name"]]]]),
-         ncol = ncol(sim[[P[["sim_df_name"]]]]),
-         n_pars = length(sim[[P[["parameter_name"]]]]),
+    list(colnames = colnames(sim[[.sdbuildR_env[["P"]][["sim_df_name"]]]]),
+         var_names = unique(sim[[.sdbuildR_env[["P"]][["sim_df_name"]]]][["variable"]]),
+         nrow = nrow(sim[[.sdbuildR_env[["P"]][["sim_df_name"]]]]),
+         ncol = ncol(sim[[.sdbuildR_env[["P"]][["sim_df_name"]]]]),
+         n_pars = length(sim[[.sdbuildR_env[["P"]][["parameter_name"]]]]),
          language = sim[["sfm"]][["sim_specs"]][["language"]],
          method = sim[["sfm"]][["sim_specs"]][["method"]]
     )
@@ -536,8 +529,8 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
   df = lapply(overlapping_var_names,
               function(name){c(name = name,
                                check_diff(sim1[["df"]][sim1[["df"]][["variable"]] == name, "value"],
-                                          sim2[["df"]][sim2[["df"]][["variable"]] == name, "value"]))}) %>%
-    do.call(dplyr::bind_rows, .) %>%
+                                          sim2[["df"]][sim2[["df"]][["variable"]] == name, "value"]))}) |>
+    do.call(dplyr::bind_rows, args = _) |>
     as.data.frame()
 
   return(list(
@@ -560,9 +553,9 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #'
 #' Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in `range`. By default, the ensemble is run in parallel using multiple threads. The results are returned as a dataframe with summary statistics and optionally individual simulations.
 #'
-#' To run large simulations, it is recommended to limit the output size by saving fewer values. Note that if specified, the seed in sim_specs() is ignored for ensemble simulations.
+#' To run large simulations, it is recommended to limit the output size by saving fewer values. To create a reproducible ensemble simulation, set a seed using sim_specs().
 #'
-#' If you do not see any variation within one condition of the ensemble (i.e. the confidence bands are very narrow), there are likely no random elements in your model. Without these, there can be no variability within a condition. Try specifying a random initial condition or adding randomness to other model elements.
+#' If you do not see any variation within a condition of the ensemble (i.e. the confidence bands are virtually non-existent), there are likely no random elements in your model. Without these, there can be no variability in the model. Try specifying a random initial condition or adding randomness to other model elements.
 #'
 #' @inheritParams build
 #' @inheritParams simulate
@@ -595,16 +588,15 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #'
 #' @examples
 #'# Load example and set simulation language to Julia
-#'sfm = xmile("predator-prey") %>% sim_specs(language = "Julia")
+#'sfm = sim_specs(xmile("predator-prey"), language = "Julia")
 #'
 #'# Set random initial conditions
-#'sfm = sfm %>%
-#'  build(c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
+#'sfm = build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
 #'
 #'# For ensemble simulations, it is highly recommended to reduce the
 #'# returned output. For example, to save only every 1 time units and discard
 #'# the first 100 time units, use:
-#'sfm = sfm %>% sim_specs(save_at = 1, save_from = 100)
+#'sfm = sim_specs(sfm, save_at = 1, save_from = 100)
 #'
 #'# Run ensemble simulation with 100 simulations
 #'sims = ensemble(sfm, n = 100)
@@ -646,7 +638,7 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #'sims = ensemble(sfm, n = 10, threaded = FALSE)
 #'
 #'# To run simulations with more threads than the default, set e.g.:
-#'use_julia(JULIA_NUM_THREADS = 10)
+#' use_julia(JULIA_NUM_THREADS = 10)
 #'
 #' # Close Julia
 #' use_julia(stop = TRUE)
@@ -676,7 +668,7 @@ ensemble = function(sfm,
   # argg[c("sfm")] = NULL
 
   if (tolower(sfm[["sim_specs"]][["language"]]) != "julia"){
-    stop("Ensemble simulations are only supported for Julia models. Please set sfm %>% sim_specs(language = 'Julia').")
+    stop("Ensemble simulations are only supported for Julia models. Please set sfm |> sim_specs(language = 'Julia').")
   }
 
   if (!is.numeric(n)){
@@ -835,13 +827,13 @@ ensemble = function(sfm,
     file.remove(filepath)
 
     # Read the total number of simulations
-    n = JuliaConnectoR::juliaEval(P[["ensemble_n"]])
-    n_total = JuliaConnectoR::juliaEval(P[["ensemble_total_n"]])
+    n = JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["ensemble_n"]])
+    n_total = JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["ensemble_total_n"]])
 
     # Read the ensemble conditions
     if (!is.null(ensemble_pars[["range"]])){
 
-      conditions = JuliaConnectoR::juliaEval(paste0("Matrix(hcat(", P[["ensemble_pars"]], "...)')"))
+      conditions = JuliaConnectoR::juliaEval(paste0("Matrix(hcat(", .sdbuildR_env[["P"]][["ensemble_pars"]], "...)')"))
       colnames(conditions) = names(ensemble_pars[["range"]])
       conditions = cbind(j = 1:nrow(conditions), conditions)
 
@@ -852,12 +844,12 @@ ensemble = function(sfm,
     }
 
     # Read the constants
-    constants = JuliaConnectoR::juliaEval(P[["parameter_name"]])
-    colnames(constants) = c("j", "i", JuliaConnectoR::juliaEval(P[["parameter_names"]]))
+    constants = JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_name"]])
+    colnames(constants) = c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_names"]]))
 
     # Read the initial values of stocks
-    init = JuliaConnectoR::juliaEval(P[["initial_value_name"]])
-    colnames(init) = c("j", "i", JuliaConnectoR::juliaEval(P[["initial_value_names"]]))
+    init = JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_name"]])
+    colnames(init) = c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_names"]]))
 
     # Read the simulation results
     if (return_sims){
@@ -885,15 +877,15 @@ ensemble = function(sfm,
          init = init,
          constants = constants,
          script = script,
-         duration = end_t - start_t) %>% utils::modifyList(argg) %>%
-      structure(., class = "sdbuildR_ensemble")
+         duration = end_t - start_t) |> utils::modifyList(argg) |>
+      structure(class = "sdbuildR_ensemble")
 
   },
   error = function(e) {
     warning("\nAn error occurred while running the Julia script.")
     list(success = FALSE, error_message = e[["message"]],
-         script = script) %>% utils::modifyList(argg) %>%
-      structure(., class = "sdbuildR_ensemble")
+         script = script) |> utils::modifyList(argg) |>
+      structure(class = "sdbuildR_ensemble")
   })
 
 

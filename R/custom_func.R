@@ -210,8 +210,8 @@ substr_i = function(string, idxs){
 #' # c
 #' # 3
 filter_IM = function(y, condition_func){
-  purrr::map2(y, names(y), function(x,key){if (condition_func(x, key)){return(x)}}) %>%
-    purrr::compact() %>% unlist()
+  purrr::map2(y, names(y), function(x,key){if (condition_func(x, key)){return(x)}}) |>
+    purrr::compact() |> unlist()
 }
 
 
@@ -232,16 +232,16 @@ filter_IM = function(y, condition_func){
 #' @seealso [step()], [pulse()], [seasonal()]
 #' @examples
 #' # Create a simple model with a ramp function
-#' sfm = xmile() %>%
-#' build("a", "stock") %>%
-#' build("input", "constant", eqn = "ramp(20, 30, 3)") %>%
+#' sfm = xmile() |>
+#' build("a", "stock") |>
+#' build("input", "constant", eqn = "ramp(20, 30, 3)") |>
 #' build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
 #' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
 #' # To create a decreasing ramp, set the height to a negative value
-#' sfm = sfm %>%
+#' sfm = sfm |>
 #' build("input", eqn = "ramp(20, 30, -3)")
 #'
 #' sim = simulate(sfm, only_stocks = FALSE)
@@ -258,8 +258,8 @@ ramp <- function(start, finish, height = 1){
                       y = c(0, height))
 
   # If the ramp is after the start of signal, add a zero at the start
-  if (min(start) > times[1]){
-    signal = rbind(data.frame(times = times[1], y = 0), signal)
+  if (min(start) > .sdbuildR_env[["times"]][1]){
+    signal = rbind(data.frame(times = .sdbuildR_env[["times"]][1], y = 0), signal)
   }
 
   # # If the ramp ends before the end of the signal, add height of ramp at the end
@@ -293,16 +293,16 @@ ramp <- function(start, finish, height = 1){
 #' # Create a simple model with a pulse function
 #' # that starts at time 5, jumps to a height of 2
 #' # with a width of 1, and does not repeat
-#' sfm = xmile() %>%
-#'   build("a", "stock") %>%
-#'   build("input", "constant", eqn = "pulse(5, 2, 1)") %>%
+#' sfm = xmile() |>
+#'   build("a", "stock") |>
+#'   build("input", "constant", eqn = "pulse(5, 2, 1)") |>
 #'   build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
 #' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
 #' # Create a pulse that repeats every 5 time units
-#' sfm = sfm %>%
+#' sfm = sfm |>
 #'   build("input", eqn = "pulse(5, 2, 1, 5)")
 #'
 #' sim = simulate(sfm, only_stocks = FALSE)
@@ -311,14 +311,14 @@ ramp <- function(start, finish, height = 1){
 pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 
   if (width <= 0){
-    stop(paste0("The width of the pulse cannot be equal to or less than 0; to indicate an 'instantaneous' pulse, specify the simulation step size (", P[["timestep_name"]], ")"))
+    stop(paste0("The width of the pulse cannot be equal to or less than 0; to indicate an 'instantaneous' pulse, specify the simulation step size (", .sdbuildR_env[["P"]][["timestep_name"]], ")"))
   }
 
   # Define time and indices of pulses
-  start_ts = seq(start, times[length(times)],
+  start_ts = seq(start, .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])],
                  # If the number of repeat is NULL, ensure no repeats
                  by = ifelse(is.null(repeat_interval),
-                             times[length(times)] + 1,
+                             .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])] + 1,
                              repeat_interval))
   end_ts = start_ts + width
 
@@ -327,14 +327,14 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
         data.frame(times = end_ts, y = 0))
 
   # If pulse is after the start of signal, add a zero at the start
-  if (min(start_ts) > times[1]){
-    signal = rbind(signal, data.frame(times = times[1], y = 0))
+  if (min(start_ts) > .sdbuildR_env[["times"]][1]){
+    signal = rbind(signal, data.frame(times = .sdbuildR_env[["times"]][1], y = 0))
   }
 
   # If pulse does not cover end of signal, add a zero at the end
   # (I don't fully understand why this is necessary, but otherwise it gives incorrect results with repeat_interval <= 0 in Julia, so for consistency's sake)
-  if (max(end_ts) < times[length(times)]){
-    signal = rbind(signal, data.frame(times = times[length(times)], y = 0))
+  if (max(end_ts) < .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])]){
+    signal = rbind(signal, data.frame(times = .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])], y = 0))
   }
 
   signal = signal[order(signal[["times"]]), ]
@@ -363,26 +363,26 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 #' @examples
 #' # Create a simple model with a step function
 #' # that jumps at time 50 to a height of 5
-#' sfm = xmile() %>%
-#' build("a", "stock") %>%
-#' build("input", "constant", eqn = "step(50, 5)") %>%
+#' sfm = xmile() |>
+#' build("a", "stock") |>
+#' build("input", "constant", eqn = "step(50, 5)") |>
 #' build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
 #' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
 #' # Negative heights are also possible
-#' sfm = sfm %>% build("input", eqn = "step(50, -10)")
+#' sfm = sfm |> build("input", eqn = "step(50, -10)")
 #'
 #' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 step <- function(start, height = 1){
 
   # Create dataframe with signal
-  signal = data.frame(times = c(start, times[length(times)]), y = c(height, height))
+  signal = data.frame(times = c(start, .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])]), y = c(height, height))
 
-  if (start > times[1]){
-    signal = rbind(data.frame(times = times[1], y = 0), signal)
+  if (start > .sdbuildR_env[["times"]][1]){
+    signal = rbind(data.frame(times = .sdbuildR_env[["times"]][1], y = 0), signal)
   }
 
   # Create linear approximation function
@@ -407,9 +407,9 @@ step <- function(start, height = 1){
 #'
 #' @examples
 #' # Create a simple model with a seasonal wave
-#' sfm = xmile() %>%
-#' build("a", "stock") %>%
-#' build("input", "constant", eqn = "seasonal(10, 0)") %>%
+#' sfm = xmile() |>
+#' build("a", "stock") |>
+#' build("input", "constant", eqn = "seasonal(10, 0)") |>
 #' build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
 #' sim = simulate(sfm, only_stocks = FALSE)
@@ -422,8 +422,8 @@ seasonal = function(period = 1, shift = 0){
   }
 
   # Create linear approximation function - define wave in advance so that the period and shift argument do not need to be kept
-  signal = cos(2 * pi * (times - shift) / period)
-  input = stats::approxfun(x = times, y = signal, rule = 2, method = "linear")
+  signal = cos(2 * pi * (.sdbuildR_env[["times"]] - shift) / period)
+  input = stats::approxfun(x = .sdbuildR_env[["times"]], y = signal, rule = 2, method = "linear")
   return(input)
 
 }

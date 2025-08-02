@@ -42,7 +42,7 @@ Updated stock-and-flow model.
 The header of a stock-and-flow model contains metadata about the model, such as the name, author, and version. Modify the header of an existing model with standard or custom properties.
 }
 \examples{
-sfm = xmile() \%>\%
+sfm = xmile() |>
   header(name = "My first model",
   caption = "This is my first model",
   author = "Kyra Evers",

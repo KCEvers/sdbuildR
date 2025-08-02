@@ -37,21 +37,12 @@ use_julia <- function(
     force = FALSE,
     force_install = FALSE, ...){
 
-  # # Ensure Julia session is stopped on exit
-  # # Necessary for correct clean up in devtools::check() of examples
-  # on.exit({
-  #   if (!stop){
-  #     options("initialization_sdbuildR" = NULL)
-  #     JuliaConnectoR::stopJulia()
-  #   }
-  # }, add = TRUE)
-
   if (stop){
-    options("initialization_sdbuildR" = NULL)
+    .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] = NULL
+    # options("initialization_sdbuildR" = NULL)
     JuliaConnectoR::stopJulia()
     return(invisible())
   }
-
 
   # Set number of Julia threads to use
   if (JULIA_NUM_THREADS > (parallel::detectCores() - 1)){
@@ -66,7 +57,7 @@ use_julia <- function(
 
 
   # Check whether use_julia() was run
-  if (!force & !force_install & !is.null(options()[["initialization_sdbuildR"]])){
+  if (!force & !force_install & !is.null(.sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]])){
     return(invisible())
   }
 
@@ -82,24 +73,6 @@ use_julia <- function(
     # Find Julia installation in the specified directory - account for users not exactly specifying \bin location
     JULIA_HOME0 = JULIA_HOME
     JULIA_HOME = dir(dirname(JULIA_HOME), pattern = "^bin$", full.names = TRUE)
-    # if (.Platform$OS.type == "unix") {
-    #   JULIA_HOME = dirname(list.files(
-    #     path = dirname(JULIA_HOME),
-    #     pattern = "julia$",
-    #     full.names = TRUE,
-    #     recursive = TRUE
-    #   ))
-    # } else if (.Platform$OS.type == "windows") {
-    #   JULIA_HOME = dirname(list.files(
-    #     path = dirname(JULIA_HOME),
-    #     pattern = "julia.exe$",
-    #     full.names = TRUE,
-    #     include.dirs = TRUE,
-    #     recursive = TRUE
-    #   ))
-    # } else {
-    #   stop("Unknown or unsupported OS")
-    # }
 
     if (length(JULIA_HOME) == 0){
       stop("No Julia installation found in ", JULIA_HOME0, ". Try use_julia() again without specifying JULIA_HOME to attempt to find it automatically.")
@@ -157,14 +130,6 @@ use_julia <- function(
     }
   }
 
-  # # Find set-up location for sdbuildR in Julia
-  # # sysimage_path = file.path(env_path, "Sysimage.so")
-  # julia <- JuliaCall::julia_setup(JULIA_HOME = JULIA_HOME, installJulia=FALSE,
-  #                                 install = FALSE, # Don't run - this installs dependencies into the global environment
-  #                                 force = force,
-  #                                 # sysimage_path = sysimage_path,
-  #                                 ...)
-
   # Set path to Julia executable
   Sys.setenv(JULIA_BINDIR = JULIA_HOME)
 
@@ -173,32 +138,32 @@ use_julia <- function(
 
   # Find set-up location for sdbuildR in Julia
   env_path <- system.file(package = "sdbuildR")
-  julia_pkg_path <- file.path(env_path, P[["jl_pkg_name"]])
+  julia_pkg_path <- file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]])
 
   # Check if the package is already developed to avoid redundant operations
   pkg_already_developed <- JuliaConnectoR::juliaEval(
-    paste0('using Pkg; "', P[["jl_pkg_name"]], '" in [pkg.name for pkg in values(Pkg.dependencies())]')
+    paste0('using Pkg; "', .sdbuildR_env[["P"]][["jl_pkg_name"]], '" in [pkg.name for pkg in values(Pkg.dependencies())]')
   )
 
   # Make sdbuildRUtils available to sdbuildR package environment
   if (!pkg_already_developed){
 
     # Navigate to Julia package directory
-    JuliaConnectoR::juliaEval(paste0('cd("', file.path(env_path, P[["jl_pkg_name"]]), '")'))
+    JuliaConnectoR::juliaEval(paste0('cd("', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
 
     # Activate the sdbuildR package environment
     JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, '")'))
 
     # Develop the package in the current environment
-    JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, P[["jl_pkg_name"]]), '")'))
+    JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
   }
 
   # Run initialization
   run_init()
 
   # Set global option of initialization
-  # options()[[P$init_sdbuildR]] = TRUE
-  options("initialization_sdbuildR" = TRUE)
+  # options("initialization_sdbuildR" = TRUE)
+  .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] = TRUE
 
   invisible()
 }
@@ -217,12 +182,7 @@ run_init = function(){
   env_path <- system.file(package = "sdbuildR")
 
   # Construct the Julia command to activate the environment and instantiate
-  # julia_cmd <- sprintf("using Pkg; Pkg.activate(\"%s\"); Pkg.instantiate()", env_path)
   julia_cmd <- sprintf("using Pkg; Pkg.activate(\"%s\")", env_path)
-
-  # Execute the command in Julia
-  # JuliaCall::julia_command(julia_cmd)
-  # JuliaCall::julia_source(file.path(env_path, "init.jl"))
 
   # Source the init.jl script
   JuliaConnectoR::juliaEval(julia_cmd)
@@ -258,24 +218,6 @@ create_julia_env = function(){
   # eltype(5) <: Unitful.Quantity # false
   # so we cannot use x::Number, but have to use x::Real
 
-  # # Add standard custom units
-  # unit_str = lapply(custom_units(),
-  #                   function(x){
-  #
-  #                     if (is_defined(x[["eqn"]])){
-  #                       unit_def = x[["eqn"]]
-  #                     } else {
-  #                       unit_def = "1"
-  #                     }
-  #
-  #                     paste0("@unit ", x[["name"]], " \"", x[["name"]], "\" ", x[["name"]], " u\"", unit_def, "\" ", ifelse(x[["prefix"]], "true", "false"))
-  #
-  #                   }) %>% paste0(collapse = sprintf("\n\tUnitful.register(%s)\n\t", P[["sdbuildR_units"]]))
-  #
-  # unit_str = paste0("\n\n# Define custom units; register after each unit as some units may be defined by other units\nmodule ", P[["sdbuildR_units"]], "\n\tusing Unitful\n\t",
-  #                   unit_str,
-  #                   "\n\tUnitful.register(", P[["sdbuildR_units"]], ")\nend\n\n", P[["unit_context"]], " = [Unitful.Unitful, ", P[["sdbuildR_units"]], "];\n\n")
-
   script = paste0(
       "# Load packages\n",
 # "using DifferentialEquations#: ODEProblem, solve, Euler, RK4, Tsit5\n",
@@ -290,11 +232,9 @@ create_julia_env = function(){
 "using DataInterpolations\n",
 "using Random\n",
 "using CSV\n",
-"using ", P[["jl_pkg_name"]], "\n",
-"using ", P[["jl_pkg_name"]], ".", P[["sdbuildR_units"]], "\n",
-"Unitful.register(", P[["jl_pkg_name"]], ".", P[["sdbuildR_units"]], ")\n",
-
-    # P[["unit_context"]], " = [Unitful.Unitful, ", P[["jl_pkg_name"]], ".", P[["sdbuildR_units"]], "];\n\n",
+"using ", .sdbuildR_env[["P"]][["jl_pkg_name"]], "\n",
+"using ", .sdbuildR_env[["P"]][["jl_pkg_name"]], ".", .sdbuildR_env[["P"]][["sdbuildR_units"]], "\n",
+"Unitful.register(", .sdbuildR_env[["P"]][["jl_pkg_name"]], ".", .sdbuildR_env[["P"]][["sdbuildR_units"]], ")\n",
 
     # # Required when extending a module’s function
     # #import Base: <, >, <=, >=, ==, != #, +, - #, *, /, ^
@@ -342,7 +282,7 @@ Base.ceil(x::Unitful.Quantity) = ceil(Unitful.ustrip.(x)) * Unitful.unit(x)
 Base.trunc(x::Unitful.Quantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)\n",
 
     # Add initialization of sdbuildR
-    paste0("\n", P[["init_sdbuildR"]], " = true"),
+    paste0("\n", .sdbuildR_env[["P"]][["init_sdbuildR"]], " = true"),
     collapse = "\n")
 
   # Write script
@@ -399,7 +339,7 @@ create_julia_pkg = function(){
   env_path <- system.file(package = "sdbuildR")
   JuliaConnectoR::juliaEval(paste0('cd("', env_path, '")'))
   JuliaConnectoR::juliaEval("using Pkg")
-  # JuliaConnectoR::juliaEval(paste0("Pkg.generate(\"", P[["jl_pkg_name"]], "\")"))
+  # JuliaConnectoR::juliaEval(paste0("Pkg.generate(\"", .sdbuildR_env[["P"]][["jl_pkg_name"]], "\")"))
   JuliaConnectoR::juliaEval("Pkg.instantiate()")
 
   # Specify the prefixes for each submodule
@@ -408,7 +348,7 @@ create_julia_pkg = function(){
     "custom_func" = "using Unitful\nusing DataInterpolations\nusing Distributions\nusing ..unit_func: convert_u\n",
     "delay" = "using Unitful\nusing ..custom_func: itp\nusing ..unit_func: convert_u\n",
     "clean" = "using Unitful\nusing DataFrames\nusing ..custom_func: itp, is_function_or_interp\n",
-    "ensemble" = "using Unitful\nusing Statistics\nusing DataFrames\n")
+    "ensemble" = "using Unitful\nusing Statistics\nusing DataFrames\nusing ..custom_func: is_function_or_interp\n")
 
 
   # Write all submodules
@@ -421,7 +361,7 @@ create_julia_pkg = function(){
                     "\nend")
 
     # Write script
-    filepath = file.path(env_path, P[["jl_pkg_name"]], "src", paste0(name, ".jl"))
+    filepath = file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]], "src", paste0(name, ".jl"))
     write_script(script, filepath)
   }
 
@@ -442,123 +382,46 @@ create_julia_pkg = function(){
                              " u\"", unit_def, "\" ",
                              ifelse(x[["prefix"]], "true", "false"))
 
-                    }) %>% paste0(collapse = sprintf("\n\tUnitful.register(%s)\n\t", P[["sdbuildR_units"]]))
+                    }) |> paste0(collapse = sprintf("\n\tUnitful.register(%s)\n\t", .sdbuildR_env[["P"]][["sdbuildR_units"]]))
 
-  script = paste0("# Define custom units; register after each unit as some units may be defined by other units\nmodule ", P[["sdbuildR_units"]], "\n\tusing Unitful\n\t",
+  script = paste0("# Define custom units; register after each unit as some units may be defined by other units\nmodule ", .sdbuildR_env[["P"]][["sdbuildR_units"]], "\n\tusing Unitful\n\t",
                   unit_str,
                   "\n\tUnitful.register(",
-                  P[["sdbuildR_units"]], ")\nend\n\n"
-                  # P[["unit_context"]], " = [Unitful.Unitful, ", P[["sdbuildR_units"]], "];\n\n"
+                  .sdbuildR_env[["P"]][["sdbuildR_units"]], ")\nend\n\n"
+                  # .sdbuildR_env[["P"]][["unit_context"]], " = [Unitful.Unitful, ", .sdbuildR_env[["P"]][["sdbuildR_units"]], "];\n\n"
   )
 
   # Write script
-  filepath = file.path(env_path, P[["jl_pkg_name"]], "src", paste0(P[["sdbuildR_units"]], ".jl"))
+  filepath = file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]], "src", paste0(.sdbuildR_env[["P"]][["sdbuildR_units"]], ".jl"))
   write_script(script, filepath)
-
-#   # Base extensions
-#   script = "# julia initialization for sdbuildR package
-# # Required when extending a module’s function
-# #import Base: <, >, <=, >=, ==, != #, +, - #, *, /, ^
-# module BaseExtensions
-#
-# using Unitful
-# # Extend base methods (multiple dispatch) to allow for comparison between a unit and a non-unit; if one of the arguments is a Unitful.Quantity, convert the other to the same unit.
-# Base.:<(x::Unitful.Quantity, y::Float64) = <(x, y * Unitful.unit(x))
-# Base.:<(x::Float64, y::Unitful.Quantity) = <(x * Unitful.unit(y), y)
-#
-# Base.:>(x::Unitful.Quantity, y::Float64) = >(x, y * Unitful.unit(x))
-# Base.:>(x::Float64, y::Unitful.Quantity) = >(x * Unitful.unit(y), y)
-#
-# Base.:(<=)(x::Unitful.Quantity, y::Float64) = <=(x, y * Unitful.unit(x))
-# Base.:(<=)(x::Float64, y::Unitful.Quantity) = <=(x * Unitful.unit(y), y)
-#
-# Base.:(>=)(x::Unitful.Quantity, y::Float64) = >=(x, y * Unitful.unit(x))
-# Base.:(>=)(x::Float64, y::Unitful.Quantity) = >=(x * Unitful.unit(y), y)
-#
-# Base.:(==)(x::Unitful.Quantity, y::Float64) = ==(x, y * Unitful.unit(x))
-# Base.:(==)(x::Float64, y::Unitful.Quantity) = ==(x * Unitful.unit(y), y)
-#
-# Base.:(!=)(x::Unitful.Quantity, y::Float64) = !=(x, y * Unitful.unit(x))
-# Base.:(!=)(x::Float64, y::Unitful.Quantity) = !=(x * Unitful.unit(y), y)
-#
-# Base.:%(x::Unitful.Quantity, y::Float64) = %(x, y * Unitful.unit(x))
-# Base.:%(x::Float64, y::Unitful.Quantity) = %(x * Unitful.unit(y), y)
-#
-# Base.mod(x::Unitful.Quantity, y::Float64) = mod(x, y * Unitful.unit(x))
-# Base.mod(x::Float64, y::Unitful.Quantity) = mod(x * Unitful.unit(y), y)
-#
-# Base.rem(x::Unitful.Quantity, y::Float64) = rem(x, y * Unitful.unit(x))
-# Base.rem(x::Float64, y::Unitful.Quantity) = rem(x * Unitful.unit(y), y)
-#
-# Base.min(x::Unitful.Quantity, y::Float64) = min(x, y * Unitful.unit(x))
-# Base.min(x::Float64, y::Unitful.Quantity) = min(x * Unitful.unit(y), y)
-#
-# Base.max(x::Unitful.Quantity, y::Float64) = max(x, y * Unitful.unit(x))
-# Base.max(x::Float64, y::Unitful.Quantity) = max(x * Unitful.unit(y), y)
-#
-# # Extend min/max: when applied to a single vector, use minimum, like in R
-# Base.min(v::AbstractVector) = minimum(v)
-# Base.max(v::AbstractVector) = maximum(v)
-#
-# Base.floor(x::Unitful.Quantity) = floor(Unitful.ustrip.(x)) * Unitful.unit(x)
-# Base.ceil(x::Unitful.Quantity) = ceil(Unitful.ustrip.(x)) * Unitful.unit(x)
-# Base.trunc(x::Unitful.Quantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)
-#
-# #round_(x::Unitful.Quantity) = round(Unitful.ustrip.(x)) * Unitful.unit(x)
-# #round_(x::Unitful.Quantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
-# #round_(x::Unitful.Quantity; digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
-# #round_(x::Unitful.Quantity, digits::Float64) = round(Unitful.ustrip.(x), digits=round(digits)) * Unitful.unit(x)
-# #round_(x::Unitful.Quantity; digits::Float64) = round(Unitful.ustrip.(x), digits=round(digits)) * Unitful.unit(x)
-#
-# round_(x) = round(x)
-#
-# round_(x, digits::Real) = round(x, digits=round(Int, digits))
-#
-# round_(x; digits::Real=0) = round(x, digits=round(Int, digits))
-#
-# round_(x::Unitful.Quantity) = round(Unitful.ustrip(x)) * Unitful.unit(x)
-#
-# round_(x::Unitful.Quantity, digits::Real) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)
-#
-# round_(x::Unitful.Quantity; digits::Real=0) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)
-#
-# end
-# "
-#   # Write base extensions
-#   filepath = file.path(env_path, P[["jl_pkg_name"]], "src", "BaseExtensions.jl")
-#   write_script(script, filepath)
-
-
 
   # Write main module
   func_names = names(unlist(unname(func_def), recursive = FALSE, use.names = TRUE))
   script = paste0("# sdbuildRUtils main module\n",
-                  "module ", P[["jl_pkg_name"]], "\n",
+                  "module ", .sdbuildR_env[["P"]][["jl_pkg_name"]], "\n",
 
                   "__precompile__()\n\n",
 
                   # The order of the files is apparently important; modules calling other modules should be ordered correctly
                   paste0(paste0("include(\"", c(names(prefix),
-                                                P[["sdbuildR_units"]]
+                                                .sdbuildR_env[["P"]][["sdbuildR_units"]]
                                                 # "BaseExtensions"
                                                 ), ".jl\")"), collapse = "\n"),
                   "\n\n",
 
                   lapply(names(prefix), function(name){
                     paste0("using .", name, ": ", paste0(unique(names(func_def[[name]])), collapse = ", "))
-                  }) %>% paste0(collapse = "\n"), "\n\n",
+                  }) |> paste0(collapse = "\n"), "\n\n",
 
                   "export ", paste0(func_names, collapse = ", "), "\n\n",
-
-                  # "using ..", P[["sdbuildR_units"]], "\n\n",
                   "end")
 
   # Write script
-  filepath = file.path(env_path, P[["jl_pkg_name"]], "src", paste0(P[["jl_pkg_name"]], ".jl"))
+  filepath = file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]], "src", paste0(.sdbuildR_env[["P"]][["jl_pkg_name"]], ".jl"))
   write_script(script, filepath)
 
   # Add dependencies
-  JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, "\\\\", P[["jl_pkg_name"]],'")'))
+  JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, "\\\\", .sdbuildR_env[["P"]][["jl_pkg_name"]],'")'))
 
   # Add dependencies
   pkgs = c("DataFrames" = "1.7",
@@ -587,13 +450,13 @@ create_julia_pkg = function(){
   # Make sdbuildRUtils available to sdbuildR package environment
 
   # Navigate to Julia package directory
-  JuliaConnectoR::juliaEval(paste0('cd("', file.path(env_path, P[["jl_pkg_name"]]), '")'))
+  JuliaConnectoR::juliaEval(paste0('cd("', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
 
   # Activate the sdbuildR package environment
   JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, '")'))
 
   # Develop the package in the current environment
-  JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, P[["jl_pkg_name"]]), '")'))
+  JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
 
   use_julia(stop=TRUE)
 

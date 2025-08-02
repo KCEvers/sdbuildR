@@ -471,7 +471,7 @@ end",
     # Create a dictionary with names like \"name_acc1\", \"name_acc2\", ...
     #return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
     return Dict(Symbol(name, \"%s\", i) => value for i in 1:order_delay)
-end",P[["acc_suffix"]]),
+end",.sdbuildR_env[["P"]][["acc_suffix"]]),
 
       "setup_smoothN" = sprintf("function setup_smoothN(initial_value, length_delay, order_delay::Float64, name::Symbol)
     # Compute the initial value for each accumulator
@@ -482,7 +482,7 @@ end",P[["acc_suffix"]]),
     # Create a dictionary with names like \"name_acc1\", \"name_acc2\", ...
     #return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
     return Dict(Symbol(name, \"%s\", i) => value for i in 1:order_delay)
-end",P[["acc_suffix"]])),
+end",.sdbuildR_env[["P"]][["acc_suffix"]])),
 
     "clean" = list(
       "saveat_func" = "# Function to save dataframe at specific times
@@ -668,10 +668,10 @@ end",
     %s = NamedTuple{valid_keys_tuple}(%s[k] for k in valid_keys)
 
 end
-", P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]], P[["parameter_name"]]),
+", .sdbuildR_env[["P"]][["parameter_name"]], .sdbuildR_env[["P"]][["parameter_name"]], .sdbuildR_env[["P"]][["parameter_name"]], .sdbuildR_env[["P"]][["parameter_name"]], .sdbuildR_env[["P"]][["parameter_name"]], .sdbuildR_env[["P"]][["parameter_name"]]),
       "clean_init" = sprintf("function clean_init(%s, %s)
     Dict(%s .=> Unitful.ustrip.(%s))
-end", P[["initial_value_name"]], P[["initial_value_names"]], P[["initial_value_names"]], P[["initial_value_name"]])),
+end", .sdbuildR_env[["P"]][["initial_value_name"]], .sdbuildR_env[["P"]][["initial_value_names"]], .sdbuildR_env[["P"]][["initial_value_names"]], .sdbuildR_env[["P"]][["initial_value_name"]])),
 
     "ensemble" = list(
       "transform_intermediaries" = "function transform_intermediaries(intermediaries, intermediary_names=nothing)
@@ -839,13 +839,13 @@ Unified processing where intermediaries are transformed to solve_out format firs
     first_params = solve_out[1].p
     if isa(first_params, NamedTuple)
         for (key, val) in pairs(first_params)
-            if !isa(val, Function)
+            if !is_function_or_interp(val)
                 push!(param_names, string(key))
             end
         end
     elseif isa(first_params, AbstractVector)
         for i in eachindex(first_params)
-            if !isa(first_params[i], Function)
+            if !is_function_or_interp(first_params[i])
                 push!(param_names, \"p$i\")
             end
         end
@@ -1136,13 +1136,13 @@ Unified processing where intermediaries are transformed to solve_out format firs
     first_params = solve_out[1].p
     if isa(first_params, NamedTuple)
         for (key, val) in pairs(first_params)
-            if !isa(val, Function)
+            if !is_function_or_interp(val)
                 push!(param_names, string(key))
             end
         end
     elseif isa(first_params, AbstractVector)
         for i in eachindex(first_params)
-            if !isa(first_params[i], Function)
+            if !is_function_or_interp(first_params[i])
                 push!(param_names, \"p$i\")
             end
         end

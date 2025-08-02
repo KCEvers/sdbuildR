@@ -27,17 +27,17 @@ A large library of units already exists, but you may want to define your own cus
 }
 \examples{
 sfm = xmile("Crielaard2022")
-sfm = sfm \%>\% model_units("BMI", eqn = "kg/m^2", doc = "Body Mass Index")
+sfm = model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
 
 # You may also use words rather than symbols for the unit definition.
 # The following modifies the unit BMI:
-sfm = sfm \%>\% model_units("BMI", eqn = "kilogram/meters^2")
+sfm = model_units(sfm, "BMI", eqn = "kilogram/meters^2")
 
 # Remove unit:
-sfm = sfm \%>\% model_units("BMI", erase = TRUE)
+sfm = model_units(sfm, "BMI", erase = TRUE)
 
 # Unit names may be changed to be syntactically valid and avoid overlap:
-sfm = xmile() \%>\% model_units("C0^2")
+sfm = model_units(xmile(), "C0^2")
 
 }
 \seealso{

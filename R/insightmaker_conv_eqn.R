@@ -20,7 +20,8 @@ convert_equations_IM = function(
                         eqn,
                         var_names,
                         regex_units) {
-  if (P[["debug"]]) {
+
+  if (.sdbuildR_env[["P"]][["debug"]]) {
     print("")
     # print(type)
     print(name)
@@ -33,7 +34,7 @@ convert_equations_IM = function(
   }
 
   # Don't translate interpolation functions, have already been converted to R code
-  # if (stringr::str_detect(name, stringr::fixed(sprintf("(%s)", P[["time_name"]])))){
+  # if (stringr::str_detect(name, stringr::fixed(sprintf("(%s)", .sdbuildR_env[["P"]][["time_name"]])))){
   # if (stringr::str_detect(eqn, stringr::fixed("stats::approxfun"))){
   # if (type == "Converter"){
   #     return(data.frame(conv_property = "convert_equations_IM", value = eqn, name = name, type = type) )
@@ -47,17 +48,10 @@ convert_equations_IM = function(
     add_Rcode = list()
   } else {
 
-  # # If the eqn is only comments, space characters, and/or curly brackets, put 0 as default value
-  # # Remove comments (everything after '#')
-  # formula_no_comments <- strsplit(eqn, "\n")[[1]] %>% sub("#.*$", "", .) %>% stringr::str_replace_all(c("\\s" = "", "\\{" = "", "\\}" = ""))
-  # if (all(!nzchar(formula_no_comments))){
-  #   eqn = paste0("0 # Default of 0, eqn is not well-defined\n", eqn)
-  # }
-
     # Step 2. Syntax (bracket types, destructuring assignment, time units {1 Month})
-    eqn = eqn %>%
+    eqn = eqn |>
       # Replace curly brackets {} with c()
-      curly_to_vector_brackets(., var_names) %>%
+      curly_to_vector_brackets(var_names) |>
       # Destructuring assignment, e.g. x, y <- {a, b}
       conv_destructuring_assignment()
 
@@ -66,13 +60,13 @@ convert_equations_IM = function(
     eqn = convert_all_statements(eqn, var_names)
 
     # Step 4. Operators (booleans, logical operators, addition of strings)
-    eqn = eqn %>%
+    eqn = eqn |>
       # Convert addition of strings to paste0
-      convert_addition_of_strings(., var_names) %>%
+      convert_addition_of_strings(var_names) |>
       # Replace logical operators (true, false, = (but not if in function()))
-      replace_op_IM(., var_names) %>%
+      replace_op_IM(var_names) |>
       # Replace range, e.g. 0:2:10; replace other colons : with =
-      replace_colon(., var_names)
+      replace_colon(var_names)
 
     # Step 5. Replace built-in functions
     conv_list = convert_builtin_functions_IM(type, name, eqn, var_names)
@@ -94,13 +88,13 @@ convert_equations_IM = function(
     }
 
 
-    if (P[["debug"]]){print(eqn)}
+    if (.sdbuildR_env[["P"]][["debug"]]){print(eqn)}
   }
 
   out = list(list(list(eqn = eqn,
-                       translated_func = translated_func)) %>%
-               stats::setNames(name)) %>%
-    stats::setNames(type) %>%
+                       translated_func = translated_func)) |>
+               stats::setNames(name)) |>
+    stats::setNames(type) |>
     append(add_Rcode)
 
   return(out)
@@ -162,8 +156,8 @@ get_range_comments <- function(eqn) {
   idxs_comments = stringr::str_locate_all(eqn, "#")[[1]][, "start"]
 
   # Get indices of new line (where comment ends), and append length of string
-  idxs_newline = unname(stringr::str_locate_all(eqn, "\n")[[1]][, 1]) %>%
-    c(., nchar(eqn) + 1) # Add 1 because of subtraction later
+  idxs_newline = unname(stringr::str_locate_all(eqn, "\n")[[1]][, 1]) |>
+    c(nchar(eqn) + 1) # Add 1 because of subtraction later
 
   if (length(idxs_comments) > 0) {
 
@@ -174,7 +168,7 @@ get_range_comments <- function(eqn) {
         idxs_comments[idxs_comments > i][1],
         # Next closest newline
         idxs_newline[idxs_newline > i][1], na.rm = T) - 1) # Subtract 1 to not include it
-    }) %>% do.call(rbind, .) %>% magrittr::set_colnames(c("start", "end")) %>%
+    }) |> do.call(rbind, args = _) |> magrittr::set_colnames(c("start", "end")) |>
       as.data.frame()
 
   } else {
@@ -247,8 +241,8 @@ conv_destructuring_assignment = function(eqn) {
       idx_inline = idxs_inline[1, ]
       # Change to one-liner function
       stringr::str_sub(eqn, idx_inline["start"], idx_inline["end"]) =
-        stringr::str_sub(eqn, idx_inline["start"], idx_inline["end"]) %>%
-              stringr::str_replace("[ ]*<-[ ]*", " ") %>%
+        stringr::str_sub(eqn, idx_inline["start"], idx_inline["end"]) |>
+              stringr::str_replace("[ ]*<-[ ]*", " ") |>
         stringr::str_replace("\\(", " <- function(")  # Replace first opening bracket; important to change it to <- and not =, as otherwise = will be replaced by ==
 
     }
@@ -371,11 +365,11 @@ curly_to_vector_brackets = function(eqn, var_names) {
         # Find which pairs this pair is nested within; this will be in order of highest to lowest level
         paired_idxs_prop[["nested_within"]] = which(
           paired_idxs[["start"]] < paired_idxs_prop[["start"]] & paired_idxs[["end"]] > paired_idxs_prop[["end"]]
-        ) %>% paste0(collapse = ",")
+        ) |> paste0(collapse = ",")
         paired_idxs_prop[["nr_nesting_levels"]] = length(strsplit(paired_idxs_prop[["nested_within"]], ",")[[1]])
         paired_idxs_prop[["nested_around"]] = which(
           paired_idxs[["start"]] > paired_idxs_prop[["start"]] &  paired_idxs[["end"]] < paired_idxs_prop[["end"]]
-        ) %>% paste0(collapse = ",")
+        ) |> paste0(collapse = ",")
         # First character to the left
         paired_idxs_prop[["left_adjacent_char"]] = stringr::str_sub(eqn,
                                                                     paired_idxs_prop[["start"]] - 1,
@@ -569,7 +563,7 @@ replace_op_IM <- function(eqn, var_names) {
 get_words = function(eqn){
 
   # An existing function stringr::word() extracts words but treats e.g. "return(a)" as one word
-  idxs_word = stringr::str_locate_all(eqn, "([a-zA-Z_\\.0-9]+)")[[1]] %>% as.data.frame()
+  idxs_word = stringr::str_locate_all(eqn, "([a-zA-Z_\\.0-9]+)")[[1]] |> as.data.frame()
 
   if (nrow(idxs_word) > 0) idxs_word[["word"]] = stringr::str_sub(eqn, idxs_word[["start"]], idxs_word[["end"]])
 
@@ -587,18 +581,16 @@ get_words = function(eqn){
 #'
 convert_statement = function(line, var_names){
 
-  # # Split by first comment #
-  # mat = stringr::str_split_fixed(line, "#", n = 2)
-  # equation = mat[,1]
-  # comment = mat[,2]
   equation = line
 
   # Count amount of whitespace at beginning of string
-  leading_whitespace <- stringr::str_extract(equation, "^[ ]*") %>% nchar() %>% stringr::str_dup(" ", .)
+  leading_whitespace <- stringr::str_extract(equation, "^[ ]*") |> nchar() |>  stringr::str_dup(" ", times = _)
   equation = trimws(equation)
 
   # Check for final comma - anything appended needs to come before the comma
-  final_char = stringr::str_extract(trimws(equation), ".$") %>% ifelse(!is.na(.), ., "")
+  final_char = stringr::str_extract(trimws(equation), ".$")
+  final_char = ifelse(!is.na(final_char), final_char, "")
+
   if (final_char == ","){
     equation = stringr::str_replace(equation, ",[ ]*$", "") # Remove comma from equation
     comma = ","
@@ -614,8 +606,8 @@ convert_statement = function(line, var_names){
   words = get_words(equation)
   first_word_orig = ifelse(nrow(words) > 0, words[1,"word"], "")
   second_word_orig = ifelse(nrow(words) > 1, words[2,"word"], "")
-  first_word = first_word_orig %>% tolower()
-  second_word = second_word_orig %>% tolower()
+  first_word = tolower(first_word_orig)
+  second_word = tolower(second_word_orig)
 
   # Change equation
   statement = ""
@@ -628,7 +620,7 @@ convert_statement = function(line, var_names){
 
     # When there is no second word, i.e. function(), don't change the equation
     if (nzchar(second_word_orig)){
-      equation = stringr::str_replace(equation, sprintf("%s ", first_word_orig), "") %>%
+      equation = stringr::str_replace(equation, sprintf("%s ", first_word_orig), "") |>
         stringr::str_replace(second_word_orig, " <- function") # Remove statement # Add equals sign
     }
 
@@ -653,12 +645,13 @@ convert_statement = function(line, var_names){
     # Add round brackets around equation
     equation = trimws(equation)
     equation = ifelse(stringr::str_starts(equation, "\\(") & stringr::str_ends(equation, "\\)"), equation,
-                      paste0("(", equation, ")")) %>% ifelse(!(first_word %in% c("return", "throw")), paste0(" ", .), .)
+                      paste0("(", equation, ")"))
+    equation = ifelse(!(first_word %in% c("return", "throw")), paste0(" ", equation), equation)
 
     # Replace ranges in for-loop
     if (first_word == "for"){
       equation = stringr::str_replace(equation, stringr::regex("from (.*?) to (.*?) by (.*?)\\)", ignore_case = T),
-                                      "in seq(\\1, \\2, by = \\3))") %>%
+                                      "in seq(\\1, \\2, by = \\3))") |>
         stringr::str_replace(stringr::regex("from (.*?) to (.*?)\\)", ignore_case = T),
                              "in seq(\\1, \\2))")
     }
@@ -714,12 +707,12 @@ convert_statement = function(line, var_names){
                statement = statement,
                equation = equation,
                closing_statement = closing_statement,
-               comma = comma) %>% stringr::str_c(collapse = "")
+               comma = comma) |> stringr::str_c(collapse = "")
 
   # comment = sprintf("%s%s%s", ifelse(nzchar(join_str) & nzchar(comment), " ", ""), ifelse(nzchar(comment), "#", ""), comment)
   # join_str = paste0(c(join_str), comment, collapse = "")
 
-  if (P[["debug"]]){
+  if (.sdbuildR_env[["P"]][["debug"]]){
     print("Converting statements:")
     print(line)
     print(join_str)
@@ -767,7 +760,9 @@ convert_all_statements = function(eqn, var_names){
   }
   eqn =  stringr::str_c(formula_split, collapse = "\n")
 
-  formula_new = unlist(lapply(stringr::str_split(eqn, "\n")[[1]], convert_statement, var_names)) %>% stringr::str_c(collapse = "\n")
+  formula_new = unlist(lapply(stringr::str_split(eqn, "\n")[[1]],
+                              convert_statement, var_names)) |>
+    stringr::str_c(collapse = "\n")
   return(formula_new)
 
 }
@@ -987,7 +982,7 @@ get_range_all_pairs = function(eqn, var_names,
     pair_vector_brackets,
     pair_quotation_marks,
     pair_custom
-  ) %>% magrittr::set_rownames(NULL)
+  ) |> magrittr::set_rownames(NULL)
 
   if (nrow(paired_idxs) > 0) {
 
@@ -1059,7 +1054,7 @@ get_seq_exclude = function(eqn,
   if (nrow(comb) > 0) {
     paired_seq = lapply(1:nrow(comb), function(i) {
       seq(comb[i, ][["start"]], comb[i, ][["end"]])
-    }) %>% unlist() %>% unique() %>% sort()
+    }) |> unlist() |> unique() |> sort()
   } else {
     paired_seq = c()
   }
@@ -1249,26 +1244,26 @@ get_syntax_IM = function(){
     "Step", "conv_step", "syntax3", F, T, "",
     "Pulse", "conv_pulse", "syntax3", F, T, "",
     "Ramp", "conv_ramp", "syntax3", F, T, "",
-    # "Seasonal", "conv_seasonal", "syntax3", F, F, sprintf("%s, %s", P[["times_name"]], P[["time_units_name"]]),
+    # "Seasonal", "conv_seasonal", "syntax3", F, F, sprintf("%s, %s", .sdbuildR_env[["P"]][["times_name"]], .sdbuildR_env[["P"]][["time_units_name"]]),
     "Seasonal", "conv_seasonal", "syntax3", F, T, "",
     "Lookup", "conv_lookup", "syntax3", F, T, "",
     "Repeat", "conv_repeat", "syntax3", F, T, "",
 
-    "Seconds", sprintf("drop_u(convert_u(%s, u(\"s\")))", P[["time_name"]]), "syntax0", F, F, "",
-    "Minutes", sprintf("drop_u(convert_u(%s, u(\"minute\")))", P[["time_name"]]), "syntax0", F, F, "",
-    "Hours", sprintf("drop_u(convert_u(%s, u(\"hr\")))", P[["time_name"]]), "syntax0", F, F, "",
-    "Days", sprintf("drop_u(convert_u(%s, u(\"d\")))", P[["time_name"]]), "syntax0", F, F, "",
-    "Weeks", sprintf("drop_u(convert_u(%s, u(\"wk\")))", P[["time_name"]]), "syntax0", F, F, "",
-    "Months", sprintf("drop_u(convert_u(%s, u(\"common_month\")))", P[["time_name"]]), "syntax0", F, F,"",
-    "Quarters", sprintf("drop_u(convert_u(%s, u(\"common_quarter\")))", P[["time_name"]]), "syntax0", F, F, "",
-    "Years", sprintf("drop_u(convert_u(%s, u(\"common_yr\")))", P[["time_name"]]), "syntax0", F, F, "",
+    "Seconds", sprintf("drop_u(convert_u(%s, u(\"s\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
+    "Minutes", sprintf("drop_u(convert_u(%s, u(\"minute\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
+    "Hours", sprintf("drop_u(convert_u(%s, u(\"hr\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
+    "Days", sprintf("drop_u(convert_u(%s, u(\"d\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
+    "Weeks", sprintf("drop_u(convert_u(%s, u(\"wk\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
+    "Months", sprintf("drop_u(convert_u(%s, u(\"common_month\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F,"",
+    "Quarters", sprintf("drop_u(convert_u(%s, u(\"common_quarter\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
+    "Years", sprintf("drop_u(convert_u(%s, u(\"common_yr\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
 
 
-    "Time", P[["time_name"]], "syntax0", F, F, "",
-    "TimeStart", paste0(P[["times_name"]], "[1]"), "syntax0", F, F, "",
-    "TimeStep", P[["timestep_name"]], "syntax0", F, F, "",
-    "TimeEnd", paste0(P[["times_name"]], "[2]"), "syntax0", F, F, "",
-    "TimeLength", paste0("(", P[["times_name"]], "[2] - ", P[["times_name"]], "[1])"), "syntax0", F, F, "",
+    "Time", .sdbuildR_env[["P"]][["time_name"]], "syntax0", F, F, "",
+    "TimeStart", paste0(.sdbuildR_env[["P"]][["times_name"]], "[1]"), "syntax0", F, F, "",
+    "TimeStep", .sdbuildR_env[["P"]][["timestep_name"]], "syntax0", F, F, "",
+    "TimeEnd", paste0(.sdbuildR_env[["P"]][["times_name"]], "[2]"), "syntax0", F, F, "",
+    "TimeLength", paste0("(", .sdbuildR_env[["P"]][["times_name"]], "[2] - ", .sdbuildR_env[["P"]][["times_name"]], "[1])"), "syntax0", F, F, "",
     # For agent-based modelling functions, issue a warning that these will not be translated
     ".FindAll()", "", "syntax4", F, T, "",
     ".FindState(", "", "syntax4", F, T, "",
@@ -1548,9 +1543,9 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 
         # Get environment and create list of arguments needed by the function
         envir = environment()
-        call_args = eval(parse(text = idx_func[["R"]])) %>%
+        call_args = eval(parse(text = idx_func[["R"]])) |>
           # Get the formal arguments needed by the function
-          formals() %>% as.list() %>%
+          formals() |> as.list() |>
           # Add own arguments
           utils::modifyList(list(
             func = tolower(idx_func[["insightmaker"]]),
@@ -1583,7 +1578,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 
       }
 
-      if (P[["debug"]]){
+      if (.sdbuildR_env[["P"]][["debug"]]){
         print(stringr::str_sub(eqn, start_idx, end_idx))
         print(replacement)
         print("")
@@ -1645,7 +1640,7 @@ parse_args = function(bracket_arg){
     ends <- c(idxs_commas - 1, stringr::str_length(bracket_arg))
 
     # Split bracket argument by indices
-    args = mapply(stringr::str_sub, bracket_arg, starts, ends) %>% trimws() %>% unname()
+    args = mapply(stringr::str_sub, bracket_arg, starts, ends) |> trimws() |> unname()
   }
 
   return(args)
@@ -1681,12 +1676,6 @@ extract_prefunc_args = function(eqn, var_names, start_func, names_with_brackets)
   } else {
 
     # If there are no brackets around the argument preceding . (e.g. .length()), extract string before
-
-    # prefunc_arg = stringr::str_extract(
-    #   stringr::str_sub(eqn, 1, start_func - 1) %>% stringi::stri_reverse(),
-    #   "[\\w\\.\\[\\]]+" # Don't match square brackets as we don't only want to extract indexers
-    # ) %>% stringi::stri_reverse() # Reverse to get preceding string
-
     idx_prefunc_arg = stringr::str_locate(
       stringr::str_sub(eqn, 1, start_func - 1) ,
       "[\\w\\.\\[\\]]+$" # Don't match square brackets as we don't only want to extract indexers
@@ -1749,9 +1738,8 @@ conv_IMMAP <- function(func, arg) {
     replacement = sprintf("sapply(%s, function(x) %s)", arg[1], arg[2])
   } else {
     # To return a named vector, we cannot pass only indices, even if the function only uses x and not key
-    replacement = sprintf("%s %%>%% mapply(function(x, key){%s}, ., names(.))",
-                                 arg[1],
-                                 arg[2])
+    replacement = sprintf("mapply(function(x, key){%s}, %s, names(%s))",
+                                 arg[2], arg[1], arg[1])
   }
 
   return(list(replacement = replacement))
@@ -1790,9 +1778,8 @@ conv_repeat <- function(func, arg) {
     } else {
       # To return a named vector, we cannot pass only indices, even if the function only uses x and not key
       replacement = sprintf(
-        "%s %%>%% stats::setNames(mapply(function(x, key) %s, seq_along(.), .), .)",
-        arg[2],
-        arg[1]
+        "stats::setNames(mapply(function(x, key) %s, seq_along(%s), %s), %s)",
+        arg[1], arg[2], arg[2], arg[2]
       )
 
     }
@@ -1818,7 +1805,7 @@ conv_lookup <- function(func, arg, name) {
   add_Rcode = list(gf = list(list(xpts = arg[2], ypts = arg[3],
                                   source = arg[1],
                                   interpolation = "linear",
-                                  extrapolation = "nearest")) %>%
+                                  extrapolation = "nearest")) |>
                      stats::setNames(func_name_str))
 
   replacement = sprintf("[%s]([%s])", func_name_str, arg[1])
@@ -1839,7 +1826,7 @@ conv_lookup <- function(func, arg, name) {
 convert_addition_of_strings = function(eqn, var_names) {
 
   # First get rid of all spaces next to + in order to identify neighbours
-  eqn = stringr::str_replace_all(eqn, " \\+", "+") %>% stringr::str_replace_all("\\+ ", "+")
+  eqn = stringr::str_replace_all(eqn, " \\+", "+") |> stringr::str_replace_all("\\+ ", "+")
 
   done = FALSE
 
@@ -1957,7 +1944,7 @@ conv_delay = function(func, arg, name){
 conv_past_values = function(func, arg, name) {
 
   # If there is one, get the function that is applied to PastValues, e.g. min in PastMin()
-  applied_func = func %>% stringr::str_replace("past", "")
+  applied_func = func |> stringr::str_replace("past", "")
   if (applied_func == "stddev") {
     applied_func = "sd"
   } else if (applied_func == "correlation") {
@@ -2066,7 +2053,7 @@ conv_fix = function(func, arg, name, type) {
 
   # Add "past" as a list element to keep track of obligatory variables
   add_Rcode = append(add_Rcode,
-                     list(list(list(past = archive_var)) %>% stats::setNames(name)) %>%
+                     list(list(list(past = archive_var)) |> stats::setNames(name)) |>
                        stats::setNames(type))
 
   # If the fix_length is a primitive, no need to add a parameter
@@ -2074,18 +2061,18 @@ conv_fix = function(func, arg, name, type) {
     fix_length_name = fix_length
   } else {
     fix_length_name = sprintf("%s_fix_length", name)
-    add_Rcode = list(constant = list(list(eqn = fix_length)) %>% stats::setNames(fix_length_name))
+    add_Rcode = list(constant = list(list(eqn = fix_length)) |> stats::setNames(fix_length_name))
     fix_length_name = paste0("[", fix_length_name, "]")
   }
 
   replacement = sprintf(
     "ifelse(%s %%%% %s == 0, %s, get_past(environment(), '[%s]', %s, %s, '%s', '%s', 'fixed'))",
-    P[["time_name"]],
+    .sdbuildR_env[["P"]][["time_name"]],
     fix_length_name,
     arg[1],
     name,
-    P[["timestep_name"]], P[["time_units_name"]],
-    P[["time_name"]], P[["times_name"]]
+    .sdbuildR_env[["P"]][["timestep_name"]], .sdbuildR_env[["P"]][["time_units_name"]],
+    .sdbuildR_env[["P"]][["time_name"]], .sdbuildR_env[["P"]][["times_name"]]
   )
 
     return(
@@ -2118,7 +2105,7 @@ conv_step = function(func, arg, match_idx, name,  # Default settings of Insight 
   # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
                           as.character(match_idx))
-  replacement = sprintf("[%s](%s)", func_name_str, P[["time_name"]])
+  replacement = sprintf("[%s](%s)", func_name_str, .sdbuildR_env[["P"]][["time_name"]])
   # Step(Start, Height=1), e.g. Step({2 Years}, 100)
 
   # Clean start time by converting to simulation time units
@@ -2130,14 +2117,14 @@ conv_step = function(func, arg, match_idx, name,  # Default settings of Insight 
   # Function definition to put at beginning of script
   func_def_str = sprintf(
     "step(start = %s, height = %s)",
-    # P[["times_name"]],
+    # .sdbuildR_env[["P"]][["times_name"]],
     start_t_step,
     h_step
-    # P[["time_units_name"]], P[["time_units_name"]]
+    # .sdbuildR_env[["P"]][["time_units_name"]], .sdbuildR_env[["P"]][["time_units_name"]]
 
   )
   add_Rcode = list(aux = list(list(eqn = func_def_str
-                                   )) %>% stats::setNames(func_name_str))
+                                   )) |> stats::setNames(func_name_str))
 
   return(list(replacement = replacement,
               add_Rcode = add_Rcode
@@ -2169,7 +2156,7 @@ conv_pulse = function(func,
   # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
                           as.character(match_idx))
-  replacement = sprintf("[%s](%s)", func_name_str, P[["time_name"]])
+  replacement = sprintf("[%s](%s)", func_name_str, .sdbuildR_env[["P"]][["time_name"]])
 
   # Pulse(Time, Height, Width=0, Repeat=-1), e.g. Pulse({5 Years}, 10, 1, {10 Years})
 
@@ -2181,9 +2168,9 @@ conv_pulse = function(func,
   w_pulse = ifelse(is.na(arg[3]), w_pulse, arg[3])
 
   if (w_pulse == "0"){
-    w_pulse = P[["timestep_name"]]
+    w_pulse = .sdbuildR_env[["P"]][["timestep_name"]]
   } else {
-    w_pulse = sprintf("%s(%s, %s)", P[["convert_u_func"]], w_pulse, P[["time_units_name"]])
+    w_pulse = sprintf("%s(%s, %s)", .sdbuildR_env[["P"]][["convert_u_func"]], w_pulse, .sdbuildR_env[["P"]][["time_units_name"]])
   }
 
   repeat_interval = ifelse(is.na(arg[4]), repeat_interval, arg[4])
@@ -2191,14 +2178,14 @@ conv_pulse = function(func,
   # Function definition to put at beginning of script
   func_def_str = sprintf(
     "pulse(start = %s(%s, %s), height = %s, width = %s, repeat_interval = %s)",
-    P[["convert_u_func"]],
-    start_t_pulse, P[["time_units_name"]],
+    .sdbuildR_env[["P"]][["convert_u_func"]],
+    start_t_pulse, .sdbuildR_env[["P"]][["time_units_name"]],
     h_pulse,
 w_pulse,
     repeat_interval
   )
   add_Rcode = list(aux = list(list(eqn = func_def_str
-                                   )) %>% stats::setNames(func_name_str))
+                                   )) |> stats::setNames(func_name_str))
 
   return(list(replacement = replacement,
               add_Rcode = add_Rcode
@@ -2223,7 +2210,7 @@ conv_ramp = function(func, arg, match_idx, name, # Default settings of Insight M
   # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
                           as.character(match_idx))
-  replacement = sprintf("[%s](%s)", func_name_str, P[["time_name"]])
+  replacement = sprintf("[%s](%s)", func_name_str, .sdbuildR_env[["P"]][["time_name"]])
 
   # Ramp(Start, Finish, Height=1), e.g. Ramp({3 Years}, {8 Years}, -50)
 
@@ -2237,17 +2224,17 @@ conv_ramp = function(func, arg, match_idx, name, # Default settings of Insight M
   # Function definition to put at beginning of script
   func_def_str = sprintf(
     "ramp(start = %s(%s, %s), finish = %s(%s, %s), height = %s)",
-    # P[["times_name"]],
-    P[["convert_u_func"]],
-    start_t_ramp, P[["time_units_name"]],
-    P[["convert_u_func"]],
-    end_t_ramp, P[["time_units_name"]],
+    # .sdbuildR_env[["P"]][["times_name"]],
+    .sdbuildR_env[["P"]][["convert_u_func"]],
+    start_t_ramp, .sdbuildR_env[["P"]][["time_units_name"]],
+    .sdbuildR_env[["P"]][["convert_u_func"]],
+    end_t_ramp, .sdbuildR_env[["P"]][["time_units_name"]],
     h_ramp
-    # P[["time_units_name"]], P[["time_units_name"]]
+    # .sdbuildR_env[["P"]][["time_units_name"]], .sdbuildR_env[["P"]][["time_units_name"]]
   )
   add_Rcode = list(aux = list(list(eqn = func_def_str
-                                   # , source = P[["time_name"]]
-                                   )) %>% stats::setNames(func_name_str))
+                                   # , source = .sdbuildR_env[["P"]][["time_name"]]
+                                   )) |> stats::setNames(func_name_str))
 
   return(list(replacement = replacement,
               add_Rcode = add_Rcode
@@ -2273,7 +2260,7 @@ conv_seasonal = function(func, arg, match_idx, name,
   # # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   # func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
   #                         as.character(match_idx))
-  # replacement = sprintf("[%s](%s)", func_name_str, P[["time_name"]])
+  # replacement = sprintf("[%s](%s)", func_name_str, .sdbuildR_env[["P"]][["time_name"]])
 
   # Seasonal(Peak=0)
 
@@ -2286,13 +2273,13 @@ conv_seasonal = function(func, arg, match_idx, name,
   #     shift = arg[1]
   #   }
   # }
-  # replacement = paste0("seasonal(", P[["time_name"]], ", period = ", period, ", shift = ", shift, ")")
+  # replacement = paste0("seasonal(", .sdbuildR_env[["P"]][["time_name"]], ", period = ", period, ", shift = ", shift, ")")
   # add_Rcode = list()
 
   # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
                           as.character(match_idx))
-  replacement = sprintf("[%s](%s)", func_name_str, P[["time_name"]])
+  replacement = sprintf("[%s](%s)", func_name_str, .sdbuildR_env[["P"]][["time_name"]])
 
   # If an argument is specified, it's the peak time
   if (nzchar(arg)) {
@@ -2310,8 +2297,8 @@ conv_seasonal = function(func, arg, match_idx, name,
     period, shift
   )
   add_Rcode = list(aux = list(list(eqn = func_def_str
-                                   # , source = P[["time_name"]]
-  )) %>% stats::setNames(func_name_str))
+                                   # , source = .sdbuildR_env[["P"]][["time_name"]]
+  )) |> stats::setNames(func_name_str))
 
 
   return(list(replacement = replacement,
