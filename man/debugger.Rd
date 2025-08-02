@@ -46,11 +46,11 @@ sfm = xmile()
 debugger(sfm)
 
 # Detect stocks without inflows or outflows
-sfm = xmile() \%>\% build("Prey", "stock")
+sfm = xmile() |> build("Prey", "stock")
 debugger(sfm)
 
 # Detect circularities in equation definitions
-sfm = xmile() \%>\% build("Prey", "stock", eqn = "Predator") \%>\%
+sfm = xmile() |> build("Prey", "stock", eqn = "Predator") |>
  build("Predator", "stock", eqn = "Prey")
 debugger(sfm)
 

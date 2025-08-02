@@ -20,30 +20,30 @@ Unit strings are converted to their standard symbols using regular expressions. 
 }
 \examples{
 # Use units in equations
-sfm = xmile() \%>\%
+sfm = xmile() |>
  build("a", "constant", eqn = "u('10kilometers') - u('3meters')",
  units = "centimeters")
 
 # Units can also be set by multiplying a number with a unit
-sfm = xmile() \%>\%
+sfm = xmile() |>
  build("a", "constant", eqn = "10 * u('kilometers') - u('3meters')")
 
 # Addition and subtraction is only allowed between matching units
-sfm = xmile() \%>\%
+sfm = xmile() |>
  build("a", "constant", eqn = "u('3seconds') + u('1hour')")
 
 # Division, multiplication, and exponentiation are allowed between different units
-sfm = xmile() \%>\%
+sfm = xmile() |>
  build("a", "constant", eqn = "u('10grams') / u('1minute')")
 
 # Use custom units in equations
-sfm = xmile() \%>\%
-  model_units("BMI", eqn = "kilograms/meters^2", doc = "Body Mass Index") \%>\%
+sfm = xmile() |>
+  model_units("BMI", eqn = "kilograms/meters^2", doc = "Body Mass Index") |>
   build("weight_gain", "flow", eqn = "u('2 BMI / year')", units = "BMI/year")
 
 # Unit strings are often needed in flows to ensure dimensional consistency
-sfm = xmile() \%>\% sim_specs(stop = 1, time_units = "days") \%>\%
-  build("consumed_food", "stock", eqn = "1", units = "kilocalories") \%>\%
+sfm = xmile() |> sim_specs(stop = 1, time_units = "days") |>
+  build("consumed_food", "stock", eqn = "1", units = "kilocalories") |>
   build("eating", "flow", eqn = "u('750kilocalories') / u('6hours')",
   units = "kilocalories/day", to = "consumed_food")
 

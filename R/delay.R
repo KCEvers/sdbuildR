@@ -78,7 +78,7 @@ compute_smoothN <- function(input, state, length, order) {
 setup_delayN <- function(initial, length, order, name) {
   order <- round(order)
   value <- initial * length / order
-  acc_names <- paste0(name, P[["acc_suffix"]], seq_len(order))
+  acc_names <- paste0(name, .sdbuildR_env[["P"]][["acc_suffix"]], seq_len(order))
   accumulator <- stats::setNames(rep(value, order), acc_names)
   return(accumulator)
 }
@@ -99,7 +99,7 @@ setup_delayN <- function(initial, length, order, name) {
 setup_smoothN <- function(initial, length, order, name) {
   order <- round(order)
   value <- initial #* length / order
-  acc_names <- paste0(name, P[["acc_suffix"]], seq_len(order))
+  acc_names <- paste0(name, .sdbuildR_env[["P"]][["acc_suffix"]], seq_len(order))
   accumulator <- stats::setNames(rep(value, order), acc_names)
   return(accumulator)
 }

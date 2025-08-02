@@ -22,9 +22,9 @@ Equivalent of Seasonal() in Insight Maker
 }
 \examples{
 # Create a simple model with a seasonal wave
-sfm = xmile() \%>\%
-build("a", "stock") \%>\%
-build("input", "constant", eqn = "seasonal(10, 0)") \%>\%
+sfm = xmile() |>
+build("a", "stock") |>
+build("input", "constant", eqn = "seasonal(10, 0)") |>
 build("inflow", "flow", eqn = "input(t)", to = "a")
 
 sim = simulate(sfm, only_stocks = FALSE)

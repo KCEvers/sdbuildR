@@ -112,8 +112,7 @@ summary(sfm)
 
 # Add two stocks. Specify their initial values in the "eqn" property, as well
 # as their plotting label
-sfm = sfm \%>\%
- build("predator", "stock", eqn = 10, label = "Predator") \%>\%
+sfm = build(sfm, "predator", "stock", eqn = 10, label = "Predator") |>
  build("prey", "stock", eqn = 50, label = "Prey")
 
 # Plot the stock-and-flow diagram
@@ -124,21 +123,19 @@ plot(sfm, center_stocks = TRUE)
 # Add four flows: the births and deaths of both the predators and prey. The
 # "eqn" property of flows represents the rate of the flow. In addition, we
 # specify which stock the flow is coming from ("from") or flowing to ("to").
-sfm = sfm \%>\%
- build("predator_births", "flow", eqn = "delta*prey*predator",
-       label = "Predator Births", to = "predator") \%>\%
+sfm = build(sfm, "predator_births", "flow", eqn = "delta*prey*predator",
+       label = "Predator Births", to = "predator") |>
  build("predator_deaths", "flow", eqn = "gamma*predator",
-       label = "Predator Deaths", from = "predator") \%>\%
+       label = "Predator Deaths", from = "predator") |>
  build("prey_births", "flow", eqn = "alpha*prey",
-       label = "Prey Births", to = "prey") \%>\%
+       label = "Prey Births", to = "prey") |>
  build("prey_deaths", "flow", eqn = "beta*prey*predator",
        label = "Prey Deaths", from = "prey")
 plot(sfm)
 
 # The flows make use of four other variables: "delta", "gamma", "alpha", and
 # "beta". Define these as constants in a vectorized manner for efficiency:
-sfm = sfm \%>\%
- build(c("delta", "gamma", "alpha", "beta"), "constant",
+sfm = build(sfm, c("delta", "gamma", "alpha", "beta"), "constant",
        eqn = c(.025, .5, .5, .05),
        label = c("Delta", "Gamma", "Alpha", "Beta"),
        doc = c("Birth rate of predators", "Death rate of predators",

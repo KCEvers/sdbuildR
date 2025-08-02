@@ -15,30 +15,30 @@
 #'
 #' @examples
 #' # Use units in equations
-#' sfm = xmile() %>%
+#' sfm = xmile() |>
 #'  build("a", "constant", eqn = "u('10kilometers') - u('3meters')",
 #'  units = "centimeters")
 #'
 #' # Units can also be set by multiplying a number with a unit
-#' sfm = xmile() %>%
+#' sfm = xmile() |>
 #'  build("a", "constant", eqn = "10 * u('kilometers') - u('3meters')")
 #'
 #' # Addition and subtraction is only allowed between matching units
-#'sfm = xmile() %>%
+#'sfm = xmile() |>
 #'  build("a", "constant", eqn = "u('3seconds') + u('1hour')")
 #'
 #' # Division, multiplication, and exponentiation are allowed between different units
-#' sfm = xmile() %>%
+#' sfm = xmile() |>
 #'  build("a", "constant", eqn = "u('10grams') / u('1minute')")
 #'
 #' # Use custom units in equations
-#' sfm = xmile() %>%
-#'   model_units("BMI", eqn = "kilograms/meters^2", doc = "Body Mass Index") %>%
+#' sfm = xmile() |>
+#'   model_units("BMI", eqn = "kilograms/meters^2", doc = "Body Mass Index") |>
 #'   build("weight_gain", "flow", eqn = "u('2 BMI / year')", units = "BMI/year")
 #'
 #' # Unit strings are often needed in flows to ensure dimensional consistency
-#' sfm = xmile() %>% sim_specs(stop = 1, time_units = "days") %>%
-#'   build("consumed_food", "stock", eqn = "1", units = "kilocalories") %>%
+#' sfm = xmile() |> sim_specs(stop = 1, time_units = "days") |>
+#'   build("consumed_food", "stock", eqn = "1", units = "kilocalories") |>
 #'   build("eating", "flow", eqn = "u('750kilocalories') / u('6hours')",
 #'   units = "kilocalories/day", to = "consumed_food")
 #'
@@ -62,8 +62,8 @@ u = function(unit_str){
 #' @examples
 #' # For example, the cosine function only accepts unitless arguments or
 #' # arguments with units in radians or degrees
-#' sfm = xmile() %>%
-#' build("a", "constant", eqn = "10", units = "minutes") %>%
+#' sfm = xmile() |>
+#' build("a", "constant", eqn = "10", units = "minutes") |>
 #' build("b", "constant", eqn = "cos(drop_u(a))")
 drop_u = function(x){
   return(x)
@@ -85,8 +85,8 @@ drop_u = function(x){
 #'
 #' @examples
 #' # Change the unit of rate from minutes to hours
-#'sfm = xmile() %>%
-#'build("rate", "constant", eqn = "10", units = "minutes") %>%
+#'sfm = xmile() |>
+#'build("rate", "constant", eqn = "10", units = "minutes") |>
 #'build("change", "flow",
 #'      eqn = "(room_temperature - coffee_temperature) / convert_u(rate, u('hour'))")
 #'
@@ -103,7 +103,7 @@ convert_u = function(x, unit_def){
 #' @returns List
 split_units = function(x){
 
-  idxs_word_df = stringr::str_locate_all(x, "([a-zA-Z_][a-zA-Z_\\.0-9 ]*)")[[1]] %>% as.data.frame()
+  idxs_word_df = stringr::str_locate_all(x, "([a-zA-Z_][a-zA-Z_\\.0-9 ]*)")[[1]] |> as.data.frame()
 
   # If there are no words, x does not need to be split
   if (nrow(idxs_word_df) == 0){
@@ -117,12 +117,12 @@ split_units = function(x){
     # Make sure beginning characters are included
     if (split_df[["start"]][1] > 1){
       split_df = rbind(data.frame(start = 1, end = split_df[["start"]][1] - 1),
-                       split_df) %>% as.data.frame()
+                       split_df) |> as.data.frame()
     }
 
     # Make sure final characters are included
     if (split_df[["end"]][nrow(split_df)] < nchar(x)){
-      split_df = rbind(split_df, data.frame(start = split_df[["end"]][nrow(split_df)] + 1, end = nchar(x))) %>% as.data.frame()
+      split_df = rbind(split_df, data.frame(start = split_df[["end"]][nrow(split_df)] + 1, end = nchar(x))) |> as.data.frame()
     }
 
     # Split string
@@ -281,20 +281,20 @@ clean_unit <- function(x, regex_units, ignore_case = FALSE, include_translation 
     x_split_clean = lapply(x_split, trimws)
     idx = lapply(x_split_clean,
                  stringr::str_detect,
-                 stringr::regex(names(regex_units), ignore_case = ignore_case)) %>%
-      lapply(which) %>%
+                 stringr::regex(names(regex_units), ignore_case = ignore_case)) |>
+      lapply(which) |>
       vapply(function(y) if (length(y) > 0) y[1] else NA_real_, numeric(1))
 
     # Concatenate parts
-    x_parts = ifelse(!is.na(idx), unname(regex_units[idx]), unlist(x_split_clean)) %>%
+    x_parts = ifelse(!is.na(idx), unname(regex_units[idx]), unlist(x_split_clean)) |>
       # Replace punctuation with underscore
-      # sapply(function(y){gsub("[@#&$!^%*~{}|:;<>?`]", "_", y)}) %>%
-      # sapply(function(y){gsub("[@#&\\$!%~\\{\\}\\|:;\\?`\\\\]", "_", y)}) %>%
-      sapply(function(y){gsub("@|#|&|\\$|!|%|~|\\{|\\}|\\||:|;|\\?|`|\\\\", "_", y)}) %>%
+      # sapply(function(y){gsub("[@#&$!^%*~{}|:;<>?`]", "_", y)}) |>
+      # sapply(function(y){gsub("[@#&\\$!%~\\{\\}\\|:;\\?`\\\\]", "_", y)}) |>
+      sapply(function(y){gsub("@|#|&|\\$|!|%|~|\\{|\\}|\\||:|;|\\?|`|\\\\", "_", y)}) |>
       # Replace space between numbers with "*"
-      sapply(function(y){gsub("([0-9]) ([0-9])", "\\1*\\2", y)}) %>%
+      sapply(function(y){gsub("([0-9]) ([0-9])", "\\1*\\2", y)}) |>
       # Remove all spaces
-      sapply(function(y){gsub("[[:space:]]", "", y)}) %>%
+      sapply(function(y){gsub("[[:space:]]", "", y)}) |>
       stats::setNames(unlist(x_split_clean))
     x_new = paste0(x_parts, collapse = "")
 
@@ -350,17 +350,15 @@ detect_undefined_units = function(sfm, new_eqns, new_units, regex_units, R_or_Ju
   units_in_model = c(sfm[["sim_specs"]][["time_units"]],
                      new_units,
                      # Extract units from equations
-                     new_eqns %>%
-                       stringr::str_extract_all(.,
-                                                ifelse(R_or_Julia == "Julia", "\\bu[\"|'](.*?)[\"|']", "\\bu\\([\"|'](.*?)[\"|']\\)"))
-  ) %>%
-    unlist() %>%
-    # lapply(scientific_notation) %>%
-    lapply(split_units) %>% unlist() %>%
-    unique() %>%
-    Filter(nzchar, .)  %>%
+                     new_eqns |>
+                       stringr::str_extract_all(ifelse(R_or_Julia == "Julia", "\\bu[\"|'](.*?)[\"|']", "\\bu\\([\"|'](.*?)[\"|']\\)"))
+  ) |>
+    unlist() |>
+    lapply(split_units) |> unlist() |>
+    unique() |>
+    Filter(nzchar, x = _)  |>
     # Only keep entries with letters in them
-    Filter(function(x){stringr::str_detect(x, "[a-zA-Z]")}, .)
+    Filter(function(x){stringr::str_detect(x, "[a-zA-Z]")}, x = _)
 
   # Find units to define: ones not already included in Julia
   existing_units = names(sfm[["model_units"]])
@@ -373,7 +371,7 @@ detect_undefined_units = function(sfm, new_eqns, new_units, regex_units, R_or_Ju
 
     add_model_units = lapply(units_to_define, function(u){
       list(name = u, eqn = "1", doc = "", prefix = FALSE)
-    }) %>% stats::setNames(units_to_define)
+    }) |> stats::setNames(units_to_define)
 
 
   } else {
@@ -600,7 +598,7 @@ get_regex_time_units = function(){
 
   # Prefixes
   si_prefix_matrix = unit_prefixes()
-  si_prefixes = si_prefix_matrix[, "symbol"] %>% stats::setNames(si_prefix_matrix[, "prefix"])
+  si_prefixes = si_prefix_matrix[, "symbol"] |> stats::setNames(si_prefix_matrix[, "prefix"])
 
 
   add_prefixes = lapply(seq_along(regex_time_units_julia[idx]), function(i){
@@ -614,7 +612,7 @@ get_regex_time_units = function(){
              stringr::str_sub(names(si_prefixes), 2, -1L),
              # Start at index 2 to skip opening ^
              stringr::str_sub(name, 2, -1L)))
-  }) %>% unname() %>% unlist()
+  }) |> unname() |> unlist()
 
   regex_time_units_julia = c(regex_time_units_julia, add_prefixes)
 
@@ -627,7 +625,7 @@ get_regex_time_units = function(){
                              "^[C|c]ommon year[s]?$" = "common_yr"
   )
 
-  # Only keep ones with characters in entry and name %>% Filter(nzchar, .)
+  # Only keep ones with characters in entry and name |> Filter(nzchar, .)
   regex_time_units_julia = regex_time_units_julia[nzchar(names(regex_time_units_julia)) & nzchar(unname(regex_time_units_julia))]
 
   return(regex_time_units_julia)
@@ -723,7 +721,7 @@ get_regex_units = function(sfm = NULL){
              stringr::str_sub(names(si_prefixes), 2, -1L),
              # Start at index 2 to skip opening ^
              stringr::str_sub(name, 2, -1L)))
-  }) %>% unname() %>% unlist()
+  }) |> unname() |> unlist()
 
   regex_units = c(regex_units, add_prefixes)
 
@@ -782,7 +780,7 @@ get_regex_units = function(sfm = NULL){
                    stringr::str_sub(names(si_prefixes), 2, -1L),
                    unit_name)
           )
-        }) %>% unlist()
+        }) |> unlist()
         regex_units = c(regex_units, add_custom_regex)
 
       }
@@ -790,7 +788,7 @@ get_regex_units = function(sfm = NULL){
   }
 
 
-  # Only keep ones with characters in entry and name %>% Filter(nzchar, .)
+  # Only keep ones with characters in entry and name |> Filter(nzchar, .)
   regex_units = regex_units[nzchar(names(regex_units)) & nzchar(unname(regex_units))]
 
   return(regex_units)
@@ -809,8 +807,7 @@ custom_units = function(){
 
   # The "month" unit in Insight Maker is 365/12, which is not the same as in the units package, where it is 365.25/12. Add new unit "common_month".
 
-
-  list("common_yr" = list(name = "common_yr", eqn = "365d", prefix = FALSE),
+  return(list("common_yr" = list(name = "common_yr", eqn = "365d", prefix = FALSE),
        "common_quarter" = list(name = "common_quarter", eqn = "365/4*d", prefix = FALSE),
        "common_month" = list(name = "common_month", eqn = "365/12*d", prefix = FALSE),
        "quarter" = list(name = "quarter", eqn = "1/4*yr", prefix = FALSE),
@@ -858,5 +855,5 @@ custom_units = function(){
        "Rydberg_constant" = list(name = "Rydberg_constant", eqn = "10_973_731.568_160/m", prefix = FALSE)
 
 
-  ) %>% return()
+  ))
 }

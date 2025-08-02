@@ -4,10 +4,16 @@
 \alias{as.data.frame.sdbuildR_sim}
 \title{Create dataframe of simulation results}
 \usage{
-\method{as.data.frame}{sdbuildR_sim}(x, ...)
+\method{as.data.frame}{sdbuildR_sim}(x, row.names = NULL, optional = FALSE, direction = "long", ...)
 }
 \arguments{
 \item{x}{Output of simulate().}
+
+\item{row.names}{NULL or a character vector giving the row names for the data frame. Missing values are not allowed.}
+
+\item{optional}{Ignored parameter.}
+
+\item{direction}{Format of dataframe, either "long" (default) or "wide".}
 
 \item{...}{Optional parameters}
 }

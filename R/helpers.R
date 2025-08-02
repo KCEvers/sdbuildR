@@ -85,7 +85,6 @@ get_map = function(x, element_name, change_null_to = ""){
     return(c())
   }
 
-  # x_list = x %>% purrr::map(element_name)
   x_list = lapply(x, `[[`, element_name)
   # Unlist preserving NULL
   x_list[sapply(x_list, function(x){is.null(x) | length(x) == 0 })] = change_null_to

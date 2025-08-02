@@ -33,7 +33,7 @@ insightmaker_to_sfm = function(URL,
                              keep_solver = FALSE
                              ){
 
-  if (P[["debug"]]){
+  if (.sdbuildR_env[["P"]][["debug"]]){
     print(URL)
     print(filepath_IM)
   }
@@ -85,7 +85,7 @@ insightmaker_to_sfm = function(URL,
   }
 
   # Clean up units
-  if (P[["debug"]]){
+  if (.sdbuildR_env[["P"]][["debug"]]){
     print("Cleaning units...")
   }
   # Get regular expressions to convert units to Julia
@@ -96,7 +96,7 @@ insightmaker_to_sfm = function(URL,
   sfm = check_nonnegativity(sfm, keep_nonnegative_flow, keep_nonnegative_stock, keep_solver)
 
   # Convert Insight Maker equation to R, including macros
-  if (P[["debug"]]){
+  if (.sdbuildR_env[["P"]][["debug"]]){
     print("Converting equations from Insight Maker to R...")
   }
 
@@ -123,7 +123,7 @@ insightmaker_to_sfm = function(URL,
   df = as.data.frame(sfm, type = c("stock", "aux", "constant", "gf"))
 
   if (length(delayN_smoothN) > 0 | length(delay_past) > 0 | length(unit_strings) > 0 | length(sfm[["model_units"]]) > 0 | any(df[["units"]] != "1")){
-    sfm = sfm %>% sim_specs(language = "Julia")
+    sfm = sfm |> sim_specs(language = "Julia")
   }
 
   return(sfm)

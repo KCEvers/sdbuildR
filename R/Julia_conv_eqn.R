@@ -62,7 +62,7 @@ convert_equations_julia_wrapper = function(sfm, regex_units){
 #'
 convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units){
 
-  if (P[["debug"]]) {
+  if (.sdbuildR_env[["P"]][["debug"]]) {
     # print("")
     # print(type)
     # print(name)
@@ -120,12 +120,12 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units)
     eqn = scientific_notation(eqn)
 
     # Step 2. Syntax (bracket types, destructuring assignment, time units {1 Month})
-    eqn = eqn %>%
+    eqn = eqn |>
       # Translate vector brackets, i.e. c() -> []
-      vector_to_square_brackets(., var_names) %>%
+      vector_to_square_brackets(var_names) |>
       # Ensure integers are floats
       # Julia can throw InexactError errors in case e.g. an initial condition is defined as an integer
-      replace_digits_with_floats(., var_names)
+      replace_digits_with_floats(var_names)
 
 
     # # Destructuring assignment, e.g. x, y <- {a, b}
@@ -140,13 +140,13 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units)
     eqn = convert_all_statements_julia(eqn, var_names)
 
     # Step 4. Operators (booleans, logical operators, addition of strings)
-    eqn = eqn %>%
+    eqn = eqn |>
       # # Convert addition of strings to paste0
-      # conv_addition_of_strings(., var_names) %>%
+      # conv_addition_of_strings(var_names) |>
       # # Replace logical operators (true, false, = (but not if in function()))
-      replace_op_julia(., var_names) #%>%
+      replace_op_julia(var_names) #|>
     # # Replace range, e.g. range(0, 10, 2) -> 0:2:10
-    # replace_range_julia(., var_names)
+    # replace_range_julia(var_names)
 
     # Step 5. Replace R functions to Julia functions
     conv_list = convert_builtin_functions_julia(type, name, eqn, var_names)
@@ -176,7 +176,7 @@ convert_equations_julia = function(sfm, type, name, eqn, var_names, regex_units)
     #   eqn = paste0("begin\n", eqn, "\nend")
     # }
 
-    # if (P[["debug"]]){print(eqn)}
+    # if (.sdbuildR_env[["P"]][["debug"]]){print(eqn)}
 
     out =  append(list(eqn_julia = eqn), add_Rcode)
 
@@ -324,7 +324,7 @@ replace_op_julia <- function(eqn, var_names) {
     # Assignment
     "<-" = " = ",
     # Pipe operator
-    "%>%" = " |> ",
+    # "%>%" = " |> ",
     # Matrix algebra
     "%*%" = " * ",
     "%in%" = " in "
@@ -574,7 +574,7 @@ convert_all_statements_julia = function(eqn, var_names){
 
           # Start with first pair
           pair = df_statements[1, ]
-          pair %>% as.data.frame()
+          pair |> as.data.frame()
 
           if (pair[["statement"]] %in% c("if")) {
             if (pair[["next_statement"]] %in% c("else if", "else")){
@@ -619,7 +619,7 @@ convert_all_statements_julia = function(eqn, var_names){
             # All default arguments have to be at the end; if not, throw error
             contains_name = stringr::str_detect(arg, "=")
             arg_split = stringr::str_split_fixed(arg, "=", n = 2)
-            names_arg = ifelse(contains_name, arg_split[, 1], NA) %>% trimws()
+            names_arg = ifelse(contains_name, arg_split[, 1], NA) |> trimws()
 
             # error when there are non-default arguments between default argumens or when default argument is not at the end
             if (any(!is.na(names_arg))){
@@ -629,7 +629,7 @@ convert_all_statements_julia = function(eqn, var_names){
 
             }
 
-            arg = paste0(arg, collapse = ", ") %>%
+            arg = paste0(arg, collapse = ", ") |>
               # Varargs (Variable Arguments): , ... -> ...
               stringr::str_replace_all(",[ ]*\\.\\.\\.", "...")
 
@@ -653,7 +653,7 @@ convert_all_statements_julia = function(eqn, var_names){
   ### Convert one liner functions
   # Get start of new sentences
   idxs_newline = rbind(data.frame(start = 1, end = 1),
-                       stringr::str_locate_all(eqn, "\n")[[1]] %>% as.data.frame(),
+                       stringr::str_locate_all(eqn, "\n")[[1]] |> as.data.frame(),
                        data.frame(start = nchar(eqn) + 1, end = nchar(eqn) + 1))
 
   # For each new line, find first two words
@@ -670,10 +670,10 @@ convert_all_statements_julia = function(eqn, var_names){
     # If second word is function, replace
     if (pair[["second_word"]] == "function"){
 
-      pair[["match"]] = pair[["match"]] %>%
+      pair[["match"]] = pair[["match"]] |>
         stringr::str_replace(paste0(pair[["second_word"]], "[ ]*\\("),
                              # Edit: DON'T turn everything into keyword argument
-                             paste0(pair[["first_word"]], "(") ) %>%
+                             paste0(pair[["first_word"]], "(") ) |>
         # Replace assignment operator too
         stringr::str_replace(paste0(stringr::str_escape(pair[["first_word"]]), "[ ]*(=|<-)"),
                              paste0(pair[["second_word"]], " "))
@@ -692,7 +692,7 @@ convert_all_statements_julia = function(eqn, var_names){
       # All default arguments have to be at the end; if not, throw error
       contains_name = stringr::str_detect(arg, "=")
       arg_split = stringr::str_split_fixed(arg, "=", n = 2)
-      names_arg = ifelse(contains_name, arg_split[, 1], NA) %>% trimws()
+      names_arg = ifelse(contains_name, arg_split[, 1], NA) |> trimws()
 
       # error when there are non-default arguments between default argumens or when default argument is not at the end
       if (any(!is.na(names_arg))){
@@ -711,7 +711,7 @@ convert_all_statements_julia = function(eqn, var_names){
 
   })
 
-  eqn = unlist(lapply(pairs, `[[`, "match")) %>% paste0(collapse = "")
+  eqn = unlist(lapply(pairs, `[[`, "match")) |> paste0(collapse = "")
 
   return(eqn)
 
@@ -733,8 +733,8 @@ create_default_arg = function(arg){
   # Find names and values of arguments
   contains_value = stringr::str_detect(arg, "=")
   arg_split = stringr::str_split_fixed(arg, "=", n = 2)
-  values_arg = ifelse(contains_value, arg_split[, 1], NA) %>% trimws()
-  names_arg = ifelse(contains_value, arg_split[, 2], arg_split[, 1]) %>% trimws()
+  values_arg = ifelse(contains_value, arg_split[, 1], NA) |> trimws()
+  names_arg = ifelse(contains_value, arg_split[, 2], arg_split[, 1]) |> trimws()
   default_arg = lapply(as.list(stats::setNames(values_arg, names_arg)), as.character)
 
   return(default_arg)
@@ -927,10 +927,10 @@ get_syntax_julia = function(){
     "drop_u", "Unitful.ustrip", "syntax1", "", "", T,
 
     # step() is already an existing function in Julia, so we use make_step() instead
-    "step", "make_step", "syntax1", paste0(P[["times_name"]], ", ", P[["time_units_name"]]), "", F,
-    "pulse", "pulse", "syntax1", paste0(P[["times_name"]], ", ", P[["time_units_name"]]), "", F,
-    "ramp", "ramp", "syntax1", paste0(P[["times_name"]], ", ", P[["time_units_name"]]), "", F,
-    "seasonal", "seasonal", "syntax1", paste0(P[["times_name"]], ", ", P[["timestep_name"]]), "", F,
+    "step", "make_step", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", F,
+    "pulse", "pulse", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", F,
+    "ramp", "ramp", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", F,
+    "seasonal", "seasonal", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["timestep_name"]]), "", F,
 
     "length_IM", "length", "syntax1", "", "", F,
 
@@ -1258,7 +1258,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
                                                    stringr::fixed(c("(?<!\\.)\\b" = "", "\\(" = "(", "\\)" = ")")))
 
         for (j in rev(1:nrow(idx_df))){
-          stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) = idx_df[j, ][["R_regex"]] #%>%
+          stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) = idx_df[j, ][["R_regex"]] #|>
         }
       }
 
@@ -1314,7 +1314,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
         idx_funcs_ordered = idx_funcs_ordered[order(idx_funcs_ordered[["is_nested_around"]]), ]
         idx_func = idx_funcs_ordered[1, ] # Select first match
 
-        if (P[["debug"]]){
+        if (.sdbuildR_env[["P"]][["debug"]]){
           print("idx_func")
           print(idx_func)
         }
@@ -1368,20 +1368,20 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             stop(paste0("Adjust equation of ", name, ": the delay length in delay() must be greater than 0."))
           }
 
-          func_name = paste0(name, P[["delay_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
+          func_name = paste0(name, .sdbuildR_env[["P"]][["delay_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
           arg3 = ifelse(length(arg) > 2, arg[3], "nothing")
 
           replacement = paste0(idx_func[["julia"]], "(",
                                arg[1], ", ",
                                arg[2], ", ",
                                arg3, ", ",
-                               P[["time_name"]],
+                               .sdbuildR_env[["P"]][["time_name"]],
                                # Symbols are faster
                                ", :", arg[1],
                                ", ",
-                               P[["intermediaries"]], ", ",
-                               P[["model_setup_name"]], ".",
-                               P[["intermediary_names"]], ")")
+                               .sdbuildR_env[["P"]][["intermediaries"]], ", ",
+                               .sdbuildR_env[["P"]][["model_setup_name"]], ".",
+                               .sdbuildR_env[["P"]][["intermediary_names"]], ")")
 
           add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(var = arg[1],
                                                                           length = arg[2],
@@ -1402,17 +1402,17 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           }
 
           arg2 = ifelse(length(arg) > 1, arg[2], "nothing")
-          func_name = paste0(name, P[["past_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
+          func_name = paste0(name, .sdbuildR_env[["P"]][["past_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
           replacement = paste0(idx_func[["julia"]], "(",
                                arg[1], ", ",
                                arg2, ", nothing, ",
-                               P[["time_name"]],
+                               .sdbuildR_env[["P"]][["time_name"]],
                                # Symbols are faster
                                ", :", arg[1],
                                ", ",
-                               P[["intermediaries"]], ", ",
-                               P[["model_setup_name"]], ".",
-                               P[["intermediary_names"]], ")")
+                               .sdbuildR_env[["P"]][["intermediaries"]], ", ",
+                               .sdbuildR_env[["P"]][["model_setup_name"]], ".",
+                               .sdbuildR_env[["P"]][["intermediary_names"]], ")")
           add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(var = arg[1],
                                                                           length = arg2)
 
@@ -1437,9 +1437,9 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           arg4 = ifelse(length(arg) > 3, arg[4], arg[1])
 
           # Number delayN() as there may be multiple
-          func_name = paste0(name, P[["delayN_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
+          func_name = paste0(name, .sdbuildR_env[["P"]][["delayN_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
 
-          replacement = paste0(func_name, P[["outflow_suffix"]])
+          replacement = paste0(func_name, .sdbuildR_env[["P"]][["outflow_suffix"]])
           setup = paste0("setup_delayN(", arg4, ", ", arg[2], ", ", arg[3],
                          # ", \"", func_name, "\")")
                          # Symbols are faster
@@ -1483,9 +1483,9 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           arg4 = ifelse(length(arg) > 3, arg[4], arg[1])
 
           # Number smoothN() as there may be multiple
-          func_name = paste0(name, P[["smoothN_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
+          func_name = paste0(name, .sdbuildR_env[["P"]][["smoothN_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
 
-          replacement = paste0(func_name, P[["outflow_suffix"]])
+          replacement = paste0(func_name, .sdbuildR_env[["P"]][["outflow_suffix"]])
           setup = paste0("setup_smoothN(", arg4, ", ", arg[2], ", ", arg[3],
                          # ", \"", func_name, "\")")
                          # Symbols are faster
@@ -1530,7 +1530,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
                                  idx_func[["julia"]])
         }
 
-        if (P[["debug"]]){
+        if (.sdbuildR_env[["P"]][["debug"]]){
           print(stringr::str_sub(eqn, start_idx, end_idx))
           print(replacement)
           print("")
@@ -1568,7 +1568,7 @@ sort_args = function(arg, func_name, default_arg = NULL, var_names = NULL){
 
     # Find default arguments of R function
     # Assume Julia and R arguments are the same, with the same order
-    default_arg = do.call(formals, list(func_name)) %>% as.list()
+    default_arg = do.call(formals, list(func_name)) |> as.list()
     varargs = any(names(default_arg) == "...")
     default_arg = default_arg[names(default_arg) != "..."] # Remove ellipsis
 

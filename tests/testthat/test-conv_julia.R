@@ -114,7 +114,7 @@ test_that("converting functions to Julia with named arguments", {
 
 
   # Error for na.rm
-  expect_error(xmile() %>% build("a", "stock", eqn = "sd(x = test, na.rm = T)"), "na\\.rm is not supported as an argument in sdbuildR. Please use na\\.omit\\(x\\) instead")
+  expect_error(xmile() |> build("a", "stock", eqn = "sd(x = test, na.rm = T)"), "na\\.rm is not supported as an argument in sdbuildR. Please use na\\.omit\\(x\\) instead")
 
   # Check that wrong arguments throw error
   expect_error(convert_equations_julia(sfm, type, name, "sd(a, y = test)",
@@ -143,65 +143,65 @@ test_that("converting functions to Julia with named arguments", {
 
 
   # Error when not all default arguments are at the end
-  expect_error(xmile() %>% macro("Function", "function(x, y = 1, z) x + y"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments.")
+  expect_error(xmile() |> macro("Function", "function(x, y = 1, z) x + y"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments.")
 
-  expect_error(xmile() %>% macro("Function", "function(x, y = 1, z){\nx + y\n}"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments.")
+  expect_error(xmile() |> macro("Function", "function(x, y = 1, z){\nx + y\n}"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments.")
 
-  expect_error(xmile() %>% macro("Function", "function(x, y = 1, z, a = 1) x + y"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments")
+  expect_error(xmile() |> macro("Function", "function(x, y = 1, z, a = 1) x + y"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments")
 
-  expect_error(xmile() %>% macro("Function", "function(x, y = 1, z, a = 1){\nx + y\n}"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments")
+  expect_error(xmile() |> macro("Function", "function(x, y = 1, z, a = 1){\nx + y\n}"), "Please change the function definition of Function. All arguments with defaults have to be placed at the end of the function arguments")
 
-  expect_no_error(xmile() %>% macro("Function", "function(x, y = 1, a = 1){\nx + y\n}"))
-  expect_no_error(xmile() %>% macro("Function", "function(x){\nx + y\n}"))
-  expect_no_error(xmile() %>% macro("Function", "function(y = 1){\nx + y\n}"))
+  expect_no_error(xmile() |> macro("Function", "function(x, y = 1, a = 1){\nx + y\n}"))
+  expect_no_error(xmile() |> macro("Function", "function(x){\nx + y\n}"))
+  expect_no_error(xmile() |> macro("Function", "function(y = 1){\nx + y\n}"))
 })
 
 
 test_that("custom function definitons work", {
 
-  sfm = xmile() %>% macro("func", "function(x, y = 1, z = 2) x + y")
+  sfm = xmile() |> macro("func", "function(x, y = 1, z = 2) x + y")
   expect_equal(sfm$macro$func$eqn_julia, "function func(x, y = 1.0, z = 2.0)\n x .+ y\nend")
 
   # Is the function now usable?
-  sfm = sfm %>%
-    sim_specs(language="R", stop = 1, dt = .1) %>%
+  sfm = sfm |>
+    sim_specs(language="R", stop = 1, dt = .1) |>
     build("a", "stock", eqn = "func(1, 2)")
   sim = expect_no_error(simulate(sfm))
   expect_equal(sim$df[1, "value"], 1 + 2)
 
   # Name argument
-  sfm = sfm %>%
+  sfm = sfm |>
     build("a",eqn = "func(1, y = 2)")
   expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, y = 2.0)")
   sim = expect_no_error(simulate(sfm))
   expect_equal(sim$df[1, "value"], 1 + 2)
 
   # Switch order of arguments
-  sfm = sfm %>%
+  sfm = sfm |>
     build("a",eqn = "func(1, z = 3, y = 2)")
   expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, z = 3.0, y = 2.0)")
   sim = expect_no_error(simulate(sfm))
   expect_equal(sim$df[1, "value"], 1 + 2)
 
   # Repeat in Julia
-  sfm = xmile() %>% macro("func", "function(x, y = 1, z = 2) x + y")
+  sfm = xmile() |> macro("func", "function(x, y = 1, z = 2) x + y")
   expect_equal(sfm$macro$func$eqn_julia, "function func(x, y = 1.0, z = 2.0)\n x .+ y\nend")
 
   # Is the function now usable?
-  sfm = sfm %>%
-    sim_specs(language="Julia", stop = 1, dt = .1) %>%
+  sfm = sfm |>
+    sim_specs(language="Julia", stop = 1, dt = .1) |>
     build("a", "stock", eqn = "func(1, 2)")
   sim = expect_no_error(simulate(sfm))
   expect_equal(sim$df[1, "value"], 1 + 2)
 
   # Named argument throws error when translating to Julia
-  sfm = sfm %>%
+  sfm = sfm |>
     build("a",eqn = "func(1, y = 2)")
   expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, y = 2.0)")
   expect_error(simulate(sfm), "The following variables were used as functions with named arguments in the Julia translated equation")
 
   # Switch order of arguments
-  sfm = sfm %>%
+  sfm = sfm |>
     build("a",eqn = "func(1, z = 3, y = 2)")
   expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, z = 3.0, y = 2.0)")
   expect_error(simulate(sfm), "The following variables were used as functions with named arguments in the Julia translated equation")
@@ -680,23 +680,23 @@ test_that("adding scientific notation", {
 test_that("functions in Julia work", {
 
   # round() with units
-  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "round(10.235)")
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "round(10.235)")
   expect_no_error(simulate(sfm))
 
-  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "round(u('100.80 kilograms'))")
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "round(u('100.80 kilograms'))")
   expect_no_error(simulate(sfm))
 
-  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "round(u('108.67 seconds'))")
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "round(u('108.67 seconds'))")
   expect_no_error(simulate(sfm))
 
   # Cosine function needs unitless argument or argument in radians
-  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "cos(10)")
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "cos(10)")
   expect_no_error(simulate(sfm))
 
-  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "cos(u('10meters'))")
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "cos(u('10meters'))")
   expect_warning(simulate(sfm), "An error occurred while running the Julia script")
 
-  sfm = xmile() %>% sim_specs(language = "Julia") %>% build("a", "stock", eqn = "cos(u('10radians'))")
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "cos(u('10radians'))")
   expect_no_error(simulate(sfm))
 
 })

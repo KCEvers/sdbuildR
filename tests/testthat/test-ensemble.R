@@ -3,7 +3,7 @@
 test_that("ensemble works", {
 
   # If you already have random elements in the model, no need to specify what to vary
-  sfm = xmile("Crielaard2022") %>% sim_specs(language = "Julia",
+  sfm = xmile("Crielaard2022") |> sim_specs(language = "Julia",
                                              start = 0, stop = 500,
                                              dt = .1,
                                              save_from = 400, save_at = 1)
@@ -103,10 +103,10 @@ test_that("ensemble works", {
 test_that("plotting ensemble also works with singular time point", {
 
   # If you already have random elements in the model, no need to specify what to vary
-  sfm = xmile("predator-prey") %>% sim_specs(language = "Julia",
+  sfm = xmile("predator-prey") |> sim_specs(language = "Julia",
                                              start = 0, stop = 50,
                                              dt = .1,
-                                             save_from = 50) %>%
+                                             save_from = 50) |>
     build(c("predator", "prey"), eqn = "runif(1)")
   sims = ensemble(sfm)
 
@@ -134,7 +134,7 @@ test_that("plotting ensemble also works with singular time point", {
 test_that("ensemble works with specified range", {
 
   # If you already have random elements in the model, no need to specify what to vary
-  sfm = xmile("Crielaard2022") %>% sim_specs(language = "Julia",
+  sfm = xmile("Crielaard2022") |> sim_specs(language = "Julia",
                                              start = 0, stop = 500,
                                              dt = .1,
                                              save_from = 400, save_at = 1)
@@ -212,7 +212,7 @@ test_that("ensemble works with specified range", {
 test_that("ensemble works with units", {
 
   # Test ensemble with model with units
-  sfm = xmile("coffee_cup") %>% sim_specs(language = "Julia") %>%
+  sfm = xmile("coffee_cup") |> sim_specs(language = "Julia") |>
     build("coffee_temperature", eqn = "runif(1, 20, 150)")
   sims = expect_no_error(ensemble(sfm))
 
@@ -238,8 +238,8 @@ test_that("ensemble works with units", {
 test_that("ensemble works with NA", {
 
   # Combine varying initial condition and parameters
-  sfm = xmile("predator-prey") %>%
-    build(c("predator", "prey"), eqn = "runif(1, 30, 50)") %>%
+  sfm = xmile("predator-prey") |>
+    build(c("predator", "prey"), eqn = "runif(1, 30, 50)") |>
     sim_specs(language = "Julia",
               dt = 0.1,
               save_at = 1, save_from = 150,
@@ -273,22 +273,22 @@ test_that("ensemble works with NA", {
 test_that("ensemble: order of range parameters", {
 
   # In an earlier version, the order of the range parameters was not preserved
-  sfm = xmile() %>% sim_specs(language = "Julia") %>%
-    sim_specs(stop = 12, time_units = "month") %>%
-    header(name = "Maya's Burnout") %>%
+  sfm = xmile() |> sim_specs(language = "Julia") |>
+    sim_specs(stop = 12, time_units = "month") |>
+    header(name = "Maya's Burnout") |>
     build("workload", "stock",
-          eqn = 4) %>%
+          eqn = 4) |>
     build("new_tasks", "flow",
           eqn = "workload * work_growth",
-          to = "workload") %>%
+          to = "workload") |>
     build("work_growth", "constant",
-          eqn = 1.5) %>%
+          eqn = 1.5) |>
     build(c("sleep", "necessary_sleep", "worry_factor"),
           c("stock", "constant", "constant"),
-          eqn = c("necessary_sleep", 8, .1)) %>%
+          eqn = c("necessary_sleep", 8, .1)) |>
     build("worry_about_work", "flow",
           eqn = "workload * worry_factor",
-          from = "sleep") %>%
+          from = "sleep") |>
     build("need_for_rest",  "flow",
           eqn = "workload * necessary_sleep / sleep",
           from = "workload")
@@ -299,6 +299,22 @@ test_that("ensemble: order of range parameters", {
 
   expect_equal(as.data.frame(sims$conditions)$work_growth, 1.5)
   expect_equal(as.data.frame(sims$conditions)$necessary_sleep, 8)
+
+})
+
+
+test_that("ensemble works with interpolation function", {
+
+  sfm = xmile("logistic_model") |> sim_specs(language = "Julia",
+                                             start = 0, stop = 50,
+                                             dt = .1,
+                                             save_from = 50) |>
+    build("X", eqn = "runif(1, 0, K)") |>
+    build("input", "constant", eqn = "pulse(10, width = dt, height = .01)") |>
+    build("inflow2", "flow", eqn = "input(t)", to = "X")
+
+  sims = expect_no_error(ensemble(sfm))
+  expect_no_error(plot(sims))
 
 })
 

@@ -44,14 +44,14 @@ Ensemble simulations are only supported in Julia, so we need to load the Julia e
 
 ```{r, results='hide'}
 use_julia()
-sfm = sfm %>% sim_specs(language = "Julia")
+sfm = sim_specs(sfm, language = "Julia")
 ```
 
 Without changing the parameters, we can run a single simulation to see how the model behaves:
 
 ```{r include=FALSE}
 # Add seed to ensure the difference between trajectories is immediately visible
-sfm = sfm %>% sim_specs(seed = 1)
+sfm = sim_specs(sfm, seed = 1)
 ```
 
 ```{r}
@@ -63,7 +63,7 @@ As the model has random initial conditions, another run will be different:
 
 ```{r include=FALSE}
 # Add seed to ensure the difference between trajectories is immediately visible
-sfm = sfm %>% sim_specs(seed = 3)
+sfm = sim_specs(sfm, seed = 3)
 ```
 
 ```{r}
@@ -78,14 +78,14 @@ To explore this more systematically, we can run an ensemble simulation using the
 Ensemble simulations create multiple runs of the model, which only makes sense if the model either has some random elements or if parameters are being varied. Our model already has random initial conditions, but if it had not, we could create these:
 
 ```{r}
-sfm = sfm %>% build(c("Food_intake", "Hunger", "Compensatory_behaviour"),
+sfm = build(sfm, c("Food_intake", "Hunger", "Compensatory_behaviour"),
                     eqn = "runif(1)")
 ```
 
 With random initial conditions, multiple runs of the same model will be different. As running ensemble simulations can be quite memory intensive, it is highly recommended to reduce the size of the returned timeseries. This will save memory and speed up the simulation. For example, we can only save the timeseries every 1 time units, and only save from time 10:
 
 ```{r}
-sfm = sfm %>% sim_specs(save_at = 1, save_from = 10)
+sfm = sim_specs(sfm, save_at = 1, save_from = 10)
 ```
 
 The model is now ready for running ensemble simulations. We complete 100 runs using the `ensemble()` function:

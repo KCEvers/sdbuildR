@@ -17,6 +17,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/KCEvers/sdbuildR/graph/badge.svg)](https://app.codecov.io/gh/KCEvers/sdbuildR)
 <!-- badges: end -->
 
 Model systems as stock-and-flow models in R. Stock-and-flow models are foundational to system dynamics, and help to understand systems complicated by nonlinearities, delays, and feedback loops. sdbuildR aims to make stock-and-flow modelling accessible and effortless, enabling you to dedicate your expertise to what matters most: building insightful, high-quality models. Get started at [https://kcevers.github.io/sdbuildR/](https://kcevers.github.io/sdbuildR/)!

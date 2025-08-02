@@ -116,6 +116,18 @@ end
 
 # Make pulse signal
 function pulse(times, time_units, start, height = 1.0, width = 1.0 * time_units, repeat_interval = nothing)
+
+    # Width of pulse cannot be zero
+    if eltype(width) <: Unitful.Quantity
+        if Unitful.ustrip(convert_u(width, time_units)) <= 0.0
+            throw(ArgumentError("The width of the pulse cannot be equal to or less than 0; to indicate an 'instantaneous' pulse, specify the simulation step size (dt)."))
+        end
+    else
+        if width <= 0.0
+            throw(ArgumentError("The width of the pulse cannot be equal to or less than 0; to indicate an 'instantaneous' pulse, specify the simulation step size (dt)."))
+        end
+    end
+
     # If times has units, but the pulse times don't, convert them to the same units
     if eltype(times) <: Unitful.Quantity
         if !(eltype(start) <: Unitful.Quantity)

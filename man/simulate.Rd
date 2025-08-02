@@ -57,7 +57,7 @@ sim = simulate(sfm, only_stocks = FALSE)
 plot(sim, add_constants = TRUE)
 
 # Use Julia for models with units or delay functions
-sfm = xmile("coffee_cup") \%>\% sim_specs(language = "Julia")
+sfm = sim_specs(xmile("coffee_cup"), language = "Julia")
 use_julia()
 sim = simulate(sfm)
 plot(sim)

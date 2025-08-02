@@ -19,11 +19,11 @@ test_that("translating Insight Maker models works", {
   expect_equal("xpts" %in% names(df), TRUE)
   expect_equal("ypts" %in% names(df), TRUE)
 
-  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
-  expect_error(simulate(sfm %>% sim_specs(language = "R")),
+  expect_error(simulate(sfm |> sim_specs(language = "R")),
                "The model contains unit strings u\\(''\\), which are not supported for simulations in R")
 
 
@@ -34,11 +34,11 @@ test_that("translating Insight Maker models works", {
   expect_equal(nrow(df) > 0, TRUE)
   expect_equal("macro" %in% df$type, TRUE)
 
-  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
-  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "R")))
+  sim = expect_no_error(simulate(sfm |> sim_specs(language = "R")))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
@@ -49,12 +49,12 @@ test_that("translating Insight Maker models works", {
   expect_equal(nrow(df) > 0, TRUE)
   expect_equal("macro" %in% df$type, TRUE)
 
-  sim = expect_no_error(simulate(sfm %>% sim_specs(language = "Julia")))
+  sim = expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
   # This model uses unit strings u(''), which are not supported in R
-  expect_error(simulate(sfm %>% sim_specs(language = "R")),
+  expect_error(simulate(sfm |> sim_specs(language = "R")),
                "The model contains unit strings u\\(''\\), which are not supported for simulations in R")
 
 })

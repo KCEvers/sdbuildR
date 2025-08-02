@@ -6,6 +6,8 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/KCEvers/sdbuildR/graph/badge.svg)](https://app.codecov.io/gh/KCEvers/sdbuildR)
 <!-- badges: end -->
 
 Model systems as stock-and-flow models in R. Stock-and-flow models are
