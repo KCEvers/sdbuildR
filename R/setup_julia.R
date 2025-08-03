@@ -148,15 +148,15 @@ use_julia <- function(
   }
 
   # Set path to Julia executable
-  old_path = Sys.getenv("JULIA_BINDIR")
+  # old_path = Sys.getenv("JULIA_BINDIR")
   Sys.setenv(JULIA_BINDIR = JULIA_HOME)
-  on.exit({
-    if (is.na(old_path)){
-      Sys.unsetenv("JULIA_BINDIR")
-    } else {
-      Sys.setenv("JULIA_BINDIR" = old_path)
-    }
-  })
+  # on.exit({
+  #   if (is.na(old_path)){
+  #     Sys.unsetenv("JULIA_BINDIR")
+  #   } else {
+  #     Sys.setenv("JULIA_BINDIR" = old_path)
+  #   }
+  # })
 
   JuliaConnectoR::startJuliaServer()
   JuliaConnectoR::juliaSetupOk()
