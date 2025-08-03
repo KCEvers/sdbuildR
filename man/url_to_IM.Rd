@@ -4,22 +4,22 @@
 \alias{url_to_IM}
 \title{Extract Insight Maker model XML string from URL}
 \usage{
-url_to_IM(URL, filepath_IM, directory)
+url_to_IM(URL, filepath_IM)
 }
 \arguments{
 \item{URL}{String with URL to an Insight Maker model}
 
 \item{filepath_IM}{String with file path to an Insight Maker model with suffix .InsightMaker}
-
-\item{directory}{Directory to save output in, optional}
 }
 \value{
 String with Insight Maker model
 }
 \description{
-Extract Insight Maker model XML string from URL
+For internal use; use \code{insightmaker_to_sfm()} to import an Insight Maker model.
 }
 \seealso{
+\code{\link[=insightmaker_to_sfm]{insightmaker_to_sfm()}}
+
 Other insightmaker: 
 \code{\link{insightmaker_to_sfm}()}
 }

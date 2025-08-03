@@ -17,6 +17,7 @@ Print summary of stock-and-flow model, including number of stocks, flows, consta
 \examples{
 sfm = xmile("SIR")
 summary(sfm)
+
 }
 \seealso{
 \code{\link[=build]{build()}}

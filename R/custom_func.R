@@ -237,12 +237,13 @@ filter_IM = function(y, condition_func){
 #' build("input", "constant", eqn = "ramp(20, 30, 3)") |>
 #' build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
+#' \dontshow{sfm = sim_specs(sfm, save_at = .1)}
+#'
 #' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
 #' # To create a decreasing ramp, set the height to a negative value
-#' sfm = sfm |>
-#' build("input", eqn = "ramp(20, 30, -3)")
+#' sfm = build(sfm, "input", eqn = "ramp(20, 30, -3)")
 #'
 #' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
@@ -302,8 +303,7 @@ ramp <- function(start, finish, height = 1){
 #' plot(sim)
 #'
 #' # Create a pulse that repeats every 5 time units
-#' sfm = sfm |>
-#'   build("input", eqn = "pulse(5, 2, 1, 5)")
+#' sfm = build(sfm, "input", eqn = "pulse(5, 2, 1, 5)")
 #'
 #' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
@@ -372,7 +372,7 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 #' plot(sim)
 #'
 #' # Negative heights are also possible
-#' sfm = sfm |> build("input", eqn = "step(50, -10)")
+#' sfm = build(sfm, "input", eqn = "step(50, -10)")
 #'
 #' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
@@ -546,7 +546,7 @@ mod = function(a, b){
 #' @examples
 #' shuffle(1:10)
 shuffle = function(x){
-  return(sample(x, length(x), replace = F))
+  return(sample(x, length(x), replace = FALSE))
 }
 
 

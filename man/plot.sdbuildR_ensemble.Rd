@@ -39,7 +39,7 @@
 
 \item{palette}{Colour palette. Must be one of hcl.pals().}
 
-\item{colors}{Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.}
+\item{colors}{Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.}
 
 \item{font_family}{Font family. Defaults to "Times New Roman".}
 
@@ -57,16 +57,18 @@
 Plot of ensemble simulation.
 }
 \description{
-Visualise ensemble simulation results of a stock-and-flow model. Either summary statistics or individual trajectories can be plotted. When multiple conditions j are specified, a grid of subplots is plotted. See \code{ensemble()} for examples.
+Visualize ensemble simulation results of a stock-and-flow model. Either summary statistics or individual trajectories can be plotted. When multiple conditions j are specified, a grid of subplots is plotted. See \code{ensemble()} for examples.
 }
 \seealso{
 \code{\link[=ensemble]{ensemble()}}
 
 Other simulate: 
 \code{\link{ensemble}()},
+\code{\link{julia_setup_ok}()},
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
-\code{\link{use_julia}()}
+\code{\link{use_julia}()},
+\code{\link{use_threads}()}
 }
 \concept{simulate}

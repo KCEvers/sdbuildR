@@ -63,8 +63,8 @@ u = function(unit_str){
 #' # For example, the cosine function only accepts unitless arguments or
 #' # arguments with units in radians or degrees
 #' sfm = xmile() |>
-#' build("a", "constant", eqn = "10", units = "minutes") |>
-#' build("b", "constant", eqn = "cos(drop_u(a))")
+#'  build("a", "constant", eqn = "10", units = "minutes") |>
+#'  build("b", "constant", eqn = "cos(drop_u(a))")
 drop_u = function(x){
   return(x)
 }
@@ -86,8 +86,8 @@ drop_u = function(x){
 #' @examples
 #' # Change the unit of rate from minutes to hours
 #'sfm = xmile() |>
-#'build("rate", "constant", eqn = "10", units = "minutes") |>
-#'build("change", "flow",
+#'  build("rate", "constant", eqn = "10", units = "minutes") |>
+#'  build("change", "flow",
 #'      eqn = "(room_temperature - coffee_temperature) / convert_u(rate, u('hour'))")
 #'
 convert_u = function(x, unit_def){
@@ -215,8 +215,6 @@ replace_written_powers = function(x){
 #' clean_unit_in_u("u('10 Meters') + u('Kilograms per sec') + u('10 pounds squared')",
 #' get_regex_units())
 clean_unit_in_u = function(x, regex_units){
-  # old:
-  # stringr::str_replace_all(x, "\\bu\\([\"|'](.*?)[\"|']\\)", function(y){clean_unit(y, regex_units)})
 
   # Extract all u('...') patterns
   matches <- stringr::str_extract_all(x, "\\bu\\([\"|'](.*?)[\"|']\\)")[[1]]
@@ -270,15 +268,21 @@ clean_unit <- function(x, regex_units, ignore_case = FALSE, include_translation 
     # Remove double spaces and trim
     x <- gsub("\\s+", " ", trimws(x))
 
-    # Replace squared -> ^2 and cubed -> ^3
-    x = sapply(x, replace_written_powers, USE.NAMES = FALSE)
-
     # Replace "per" with "/"
     x <- gsub("[[:space:]\\)][Pp]er[[:space:]\\(]", "/", x, ignore.case = ignore_case)
 
     # Split unit into separate parts
     x_split = split_units(x)
     x_split_clean = lapply(x_split, trimws)
+
+    # Replace squared -> ^2 and cubed -> ^3
+    x_split_clean = lapply(x_split_clean, replace_written_powers)
+
+    # Remerge
+    x = paste0(x_split_clean, collapse = "")
+    x_split = split_units(x)
+    x_split_clean = lapply(x_split, trimws)
+
     idx = lapply(x_split_clean,
                  stringr::str_detect,
                  stringr::regex(names(regex_units), ignore_case = ignore_case)) |>
@@ -288,8 +292,6 @@ clean_unit <- function(x, regex_units, ignore_case = FALSE, include_translation 
     # Concatenate parts
     x_parts = ifelse(!is.na(idx), unname(regex_units[idx]), unlist(x_split_clean)) |>
       # Replace punctuation with underscore
-      # sapply(function(y){gsub("[@#&$!^%*~{}|:;<>?`]", "_", y)}) |>
-      # sapply(function(y){gsub("[@#&\\$!%~\\{\\}\\|:;\\?`\\\\]", "_", y)}) |>
       sapply(function(y){gsub("@|#|&|\\$|!|%|~|\\{|\\}|\\||:|;|\\?|`|\\\\", "_", y)}) |>
       # Replace space between numbers with "*"
       sapply(function(y){gsub("([0-9]) ([0-9])", "\\1*\\2", y)}) |>
@@ -297,15 +299,6 @@ clean_unit <- function(x, regex_units, ignore_case = FALSE, include_translation 
       sapply(function(y){gsub("[[:space:]]", "", y)}) |>
       stats::setNames(unlist(x_split_clean))
     x_new = paste0(x_parts, collapse = "")
-
-    # # Replace punctuation with underscore
-    # x_new <- gsub("[@#&$!]", "_", x_new)
-    #
-    # # Replace space between numbers with "*"
-    # x_new <- gsub("([0-9]) ([0-9])", "\\1*\\2", x_new)
-    #
-    # # Remove all spaces
-    # x_new <- gsub("[[:space:]]", "", x_new)
 
     # Add back scientific notation in case there are too many digits
     x_new = scientific_notation(x_new, task = "add")
@@ -418,7 +411,7 @@ get_units = function(){
     "The volt, an SI unit of electric potential, defined as 1 W / A.", "V", "Volt", "1W/A", TRUE,
     "The ohm, an SI unit of electrical resistance, defined as 1 V / A.", "Ohm", "Ohm", "1V/A", TRUE,
     "The siemens, an SI unit of electrical conductance, defined as 1 Ohm^-1", "S", "Siemens", "1/Ohm", TRUE,
-    "The farad, an SI unit of electrical capacitance, defined as 1 s^4 * A^2 / (kg * m^2).", "F", "Farad", "1s^4*A^2/(kg*m^2)", TRUE,
+    "The farad, an SI unit of electrical capacitance, defined as 1 s^4 * A^2 / (kg * m^2).", "FALSE", "Farad", "1s^4*A^2/(kg*m^2)", TRUE,
     "The henry, an SI unit of electrical inductance, defined as 1 J / A^2.", "H", "Henry", "1J/(A^2)", TRUE,
     "The tesla, an SI unit of magnetic B-field strength, defined as 1 kg / (A * s^2).", "T", "Tesla", "1kg/(A*s^2)", TRUE,
     "The weber, an SI unit of magnetic flux, defined as 1 kg * m^2 / (A * s^2).", "Wb", "Weber", "1kg*m^2/(A*s^2)", TRUE,
@@ -640,7 +633,8 @@ get_regex_time_units = function(){
 #' @family units
 #' @export
 #'
-#' @examples unit_prefixes()
+#' @examples
+#' unit_prefixes()
 unit_prefixes = function(){
   # Define the SI prefixes, symbols, and scales (with scales as 10^exponent)
   si_prefix_matrix <- matrix(
@@ -825,23 +819,9 @@ custom_units = function(){
        "USD" = list(name = "USD", eqn = "1", prefix = FALSE),
        "GBP" = list(name = "GBP", eqn = "1", prefix = FALSE),
 
-       # Unicode characters are not accepted in R, so create new units
-       # This is necessary, because otherwise these units will be translated to unicode characters for users, which can create problems in R. Alternatively, the units are translated to e.g. \\u00B0, which is not nice for the user.
-       # "deg" = list(name = "deg", eqn = "1.0\\u00B0", prefix = FALSE),
-       # "Ohm" = list(name = "Ohm", eqn = "1.0\\u2126", prefix = FALSE),
-       # "hbar" = list(name = "hbar", eqn = "1.0\\u0127", prefix = FALSE),
-       # "superconducting_magnetic_flux_quantum" = list(name = "superconducting_magnetic_flux_quantum", eqn = "1.0\\u03A60", prefix = FALSE),
-       # "degF" = list(name = "degF", eqn = "1.0\\u00B0F", prefix = FALSE),
-       # "degC" = list(name = "degC", eqn = "1.0\\u00B0C", prefix = FALSE),
-       # "Stefan_Boltzmann_constant" = list(name = "Stefan_Boltzmann_constant", eqn = "1.0\\u03C3", prefix = FALSE),
-       # "AngHertz" = list(name = "AngHertz", eqn = "1.0Hz2\\u03C0", prefix = FALSE),
-       # "magnetic_constant" = list(name = "magnetic_constant", eqn = "1.0\\u03C30", prefix = FALSE),
-       # "electric_constant" = list(name = "electric_constant", eqn = "1.0\\u03F50", prefix = FALSE)
-
        "deg" = list(name = "deg", eqn = "pi/180", prefix = FALSE),
 
-       #    # Use lowercase ohm because Ohm is already taken as an abbreviation and throws an error upon compiling the package
-
+          # Use lowercase ohm because Ohm is already taken as an abbreviation and throws an error upon compiling the package
        "ohm" = list(name = "ohm", eqn = "1V/A", prefix = FALSE),
        "reduced_Planck_constant" = list(name = "reduced_Planck_constant", eqn = "h/2pi", prefix = FALSE),
        "superconducting_magnetic_flux_quantum" = list(name = "superconducting_magnetic_flux_quantum", eqn = "h/(2q)", prefix = FALSE),

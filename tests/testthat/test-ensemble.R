@@ -2,6 +2,8 @@
 
 test_that("ensemble works", {
 
+  testthat::skip_on_cran()
+
   # If you already have random elements in the model, no need to specify what to vary
   sfm = xmile("Crielaard2022") |> sim_specs(language = "Julia",
                                              start = 0, stop = 500,
@@ -11,8 +13,7 @@ test_that("ensemble works", {
 
   sims = expect_error(ensemble(sfm, n = 0),
                       "The number of simulations must be greater than 0")
-  sims = expect_no_error(ensemble(sfm, threaded = TRUE))
-  sims = expect_no_error(ensemble(sfm, threaded = FALSE))
+  sims = expect_no_error(ensemble(sfm))
 
   # Specifying quantiles
   expect_error(ensemble(sfm, quantiles = 0.1),

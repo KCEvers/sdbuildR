@@ -32,7 +32,7 @@ sim = simulate(sfm, only_stocks = FALSE)
 plot(sim)
 
 # Negative heights are also possible
-sfm = sfm |> build("input", eqn = "step(50, -10)")
+sfm = build(sfm, "input", eqn = "step(50, -10)")
 
 sim = simulate(sfm, only_stocks = FALSE)
 plot(sim)

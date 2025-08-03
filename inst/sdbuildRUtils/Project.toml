@@ -1,5 +1,5 @@
 name = "sdbuildRUtils"
-uuid = "558783a2-18a6-44dc-8953-3641eeb55936"
+uuid = "a5299d56-575f-453c-bd7f-d3a3c62fa4e3"
 authors = ["Kyra Evers <kyra.c.evers@gmail.com>"]
 version = "0.1.0"
 
@@ -13,7 +13,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 DataFrames = "1.7.0"
-DataInterpolations = "8.1.0"
+DataInterpolations = "8.1"
 Distributions = "0.25"
 Random = "1.11.0"
 Statistics = "1.11"

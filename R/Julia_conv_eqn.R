@@ -283,7 +283,6 @@ replace_digits_with_floats = function(eqn, var_names){
 # }
 
 
-# eqn = "c(9,4,5,'8','T','*', 4) + A - B^2 & TRUE + c(F,F,T) "
 
 #' Translate R operators to Julia
 #'
@@ -754,27 +753,27 @@ get_syntax_julia = function(){
   conv_df = matrix(c(
 
     # Statistics
-    "min", "min", "syntax1", "", "", F,
-    "max", "max", "syntax1", "", "", F,
-    "pmin", "min", "syntax1", "", "", F,
-    "pmax", "max", "syntax1", "", "", F,
-    "mean", "Statistics.mean", "syntax1", "", "", F,
-    "median", "Statistics.median", "syntax1", "", "", F,
-    "prod", "prod", "syntax1", "", "", F, # ** to do: na.rm!
-    "sum", "sum", "syntax1", "", "", F,
-    "sd", "Statistics.std", "syntax1", "", "", F,
-    "cor", "Statistics.cor", "syntax1", "", "", F,
-    "cov", "Statistics.cov", "syntax1", "", "", F,
-    "var", "Statistics.var", "syntax1", "", "", F,
-    "range", "extrema", "syntax1", "", "", F,
+    "min", "min", "syntax1", "", "", FALSE,
+    "max", "max", "syntax1", "", "", FALSE,
+    "pmin", "min", "syntax1", "", "", FALSE,
+    "pmax", "max", "syntax1", "", "", FALSE,
+    "mean", "Statistics.mean", "syntax1", "", "", FALSE,
+    "median", "Statistics.median", "syntax1", "", "", FALSE,
+    "prod", "prod", "syntax1", "", "", FALSE, # ** to do: na.rm!
+    "sum", "sum", "syntax1", "", "", FALSE,
+    "sd", "Statistics.std", "syntax1", "", "", FALSE,
+    "cor", "Statistics.cor", "syntax1", "", "", FALSE,
+    "cov", "Statistics.cov", "syntax1", "", "", FALSE,
+    "var", "Statistics.var", "syntax1", "", "", FALSE,
+    "range", "extrema", "syntax1", "", "", FALSE,
 
-    "as.logical", "Bool", "syntax1", "", "" , T,
-    "seq", "range", "syntax_seq", "", "", F,
-    "seq.int", "range", "syntax_seq", "", "", F,
-    "seq_along", "range", "syntax_seq", "", "", F,
-    "seq_len", "range", "syntax_seq", "", "", F,
-    "sample", "StatsBase.sample", "syntax_sample", "", "", F,
-    "sample.int", "StatsBase.sample", "syntax_sample", "", "", F,
+    "as.logical", "Bool", "syntax1", "", "" , TRUE,
+    "seq", "range", "syntax_seq", "", "", FALSE,
+    "seq.int", "range", "syntax_seq", "", "", FALSE,
+    "seq_along", "range", "syntax_seq", "", "", FALSE,
+    "seq_len", "range", "syntax_seq", "", "", FALSE,
+    "sample", "StatsBase.sample", "syntax_sample", "", "", FALSE,
+    "sample.int", "StatsBase.sample", "syntax_sample", "", "", FALSE,
 
 
     # ** mad()
@@ -787,33 +786,33 @@ get_syntax_julia = function(){
     # range(start; length, stop, step)
     # range(;start, length, stop, step)
 
-    # "shuffle", "", "syntax1", "", "" , T,
+    # "shuffle", "", "syntax1", "", "" , TRUE,
 
 
     # ** to do: cummax, cummin
-    "cumsum", "cumsum", "syntax1", "", "", F,
-    "cumprod", "cumprod", "syntax1", "", "", F,
-    "diff", "diff", "syntax1", "", "", F,
-    "abs", "abs", "syntax1", "", "", T,
-    "sign", "sign", "syntax1", "", "", T,
+    "cumsum", "cumsum", "syntax1", "", "", FALSE,
+    "cumprod", "cumprod", "syntax1", "", "", FALSE,
+    "diff", "diff", "syntax1", "", "", FALSE,
+    "abs", "abs", "syntax1", "", "", TRUE,
+    "sign", "sign", "syntax1", "", "", TRUE,
 
-    "cos", "cos", "syntax1", "", "", T,
-    "sin", "sin", "syntax1", "", "", T,
-    "tan", "tan", "syntax1", "", "", T,
-    "acos", "acos", "syntax1", "", "", T,
-    "asin", "asin", "syntax1", "", "", T,
-    "atan", "atan", "syntax1", "", "", T,
-    "cospi", "cospi", "syntax1", "", "", T,
-    "sinpi", "sinpi", "syntax1", "", "", T,
-    "tanpi", "tanpi", "syntax1", "", "", T,
+    "cos", "cos", "syntax1", "", "", TRUE,
+    "sin", "sin", "syntax1", "", "", TRUE,
+    "tan", "tan", "syntax1", "", "", TRUE,
+    "acos", "acos", "syntax1", "", "", TRUE,
+    "asin", "asin", "syntax1", "", "", TRUE,
+    "atan", "atan", "syntax1", "", "", TRUE,
+    "cospi", "cospi", "syntax1", "", "", TRUE,
+    "sinpi", "sinpi", "syntax1", "", "", TRUE,
+    "tanpi", "tanpi", "syntax1", "", "", TRUE,
 
 
-    "nchar", "length", "syntax1", "", "", F,
-    "cor", "cor", "syntax1", "", "", F,
-    "floor", "floor", "syntax1", "", "", T,
-    "ceiling", "ceil", "syntax1", "", "", T,
-    "round", "round_", "syntax1", "", "", T,
-    "trunc", "trunc", "syntax1", "", "", T,
+    "nchar", "length", "syntax1", "", "", FALSE,
+    "cor", "cor", "syntax1", "", "", FALSE,
+    "floor", "floor", "syntax1", "", "", TRUE,
+    "ceiling", "ceil", "syntax1", "", "", TRUE,
+    "round", "round_", "syntax1", "", "", TRUE,
+    "trunc", "trunc", "syntax1", "", "", TRUE,
 
     # Find
     # "which", "findall", "syntax1", "", "",
@@ -821,45 +820,45 @@ get_syntax_julia = function(){
     # findmax(arr): Returns (max_value, index).
     # findmin(arr): Returns (min_value, index).
 
-    "which.min", "argmin", "syntax1", "", "", F,
-    "which.max", "argmax", "syntax1", "", "", F,
+    "which.min", "argmin", "syntax1", "", "", FALSE,
+    "which.max", "argmax", "syntax1", "", "", FALSE,
 
-    "exp", "exp", "syntax1", "", "", T,
-    "expm1", "expm1", "syntax1", "", "", T,
-    # "log", "log", "syntax1", "", "", T, # **to do, put base first!
-    # "logb", "logb", "syntax1", "", "", T,
-    "log2", "log2", "syntax1", "", "", T,
-    "log10", "log10", "syntax1", "", "", T,
-    "sqrt", "sqrt", "syntax1", "", "", T,
+    "exp", "exp", "syntax1", "", "", TRUE,
+    "expm1", "expm1", "syntax1", "", "", TRUE,
+    # "log", "log", "syntax1", "", "", TRUE, # **to do, put base first!
+    # "logb", "logb", "syntax1", "", "", TRUE,
+    "log2", "log2", "syntax1", "", "", TRUE,
+    "log10", "log10", "syntax1", "", "", TRUE,
+    "sqrt", "sqrt", "syntax1", "", "", TRUE,
 
 
-    "dim", "size", "syntax1", "", "", F,
-    "nrow", "size", "syntax1", "", "1", F,
-    "ncol", "size", "syntax1", "", "2", F,
-    "cbind", "hcat", "syntax1", "", "", F,
-    "rbind", "vcat", "syntax1", "", "", F,
+    "dim", "size", "syntax1", "", "", FALSE,
+    "nrow", "size", "syntax1", "", "1", FALSE,
+    "ncol", "size", "syntax1", "", "2", FALSE,
+    "cbind", "hcat", "syntax1", "", "", FALSE,
+    "rbind", "vcat", "syntax1", "", "", FALSE,
 
     # Matrix functions
-    "diag", "LinearAlgebra.diag", "syntax1", "", "", F,
-    "upper.tri", "LinearAlgebra.UpperTriangular", "syntax1", "", "", F,
-    "lower.tri", "LinearAlgebra.LowerTriangular", "syntax1", "", "", F,
-    "norm", "LinearAlgebra.norm", "syntax1", "", "", F,
-    "det", "LinearAlgebra.det", "syntax1", "", "", F,
+    "diag", "LinearAlgebra.diag", "syntax1", "", "", FALSE,
+    "upper.tri", "LinearAlgebra.UpperTriangular", "syntax1", "", "", FALSE,
+    "lower.tri", "LinearAlgebra.LowerTriangular", "syntax1", "", "", FALSE,
+    "norm", "LinearAlgebra.norm", "syntax1", "", "", FALSE,
+    "det", "LinearAlgebra.det", "syntax1", "", "", FALSE,
 
-    "t", "transpose", "syntax1", "", "", F,
-    "rev", "reverse", "syntax1", "", "", F,
-    "print", "println", "syntax1", "", "", F,
+    "t", "transpose", "syntax1", "", "", FALSE,
+    "rev", "reverse", "syntax1", "", "", FALSE,
+    "print", "println", "syntax1", "", "", FALSE,
 
-    "na.omit", "skipmissing", "syntax1", "", "", F,
+    "na.omit", "skipmissing", "syntax1", "", "", FALSE,
 
-    "eigen", "eig", "syntax1", "", "", F,
-    "getcd", "getcwd", "syntax1", "", "", F,
-    "setwd", "setcwd", "syntax1", "", "", F,
+    "eigen", "eig", "syntax1", "", "", FALSE,
+    "getcd", "getcwd", "syntax1", "", "", FALSE,
+    "setwd", "setcwd", "syntax1", "", "", FALSE,
 
 
-    "Filter", "filter", "syntax1", "", "", T,
-    "which", "findall", "syntax1", "", "", F,
-    "class", "typeof", "syntax1", "", "", F,
+    "Filter", "filter", "syntax1", "", "", TRUE,
+    "which", "findall", "syntax1", "", "", FALSE,
+    "class", "typeof", "syntax1", "", "", FALSE,
 
     # **
     # "pracma::logspace", "logrange", "syntax1", "", "",
@@ -870,12 +869,12 @@ get_syntax_julia = function(){
     # "", "isapprox", "syntax1", "", "",
     #
     # # String manipulation
-    "grep", "match", "syntax1", "", "", F,
-    "strsplit", "split", "syntax1", "", "", F,
-    "paste0", "join", "syntax1", "", "", F,
-    "toupper", "uppercase", "syntax1", "", "", T,
-    "tolower", "lowercase", "syntax1", "", "", T,
-    "stringr::str_to_title", "uppercasefirst", "syntax1", "", "", T,
+    "grep", "match", "syntax1", "", "", FALSE,
+    "strsplit", "split", "syntax1", "", "", FALSE,
+    "paste0", "join", "syntax1", "", "", FALSE,
+    "toupper", "uppercase", "syntax1", "", "", TRUE,
+    "tolower", "lowercase", "syntax1", "", "", TRUE,
+    "stringr::str_to_title", "uppercasefirst", "syntax1", "", "", TRUE,
 
 
     # "sprintf", "", "syntax1", "", "",
@@ -884,31 +883,31 @@ get_syntax_julia = function(){
 
     # Sets
     # to do: Julia's isdisjoint, issubset, issetequal.
-    "union", "union", "syntax1", "", "", F,
-    "intersect", "intersect", "syntax1", "", "", F,
-    "setdiff", "setdiff", "syntax1", "", "", F,
-    "setequal", "setequal", "syntax1", "", "", F,
+    "union", "union", "syntax1", "", "", FALSE,
+    "intersect", "intersect", "syntax1", "", "", FALSE,
+    "setdiff", "setdiff", "syntax1", "", "", FALSE,
+    "setequal", "setequal", "syntax1", "", "", FALSE,
 
     # is....()
-    "rlang::is_empty", "isempty", "syntax1", "", "", F,
-    "all", "all", "syntax1", "", "", F,
-    "any", "any", "syntax1", "", "", F,
+    "rlang::is_empty", "isempty", "syntax1", "", "", FALSE,
+    "all", "all", "syntax1", "", "", FALSE,
+    "any", "any", "syntax1", "", "", FALSE,
 
-    "is.infinite", "isinf", "syntax1", "", "", T,
-    "is.finite", "isfinite", "syntax1", "", "", T,
-    "is.nan", "ismissing", "syntax1", "", "", T,
+    "is.infinite", "isinf", "syntax1", "", "", TRUE,
+    "is.finite", "isfinite", "syntax1", "", "", TRUE,
+    "is.nan", "ismissing", "syntax1", "", "", TRUE,
 
     # https://docs.julialang.org/en/v1/base/collections
     # Julia: indexin, sortperm, findfirst
-    "sort", "sort", "syntax1", "", "", F,
+    "sort", "sort", "syntax1", "", "", FALSE,
 
 
     # Complex numbers
-    "Re", "real", "syntax1", "", "", T,
-    "Im", "imag", "syntax1", "", "", T,
-    "Mod", "", "syntax1", "", "", T,
-    "Arg", "", "syntax1", "", "", T,
-    "Conj", "conj", "syntax1", "", "", T,
+    "Re", "real", "syntax1", "", "", TRUE,
+    "Im", "imag", "syntax1", "", "", TRUE,
+    "Mod", "", "syntax1", "", "", TRUE,
+    "Arg", "", "syntax1", "", "", TRUE,
+    "Conj", "conj", "syntax1", "", "", TRUE,
 
     # as.complex(x, ...)
     # is.complex(x)
@@ -920,121 +919,121 @@ get_syntax_julia = function(){
     # imag, reim, complex, isreal, Real.
 
     # Custom functions
-    "logistic", "logistic", "syntax1", "", "", T,
-    "logit", "logit", "syntax1", "", "", T,
-    "expit", "expit", "syntax1", "", "", T,
-    "convert_u", "convert_u", "syntax1", "", "", T,
-    "drop_u", "Unitful.ustrip", "syntax1", "", "", T,
+    "logistic", "logistic", "syntax1", "", "", TRUE,
+    "logit", "logit", "syntax1", "", "", TRUE,
+    "expit", "expit", "syntax1", "", "", TRUE,
+    "convert_u", "convert_u", "syntax1", "", "", TRUE,
+    "drop_u", "Unitful.ustrip", "syntax1", "", "", TRUE,
 
     # step() is already an existing function in Julia, so we use make_step() instead
-    "step", "make_step", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", F,
-    "pulse", "pulse", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", F,
-    "ramp", "ramp", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", F,
-    "seasonal", "seasonal", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["timestep_name"]]), "", F,
+    "step", "make_step", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", FALSE,
+    "pulse", "pulse", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", FALSE,
+    "ramp", "ramp", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", FALSE,
+    "seasonal", "seasonal", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["timestep_name"]]), "", FALSE,
 
-    "length_IM", "length", "syntax1", "", "", F,
+    "length_IM", "length", "syntax1", "", "", FALSE,
 
-    "delay", "retrieve_delay", "delay", "", "", F,
-    "past", "retrieve_past", "past", "", "", F,
-    "delayN", "compute_delayN", "delayN", "", "", F,
-    "smoothN", "compute_smoothN", "smoothN", "", "", F,
+    "delay", "retrieve_delay", "delay", "", "", FALSE,
+    "past", "retrieve_past", "past", "", "", FALSE,
+    "delayN", "compute_delayN", "delayN", "", "", FALSE,
+    "smoothN", "compute_smoothN", "smoothN", "", "", FALSE,
 
     # Random Number Functions (13)
-    "runif", "rand", "syntaxD", "Distributions.Uniform", "", F,
-    "rnorm", "rand", "syntaxD", "Distributions.Normal", "", F,
-    "rlnorm", "rand", "syntaxD", "Distributions.LogNormal", "", F,
-    "rbool", "rbool", "syntax1", "", "", F,
-    "rbinom", "rand", "syntaxD", "Distributions.Binomial", "", F,
-    "rnbinom", "rand", "syntaxD", "Distributions.NegativeBinomial", "", F,
-    "rpois", "rand", "syntaxD", "Distributions.Poisson", "", F,
-    # "EnvStats::rtri", "", "syntaxD", "", "", F,
-    "rexp", "rand", "syntaxD", "Distributions.Exponential", "", F,
-    "rgamma", "rand", "syntaxD", "Distributions.Gamma", "", F,
-    "rbeta", "rand", "syntaxD", "Distributions.Beta", "", F,
-    "rcauchy", "rand", "syntaxD", "Distributions.Cauchy", "", F,
-    "rchisq", "rand", "syntaxD", "Distributions.Chisq", "", F,
-    "rgeom", "rand", "syntaxD", "Distributions.Geometric", "", F,
-    "rf", "rand", "syntaxD", "Distributions.FDist", "", F,
-    # "rhyper", "rand", "syntaxD", "Distributions.", "", F,
-    # "rlogis", "rand", "syntaxD", "Distributions.", "", F,
-    "rmultinom", "rand", "syntaxD", "Distributions.Multinomial", "", F,
-    # "rsignrank", "rand", "syntaxD", "Distributions.", "", F,
-    "rt", "rand", "syntaxD", "Distributions.TDist", "", F,
-    "rweibull", "rand", "syntaxD", "Distributions.Weibull", "", F,
-    # "rwilcox", "rand", "syntaxD", "Distributions.", "", F,
-    # "rbirthday", "rand", "syntaxD", "Distributions.", "", F,
-    # "rtukey", "rand", "syntaxD", "Distributions.", "", F,
-    "rdist", "rdist", "syntax1", "", "", F,
-    "set.seed", "Random.seed!", "syntax1", "", "", F,
+    "runif", "rand", "syntaxD", "Distributions.Uniform", "", FALSE,
+    "rnorm", "rand", "syntaxD", "Distributions.Normal", "", FALSE,
+    "rlnorm", "rand", "syntaxD", "Distributions.LogNormal", "", FALSE,
+    "rbool", "rbool", "syntax1", "", "", FALSE,
+    "rbinom", "rand", "syntaxD", "Distributions.Binomial", "", FALSE,
+    "rnbinom", "rand", "syntaxD", "Distributions.NegativeBinomial", "", FALSE,
+    "rpois", "rand", "syntaxD", "Distributions.Poisson", "", FALSE,
+    # "EnvStats::rtri", "", "syntaxD", "", "", FALSE,
+    "rexp", "rand", "syntaxD", "Distributions.Exponential", "", FALSE,
+    "rgamma", "rand", "syntaxD", "Distributions.Gamma", "", FALSE,
+    "rbeta", "rand", "syntaxD", "Distributions.Beta", "", FALSE,
+    "rcauchy", "rand", "syntaxD", "Distributions.Cauchy", "", FALSE,
+    "rchisq", "rand", "syntaxD", "Distributions.Chisq", "", FALSE,
+    "rgeom", "rand", "syntaxD", "Distributions.Geometric", "", FALSE,
+    "rf", "rand", "syntaxD", "Distributions.FDist", "", FALSE,
+    # "rhyper", "rand", "syntaxD", "Distributions.", "", FALSE,
+    # "rlogis", "rand", "syntaxD", "Distributions.", "", FALSE,
+    "rmultinom", "rand", "syntaxD", "Distributions.Multinomial", "", FALSE,
+    # "rsignrank", "rand", "syntaxD", "Distributions.", "", FALSE,
+    "rt", "rand", "syntaxD", "Distributions.TDist", "", FALSE,
+    "rweibull", "rand", "syntaxD", "Distributions.Weibull", "", FALSE,
+    # "rwilcox", "rand", "syntaxD", "Distributions.", "", FALSE,
+    # "rbirthday", "rand", "syntaxD", "Distributions.", "", FALSE,
+    # "rtukey", "rand", "syntaxD", "Distributions.", "", FALSE,
+    "rdist", "rdist", "syntax1", "", "", FALSE,
+    "set.seed", "Random.seed!", "syntax1", "", "", FALSE,
 
 
     # Statistical Distributions (20)
-    "punif", "Distributions.cdf.", "syntaxD", "Distributions.Uniform", "", F,
-    "dunif", "Distributions.pdf.", "syntaxD", "Distributions.Uniform", "", F,
-    "qunif", "Distributions.quantile.", "syntaxD", "Distributions.Uniform", "", F,
+    "punif", "Distributions.cdf.", "syntaxD", "Distributions.Uniform", "", FALSE,
+    "dunif", "Distributions.pdf.", "syntaxD", "Distributions.Uniform", "", FALSE,
+    "qunif", "Distributions.quantile.", "syntaxD", "Distributions.Uniform", "", FALSE,
 
-    "pnorm", "Distributions.cdf.", "syntaxD", "Distributions.Normal", "", F,
-    "dnorm", "Distributions.pdf.", "syntaxD", "Distributions.Normal", "", F,
-    "qnorm", "Distributions.quantile.", "syntaxD", "Distributions.Normal", "", F,
+    "pnorm", "Distributions.cdf.", "syntaxD", "Distributions.Normal", "", FALSE,
+    "dnorm", "Distributions.pdf.", "syntaxD", "Distributions.Normal", "", FALSE,
+    "qnorm", "Distributions.quantile.", "syntaxD", "Distributions.Normal", "", FALSE,
 
-    "plnorm", "Distributions.cdf.", "syntaxD", "Distributions.LogNormal", "", F,
-    "dlnorm", "Distributions.pdf.", "syntaxD", "Distributions.LogNormal", "", F,
-    "qlnorm", "Distributions.quantile.", "syntaxD", "Distributions.LogNormal", "", F,
+    "plnorm", "Distributions.cdf.", "syntaxD", "Distributions.LogNormal", "", FALSE,
+    "dlnorm", "Distributions.pdf.", "syntaxD", "Distributions.LogNormal", "", FALSE,
+    "qlnorm", "Distributions.quantile.", "syntaxD", "Distributions.LogNormal", "", FALSE,
 
-    "pbinom", "Distributions.cdf.", "syntaxD", "Distributions.Binomial", "", F,
-    "dbinom", "Distributions.pdf.", "syntaxD", "Distributions.Binomial", "", F,
-    "qbinom", "Distributions.quantile.", "syntaxD", "Distributions.Binomial", "", F,
+    "pbinom", "Distributions.cdf.", "syntaxD", "Distributions.Binomial", "", FALSE,
+    "dbinom", "Distributions.pdf.", "syntaxD", "Distributions.Binomial", "", FALSE,
+    "qbinom", "Distributions.quantile.", "syntaxD", "Distributions.Binomial", "", FALSE,
 
-    "pnbinom", "Distributions.cdf.", "syntaxD", "Distributions.NegativeBinomial", "", F,
-    "dnbinom", "Distributions.pdf.", "syntaxD", "Distributions.NegativeBinomial", "", F,
-    "qnbinom", "Distributions.quantile.", "syntaxD", "Distributions.NegativeBinomial", "", F,
+    "pnbinom", "Distributions.cdf.", "syntaxD", "Distributions.NegativeBinomial", "", FALSE,
+    "dnbinom", "Distributions.pdf.", "syntaxD", "Distributions.NegativeBinomial", "", FALSE,
+    "qnbinom", "Distributions.quantile.", "syntaxD", "Distributions.NegativeBinomial", "", FALSE,
 
-    "pgamma", "Distributions.cdf.", "syntaxD", "Distributions.Gamma", "", F,
-    "dgamma", "Distributions.pdf.", "syntaxD", "Distributions.Gamma", "", F,
-    "qgamma", "Distributions.quantile.", "syntaxD", "Distributions.Gamma", "", F,
+    "pgamma", "Distributions.cdf.", "syntaxD", "Distributions.Gamma", "", FALSE,
+    "dgamma", "Distributions.pdf.", "syntaxD", "Distributions.Gamma", "", FALSE,
+    "qgamma", "Distributions.quantile.", "syntaxD", "Distributions.Gamma", "", FALSE,
 
-    "pbeta", "Distributions.cdf.", "syntaxD", "Distributions.Beta", "", F,
-    "dbeta", "Distributions.pdf.", "syntaxD", "Distributions.Beta", "", F,
-    "qbeta", "Distributions.quantile.", "syntaxD", "Distributions.Beta", "", F,
+    "pbeta", "Distributions.cdf.", "syntaxD", "Distributions.Beta", "", FALSE,
+    "dbeta", "Distributions.pdf.", "syntaxD", "Distributions.Beta", "", FALSE,
+    "qbeta", "Distributions.quantile.", "syntaxD", "Distributions.Beta", "", FALSE,
 
-    "pcauchy", "Distributions.cdf.", "syntaxD", "Distributions.Cauchy", "", F,
-    "dcauchy", "Distributions.pdf.", "syntaxD", "Distributions.Cauchy", "", F,
-    "qcauchy", "Distributions.quantile.", "syntaxD", "Distributions.Cauchy", "", F,
+    "pcauchy", "Distributions.cdf.", "syntaxD", "Distributions.Cauchy", "", FALSE,
+    "dcauchy", "Distributions.pdf.", "syntaxD", "Distributions.Cauchy", "", FALSE,
+    "qcauchy", "Distributions.quantile.", "syntaxD", "Distributions.Cauchy", "", FALSE,
 
-    "pgeom", "Distributions.cdf.", "syntaxD", "Distributions.Geometric", "", F,
-    "dgeom", "Distributions.pdf.", "syntaxD", "Distributions.Geometric", "", F,
-    "qgeom", "Distributions.quantile.", "syntaxD", "Distributions.Geometric", "", F,
+    "pgeom", "Distributions.cdf.", "syntaxD", "Distributions.Geometric", "", FALSE,
+    "dgeom", "Distributions.pdf.", "syntaxD", "Distributions.Geometric", "", FALSE,
+    "qgeom", "Distributions.quantile.", "syntaxD", "Distributions.Geometric", "", FALSE,
 
-    "dmultinom", "Distributions.pdf.", "syntaxD", "Distributions.Multinomial", "", F,
+    "dmultinom", "Distributions.pdf.", "syntaxD", "Distributions.Multinomial", "", FALSE,
 
-    "pweibull", "Distributions.cdf.", "syntaxD", "Distributions.Weibull", "", F,
-    "dweibull", "Distributions.pdf.", "syntaxD", "Distributions.Weibull", "", F,
-    "qweibull", "Distributions.quantile.", "syntaxD", "Distributions.Weibull", "", F,
+    "pweibull", "Distributions.cdf.", "syntaxD", "Distributions.Weibull", "", FALSE,
+    "dweibull", "Distributions.pdf.", "syntaxD", "Distributions.Weibull", "", FALSE,
+    "qweibull", "Distributions.quantile.", "syntaxD", "Distributions.Weibull", "", FALSE,
 
-    "pt", "Distributions.cdf.", "syntaxD", "Distributions.TDist", "", F,
-    "dt", "Distributions.pdf.", "syntaxD", "Distributions.TDist", "", F,
-    "qt", "Distributions.quantile.", "syntaxD", "Distributions.TDist", "", F,
+    "pt", "Distributions.cdf.", "syntaxD", "Distributions.TDist", "", FALSE,
+    "dt", "Distributions.pdf.", "syntaxD", "Distributions.TDist", "", FALSE,
+    "qt", "Distributions.quantile.", "syntaxD", "Distributions.TDist", "", FALSE,
 
-    "pf", "Distributions.cdf.", "syntaxD", "Distributions.FDist", "", F,
-    "df", "Distributions.pdf.", "syntaxD", "Distributions.FDist", "", F,
-    "qf", "Distributions.quantile.", "syntaxD", "Distributions.FDist", "", F,
+    "pf", "Distributions.cdf.", "syntaxD", "Distributions.FDist", "", FALSE,
+    "df", "Distributions.pdf.", "syntaxD", "Distributions.FDist", "", FALSE,
+    "qf", "Distributions.quantile.", "syntaxD", "Distributions.FDist", "", FALSE,
 
-    "pchisq", "Distributions.cdf.", "syntaxD", "Distributions.Chisq", "", F,
-    "dchisq", "Distributions.pdf.", "syntaxD", "Distributions.Chisq", "", F,
-    "qchisq", "Distributions.quantile.", "syntaxD", "Distributions.Chisq", "", F,
+    "pchisq", "Distributions.cdf.", "syntaxD", "Distributions.Chisq", "", FALSE,
+    "dchisq", "Distributions.pdf.", "syntaxD", "Distributions.Chisq", "", FALSE,
+    "qchisq", "Distributions.quantile.", "syntaxD", "Distributions.Chisq", "", FALSE,
 
-    "pexp", "Distributions.cdf.", "syntaxD", "Distributions.Exponential", "", F,
-    "dexp", "Distributions.pdf.", "syntaxD", "Distributions.Exponential", "", F,
-    "qexp", "Distributions.quantile.", "syntaxD", "Distributions.Exponential", "", F,
+    "pexp", "Distributions.cdf.", "syntaxD", "Distributions.Exponential", "", FALSE,
+    "dexp", "Distributions.pdf.", "syntaxD", "Distributions.Exponential", "", FALSE,
+    "qexp", "Distributions.quantile.", "syntaxD", "Distributions.Exponential", "", FALSE,
 
-    "ppois", "Distributions.cdf.", "syntaxD", "Distributions.Poisson", "", F,
-    "dpois", "Distributions.pdf.", "syntaxD", "Distributions.Poisson", "", F,
-    "qpois", "Distributions.quantile.", "syntaxD", "Distributions.Poisson", "", F,
+    "ppois", "Distributions.cdf.", "syntaxD", "Distributions.Poisson", "", FALSE,
+    "dpois", "Distributions.pdf.", "syntaxD", "Distributions.Poisson", "", FALSE,
+    "qpois", "Distributions.quantile.", "syntaxD", "Distributions.Poisson", "", FALSE,
 
 
     # Complete replacements
-    "next", "continue", "syntax0", "", "", F,
-    "stop", "error", "syntax0", "", "", F ),
+    "next", "continue", "syntax0", "", "", FALSE,
+    "stop", "error", "syntax0", "", "", FALSE ),
 
 
 
@@ -1452,7 +1451,9 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
 
           update = paste0(func_name, ".update")
 
-          add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(setup = setup,
+          add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(
+            name = name,
+            setup = setup,
                                                                           compute = compute,
                                                                           update = update,
                                                                           type = idx_func[["julia"]],
@@ -1498,7 +1499,9 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
 
           update = paste0(func_name, ".update")
 
-          add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(setup = setup,
+          add_Rcode[["func"]][[idx_func[["syntax"]]]][[func_name]] = list(
+            name = name,
+            setup = setup,
                                                                           compute = compute,
                                                                           update = update,
                                                                           type = idx_func[["julia"]],

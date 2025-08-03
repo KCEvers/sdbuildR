@@ -22,10 +22,8 @@ Internal function used to save the dataframe at specific times in case save_at i
 \seealso{
 Other internal: 
 \code{\link{compare_sim}()},
-\code{\link{compute_delayN}()},
-\code{\link{compute_smoothN}()},
+\code{\link{has_internet}()},
 \code{\link{nonnegative}()},
-\code{\link{setup_delayN}()},
-\code{\link{setup_smoothN}()}
+\code{\link{not_on_cran}()}
 }
 \concept{internal}

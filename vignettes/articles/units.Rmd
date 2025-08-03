@@ -46,7 +46,7 @@ $$
 
 Such an equation is still dimensionally consistent, as minutes and hours match and can be converted to one another. There is no need to add an additional factor to convert minutes to hours. In sdbuildR, Julia's *Unitful* package takes care of the conversion between matching units.
 
-Mathematical operations differ in their unit compatability requirements. Addition and subtraction can only be applied to variables that have the same unit, as these operations combine or compare quantities directly. For instance, it is not possible to add kilocalories to body fat in kilograms, $kg + kcal$. To specify how consuming food can add body fat, we need to translate kilocalories to kilograms. A correct formulation divides the number of kilocalories consumed by the number of kilocalories in a kilogram of body fat, which is dimensionally consistent with $kg$:
+Mathematical operations differ in their unit compatibility requirements. Addition and subtraction can only be applied to variables that have the same unit, as these operations combine or compare quantities directly. For instance, it is not possible to add kilocalories to body fat in kilograms, $kg + kcal$. To specify how consuming food can add body fat, we need to translate kilocalories to kilograms. A correct formulation divides the number of kilocalories consumed by the number of kilocalories in a kilogram of body fat, which is dimensionally consistent with $kg$:
 
 $$
 \frac{kcal}{\frac{7700kcal}{kg}}

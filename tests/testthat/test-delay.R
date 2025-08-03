@@ -38,6 +38,9 @@ test_that("delay() works", {
           from = "MaterialinTransit") |>
     build("AverageDelay", "constant", eqn = 4)
   expect_no_error(plot(sfm))
+
+  testthat::skip_on_cran()
+
   sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
   inflow = sim$df[sim$df$variable == "Inflow", "value"]
   outflow = sim$df[sim$df$variable == "Inflow", "value"]
@@ -71,6 +74,9 @@ test_that("past() works", {
     build("Outflow", "flow", eqn = "max(past(Inflow, AverageDelay))", from = "MaterialinTransit") |>
     build("AverageDelay", "constant", eqn = 4)
   expect_no_error(plot(sfm))
+
+  testthat::skip_on_cran()
+
   sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
   inflow = sim$df[sim$df$variable == "Inflow", "value"]
   outflow = sim$df[sim$df$variable == "Inflow", "value"]
@@ -104,6 +110,9 @@ test_that("delayN() works", {
     build("Outflow", "flow", eqn = "delayN(Inflow, AverageDelay, 5, 0)", from = "MaterialinTransit") |>
     build("AverageDelay", "constant", eqn = 4))
   expect_no_error(plot(sfm))
+
+  testthat::skip_on_cran()
+
   sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
   inflow = sim$df[sim$df$variable == "Inflow", "value"]
   t = sim$df[sim$df$variable == "Inflow", "time"]
@@ -184,6 +193,9 @@ test_that("delay functions correspond to Insight Maker", {
   sfm = expect_no_error(insightmaker_to_sfm(URL))
   expect_no_error(summary(sfm))
   df = expect_no_error(as.data.frame(sfm))
+
+  testthat::skip_on_cran()
+
   sim = expect_no_error(simulate(sfm, only_stocks = FALSE))
 
   filepath = testthat::test_path("testdata", "delay_data_2025_07_12.csv")
@@ -196,13 +208,12 @@ test_that("delay functions correspond to Insight Maker", {
   s2 = setdiff(colnames(sim_IM), c("Time", df[df[["type"]] %in% c("constant"), "name"], "input") )
   expect_equal(all(s2 %in% s1), TRUE)
   expect_equal(names(sim$constants), "tau_fixed")
-#
+
 # #   # Check that all variables match
 #   for (var in unique(sim$df$variable)){
 #     print(var)
 #     expect_equal(sim$df[sim$df$variable == var, "value"], sim_IM[[var]])
 #   }
-
 
   # ** test with saveat...
 

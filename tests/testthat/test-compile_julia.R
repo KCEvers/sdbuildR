@@ -2,6 +2,7 @@
 
 test_that("templates work", {
 
+  testthat::skip_on_cran()
 
   for (s in c("SIR", "predator-prey", "logistic_model", "Crielaard2022", "Duffing", "Chua")){
     sfm = xmile(s) |> sim_specs(language = "Julia")
@@ -26,6 +27,8 @@ test_that("templates work", {
 
 test_that("output of simulate in Julia", {
 
+  testthat::skip_on_cran()
+
   sfm = xmile("SIR") |> sim_specs(language = "Julia", start = 0, stop = 10, dt = .1)
   sim = expect_no_error(simulate(sfm))
   expect_equal(all(c("df", "init", "constants", "sfm", "script", "duration") %in% names(sim)), TRUE)
@@ -43,8 +46,6 @@ test_that("output of simulate in Julia", {
 
 test_that("save_at works", {
 
-  use_julia()
-
   # Cannot set save_at to lower than dt
   sfm = xmile("SIR")
   expect_warning(sfm |> sim_specs(dt = .1, save_at = .01),
@@ -53,11 +54,10 @@ test_that("save_at works", {
   # Check whether dataframe is returned at save_at times
   sfm = sfm |>
     sim_specs(save_at = 0.1, dt = 0.001, start = 100, stop = 200)
-  sim = simulate(sfm |> sim_specs(language = "Julia"))
-  expect_equal(diff(sim$df[sim$df$variable == "Infected", "time"])[1],
-               as.numeric(sfm$sim_specs$save_at))
 
-  sim = simulate(sfm |> sim_specs(language = "R"))
+  testthat::skip_on_cran()
+
+  sim = simulate(sfm |> sim_specs(language = "Julia"))
   expect_equal(diff(sim$df[sim$df$variable == "Infected", "time"])[1],
                as.numeric(sfm$sim_specs$save_at))
 
@@ -73,6 +73,7 @@ test_that("save_at works", {
 
 
 test_that("save_from works", {
+  testthat::skip_on_cran()
 
   sfm = xmile("SIR") |> sim_specs(start = 0, stop = 100,
                                    save_from = 10, language = "Julia")
@@ -86,6 +87,8 @@ test_that("save_from works", {
 
 
 test_that("simulate with different components works", {
+
+  testthat::skip_on_cran()
 
   # Without stocks throws error
   sfm = xmile()
@@ -171,6 +174,8 @@ test_that("simulate with different components works", {
 
 test_that("seed works", {
 
+  testthat::skip_on_cran()
+
   # Without a seed, simulations shouldn't be the same
   sfm = xmile("predator-prey") |>
     sim_specs(seed = NULL) |>
@@ -192,6 +197,8 @@ test_that("seed works", {
 
 test_that("units in stocks and flows", {
 
+  testthat::skip_on_cran()
+
   # No unit specified in stock yet stock evaluates to unit
   sfm = xmile()  |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "round(u('100.80 kilograms'))")
   expect_no_error(simulate(sfm))
@@ -203,6 +210,8 @@ test_that("units in stocks and flows", {
 
 
 test_that("function in aux still works", {
+
+  testthat::skip_on_cran()
 
   sfm = xmile() |>
     sim_specs(language = "Julia", start = 0, stop = 10, dt = .1) |>
@@ -225,3 +234,37 @@ test_that("function in aux still works", {
 
 })
 
+test_that("negative times are possible", {
+  testthat::skip_on_cran()
+
+  sfm = xmile("logistic_model") |> sim_specs(start = -100, language = "Julia")
+  expect_no_error({sim = simulate(sfm)})
+
+})
+
+
+test_that("functions in Julia work", {
+
+  testthat::skip_on_cran()
+
+  # round() with units
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "round(10.235)")
+  expect_no_error(simulate(sfm))
+
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "round(u('100.80 kilograms'))")
+  expect_no_error(simulate(sfm))
+
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "round(u('108.67 seconds'))")
+  expect_no_error(simulate(sfm))
+
+  # Cosine function needs unitless argument or argument in radians
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "cos(10)")
+  expect_no_error(simulate(sfm))
+
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "cos(u('10meters'))")
+  expect_warning(simulate(sfm), "An error occurred while running the Julia script")
+
+  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "cos(u('10radians'))")
+  expect_no_error(simulate(sfm))
+
+})

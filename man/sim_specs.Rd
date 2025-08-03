@@ -46,7 +46,7 @@ Simulation specifications are the settings that determine how the model is simul
 }
 \examples{
 sfm = xmile("predator-prey") |>
-sim_specs(start = 1960, stop = 2010, dt = 0.1)
+ sim_specs(start = 0, stop = 10, dt = 0.01)
 sim = simulate(sfm)
 plot(sim)
 
@@ -57,21 +57,13 @@ sfm = sim_specs(sfm, method = "rk4")
 sfm = sim_specs(sfm, time_units = "years")
 
 # To save storage but not affect accuracy, use save_at and save_from
-sfm = sim_specs(sfm, dt = 0.001, save_at = .1, save_from = 2000)
+sfm = sim_specs(sfm, dt = 0.001, save_at = .1, save_from = 1)
 sim = simulate(sfm)
 head(as.data.frame(sim))
 
-# Specify seed for reproducibility
+# Add stochastic initial condition but specify seed to obtain same result
 sfm = sim_specs(sfm, seed = 1) |>
- # Add stochastic initial condition
  build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
-sim1 = simulate(sfm)
-sim2 = simulate(sfm)
-plot(sim1)
-plot(sim2)
-
-# Removing the seed yields variation
-sfm = sim_specs(sfm, seed = NULL)
 sim1 = simulate(sfm)
 sim2 = simulate(sfm)
 plot(sim1)
@@ -84,9 +76,11 @@ sfm = sim_specs(sfm, language = "Julia")
 \seealso{
 Other simulate: 
 \code{\link{ensemble}()},
+\code{\link{julia_setup_ok}()},
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{simulate}()},
-\code{\link{use_julia}()}
+\code{\link{use_julia}()},
+\code{\link{use_threads}()}
 }
 \concept{simulate}

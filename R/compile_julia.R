@@ -14,14 +14,10 @@ simulate_julia = function(sfm,
                           only_stocks,
                           verbose){
 
-
   # Collect arguments
-  argg <- c(
-    as.list(environment()))
+  argg <- c(as.list(environment()))
   # Remove NULL arguments
   argg = argg[!lengths(argg) == 0]
-  # Remove some elements
-  # argg[c("sfm")] = NULL
 
   # Get output filepaths
   filepath_sim = get_tempfile(fileext = ".csv")
@@ -41,9 +37,9 @@ simulate_julia = function(sfm,
   # Evaluate script
   sim = tryCatch({
 
-    # Evaluate script
     use_julia()
 
+    # Evaluate script
     start_t = Sys.time()
 
     # Wrap in invisible and capture.output to not show message of units module being overwritten
@@ -54,10 +50,6 @@ simulate_julia = function(sfm,
     if (verbose){
       message(paste0("Simulation took ", round(end_t - start_t, 4), " seconds"))
     }
-
-    # pars_julia = JuliaConnectoR::juliaGet(JuliaConnectoR::juliaEval(paste0("clean_constants(", .sdbuildR_env[["P"]][["model_setup_name"]], ".", .sdbuildR_env[["P"]][["parameter_name"]], ")")))
-    #
-    # init_julia = JuliaConnectoR::juliaEval(paste0("clean_init(", .sdbuildR_env[["P"]][["model_setup_name"]], ".", .sdbuildR_env[["P"]][["initial_value_name"]], ", ", .sdbuildR_env[["P"]][["model_setup_name"]], ".", .sdbuildR_env[["P"]][["initial_value_names"]], ")"))
 
     # Read the constants
     constants = as.numeric(JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_name"]]))
@@ -355,25 +347,6 @@ prep_ensemble_range = function(sfm, ensemble_pars){
                                           NULL)
                                       })
 
-    # # Change the equations of the variables in the model to use ensemble_pars.name[i]
-    # names_df = get_names(sfm)
-    # stocks = names_df[match(names(ensemble_pars[["range"]]), names_df[["name"]]), "type"]
-    #
-    # for (i in 1:length(ensemble_pars[["range"]])){
-    #   name = names(ensemble_pars[["range"]])[i]
-    #   # Replace the equations of the chosen variables with ensemble_pars.name[i]
-    #   sfm[["model"]][["variables"]][[stocks[i]]][[name]][["eqn_julia"]] = paste0(.sdbuildR_env[["P"]][["ensemble_pars"]], ".", name, "[", .sdbuildR_env[["P"]][["ensemble_iter"]], "]")
-    # }
-
-    # # Remove the model variables from the model that are in the ensemble range
-    # names_df = get_names(sfm)
-    # stocks = names_df[match(names(ensemble_pars[["range"]]), names_df[["name"]]), "type"]
-    #
-    # for (i in 1:length(ensemble_pars[["range"]])){
-    #   name = names(ensemble_pars[["range"]])[i]
-    #   sfm[["model"]][["variables"]][[stocks[i]]][[name]] = NULL
-    # }
-
     # Set the equations of the variables in the model to 0 because these will be replaced by the ensemble parameters
     names_df = get_names(sfm)
     stocks = names_df[match(names(ensemble_pars[["range"]]), names_df[["name"]]), "type"]
@@ -406,7 +379,7 @@ prep_delayN_smoothN = function(sfm, delayN_smoothN){
     delayN_smoothN = delayN_smoothN[sort(names(delayN_smoothN))]
 
     names_df = get_names(sfm)
-    allowed_delay_var = names_df[names_df[["type"]] %in% c("stock", "flow", "aux"), "name"]
+    allowed_delay_var = names_df[names_df[["type"]] %in% c("stock", "flow", "aux", "gf"), "name"]
     delayN_smoothN = unlist(unname(delayN_smoothN), recursive = FALSE)
 
     sfm[["model"]][["variables"]][["stock"]] = append(sfm[["model"]][["variables"]][["stock"]],
@@ -422,15 +395,18 @@ prep_delayN_smoothN = function(sfm, delayN_smoothN){
                                                           stop(paste0("The variable '", bare_var, "' used in delayN() or smoothN() is not defined in the model."))
                                                         }
 
-                                                        # Check whether variable is either a stock, flow, or aux
+                                                        # # Check whether variable is either a stock, flow, or aux
+                                                        # if (!bare_var %in% allowed_delay_var){
+                                                        #   stop(paste0("The variable '", bare_var, "' used in delayN() or smoothN() is not a stock, flow, auxiliary, or graphical function variable."))
+                                                        # }
+                                                        # Check whether variable is either a stock, flow, aux, or gf
                                                         if (!bare_var %in% allowed_delay_var){
-                                                          stop(paste0("The variable '", bare_var, "' used in delayN() or smoothN() is not a stock, flow, or auxiliary variable."))
+                                                          stop(paste0(x[["name"]], " attempts to delay a constant ('", bare_var, "') in a delayN() or smoothN() function. Please only use dynamic variables (stock, flow, aux, or gf) in delayN() or smoothN()."))
                                                         }
 
                                                         # Unit is the same as the delayed variable
                                                         y[["units"]] = names_df[names_df[["name"]] == bare_var, ][["units"]]
                                                         y[["name"]] = y[["label"]] = names(delayN_smoothN)[i]
-                                                        # y$initial = x[["initial"]]
                                                         y[["type"]] = "delayN_smoothN"
 
                                                         # To get the dependencies right, we need the initial value, length and order in eqn
@@ -1055,11 +1031,6 @@ prep_stock_change_julia = function(sfm, keep_unit){
                                                       inflow = outflow = ""
 
                                                       if (x[["type"]] == "delayN_smoothN"){
-                                                        # regex_find_idx = paste0("findall(n -> occursin(r\"", x[["name"]], .sdbuildR_env[["P"]][["acc_suffix"]], "[0-9]+$\", string(n)), ",
-                                                        #                         .sdbuildR_env[["P"]][["model_setup_name"]], ".", .sdbuildR_env[["P"]][["initial_value_names"]], ")")
-                                                        # x[["sum_name"]] = paste0(.sdbuildR_env[["P"]][["change_state_name"]], "[", regex_find_idx, "]")
-                                                        # x[["unpack_state"]] = paste0(.sdbuildR_env[["P"]][["state_name"]], "[", regex_find_idx, "]")
-
 
                                                         x[["sum_name"]] = paste0(.sdbuildR_env[["P"]][["change_state_name"]], "[", .sdbuildR_env[["P"]][["model_setup_name"]], ".", .sdbuildR_env[["P"]][["delay_idx_name"]], ".", x[["name"]], "]")
                                                         x[["unpack_state"]] = paste0(.sdbuildR_env[["P"]][["state_name"]], "[", .sdbuildR_env[["P"]][["model_setup_name"]], ".", .sdbuildR_env[["P"]][["delay_idx_name"]], ".", x[["name"]], "]")
@@ -1097,14 +1068,22 @@ prep_stock_change_julia = function(sfm, keep_unit){
 
                                                       # Add units if defined
                                                       if (keep_unit & is_defined(x[["units"]])){
+
+                                                        if (x[["type"]] == "delayN_smoothN"){
+                                                          x[["sum_eqn"]] = paste0(x[["sum_eqn"]], " ./ ",
+                                                                                  .sdbuildR_env[["P"]][["time_units_name"]])
+                                                        } else {
+
                                                         x[["sum_eqn"]] = paste0(.sdbuildR_env[["P"]][["convert_u_func"]],
                                                                                 "(", x[["sum_eqn"]],
                                                                                 ", Unitful.unit.(",
                                                                                 x[["name"]], ")/",
                                                                                 .sdbuildR_env[["P"]][["time_units_name"]], ")")
 
+                                                        }
+
                                                       }
-                                                      # }
+
                                                       return(x)
 
                                                     })
@@ -1470,10 +1449,6 @@ compile_run_ode_julia = function(sfm,
 #' @return The path to the created file
 #'
 #' @noRd
-#' @examples
-#' julia_code <- "println(\"Hello from julia!\")"
-#' filepath = get_tempfile(".jl")
-#' write_script(julia_code, filepath)
 write_script <- function(script,
                          filepath) {
 
@@ -1487,7 +1462,7 @@ write_script <- function(script,
   }
 
   # Write the script to the file
-  writeLines(script, filepath)
+  writeLines(script, filepath, useBytes = FALSE)
 
   invisible()
 }
@@ -1515,20 +1490,10 @@ get_tempfile = function(fileext){
 decode_unicode <- function(text) {
 
   stringr::str_replace_all(text,
-                           # "\\[\\]?u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]",
                            "(\\\\u|\\\\\\\\u)[0-9a-fA-F]{4}",
                            function(matched) {
                              # Extract the Unicode escape sequence
                              jsonlite::fromJSON(sprintf('"%s"', matched))
-                             # hex_code <- stringr::str_sub(matched, nchar(matched)-3, nchar(matched))  # Extract the "XXXX" part
-                             # print(hex_code)
-                             # # Convert the hexadecimal code to an integer
-                             # code_int <- strtoi(hex_code, base = 16)
-                             # # Convert the integer to the corresponding Unicode character
-                             #
-                             #
-                             # print(intToUtf8(code_int))
-                             # intToUtf8(code_int)
 
                            })
 

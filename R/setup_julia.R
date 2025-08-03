@@ -1,4 +1,36 @@
+#' Check Julia environment set up
+#'
+#' @return Logical value
+#' @export
+#' @family simulate
+#' @examples
+#' julia_setup_ok()
+julia_setup_ok <- function() {
 
+  isTRUE(.sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]])
+
+  # # Suppress talkative check
+  # result = invisible(capture.output(
+  #   capture.output({
+  #     result <- JuliaConnectoR::juliaSetupOk()
+  #   }, type = "message"),
+  #   type = "output"
+  # ))
+  # result = TRUE
+  #
+  # if (isTRUE(result)){
+
+    # # Check whether initialization variable of sdbuildR evaluates to TRUE in Julia
+    # tryCatch({
+    #   isTRUE(JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["init_sdbuildR"]]))
+    # }, error = function(e){
+    #   return(FALSE)
+    # })
+    # return(check)
+  # } else {
+  #   return(FALSE)
+  # }
+}
 
 #' Set up Julia environment
 #'
@@ -9,7 +41,6 @@
 #' @param stop If TRUE, stop active Julia session. Defaults to FALSE.
 #' @param version Julia version. Default is "latest", which will install the most recent stable release.
 #' @param JULIA_HOME Path to Julia installation. Defaults to NULL to locate Julia automatically.
-#' @param JULIA_NUM_THREADS Number of Julia threads to use. Defaults to parallel::detectCores() - 1. If set to a value higher than the number of available cores minus 1, it will be set to the number of available cores minus 1.
 #' @param dir Directory to install Julia. Defaults to NULL to use default location.
 #' @param force If TRUE, force Julia setup to execute again.
 #' @param force_install If TRUE, force Julia installation even if existing version is found. Defaults to FALSE.
@@ -20,44 +51,30 @@
 #' @family simulate
 #'
 #' @examples
-#' # For first time use, install Julia and set up environment
-#' use_julia()
+#' if (FALSE){
+#'   # Start Julia session
+#'   # or install Julia and set up environment (first time use)
+#'   use_julia()
 #'
-#' # Start Julia session
-#' use_julia()
-#'
-#' # Stop Julia session
-#' use_julia(stop = TRUE)
+#'   # Stop Julia session
+#'   use_julia(stop = TRUE)
+#' }
 use_julia <- function(
     stop = FALSE,
     version = "latest",
     JULIA_HOME = NULL,
-    JULIA_NUM_THREADS = parallel::detectCores() - 1,
     dir = NULL,
     force = FALSE,
     force_install = FALSE, ...){
 
   if (stop){
     .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] = NULL
-    # options("initialization_sdbuildR" = NULL)
     JuliaConnectoR::stopJulia()
     return(invisible())
   }
 
-  # Set number of Julia threads to use
-  if (JULIA_NUM_THREADS > (parallel::detectCores() - 1)){
-    warning("JULIA_NUM_THREADS is set to ", JULIA_NUM_THREADS, ", which is higher than the number of available cores minus 1. Setting it to ", parallel::detectCores() - 1, ".")
-    JULIA_NUM_THREADS = parallel::detectCores() - 1
-  }
-  if (JULIA_NUM_THREADS < 1){
-    JULIA_NUM_THREADS = 1
-  }
-
-  Sys.setenv("JULIA_NUM_THREADS" = JULIA_NUM_THREADS)
-
-
   # Check whether use_julia() was run
-  if (!force & !force_install & !is.null(.sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]])){
+  if (!force & !force_install & julia_setup_ok()){
     return(invisible())
   }
 
@@ -131,7 +148,15 @@ use_julia <- function(
   }
 
   # Set path to Julia executable
+  old_path = Sys.getenv("JULIA_BINDIR")
   Sys.setenv(JULIA_BINDIR = JULIA_HOME)
+  on.exit({
+    if (is.na(old_path)){
+      Sys.unsetenv("JULIA_BINDIR")
+    } else {
+      Sys.setenv("JULIA_BINDIR" = old_path)
+    }
+  })
 
   JuliaConnectoR::startJuliaServer()
   JuliaConnectoR::juliaSetupOk()
@@ -162,15 +187,17 @@ use_julia <- function(
   run_init()
 
   # Set global option of initialization
-  # options("initialization_sdbuildR" = TRUE)
-  .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] = TRUE
-
-  invisible()
+  if (isFALSE(JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["init_sdbuildR"]]))){
+    stop("Set up of Julia environment FAILED!")
+  } else {
+    .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] = TRUE
+    return(invisible())
+  }
 }
 
 
 
-#' Set-up Julia environment for sdbuildR with init.jl
+#' Set up Julia environment for sdbuildR with init.jl
 #'
 #' @return NULL
 #' @noRd

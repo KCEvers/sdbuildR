@@ -19,6 +19,11 @@ Past value
 \description{
 Also known as a pipeline or fixed delay. Note that this function is only usable for simulations run with Julia.
 }
+\examples{
+\dontshow{if (not_on_cran()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other delay: 
 \code{\link{delayN}()},

@@ -7,7 +7,6 @@
 insightmaker_to_sfm(
   URL,
   filepath_IM,
-  directory = tempdir(),
   keep_nonnegative_flow = TRUE,
   keep_nonnegative_stock = FALSE,
   keep_solver = FALSE
@@ -17,8 +16,6 @@ insightmaker_to_sfm(
 \item{URL}{URL to Insight Maker model. Character.}
 
 \item{filepath_IM}{File path to Insight Maker model. Only used if URL is not specified. Needs to be a character with suffix .InsightMaker.}
-
-\item{directory}{Directory to save translated Insight Maker model in (optional). Defaults to temporary directory.}
 
 \item{keep_nonnegative_flow}{If TRUE, keeps original non-negativity setting of flows. Defaults to TRUE.}
 
@@ -32,16 +29,22 @@ Stock-and-flow model of class xmile.
 \description{
 Import a stock-and-flow model from \href{https://insightmaker.com/}{Insight Maker}. Models may be your own or from another user. Importing causal loop diagrams or agent-based models is not supported.
 }
+\details{
+Insight Maker models can be imported using either a URL or an Insight Maker file. Ensure the URL refers to a public (not private) model. To download a model file from Insight Maker, first clone the model if it is not your own. Then, go to "Share" (top right), "Export", and "Download Insight Maker file".
+}
 \examples{
+\dontshow{if (has_internet()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 # Load a model from Insight Maker
 sfm = insightmaker_to_sfm(URL =
  'https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022')
 plot(sfm)
 
+\dontshow{sfm = sim_specs(sfm, save_at = .5)}
+
 # Simulate the model
 sim = simulate(sfm)
 plot(sim)
-
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}

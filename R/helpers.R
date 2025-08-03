@@ -1,5 +1,43 @@
+#' Check if user has internet
+#'
+#' Internal function
+#'
+#' @returns Logical value
+#'
+#' @export
+#' @family internal
+#' @examplesIf has_internet()
+#' has_internet()
+#'
+has_internet <- function() {
+  tryCatch({
+    con <- url("https://www.r-project.org")
+    close(con)
+    TRUE
+  }, error = function(e) FALSE)
+}
 
-#' Equivalent of purrr::compact()
+
+
+#' Check if on CRAN
+#'
+#' @returns Logical value
+#' @export
+#' @family internal
+#'
+#' @examples
+#' not_on_cran()
+not_on_cran <- function() {
+  env <- Sys.getenv("NOT_CRAN")
+  if (identical(env, "")) {
+    interactive()
+  } else {
+    isTRUE(as.logical(env))
+  }
+}
+
+
+#' Near equivalent of purrr::compact()
 #'
 #' @param x
 #'
