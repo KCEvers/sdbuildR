@@ -69,7 +69,7 @@
 <li><p>Flows without a source (<code>from</code>) or target (<code>to</code>)</p></li>
 <li><p>Flows connected to a stock that does not exist</p></li>
 <li><p>Undefined variable references in equations</p></li>
-<li><p>Circularities in equations</p></li>
+<li><p>Circularity in equations</p></li>
 <li><p>Connected stocks and flows without both having units or no units</p></li>
 <li><p>Missing unit definitions</p></li>
 </ul><p>The following potential problems are detected:</p><ul><li><p>Absence of flows</p></li>
@@ -120,7 +120,7 @@
 <span class="r-msg co"><span class="r-pr">#&gt;</span> * These variables have an equation of 0:</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> - Prey</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Detect circularities in equation definitions</span></span></span>
+<span class="r-in"><span><span class="co"># Detect circularity in equation definitions</span></span></span>
 <span class="r-in"><span><span class="va">sfm</span> <span class="op">=</span> <span class="fu"><a href="xmile.html">xmile</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="build.html">build</a></span><span class="op">(</span><span class="st">"Prey"</span>, <span class="st">"stock"</span>, eqn <span class="op">=</span> <span class="st">"Predator"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span> <span class="fu"><a href="build.html">build</a></span><span class="op">(</span><span class="st">"Predator"</span>, <span class="st">"stock"</span>, eqn <span class="op">=</span> <span class="st">"Prey"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">debugger</span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span></span></span>
