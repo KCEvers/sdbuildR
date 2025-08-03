@@ -45,7 +45,7 @@ Object of class sdbuildR_sim, which is a list containing:
 }
 }
 \description{
-Simulate a stock-and-flow model with simulation specifications defined by \code{sim_specs()}. If not already run, the Julia environment will be set up with \code{use_julia()}. If any problems are detected by \code{debugger()}, the model cannot be simulated.
+Simulate a stock-and-flow model with simulation specifications defined by \code{sim_specs()}. If not already run, the Julia environment will first be set up with \code{use_julia()}. If any problems are detected by \code{debugger()}, the model cannot be simulated.
 }
 \examples{
 sfm = xmile("SIR")
@@ -56,24 +56,26 @@ plot(sim)
 sim = simulate(sfm, only_stocks = FALSE)
 plot(sim, add_constants = TRUE)
 
+\dontshow{if (not_on_cran()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 # Use Julia for models with units or delay functions
 sfm = sim_specs(xmile("coffee_cup"), language = "Julia")
-use_julia()
 sim = simulate(sfm)
 plot(sim)
 
 # Close Julia session
 use_julia(stop = TRUE)
-
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=debugger]{debugger()}}, \code{\link[=sim_specs]{sim_specs()}}, \code{\link[=use_julia]{use_julia()}}
 
 Other simulate: 
 \code{\link{ensemble}()},
+\code{\link{julia_setup_ok}()},
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},
-\code{\link{use_julia}()}
+\code{\link{use_julia}()},
+\code{\link{use_threads}()}
 }
 \concept{simulate}

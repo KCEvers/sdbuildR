@@ -21,6 +21,10 @@ Delayed variable
 \description{
 Delay of order N, which is a more complex delay that can be used to model processes with multiple stages or orders of delay. Note that this function is only usable for simulations run with Julia.
 }
+\examples{
+\dontshow{if (not_on_cran()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other delay: 
 \code{\link{delay}()},

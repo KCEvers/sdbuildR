@@ -2,7 +2,7 @@
 
 julia_version = "1.11.5"
 manifest_format = "2.0"
-project_hash = "97248d0a58b78d570eb4c08de292af4c36ca7a98"
+project_hash = "485379a243340b993017419f1e3bd36210a8a397"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "be7ae030256b8ef14a441726c4c37766b90b93a3"
@@ -2254,5 +2254,5 @@ version = "17.4.0+2"
 [[deps.sdbuildRUtils]]
 deps = ["DataFrames", "DataInterpolations", "Distributions", "Random", "Statistics", "Unitful"]
 path = "C:/Users/kevers1/Documents/PhD/sdbuildR/inst/sdbuildRUtils"
-uuid = "558783a2-18a6-44dc-8953-3641eeb55936"
+uuid = "a5299d56-575f-453c-bd7f-d3a3c62fa4e3"
 version = "0.1.0"

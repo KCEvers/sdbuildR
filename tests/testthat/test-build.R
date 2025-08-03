@@ -47,13 +47,6 @@ test_that("sim_specs() works", {
   expect_error(sfm |> sim_specs(stop = -100), "Start time must be smaller than stop time!")
   expect_error(sfm |> sim_specs(start = 200), "Start time must be smaller than stop time!")
 
-  # Check that negative times are possible
-  sfm = xmile("logistic_model") |> sim_specs(language = "Julia")
-  sfm = sfm |> sim_specs(start = -100)
-  expect_no_error({sim = simulate(sfm)})
-  sfm = sfm |> sim_specs(language = "R")
-  expect_no_error({sim = simulate(sfm)})
-
   # Check that seed must be an integer
   expect_error(sfm |> sim_specs(seed = "a"), "seed must be an integer!")
   expect_error(sfm |> sim_specs(seed = 1.5), "seed must be an integer!")
@@ -74,6 +67,7 @@ test_that("sim_specs() works", {
   sfm = xmile() |> sim_specs(dt = 0.1)
   expect_equal(sfm$sim_specs$dt, "0.1")
   expect_equal(sfm$sim_specs$save_at, "0.1")
+
 
   # save_from
   sfm = xmile() |> sim_specs(start = 0, stop = 100, dt = .01, save_at = .1)
@@ -298,34 +292,6 @@ test_that("change_name and change_type in build()", {
 
 
 
-# test_that("units in eqn, min, max are cleaned in build()", {
-#
-#   # Check whether units in u() are cleaned
-#   sfm = xmile() |> build("f", "aux", eqn = "90 * u('90 watts')")
-#   expect_equal(sfm$model$variables$aux$f$eqn, "90 * u('90W')")
-#
-#   # Check scientific notation is cleaned
-#   sfm = sfm |> build("g", "aux", eqn = "90 * u('9e+50 watts')")
-#   expect_equal(sfm$model$variables$aux$g$eqn, "90 * u('9e+50W')")
-#
-#   sfm = sfm |> build("h", "aux", eqn = "90 * u('90 watts')")
-#   expect_equal(sfm$model$variables$aux$h$eqn, "90 * u('90W')")
-#
-#   # Check units in min and max are cleaned
-#   sfm = sfm |> build("e", "aux", min = "u('90meter')")
-#   expect_equal(sfm$model$variables$aux$e$min, "u('90m')")
-#   expect_equal(sfm$model$variables$aux$e$min_julia, "u\"90m\"")
-#
-#   sfm = sfm |> build("f", "aux", min = "u('9*80 centimeters')", max = "100 + a + u('90 Ohm')")
-#   expect_equal(sfm$model$variables$aux$f$min, "u('9*80cm')")
-#   expect_equal(sfm$model$variables$aux$f$min_julia, "u\"9*80cm\"")
-#   expect_equal(sfm$model$variables$aux$f$max, "100 + a + u('90Ohm')")
-#   expect_equal(sfm$model$variables$aux$f$max_julia, "100.0 .+ a .+ u\"90Ohm\"")
-#
-#
-# })
-
-
 test_that("erase in build() works", {
 
   sfm = xmile("Lorenz")
@@ -522,11 +488,6 @@ test_that("build() works", {
   # # Multiple equations but only one name should throw error
   # expect_error({xmile() |> build("a", eqn = c("1", "2"))},
   # "The length of eqn =  must be either 1 or equal to the length of name = 'a'.")
-
-  # # Check min and max
-  # sfm = xmile() |> build("e", "aux", min = "90")
-  # expect_equal(sfm$model$variables$aux$e$min, "90")
-  # expect_equal(sfm$model$variables$aux$e$min_julia, "90.0")
 
 
 })

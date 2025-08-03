@@ -19,6 +19,8 @@ Initialize an empty stock-and-flow model of class sdbuildR_xmile. You can either
 sfm = xmile()
 summary(sfm)
 
+\dontshow{sfm = sim_specs(sfm, save_at = 1)}
+
 # Load a template
 sfm = xmile("Lorenz")
 sim = simulate(sfm)

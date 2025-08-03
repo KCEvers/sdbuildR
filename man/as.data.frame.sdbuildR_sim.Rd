@@ -28,7 +28,6 @@ sfm = xmile("SIR")
 sim = simulate(sfm)
 head(as.data.frame(sim))
 
-
 }
 \seealso{
 \code{\link[=simulate]{simulate()}}, \code{\link[=xmile]{xmile()}}

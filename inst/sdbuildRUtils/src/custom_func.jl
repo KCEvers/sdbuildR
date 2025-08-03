@@ -194,7 +194,7 @@ end
 # Create seasonal wave 
 function seasonal(times, dt, period = u"1yr", shift = u"0yr")
 
-    @assert period > 0 "The period of the seasonal wave must be greater than 0."
+    @assert Unitful.ustrip(period) > 0 "The period of the seasonal wave must be greater than 0."
 
     time_vec = times[1]:dt:times[2]
     phase = 2 * pi .* (time_vec .- shift) ./ period  # π radians
@@ -229,7 +229,7 @@ function expit(x)
 end
 
 function logistic(x, slope=1.0, midpoint=0.0, upper = 1.0)
-    @assert isfinite(slope) && isfinite(midpoint) && isfinite(upper) "slope, midpoint, and upper must be numeric"
+    @assert isfinite(Unitful.ustrip(slope)) && isfinite(Unitful.ustrip(midpoint)) && isfinite(Unitful.ustrip(upper)) "slope, midpoint, and upper must be numeric"
     upper / (1 + exp(-slope * (x - midpoint)))
 end
 

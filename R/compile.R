@@ -2,7 +2,7 @@
 
 #' Simulate stock-and-flow model
 #'
-#' Simulate a stock-and-flow model with simulation specifications defined by `sim_specs()`. If not already run, the Julia environment will be set up with `use_julia()`. If any problems are detected by `debugger()`, the model cannot be simulated.
+#' Simulate a stock-and-flow model with simulation specifications defined by `sim_specs()`. If not already run, the Julia environment will first be set up with `use_julia()`. If any problems are detected by `debugger()`, the model cannot be simulated.
 #'
 #' @inheritParams insightmaker_to_sfm
 #' @inheritParams build
@@ -34,9 +34,9 @@
 #' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim, add_constants = TRUE)
 #'
+#' @examplesIf not_on_cran()
 #' # Use Julia for models with units or delay functions
 #' sfm = sim_specs(xmile("coffee_cup"), language = "Julia")
-#' use_julia()
 #' sim = simulate(sfm)
 #' plot(sim)
 #'
@@ -59,6 +59,11 @@ simulate = function(sfm,
   }
 
   if (tolower(sfm[["sim_specs"]][["language"]]) == "julia"){
+
+    # if (!julia_setup_ok()){
+    #   stop("The Julia environment has not been set up yet! Run use_julia().")
+    # }
+
     return(simulate_julia(sfm,
                           keep_nonnegative_flow = keep_nonnegative_flow,
                           keep_nonnegative_stock = keep_nonnegative_stock,
@@ -79,7 +84,7 @@ simulate = function(sfm,
                       only_stocks = only_stocks,
                       verbose = verbose))
   } else {
-    stop("Language not supported.\nPlease run either sfm |> sim_specs(language = 'Julia') (recommended) or sfm |> sim_specs(language = 'R') (no unit support).")
+    stop("Language not supported.\nPlease run either sim_specs(sfm, language = 'Julia') (recommended) or sim_specs(sfm, language = 'R') (no unit, delay, or ensemble support).")
   }
 
 }
@@ -446,9 +451,15 @@ order_equations <- function(sfm, print_msg = TRUE){
                                dependencies[["stock"]]) |>
     purrr::list_flatten()
 
+  if (static_and_dynamic[["issue"]]){
+    if (any(unname(static_dependencies_dict) %in% c(names(dependencies[["aux"]]), names(dependencies[["flow"]])))){
+      warning(paste0("Ordering equations failed. ", static_and_dynamic[["msg"]], collapse = ""))
+    }
+  }
+
   static = topological_sort(static_dependencies_dict)
   if (print_msg & static[["issue"]]){
-    message(paste0("Ordering static equations failed. ", static[["msg"]], collapse = ""))
+    warning(paste0("Ordering static equations failed. ", static[["msg"]], collapse = ""))
   }
 
 
@@ -457,8 +468,9 @@ order_equations <- function(sfm, print_msg = TRUE){
                         dependencies[["flow"]]) |>
     purrr::list_flatten()
   dynamic = topological_sort(dependencies_dict)
+
   if (print_msg & dynamic[["issue"]]){
-    message(paste0("Ordering dynamic equations failed. ", dynamic[["msg"]], collapse = ""))
+    warning(paste0("Ordering dynamic equations failed. ", dynamic[["msg"]], collapse = ""))
   }
 
   return(list(static = static, dynamic = dynamic,
@@ -549,9 +561,9 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 }
 
 
-#' Run ensemble simulation
+#' Run ensemble simulations
 #'
-#' Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in `range`. By default, the ensemble is run in parallel using multiple threads. The results are returned as a dataframe with summary statistics and optionally individual simulations.
+#' Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in `range`. The ensemble can be run in parallel using multiple threads by first setting `use_threads()`. The results are returned as a dataframe with summary statistics and optionally individual simulations.
 #'
 #' To run large simulations, it is recommended to limit the output size by saving fewer values. To create a reproducible ensemble simulation, set a seed using sim_specs().
 #'
@@ -564,7 +576,6 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #' @param range List of ranges to vary parameters in the ensemble. Only stocks and constants can be specified. All ranges have to be of the same length if cross = FALSE. Defaults to NULL.
 #' @param cross If TRUE, cross the parameters in the range list to generate all possible combinations of parameters. Defaults to TRUE.
 #' @param quantiles Quantiles to calculate in the summary, e.g. c(0.025, 0.975).
-#' @param threaded If TRUE, run the simulation on multiple threads. The number of threads is taken from the use_julia() argument JULIA_NUM_THREADS, which defaults to four. Defaults to TRUE.
 #'
 #' @returns Object of class sdbuildR_ensemble, which is a list containing:
 #' \describe{
@@ -584,11 +595,11 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #'  }
 #' @export
 #' @family simulate
-#' @seealso [build()], [xmile()], [sim_specs()], [use_julia()]
+#' @seealso [use_threads()], [build()], [xmile()], [sim_specs()], [use_julia()]
 #'
 #' @examples
 #'# Load example and set simulation language to Julia
-#'sfm = sim_specs(xmile("predator-prey"), language = "Julia")
+#'sfm = xmile("predator-prey") |> sim_specs(language = "Julia")
 #'
 #'# Set random initial conditions
 #'sfm = build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
@@ -598,47 +609,50 @@ compare_sim = function(sim1, sim2, tolerance = .00001){
 #'# the first 100 time units, use:
 #'sfm = sim_specs(sfm, save_at = 1, save_from = 100)
 #'
-#'# Run ensemble simulation with 100 simulations
-#'sims = ensemble(sfm, n = 100)
-#'plot(sims)
+#' @examplesIf not_on_cran()
+#' # Run ensemble simulation with 100 simulations
+#' sims = ensemble(sfm, n = 100)
+#' plot(sims)
 #'
-#'# Plot individual trajectories
-#'sims = ensemble(sfm, n = 10, return_sims = TRUE)
-#'plot(sims, type = "sims")
+#' # Plot individual trajectories
+#' sims = ensemble(sfm, n = 10, return_sims = TRUE)
+#' plot(sims, type = "sims")
 #'
-#'# Specify which trajectories to plot
-#'plot(sims, type = "sims", i = 1)
+#' # Specify which trajectories to plot
+#' plot(sims, type = "sims", i = 1)
 #'
-#'# Plot the median with lighter individual trajectories
-#'plot(sims, central_tendency = "median", type = "sims", alpha = 0.1)
+#' # Plot the median with lighter individual trajectories
+#' plot(sims, central_tendency = "median", type = "sims", alpha = 0.1)
 #'
-#'# Ensembles can also be run with exact values for the initial conditions
-#'# and parameters. Below, we vary the initial values of the predator and the
-#'# birth rate of the predators (delta). We generate a hunderd samples per
-#'# condition. By default, the parameters are crossed, meaning that all
-#'# combinations of the parameters are run.
-#'sims = ensemble(sfm, n = 50,
-#'                range = list("predator" = c(10, 50),
-#'                             "delta" = c(.025, .05)))
+#' # Ensembles can also be run with exact values for the initial conditions
+#' # and parameters. Below, we vary the initial values of the predator and the
+#' # birth rate of the predators (delta). We generate a hunderd samples per
+#' # condition. By default, the parameters are crossed, meaning that all
+#' # combinations of the parameters are run.
+#' sims = ensemble(sfm, n = 50,
+#'                 range = list("predator" = c(10, 50), "delta" = c(.025, .05)))
 #'
-#'plot(sims)
+#' plot(sims)
 #'
-#'# By default, a maximum of nine conditions is plotted.
-#'# Plot specific conditions:
-#'plot(sims, j = c(1, 3), nrows = 1)
+#' # By default, a maximum of nine conditions is plotted.
+#' # Plot specific conditions:
+#' plot(sims, j = c(1, 3), nrows = 1)
 #'
-#'# Generate a non-crossed design, where the length of each range needs to be
-#'# equal:
-#'sims = ensemble(sfm, n = 10,
-#'                range = list("predator" = c(10, 20, 30),
-#'                             "delta" = c(.020, .025, .03)), cross = FALSE)
-#'plot(sims, nrows = 3)
+#' # Generate a non-crossed design, where the length of each range needs to be
+#' # equal:
+#' sims = ensemble(sfm, n = 10, cross = FALSE,
+#'   range = list(
+#'     "predator" = c(10, 20, 30),
+#'     "delta" = c(.020, .025, .03)
+#'  ))
+#' plot(sims, nrows = 3)
 #'
-#'# Run simulation not in parallel
-#'sims = ensemble(sfm, n = 10, threaded = FALSE)
+#' # Run simulation in parallel
+#' use_threads(4)
+#' sims = ensemble(sfm, n = 10)
 #'
-#'# To run simulations with more threads than the default, set e.g.:
-#' use_julia(JULIA_NUM_THREADS = 10)
+#' # Stop using threads
+#' use_threads(stop = TRUE)
 #'
 #' # Close Julia
 #' use_julia(stop = TRUE)
@@ -649,7 +663,6 @@ ensemble = function(sfm,
                     range = NULL,
                     cross = TRUE,
                     quantiles = c(0.025, 0.975),
-                    threaded = TRUE,
                     only_stocks = TRUE,
                     keep_nonnegative_flow = TRUE,
                     keep_nonnegative_stock = FALSE,
@@ -660,12 +673,9 @@ ensemble = function(sfm,
   check_xmile(sfm)
 
   # Collect arguments
-  argg <- c(
-    as.list(environment()))
+  argg <- c(as.list(environment()))
   # Remove NULL arguments
   argg = argg[!lengths(argg) == 0]
-  # Remove some elements
-  # argg[c("sfm")] = NULL
 
   if (tolower(sfm[["sim_specs"]][["language"]]) != "julia"){
     stop("Ensemble simulations are only supported for Julia models. Please set sfm |> sim_specs(language = 'Julia').")
@@ -693,10 +703,6 @@ ensemble = function(sfm,
 
   if (!is.logical(cross)){
     stop("cross should be TRUE or FALSE!")
-  }
-
-  if (!is.logical(threaded)){
-    stop("threaded should be TRUE or FALSE!")
   }
 
   if (!is.logical(return_sims)){
@@ -768,6 +774,9 @@ ensemble = function(sfm,
     n_conditions = 1
   }
 
+  # if (!julia_setup_ok()){
+  #   stop("The Julia environment has not been set up yet! Run use_julia().")
+  # }
 
   if (verbose){
     message(paste0("Running a total of ", n * n_conditions,
@@ -782,10 +791,27 @@ ensemble = function(sfm,
 
   # Create ensemble parameters
   ensemble_pars = list(n = n,
-                       threaded = threaded,
                        quantiles = quantiles,
                        return_sims = return_sims,
                        range = range, cross = cross)
+
+
+  old_threads = .sdbuildR_env[["prev_JULIA_NUM_THREADS"]]
+
+  if (!is.null(.sdbuildR_env[["JULIA_NUM_THREADS"]]) & !is.null(old_threads)){
+    ensemble_pars[["threaded"]] = TRUE
+    Sys.setenv("JULIA_NUM_THREADS" = .sdbuildR_env[["JULIA_NUM_THREADS"]])
+
+    on.exit({
+      if (is.na(old_threads)) {
+        Sys.unsetenv("JULIA_NUM_THREADS")
+      } else {
+        Sys.setenv("JULIA_NUM_THREADS" = old_threads)
+      }
+      })
+  } else {
+    ensemble_pars[["threaded"]] = FALSE
+  }
 
 
   # Get output filepaths
@@ -807,9 +833,9 @@ ensemble = function(sfm,
   # Evaluate script
   sim = tryCatch({
 
-    # Evaluate script
     use_julia()
 
+    # Evaluate script
     start_t = Sys.time()
 
     # Wrap in invisible and capture.output to not show message of units module being overwritten
@@ -893,4 +919,56 @@ ensemble = function(sfm,
 
 }
 
+
+
+#' Set up threaded ensemble simulations
+#'
+#' Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS.
+#'
+#' @param n Number of Julia threads to use. Defaults to parallel::detectCores() - 1. If set to a value higher than the number of available cores minus 1, it will be set to the number of available cores minus 1.
+#' @param stop Stop using threaded ensemble simulations. Defaults to FALSE.
+#'
+#' @returns NULL
+#' @family simulate
+#' @seealso [ensemble()], [use_julia()]
+#' @export
+#'
+#' @examples
+#' use_threads(n = 4)
+#' use_threads(stop = TRUE)
+use_threads = function(n = parallel::detectCores() - 1, stop = FALSE){
+
+  if (!is.numeric(n)){
+    stop("n must be a number!")
+  }
+
+  if (n < 1){
+    stop("n must be larger than 1!")
+  }
+
+  if (!is.logical(stop)){
+    stop("stop must be TRUE or FALSE!")
+  }
+
+  if (stop){
+
+    .sdbuildR_env[["JULIA_NUM_THREADS"]] = NULL
+
+  } else {
+
+    # Set number of Julia threads to use
+    if (n > (parallel::detectCores() - 1)){
+      warning("n is set to ", n, ", which is higher than the number of available cores minus 1. Setting it to ", parallel::detectCores() - 1, ".")
+      n = parallel::detectCores() - 1
+    }
+
+    # Save user's old setting
+    .sdbuildR_env[["prev_JULIA_NUM_THREADS"]] = Sys.getenv("JULIA_NUM_THREADS")
+
+    .sdbuildR_env[["JULIA_NUM_THREADS"]] = n
+  }
+
+  return(invisible())
+
+}
 

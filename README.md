@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# sdbuildR: Easily build and simulate stock-and-flow models in R
+# sdbuildR: Easily Build and Simulate Stock-and-Flow Models in R
 
 <!-- badges: start -->
 
@@ -13,7 +13,7 @@ coverage](https://codecov.io/gh/KCEvers/sdbuildR/graph/badge.svg)](https://app.c
 Model systems as stock-and-flow models in R. Stock-and-flow models are
 foundational to system dynamics, and help to understand systems
 complicated by nonlinearities, delays, and feedback loops. sdbuildR aims
-to make stock-and-flow modelling accessible and effortless, enabling you
+to make stock-and-flow modeling accessible and effortless, enabling you
 to dedicate your expertise to what matters most: building insightful,
 high-quality models. Get started at
 <https://kcevers.github.io/sdbuildR/>!
@@ -23,7 +23,8 @@ high-quality models. Get started at
 - **Accessibility**: Get started with stock-and-flow models with limited
   knowledge.
 - **Flexibility**: Modify your models easily and robustly.
-- **Insight Maker integration**: Import models from Insight Maker.
+- **Insight Maker integration**: Import models from [Insight
+  Maker](https://insightmaker.com/).
 - **Julia backend**: Use Julia for high-performance simulations, without
   any knowledge of Julia.
 - **Unit support**: Use standard or custom units to verify and interpret
@@ -48,19 +49,18 @@ You can install the development version of sdbuildR like so:
 remotes::install_github("KCEvers/sdbuildR")
 ```
 
-sdbuildR offers two simulation engines: R and Julia. If you would like
-to run ensemble simulations, use units and implement delay functions,
-you will need to set up the Julia environment. Run `use_julia()` to
-install Julia and required packages (initial setup may take 5–15
-minutes):
+sdbuildR offers two simulation engines: R and Julia (supported by
+[JuliaConnectoR](https://github.com/stefan-m-lenz/JuliaConnectoR/)). If
+you would like to run ensemble simulations, use units and implement
+delay functions, you will need to set up the Julia environment. Run
+`use_julia()` to install Julia and required packages (initial setup may
+take 5–15 minutes):
 
 ``` r
 sdbuildR::use_julia()
 ```
 
 ## Limitations
-
-<!-- Unlike other System Dynamics software, sdbuildR makes a distinction between static and dynamic variables. This means that static variables - the initial values of stocks, constants, and graphical functions - cannot depend on dynamic variables - auxiliaries and flows. If this is the case, an error will be thrown with the problematic dependencies and the model will not be simulated.  -->
 
 Unlike in other System Dynamics software, sdbuildR minimally supports
 non-negative stocks and flows. Setting stocks to non-negative will not
@@ -81,7 +81,7 @@ Maker](https://insightmaker.com/). To translate xmile models to R, see
 the R package [readsdr](https://github.com/jandraor/readsdr). To build
 stock-and-flow models with the R package
 [deSolve](https://cran.r-project.org/web/packages/deSolve/index.html),
-the book [System Dynamics Modelling with
+the book [System Dynamics Modeling with
 R](https://link.springer.com/book/10.1007/978-3-319-34043-2) by Jim
 Duggan will prove useful. In Python, stock-and-flow models are supported
 by [PySD](https://pysd.readthedocs.io/en/master/).

@@ -22,8 +22,10 @@ function retrieve_delay(var_value, delay_time, default_value, t, var_name, inter
     ts = intermediaries.t
     ys = [val[var_index] for val in intermediaries.saveval]
 
-    if !isapprox(t, ts[end]; atol=1e-10)
-        ts = [ts; t]  # Append current time if not present
+    # Append current time if not present
+    #if !isapprox(t, ts[end]; atol=1e-10)
+    if abs(Unitful.ustrip(t - last(ts))) > 1e-10
+        ts = [ts; t]
     end
 
     ys = [ys; var_value][1:length(ts)]  # Ensure ys is the same length as ts
@@ -67,8 +69,10 @@ function retrieve_past(var_value, delay_time, default_value, t, var_name, interm
     #     ts = [ts; t]
     # end
 
-    if !isapprox(t, ts[end]; atol=1e-10)
-        ts = [ts; t]  # Append current time if not present
+    # Append current time if not present
+    #if !isapprox(t, ts[end]; atol=1e-10)
+    if abs(Unitful.ustrip(t - last(ts))) > 1e-10
+        ts = [ts; t]
     end
 
     ys = [ys; var_value][1:length(ts)]  # Ensure ys is the same length as ts

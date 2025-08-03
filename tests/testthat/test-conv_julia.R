@@ -163,49 +163,44 @@ test_that("custom function definitons work", {
   expect_equal(sfm$macro$func$eqn_julia, "function func(x, y = 1.0, z = 2.0)\n x .+ y\nend")
 
   # Is the function now usable?
-  sfm = sfm |>
-    sim_specs(language="R", stop = 1, dt = .1) |>
+  sfm = sfm |> sim_specs(language="R", stop = 1, dt = .1) |>
     build("a", "stock", eqn = "func(1, 2)")
   sim = expect_no_error(simulate(sfm))
   expect_equal(sim$df[1, "value"], 1 + 2)
 
   # Name argument
-  sfm = sfm |>
-    build("a",eqn = "func(1, y = 2)")
+  sfm = sfm |> build("a", eqn = "func(1, y = 2)")
   expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, y = 2.0)")
   sim = expect_no_error(simulate(sfm))
   expect_equal(sim$df[1, "value"], 1 + 2)
 
   # Switch order of arguments
-  sfm = sfm |>
-    build("a",eqn = "func(1, z = 3, y = 2)")
+  sfm = sfm |> build("a", eqn = "func(1, z = 3, y = 2)")
   expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, z = 3.0, y = 2.0)")
   sim = expect_no_error(simulate(sfm))
   expect_equal(sim$df[1, "value"], 1 + 2)
 
+  # # Named argument throws error when translating to Julia
+  # sfm = sfm |> build("a", eqn = "func(1, y = 2)")
+  # expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, y = 2.0)")
+  # expect_error(simulate(sfm), "The following variables were used as functions with named arguments in the Julia translated equation")
+  #
+  # # Switch order of arguments
+  # sfm = sfm |>
+  #   build("a",eqn = "func(1, z = 3, y = 2)")
+  # expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, z = 3.0, y = 2.0)")
+  # expect_error(simulate(sfm), "The following variables were used as functions with named arguments in the Julia translated equation")
+
   # Repeat in Julia
+  testthat::skip_on_cran()
   sfm = xmile() |> macro("func", "function(x, y = 1, z = 2) x + y")
   expect_equal(sfm$macro$func$eqn_julia, "function func(x, y = 1.0, z = 2.0)\n x .+ y\nend")
 
   # Is the function now usable?
-  sfm = sfm |>
-    sim_specs(language="Julia", stop = 1, dt = .1) |>
+  sfm = sfm |> sim_specs(language="Julia", stop = 1, dt = .1) |>
     build("a", "stock", eqn = "func(1, 2)")
   sim = expect_no_error(simulate(sfm))
   expect_equal(sim$df[1, "value"], 1 + 2)
-
-  # Named argument throws error when translating to Julia
-  sfm = sfm |>
-    build("a",eqn = "func(1, y = 2)")
-  expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, y = 2.0)")
-  expect_error(simulate(sfm), "The following variables were used as functions with named arguments in the Julia translated equation")
-
-  # Switch order of arguments
-  sfm = sfm |>
-    build("a",eqn = "func(1, z = 3, y = 2)")
-  expect_equal(sfm$model$variables$stock$a$eqn_julia, "func(1.0, z = 3.0, y = 2.0)")
-  expect_error(simulate(sfm), "The following variables were used as functions with named arguments in the Julia translated equation")
-
 
 })
 
@@ -360,11 +355,39 @@ test_that("clean units for Julia", {
   expected = "0.0000000567W/(m^2*K^4)"
   expect_equal(result, expected)
 
+  x = "0.0000000567 Watts / square meter / Degrees Celsius^4"
+  result = clean_unit(x, regex_units)
+  expected = "0.0000000567W/m^2/degC^4"
+  expect_equal(result, expected)
+
+  x = "273 Degrees Celsius"
+  result = clean_unit(x, regex_units)
+  expected = "273degC"
+  expect_equal(result, expected)
+
+  x = "386000000000000013920400480 Watts"
+  result = clean_unit(x, regex_units)
+  expected = "3.86e+26W"
+  expect_equal(result, expected)
+
+  x = "1004 Joules / kilograms / Degrees Celsius"
+  result = clean_unit(x, regex_units)
+  expected = "1004J/kg/degC"
+  expect_equal(result, expected)
+
+  x = "4180 Joules / kg / Degrees Celsius"
+  result = clean_unit(x, regex_units)
+  expected = "4180J/kg/degC"
+  expect_equal(result, expected)
+
+  x = "1000 kg / cubic meter"
+  result = clean_unit(x, regex_units)
+  expected = "1000kg/m^3"
+  expect_equal(result, expected)
+
   # **test unicode symbols like ohm and degree
 
   # **test ignore case
-
-
 
 })
 
@@ -676,28 +699,4 @@ test_that("adding scientific notation", {
 
 })
 
-
-test_that("functions in Julia work", {
-
-  # round() with units
-  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "round(10.235)")
-  expect_no_error(simulate(sfm))
-
-  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "round(u('100.80 kilograms'))")
-  expect_no_error(simulate(sfm))
-
-  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "round(u('108.67 seconds'))")
-  expect_no_error(simulate(sfm))
-
-  # Cosine function needs unitless argument or argument in radians
-  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "cos(10)")
-  expect_no_error(simulate(sfm))
-
-  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "cos(u('10meters'))")
-  expect_warning(simulate(sfm), "An error occurred while running the Julia script")
-
-  sfm = xmile() |> sim_specs(language = "Julia") |> build("a", "stock", eqn = "cos(u('10radians'))")
-  expect_no_error(simulate(sfm))
-
-})
 

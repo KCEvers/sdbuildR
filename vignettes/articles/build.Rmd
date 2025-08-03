@@ -444,4 +444,3 @@ sfm = build(sfm, "x", "aux", eqn = "func(y)")
 <!-- "Most solvers of deSolve use an automatic internal time step, that adjusts itself, depending on the roughness or smoothness of the system. The use of if statements or if()functions in the model function is not a good idea for two reasons: (i) the time steps may not be hit exactly and (2) the model function (i.e. the derivative) should ideally be continuous and differentiable and avoid step-wise behavior, even if the solvers are quite robust in such cases." -->
 
 
-<!-- XXX Have fun building your own models! -->

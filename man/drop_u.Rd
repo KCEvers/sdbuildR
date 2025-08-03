@@ -19,8 +19,8 @@ In rare cases, it may be desirable to drop the units of a variable within an equ
 # For example, the cosine function only accepts unitless arguments or
 # arguments with units in radians or degrees
 sfm = xmile() |>
-build("a", "constant", eqn = "10", units = "minutes") |>
-build("b", "constant", eqn = "cos(drop_u(a))")
+ build("a", "constant", eqn = "10", units = "minutes") |>
+ build("b", "constant", eqn = "cos(drop_u(a))")
 }
 \seealso{
 \code{\link[=model_units]{model_units()}}, \code{\link[=unit_prefixes]{unit_prefixes()}}, \code{\link[=u]{u()}}, \code{\link[=convert_u]{convert_u()}}

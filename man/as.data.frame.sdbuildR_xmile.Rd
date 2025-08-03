@@ -43,6 +43,7 @@ as.data.frame(xmile("SIR"), type = "stock")
 
 # Only show equation and label
 as.data.frame(xmile("SIR"), properties = c("eqn", "label"))
+
 }
 \seealso{
 Other build: 

@@ -127,7 +127,7 @@ compile_R = function(sfm,
   # Stop if equations contain unit strings
   if (length(eqn_units) > 0){
 
-    stop(paste0("The model contains unit strings u(''), which are not supported for simulations in R.\nSet sfm |> sim_specs(language = 'Julia') or modify the equations of these variables:\n\n", paste0(names(eqn_units), collapse = ", ")))
+    stop(paste0("The model contains unit strings u(''), which are not supported for simulations in R.\nSet sim_specs(sfm, language = 'Julia') or modify the equations of these variables:\n\n", paste0(names(eqn_units), collapse = ", ")))
   }
 
   # Check model for delayN() and smoothN() functions

@@ -99,7 +99,7 @@ The obligatory properties of an auxiliary are "name", "type", and "eqn". Optiona
 }
 
 \section{Graphical functions}{
- Graphical functions, also known as table or lookup functions, are interpolation functions used to define the desired output (y) for a specified input (x). They are defined by a set of x- and y-domain points, which are used to create a piecewise linear function. The interpolation method defines the behaviour of the graphical function between x-points ("constant" to return the value of the previous x-point, "linear" to linearly interpolate between defined x-points), and the extrapolation method defines the behaviour outside of the x-points ("NA" to return NA values outside of defined x-points, "nearest" to return the value of the closest x-point).
+ Graphical functions, also known as table or lookup functions, are interpolation functions used to define the desired output (y) for a specified input (x). They are defined by a set of x- and y-domain points, which are used to create a piecewise linear function. The interpolation method defines the behavior of the graphical function between x-points ("constant" to return the value of the previous x-point, "linear" to linearly interpolate between defined x-points), and the extrapolation method defines the behavior outside of the x-points ("NA" to return NA values outside of defined x-points, "nearest" to return the value of the closest x-point).
 
 The obligatory properties of an auxiliary are "name", "type", "xpts", and "ypts". "xpts" and "ypts" must be of the same length. Optional additional properties are "units", "label", "doc", "source", "interpolation", "extrapolation".
 }
@@ -109,6 +109,7 @@ The obligatory properties of an auxiliary are "name", "type", "xpts", and "ypts"
 # First initialize an empty model:
 sfm = xmile()
 summary(sfm)
+\dontshow{sfm = sim_specs(sfm, save_at = .1)}
 
 # Add two stocks. Specify their initial values in the "eqn" property, as well
 # as their plotting label

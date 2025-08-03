@@ -24,7 +24,7 @@ The following problems are detected:
 \item Flows without a source (\code{from}) or target (\code{to})
 \item Flows connected to a stock that does not exist
 \item Undefined variable references in equations
-\item Circularities in equations
+\item Circularity in equations
 \item Connected stocks and flows without both having units or no units
 \item Missing unit definitions
 }
@@ -49,7 +49,7 @@ debugger(sfm)
 sfm = xmile() |> build("Prey", "stock")
 debugger(sfm)
 
-# Detect circularities in equation definitions
+# Detect circularity in equation definitions
 sfm = xmile() |> build("Prey", "stock", eqn = "Predator") |>
  build("Predator", "stock", eqn = "Prey")
 debugger(sfm)

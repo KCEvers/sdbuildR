@@ -6,8 +6,8 @@ output:
     toc_depth: 2
 vignette: >
   %\VignetteIndexEntry{Ensemble simulations}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
   chunk_output_type: console
 ---
@@ -126,14 +126,23 @@ sims = ensemble(sfm, n = 100, only_stocks = FALSE)
 plot(sims)
 ```
 
+### Parallel simulations
+
+To run simulations in parallel, set the number of threads you would like to use:
+
+```{r}
+use_threads(n = 4)
+```
+
+To stop using parallel simulations, run `use_threads(stop = TRUE)`.
+
 ## Specifying ranges
 
 Instead of generating an ensemble with random initial conditions, we can also specify ensembles with exact parameter values. For example, we could vary the $a_2$ parameter, which determines how strongly having eaten increases compensatory behaviour.
 
 ```{r}
-sims = ensemble(sfm, 
-                range = list("a2" = c(0.2, 0.4, 0.6, 0.8)), 
-                n = 100)
+sims = ensemble(sfm, n = 100,
+                range = list("a2" = c(0.2, 0.4, 0.6, 0.8)))
 ```
 
 

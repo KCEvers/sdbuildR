@@ -13,6 +13,8 @@
 #' @examples sfm = xmile()
 #' summary(sfm)
 #'
+#' \dontshow{sfm = sim_specs(sfm, save_at = 1)}
+#'
 #' # Load a template
 #' sfm = xmile("Lorenz")
 #' sim = simulate(sfm)
@@ -37,16 +39,13 @@ xmile <- function(name = NULL){
   obj = list(
     header = header_defaults,
     sim_specs = spec_defaults,
-    # behavior = list(stock = list(non_negative = "FALSE"),
-    #                 flow = list(non_negative = "FALSE")),
              model = list(
                variables = list(
-                 stock = list(),
-                 constant = list(),
-                              aux = list(),
-                              flow = list(),
-                 # module = list(), # for submodels
-                              gf = list())),
+                  stock = list(),
+                  constant = list(),
+                  aux = list(),
+                  flow = list(),
+                  gf = list())),
              macro = list(),
              model_units = list(),
              display = list(variables = c()))
@@ -61,7 +60,7 @@ xmile <- function(name = NULL){
 
 #' Plot stock-and-flow diagram
 #'
-#' Visualise a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Hover over the stocks and flows to see their equations.
+#' Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Hover over the stocks and flows to see their equations.
 #'
 #' @param x Stock-and-flow model of class sdbuildR_xmile
 #' @param format_label If TRUE, apply default formatting to labels if labels are the same as variable names.
@@ -220,12 +219,12 @@ get_flow_df = function(sfm){
 
 #' Plot timeseries of simulation
 #'
-#' Visualise simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.
+#' Visualize simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.
 #'
 #' @param x Output of simulate().
 #' @param add_constants If TRUE, include constants in plot. Defaults to FALSE.
 #' @param palette Colour palette. Must be one of hcl.pals().
-#' @param colors Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
+#' @param colors Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
 #' @param font_family Font family. Defaults to "Times New Roman".
 #' @param font_size Font size. Defaults to 16.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
@@ -245,10 +244,10 @@ get_flow_df = function(sfm){
 #' # The default plot title and axis labels can be changed like so:
 #' plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
 #'
-#' # If you want to add constants to the plot, set `add_constants = TRUE`
+#' # Add constants to the plot
 #' plot(sim, add_constants = TRUE)
 #'
-#' # To plot all model variables, run the simulation with `only_stocks = FALSE`
+#' # Plot all model variables
 #' sim = simulate(sfm, only_stocks = FALSE)
 #' plot(sim, add_constants = TRUE)
 #'
@@ -388,7 +387,7 @@ plot.sdbuildR_sim = function(x,
     }
 
     if (gen_colors){
-      # Minimum number of variables needed for colour palette generation
+      # Minimum number of variables needed for color palette generation
       if (nr_var < 3){
         nr_var_c = 3
       } else {
@@ -497,7 +496,7 @@ plot.sdbuildR_sim = function(x,
 
 #' Plot timeseries of ensemble
 #'
-#' Visualise ensemble simulation results of a stock-and-flow model. Either summary statistics or individual trajectories can be plotted. When multiple conditions j are specified, a grid of subplots is plotted. See `ensemble()` for examples.
+#' Visualize ensemble simulation results of a stock-and-flow model. Either summary statistics or individual trajectories can be plotted. When multiple conditions j are specified, a grid of subplots is plotted. See `ensemble()` for examples.
 #'
 #' @param x Output of ensemble().
 #' @param type Type of plot. Either "summary" for a summary plot with mean or median lines and confidence intervals, or "sims" for individual simulation trajectories with mean or median lines. Defaults to "summary".
@@ -507,7 +506,7 @@ plot.sdbuildR_sim = function(x,
 #' @param shareX If TRUE, share the x-axis across subplots. Defaults to TRUE.
 #' @param shareY If TRUE, share the y-axis across subplots. Defaults to TRUE.
 #' @param palette Colour palette. Must be one of hcl.pals().
-#' @param colors Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
+#' @param colors Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
 #' @param font_family Font family. Defaults to "Times New Roman".
 #' @param font_size Font size. Defaults to 16.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
@@ -574,30 +573,32 @@ plot.sdbuildR_ensemble = function(x,
 
   dots <- list(...)
 
-  if (type == "summary"){
+  sub <- if (!"sub" %in% names(dots)) {
+    if (type == "summary"){
 
-      subtitle = paste0(ifelse(isFALSE(central_tendency), "",
-                               stringr::str_to_title(central_tendency)), " with [",
-                      min(x[["quantiles"]]), ", ", max(x[["quantiles"]]),
-                      "] confidence interval of ", x[["n"]], " simulation",
-                      ifelse(x[["n"]] == 1, "", "s"))
+        sub = paste0(ifelse(isFALSE(central_tendency), "",
+                                 stringr::str_to_title(central_tendency)), " with [",
+                        min(x[["quantiles"]]), ", ", max(x[["quantiles"]]),
+                        "] confidence interval of ", x[["n"]], " simulation",
+                        ifelse(x[["n"]] == 1, "", "s"))
 
-  } else if (type == "sims"){
-    subtitle = paste0(ifelse(isFALSE(central_tendency), "",
-                             stringr::str_to_title(central_tendency)),
-                      " with ", length(i), "/", x[["n"]], " simulation",
-                      ifelse(x[["n"]] == 1, "", "s"))
+    } else if (type == "sims"){
+      sub = paste0(ifelse(isFALSE(central_tendency), "",
+                               stringr::str_to_title(central_tendency)),
+                        " with ", length(i), "/", x[["n"]], " simulation",
+                        ifelse(x[["n"]] == 1, "", "s"))
+    }
   }
+
 
   main <- if (!"main" %in% names(dots)) {
 
-    paste0("Ensemble of ", x[["sfm"]][["header"]][["name"]],
-           "\n<span style='font-size:", font_size, "px;'>", subtitle, "</span>")
+    paste0("Ensemble of ", x[["sfm"]][["header"]][["name"]])
 
   } else {
     dots[["main"]]
   }
-
+  main = paste0(main, "\n<span style='font-size:", font_size, "px;'>", sub, "</span>")
 
   xlab <- if (!"xlab" %in% names(dots)) {
     matched_time_unit <- find_matching_regex(x[["sfm"]][["sim_specs"]][["time_units"]], get_regex_time_units())
@@ -744,7 +745,7 @@ plot.sdbuildR_ensemble = function(x,
     }
 
     if (gen_colors){
-      # Minimum number of variables needed for colour palette generation
+      # Minimum number of variables needed for color palette generation
       if (nr_var < 3){
         nr_var_c = 3
       } else {
@@ -883,7 +884,7 @@ plot.sdbuildR_ensemble = function(x,
 #' @param q_low Column name for the lower bound of the confidence interval (e.g., "q0.025").
 #' @param q_high Column name for the upper bound of the confidence interval (e.g., "q0.975").
 #' @param mode Plotting mode. Either "lines" if there are multiple time points or "markers" for a single time point.
-#' @param colors Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
+#' @param colors Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
 #' @param dots List of additional parameters passed to the plotly functions.
 #' @param main Main title of the plot. Defaults to the name of the stock-and-flow model and the number of simulations.
 #' @param xlab Label on x-axis.
@@ -1267,7 +1268,6 @@ plot_ensemble_helper = function(j_idx, j_name, j, type, create_subplots,
 #' sim = simulate(sfm)
 #' head(as.data.frame(sim))
 #'
-#'
 as.data.frame.sdbuildR_sim = function(x,
                                       row.names = NULL, optional = FALSE,
                                       direction = "long", ...){
@@ -1321,6 +1321,7 @@ as.data.frame.sdbuildR_sim = function(x,
 #' @examples
 #' sfm = xmile("SIR")
 #' summary(sfm)
+#'
 summary.sdbuildR_xmile <- function(object, ...) {
 
   stocks = names(object[["model"]][["variables"]][["stock"]])
@@ -2171,9 +2172,9 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 #' @export
 #'
 #' @examples sfm = xmile("predator-prey") |>
-#' sim_specs(start = 1960, stop = 2010, dt = 0.1)
-#'sim = simulate(sfm)
-#'plot(sim)
+#'  sim_specs(start = 0, stop = 10, dt = 0.01)
+#' sim = simulate(sfm)
+#' plot(sim)
 #'
 #'# Change the simulation method to "rk4"
 #'sfm = sim_specs(sfm, method = "rk4")
@@ -2182,21 +2183,13 @@ header = function(sfm, name = "My Model", caption = "My Model Description",
 #'sfm = sim_specs(sfm, time_units = "years")
 #'
 #'# To save storage but not affect accuracy, use save_at and save_from
-#'sfm = sim_specs(sfm, dt = 0.001, save_at = .1, save_from = 2000)
+#'sfm = sim_specs(sfm, dt = 0.001, save_at = .1, save_from = 1)
 #'sim = simulate(sfm)
 #'head(as.data.frame(sim))
 #'
-#'# Specify seed for reproducibility
+#'# Add stochastic initial condition but specify seed to obtain same result
 #'sfm = sim_specs(sfm, seed = 1) |>
-#'  # Add stochastic initial condition
 #'  build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
-#'sim1 = simulate(sfm)
-#'sim2 = simulate(sfm)
-#'plot(sim1)
-#'plot(sim2)
-#'
-#'# Removing the seed yields variation
-#'sfm = sim_specs(sfm, seed = NULL)
 #'sim1 = simulate(sfm)
 #'sim2 = simulate(sfm)
 #'plot(sim1)
@@ -2573,7 +2566,7 @@ report_name_change = function(old_names, new_names){
 #'
 #' The obligatory properties of an auxiliary are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative".
 #'
-#' @section Graphical functions: Graphical functions, also known as table or lookup functions, are interpolation functions used to define the desired output (y) for a specified input (x). They are defined by a set of x- and y-domain points, which are used to create a piecewise linear function. The interpolation method defines the behaviour of the graphical function between x-points ("constant" to return the value of the previous x-point, "linear" to linearly interpolate between defined x-points), and the extrapolation method defines the behaviour outside of the x-points ("NA" to return NA values outside of defined x-points, "nearest" to return the value of the closest x-point).
+#' @section Graphical functions: Graphical functions, also known as table or lookup functions, are interpolation functions used to define the desired output (y) for a specified input (x). They are defined by a set of x- and y-domain points, which are used to create a piecewise linear function. The interpolation method defines the behavior of the graphical function between x-points ("constant" to return the value of the previous x-point, "linear" to linearly interpolate between defined x-points), and the extrapolation method defines the behavior outside of the x-points ("NA" to return NA values outside of defined x-points, "nearest" to return the value of the closest x-point).
 #'
 #' The obligatory properties of an auxiliary are "name", "type", "xpts", and "ypts". "xpts" and "ypts" must be of the same length. Optional additional properties are "units", "label", "doc", "source", "interpolation", "extrapolation".
 #'
@@ -2608,6 +2601,7 @@ report_name_change = function(old_names, new_names){
 #'# First initialize an empty model:
 #'sfm = xmile()
 #'summary(sfm)
+#' \dontshow{sfm = sim_specs(sfm, save_at = .1)}
 #'
 #'# Add two stocks. Specify their initial values in the "eqn" property, as well
 #'# as their plotting label
@@ -3374,14 +3368,6 @@ get_build_code = function(sfm, format_code = TRUE){
 
   # Simulation specifications - careful here. If a default is 100.0, this will be turned into 100. Need to have character defaults to preserve digits.
   sim_specs_list = sfm[["sim_specs"]]
-
-  # # Remove defaults
-  # defaults_sim_specs = formals(sim_specs)
-  # default_elements = defaults_sim_specs[names(sim_specs_list)]
-  # default_elements = default_elements[!lengths(default_elements) == 0]
-  #
-  # idx = unlist(default_elements) == unlist(sim_specs_list[names(default_elements)])
-  # sim_specs_list[names(which(idx))] = NULL
   sim_specs_list <- lapply(sim_specs_list, function(z) if (is.character(z)) paste0("\"", z, "\"") else z)
   sim_specs_str = paste0(names(sim_specs_list), " = ", unname(sim_specs_list), collapse = ", ")
   sim_specs_str = paste0(" |>\n\t\tsim_specs(", sim_specs_str, ")")
@@ -3742,6 +3728,7 @@ static_depend_on_dyn = function(sfm){
 #'
 #' # Only show equation and label
 #' as.data.frame(xmile("SIR"), properties = c("eqn", "label"))
+#'
 as.data.frame.sdbuildR_xmile = function(x,
                                         row.names = NULL, optional = FALSE,
                                         type = NULL, name = NULL, properties = NULL, ...){

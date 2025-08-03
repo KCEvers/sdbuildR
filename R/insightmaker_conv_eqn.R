@@ -167,7 +167,7 @@ get_range_comments <- function(eqn) {
         # Next closest comment
         idxs_comments[idxs_comments > i][1],
         # Next closest newline
-        idxs_newline[idxs_newline > i][1], na.rm = T) - 1) # Subtract 1 to not include it
+        idxs_newline[idxs_newline > i][1], na.rm = TRUE) - 1) # Subtract 1 to not include it
     }) |> do.call(rbind, args = _) |> magrittr::set_colnames(c("start", "end")) |>
       as.data.frame()
 
@@ -229,8 +229,8 @@ conv_destructuring_assignment = function(eqn) {
     idxs_inline = stringr::str_locate_all(eqn,
                                               stringr::regex(
                                                 "^(.*?)\\)[ ]*[^%]<-",
-                                                dotall = F,
-                                                multiline = T
+                                                dotall = FALSE,
+                                                multiline = TRUE
                                               ))[[1]]
     idxs_inline
 
@@ -252,10 +252,9 @@ conv_destructuring_assignment = function(eqn) {
     idxs_assignment = stringr::str_locate_all(eqn,
                                               stringr::regex(
                                                 # Match shouldn't contain square brackets, e.g. res[row, col] <- total
-                                                # "^[ ]*[^\\{\\}]+,[^\\{\\}]+[^%]<-",
                                                 "^[ ]*(.*?),(.*?)[^%]<-",
-                                                dotall = F,
-                                                multiline = T
+                                                dotall = FALSE,
+                                                multiline = TRUE
                                               ))[[1]]
     idxs_assignment
 
@@ -650,9 +649,9 @@ convert_statement = function(line, var_names){
 
     # Replace ranges in for-loop
     if (first_word == "for"){
-      equation = stringr::str_replace(equation, stringr::regex("from (.*?) to (.*?) by (.*?)\\)", ignore_case = T),
+      equation = stringr::str_replace(equation, stringr::regex("from (.*?) to (.*?) by (.*?)\\)", ignore_case = TRUE),
                                       "in seq(\\1, \\2, by = \\3))") |>
-        stringr::str_replace(stringr::regex("from (.*?) to (.*?)\\)", ignore_case = T),
+        stringr::str_replace(stringr::regex("from (.*?) to (.*?)\\)", ignore_case = TRUE),
                              "in seq(\\1, \\2))")
     }
 
@@ -735,7 +734,7 @@ convert_all_statements = function(eqn, var_names){
   # Insight Maker doesn't require users to specify an Else-statement in If ... Else If ... End If -> if no condition evaluates to TRUE, the output is zero. Add "Else\n0\n" in these lines.
   # Find all if end if
   formula_split = stringr::str_split(eqn, "\n")[[1]]
-  idx_end_if = which(stringr::str_detect(formula_split, stringr::regex("\\bend if\\b", ignore_case = T)))
+  idx_end_if = which(stringr::str_detect(formula_split, stringr::regex("\\bend if\\b", ignore_case = TRUE)))
 
   # For each end if, check whether first preceding line with "Then" or "Else" or "If"
   for (i in idx_end_if){
@@ -1118,45 +1117,45 @@ get_syntax_IM = function(){
   # Custom function to replace each (nested) function; necessary because regex in stringr unfortunately doesn't seem to handle nested functions
   conv_df = matrix(c(
     # Mathematical Functions (27)
-    "Round", "round_IM", "syntax1", F, T, "",
-    "Ceiling", "ceiling", "syntax1", F, T, "",
-    "Floor", "floor", "syntax1", F, T, "",
-    "Cos", "cos", "syntax1", F, T, "",
-    "ArcCos", "acos", "syntax1", F, T, "",
-    "Sin", "sin", "syntax1", F, T, "",
-    "ArcSin", "asin", "syntax1", F, T, "",
-    "Tan", "tan", "syntax1", F, T, "",
-    "ArcTan", "atan", "syntax1", F, T, "",
-    "Log", "log10", "syntax1", F, T, "",
-    "Ln", "log", "syntax1", F, T, "",
-    "Exp", "exp", "syntax1", F, T, "",
-    "Sum", "sum", "syntax1", T, T, "",
-    "Product", "prod", "syntax1", T, T, "",
-    "Max", "max", "syntax1", T, T, "",
-    "Min", "min", "syntax1", T, T, "",
-    "Mean", "mean", "syntax1", T, T, "",
-    "Median", "median", "syntax1", T, T, "",
-    "StdDev", "sd", "syntax1", T, T, "",
-    "Abs", "abs", "syntax1", T, T, "",
-    "Sqrt", "sqrt", "syntax1", F, T, "",
-    "Sign", "sign", "syntax1", F, T, "",
-    "Logit", "logit", "syntax1", F, T, "",
-    "Expit", "expit", "syntax1", F, T, "",
+    "Round", "round_IM", "syntax1", FALSE, TRUE, "",
+    "Ceiling", "ceiling", "syntax1", FALSE, TRUE, "",
+    "Floor", "floor", "syntax1", FALSE, TRUE, "",
+    "Cos", "cos", "syntax1", FALSE, TRUE, "",
+    "ArcCos", "acos", "syntax1", FALSE, TRUE, "",
+    "Sin", "sin", "syntax1", FALSE, TRUE, "",
+    "ArcSin", "asin", "syntax1", FALSE, TRUE, "",
+    "Tan", "tan", "syntax1", FALSE, TRUE, "",
+    "ArcTan", "atan", "syntax1", FALSE, TRUE, "",
+    "Log", "log10", "syntax1", FALSE, TRUE, "",
+    "Ln", "log", "syntax1", FALSE, TRUE, "",
+    "Exp", "exp", "syntax1", FALSE, TRUE, "",
+    "Sum", "sum", "syntax1", TRUE, TRUE, "",
+    "Product", "prod", "syntax1", TRUE, TRUE, "",
+    "Max", "max", "syntax1", TRUE, TRUE, "",
+    "Min", "min", "syntax1", TRUE, TRUE, "",
+    "Mean", "mean", "syntax1", TRUE, TRUE, "",
+    "Median", "median", "syntax1", TRUE, TRUE, "",
+    "StdDev", "sd", "syntax1", TRUE, TRUE, "",
+    "Abs", "abs", "syntax1", TRUE, TRUE, "",
+    "Sqrt", "sqrt", "syntax1", FALSE, TRUE, "",
+    "Sign", "sign", "syntax1", FALSE, TRUE, "",
+    "Logit", "logit", "syntax1", FALSE, TRUE, "",
+    "Expit", "expit", "syntax1", FALSE, TRUE, "",
 
     # Random Number Functions (13)
-    "Rand", "runif", "syntax1", F, F, "1",
-    "RandNormal", "rnorm", "syntax1", F, F, "1",
-    "RandLognormal", "rlnorm", "syntax1", F, F, "1",
-    "RandBoolean", "rbool", "syntax1", F, F, "",
-    "RandBinomial", "rbinom", "syntax1", F, F, "1",
-    "RandNegativeBinomial", "rnbinom", "syntax1", F, F, "1",
-    "RandPoisson", "rpois", "syntax1", F, F, "1",
-    "RandTriangular", "EnvStats::rtri", "syntax1", F, F, "1",
-    "RandExp", "rexp", "syntax1", F, F, "1",
-    "RandGamma", "rgamma", "syntax1", F, F, "1",
-    "RandBeta", "rbeta", "syntax1", F, F, "1",
-    "RandDist", "rdist", "syntax1", F, F, "1",
-    "setRandSeed", "set.seed", "syntax1", F, T, "",
+    "Rand", "runif", "syntax1", FALSE, FALSE, "1",
+    "RandNormal", "rnorm", "syntax1", FALSE, FALSE, "1",
+    "RandLognormal", "rlnorm", "syntax1", FALSE, FALSE, "1",
+    "RandBoolean", "rbool", "syntax1", FALSE, FALSE, "",
+    "RandBinomial", "rbinom", "syntax1", FALSE, FALSE, "1",
+    "RandNegativeBinomial", "rnbinom", "syntax1", FALSE, FALSE, "1",
+    "RandPoisson", "rpois", "syntax1", FALSE, FALSE, "1",
+    "RandTriangular", "EnvStats::rtri", "syntax1", FALSE, FALSE, "1",
+    "RandExp", "rexp", "syntax1", FALSE, FALSE, "1",
+    "RandGamma", "rgamma", "syntax1", FALSE, FALSE, "1",
+    "RandBeta", "rbeta", "syntax1", FALSE, FALSE, "1",
+    "RandDist", "rdist", "syntax1", FALSE, FALSE, "1",
+    "setRandSeed", "set.seed", "syntax1", FALSE, TRUE, "",
 
     # **to do: custom julia functions
     # e.g. qnorm
@@ -1164,133 +1163,132 @@ get_syntax_IM = function(){
 
 
     # Statistical Distributions (20)
-    "CDFNormal", "pnorm", "syntax1", F, T, "",
-    "PDFNormal", "dnorm", "syntax1", F, T, "",
-    "InvNormal", "qnorm", "syntax1", F, T, "",
-    "CDFLognormal", "plnorm", "syntax1", F, T, "",
-    "PDFLognormal", "dlnorm", "syntax1", F, T, "",
-    "InvLognormal", "qlnorm", "syntax1", F, T, "",
-    "CDFt", "pt", "syntax1", F, T, "",
-    "PDFt", "dt", "syntax1", F, T, "",
-    "Invt", "qt", "syntax1", F, T, "",
-    "CDFF", "pf", "syntax1", F, T, "",
-    "PDFF", "df", "syntax1", F, T, "",
-    "InvF", "qf", "syntax1", F, T, "",
-    "CDFChiSquared", "pchisq", "syntax1", F, T, "",
-    "PDFChiSquared", "dchisq", "syntax1", F, T, "",
-    "InvChiSquared", "qchisq", "syntax1", F, T, "",
-    "CDFExponential", "pexp", "syntax1", F, T, "",
-    "PDFExponential", "dexp", "syntax1", F, T, "",
-    "InvExponential", "qexp", "syntax1", F, T, "",
-    "CDFPoisson", "ppois", "syntax1", F, T, "",
-    "PMFPoisson", "dpois", "syntax1", F, T, "",
+    "CDFNormal", "pnorm", "syntax1", FALSE, TRUE, "",
+    "PDFNormal", "dnorm", "syntax1", FALSE, TRUE, "",
+    "InvNormal", "qnorm", "syntax1", FALSE, TRUE, "",
+    "CDFLognormal", "plnorm", "syntax1", FALSE, TRUE, "",
+    "PDFLognormal", "dlnorm", "syntax1", FALSE, TRUE, "",
+    "InvLognormal", "qlnorm", "syntax1", FALSE, TRUE, "",
+    "CDFt", "pt", "syntax1", FALSE, TRUE, "",
+    "PDFt", "dt", "syntax1", FALSE, TRUE, "",
+    "Invt", "qt", "syntax1", FALSE, TRUE, "",
+    "CDFF", "pf", "syntax1", FALSE, TRUE, "",
+    "PDFF", "df", "syntax1", FALSE, TRUE, "",
+    "InvF", "qf", "syntax1", FALSE, TRUE, "",
+    "CDFChiSquared", "pchisq", "syntax1", FALSE, TRUE, "",
+    "PDFChiSquared", "dchisq", "syntax1", FALSE, TRUE, "",
+    "InvChiSquared", "qchisq", "syntax1", FALSE, TRUE, "",
+    "CDFExponential", "pexp", "syntax1", FALSE, TRUE, "",
+    "PDFExponential", "dexp", "syntax1", FALSE, TRUE, "",
+    "InvExponential", "qexp", "syntax1", FALSE, TRUE, "",
+    "CDFPoisson", "ppois", "syntax1", FALSE, TRUE, "",
+    "PMFPoisson", "dpois", "syntax1", FALSE, TRUE, "",
 
     # User Input Functions (3)
-    "Alert", "print", "syntax1", F, T, "",
-    "Prompt", "readline", "syntax1", F, T, "",
-    "Confirm", "readline", "syntax1", F, T, "",
+    "Alert", "print", "syntax1", FALSE, TRUE, "",
+    "Prompt", "readline", "syntax1", FALSE, TRUE, "",
+    "Confirm", "readline", "syntax1", FALSE, TRUE, "",
 
     # String Functions (10)
-    "Range", "substr_i", "syntax2", F, T, "",
-    "Split", "strsplit", "syntax2", F, T, "",
-    "UpperCase", "toupper", "syntax2", F, T, "",
-    "LowerCase", "tolower", "syntax2", F, T, "",
-    "Join", "stringr::str_flatten", "syntax2", F, T, "",
-    "Trim", "trimws", "syntax2", F, T, "",
-    "Parse", "as.numeric", "syntax2", F, T, "",
+    "Range", "substr_i", "syntax2", FALSE, TRUE, "",
+    "Split", "strsplit", "syntax2", FALSE, TRUE, "",
+    "UpperCase", "toupper", "syntax2", FALSE, TRUE, "",
+    "LowerCase", "tolower", "syntax2", FALSE, TRUE, "",
+    "Join", "stringr::str_flatten", "syntax2", FALSE, TRUE, "",
+    "Trim", "trimws", "syntax2", FALSE, TRUE, "",
+    "Parse", "as.numeric", "syntax2", FALSE, TRUE, "",
 
     # Vector Functions (20)
-    "Length", "length_IM", "syntax2", F, T, "",
+    "Length", "length_IM", "syntax2", FALSE, TRUE, "",
     # "Join", "c", "syntax1", ),
     # "Flatten", "purrr::flatten", "syntax2", ),
-    "Unique", "unique", "syntax2", F, T, "",
-    "Union", "union", "syntax2", F, T, "",
-    "Intersection", "intersect", "syntax2", F, T, "",
-    "Difference", "symdiff", "syntax2", F, T, "",
-    "Sort", "sort", "syntax2", F, T, "",
-    "Reverse", "rev", "syntax2", F, T, "",
-    "Sample", "sample", "syntax2", F, T, "",
-    "IndexOf", "indexof", "syntax2", F, T, "",
-    "Contains", "contains_IM", "syntax2", F, T, "",
-    "Keys", "names", "syntax2", F, T, "",
-    "Values", "unname", "syntax2", F, T, "",
+    "Unique", "unique", "syntax2", FALSE, TRUE, "",
+    "Union", "union", "syntax2", FALSE, TRUE, "",
+    "Intersection", "intersect", "syntax2", FALSE, TRUE, "",
+    "Difference", "symdiff", "syntax2", FALSE, TRUE, "",
+    "Sort", "sort", "syntax2", FALSE, TRUE, "",
+    "Reverse", "rev", "syntax2", FALSE, TRUE, "",
+    "Sample", "sample", "syntax2", FALSE, TRUE, "",
+    "IndexOf", "indexof", "syntax2", FALSE, TRUE, "",
+    "Contains", "contains_IM", "syntax2", FALSE, TRUE, "",
+    "Keys", "names", "syntax2", FALSE, TRUE, "",
+    "Values", "unname", "syntax2", FALSE, TRUE, "",
     # Map() and Filter() have syntax 2 ({}.Map(), but need an additional edit. First apply syntax 2 and then syntax 3
-    "Map", "IMMAP", "syntax2", F, T, "",
-    "Filter", "IMFILTER", "syntax2", F, T, "",
-    "IMMAP", "conv_IMMAP", "syntax3", F, T, "",
-    "IMFILTER", "conv_IMFILTER", "syntax3", F, T, "",
+    "Map", "IMMAP", "syntax2", FALSE, TRUE, "",
+    "Filter", "IMFILTER", "syntax2", FALSE, TRUE, "",
+    "IMMAP", "conv_IMMAP", "syntax3", FALSE, TRUE, "",
+    "IMFILTER", "conv_IMFILTER", "syntax3", FALSE, TRUE, "",
     # General Functions (6)
-    "IfThenElse", "ifelse", "syntax1", F, T, "",
+    "IfThenElse", "ifelse", "syntax1", FALSE, TRUE, "",
     # "Pause", "", , ), # no R equivalent
-    "Stop", "stop", "syntax1", F, T, "",
+    "Stop", "stop", "syntax1", FALSE, TRUE, "",
     # Syntax 3
-    # "Unitless", "convert_unitless", "syntax3", F, T, "",
-    "Unitless", "drop_u", "syntax1", F, T, "",
-    "PastValues", "conv_past_values", "syntax3", F, T, "",
-    "PastMax", "conv_past_values", "syntax3", F, T, "",
-    "PastMin", "conv_past_values", "syntax3", F, T, "",
-    "PastMedian", "conv_past_values", "syntax3", F, T, "",
-    "PastMean", "conv_past_values", "syntax3", F, T, "",
-    "PastStdDev", "conv_past_values", "syntax3", F, T, "",
-    "PastCorrelation", "conv_past_values", "syntax3", F, T, "",
-    "Delay1", "conv_delayN", "syntax3", F, T, "",
-    "Delay3", "conv_delayN", "syntax3", F, T, "",
-    "DelayN", "conv_delayN", "syntax3", F, T, "",
-    "Smooth", "conv_delayN", "syntax3", F, T, "",
-    "SmoothN", "conv_delayN", "syntax3", F, T, "",
-    "Delay", "conv_delay", "syntax3", F, T, "",
-    "Fix", "conv_fix", "syntax3", F, T, "",
-    "Staircase", "conv_step", "syntax3", F, T, "", # synonym for Step()
-    "Step", "conv_step", "syntax3", F, T, "",
-    "Pulse", "conv_pulse", "syntax3", F, T, "",
-    "Ramp", "conv_ramp", "syntax3", F, T, "",
-    # "Seasonal", "conv_seasonal", "syntax3", F, F, sprintf("%s, %s", .sdbuildR_env[["P"]][["times_name"]], .sdbuildR_env[["P"]][["time_units_name"]]),
-    "Seasonal", "conv_seasonal", "syntax3", F, T, "",
-    "Lookup", "conv_lookup", "syntax3", F, T, "",
-    "Repeat", "conv_repeat", "syntax3", F, T, "",
+    # "Unitless", "convert_unitless", "syntax3", FALSE, TRUE, "",
+    "Unitless", "drop_u", "syntax1", FALSE, TRUE, "",
+    "PastValues", "conv_past_values", "syntax3", FALSE, TRUE, "",
+    "PastMax", "conv_past_values", "syntax3", FALSE, TRUE, "",
+    "PastMin", "conv_past_values", "syntax3", FALSE, TRUE, "",
+    "PastMedian", "conv_past_values", "syntax3", FALSE, TRUE, "",
+    "PastMean", "conv_past_values", "syntax3", FALSE, TRUE, "",
+    "PastStdDev", "conv_past_values", "syntax3", FALSE, TRUE, "",
+    "PastCorrelation", "conv_past_values", "syntax3", FALSE, TRUE, "",
+    "Delay1", "conv_delayN", "syntax3", FALSE, TRUE, "",
+    "Delay3", "conv_delayN", "syntax3", FALSE, TRUE, "",
+    "DelayN", "conv_delayN", "syntax3", FALSE, TRUE, "",
+    "Smooth", "conv_delayN", "syntax3", FALSE, TRUE, "",
+    "SmoothN", "conv_delayN", "syntax3", FALSE, TRUE, "",
+    "Delay", "conv_delay", "syntax3", FALSE, TRUE, "",
+    "Fix", "conv_fix", "syntax3", FALSE, TRUE, "",
+    "Staircase", "conv_step", "syntax3", FALSE, TRUE, "", # synonym for Step()
+    "Step", "conv_step", "syntax3", FALSE, TRUE, "",
+    "Pulse", "conv_pulse", "syntax3", FALSE, TRUE, "",
+    "Ramp", "conv_ramp", "syntax3", FALSE, TRUE, "",
+    "Seasonal", "conv_seasonal", "syntax3", FALSE, TRUE, "",
+    "Lookup", "conv_lookup", "syntax3", FALSE, TRUE, "",
+    "Repeat", "conv_repeat", "syntax3", FALSE, TRUE, "",
 
-    "Seconds", sprintf("drop_u(convert_u(%s, u(\"s\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
-    "Minutes", sprintf("drop_u(convert_u(%s, u(\"minute\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
-    "Hours", sprintf("drop_u(convert_u(%s, u(\"hr\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
-    "Days", sprintf("drop_u(convert_u(%s, u(\"d\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
-    "Weeks", sprintf("drop_u(convert_u(%s, u(\"wk\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
-    "Months", sprintf("drop_u(convert_u(%s, u(\"common_month\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F,"",
-    "Quarters", sprintf("drop_u(convert_u(%s, u(\"common_quarter\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
-    "Years", sprintf("drop_u(convert_u(%s, u(\"common_yr\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", F, F, "",
+    "Seconds", sprintf("drop_u(convert_u(%s, u(\"s\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", FALSE, FALSE, "",
+    "Minutes", sprintf("drop_u(convert_u(%s, u(\"minute\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", FALSE, FALSE, "",
+    "Hours", sprintf("drop_u(convert_u(%s, u(\"hr\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", FALSE, FALSE, "",
+    "Days", sprintf("drop_u(convert_u(%s, u(\"d\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", FALSE, FALSE, "",
+    "Weeks", sprintf("drop_u(convert_u(%s, u(\"wk\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", FALSE, FALSE, "",
+    "Months", sprintf("drop_u(convert_u(%s, u(\"common_month\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", FALSE, FALSE,"",
+    "Quarters", sprintf("drop_u(convert_u(%s, u(\"common_quarter\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", FALSE, FALSE, "",
+    "Years", sprintf("drop_u(convert_u(%s, u(\"common_yr\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", FALSE, FALSE, "",
 
 
-    "Time", .sdbuildR_env[["P"]][["time_name"]], "syntax0", F, F, "",
-    "TimeStart", paste0(.sdbuildR_env[["P"]][["times_name"]], "[1]"), "syntax0", F, F, "",
-    "TimeStep", .sdbuildR_env[["P"]][["timestep_name"]], "syntax0", F, F, "",
-    "TimeEnd", paste0(.sdbuildR_env[["P"]][["times_name"]], "[2]"), "syntax0", F, F, "",
-    "TimeLength", paste0("(", .sdbuildR_env[["P"]][["times_name"]], "[2] - ", .sdbuildR_env[["P"]][["times_name"]], "[1])"), "syntax0", F, F, "",
+    "Time", .sdbuildR_env[["P"]][["time_name"]], "syntax0", FALSE, FALSE, "",
+    "TimeStart", paste0(.sdbuildR_env[["P"]][["times_name"]], "[1]"), "syntax0", FALSE, FALSE, "",
+    "TimeStep", .sdbuildR_env[["P"]][["timestep_name"]], "syntax0", FALSE, FALSE, "",
+    "TimeEnd", paste0(.sdbuildR_env[["P"]][["times_name"]], "[2]"), "syntax0", FALSE, FALSE, "",
+    "TimeLength", paste0("(", .sdbuildR_env[["P"]][["times_name"]], "[2] - ", .sdbuildR_env[["P"]][["times_name"]], "[1])"), "syntax0", FALSE, FALSE, "",
     # For agent-based modelling functions, issue a warning that these will not be translated
-    ".FindAll()", "", "syntax4", F, T, "",
-    ".FindState(", "", "syntax4", F, T, "",
-    ".FindNotState(", "", "syntax4", F, T, "",
-    ".FindIndex(", "", "syntax4", F, T, "",
-    ".FindNearby(", "", "syntax4", F, T, "",
-    ".FindNearest(", "", "syntax4", F, T, "",
-    ".FindFurthest(", "", "syntax4", F, T, "",
-    ".Value(", "", "syntax4", F, T, "",
-    ".SetValue(", "", "syntax4", F, T, "",
-    ".Location()", "", "syntax4", F, T, "",
-    ".Index()", "", "syntax4", F, T, "",
-    ".Location(", "", "syntax4", F, T, "",
-    ".SetLocation(", "", "syntax4", F, T, "",
-    "Distance(", "", "syntax4", F, T, "",
-    ".Move(", "", "syntax4", F, T, "",
-    ".MoveTowards(", "", "syntax4", F, T, "",
-    ".Connected()", "", "syntax4", F, T, "",
-    ".Connect(", "", "syntax4", F, T, "",
-    ".Unconnect(", "", "syntax4", F, T, "",
-    ".ConnectionWeight(", "", "syntax4", F, T, "",
-    ".SetConnectionWeight(", "", "syntax4", F, T, "",
-    ".PopulationSize()", "", "syntax4", F, T, "",
-    ".Add(", "", "syntax4", F, T, "",
-    ".Remove()", "", "syntax4", F, T, "",
-    "Width(", "", "syntax4", F, T, "",
-    "Height(", "", "syntax4", F, T, ""),
+    ".FindAll()", "", "syntax4", FALSE, TRUE, "",
+    ".FindState(", "", "syntax4", FALSE, TRUE, "",
+    ".FindNotState(", "", "syntax4", FALSE, TRUE, "",
+    ".FindIndex(", "", "syntax4", FALSE, TRUE, "",
+    ".FindNearby(", "", "syntax4", FALSE, TRUE, "",
+    ".FindNearest(", "", "syntax4", FALSE, TRUE, "",
+    ".FindFurthest(", "", "syntax4", FALSE, TRUE, "",
+    ".Value(", "", "syntax4", FALSE, TRUE, "",
+    ".SetValue(", "", "syntax4", FALSE, TRUE, "",
+    ".Location()", "", "syntax4", FALSE, TRUE, "",
+    ".Index()", "", "syntax4", FALSE, TRUE, "",
+    ".Location(", "", "syntax4", FALSE, TRUE, "",
+    ".SetLocation(", "", "syntax4", FALSE, TRUE, "",
+    "Distance(", "", "syntax4", FALSE, TRUE, "",
+    ".Move(", "", "syntax4", FALSE, TRUE, "",
+    ".MoveTowards(", "", "syntax4", FALSE, TRUE, "",
+    ".Connected()", "", "syntax4", FALSE, TRUE, "",
+    ".Connect(", "", "syntax4", FALSE, TRUE, "",
+    ".Unconnect(", "", "syntax4", FALSE, TRUE, "",
+    ".ConnectionWeight(", "", "syntax4", FALSE, TRUE, "",
+    ".SetConnectionWeight(", "", "syntax4", FALSE, TRUE, "",
+    ".PopulationSize()", "", "syntax4", FALSE, TRUE, "",
+    ".Add(", "", "syntax4", FALSE, TRUE, "",
+    ".Remove()", "", "syntax4", FALSE, TRUE, "",
+    "Width(", "", "syntax4", FALSE, TRUE, "",
+    "Height(", "", "syntax4", FALSE, TRUE, ""),
     ncol = 6, byrow = TRUE, dimnames = list(NULL, c("insightmaker", "R", "syntax", "add_c()", "needs_brackets", "add_first_arg"))
 
   )
@@ -1860,7 +1858,7 @@ convert_addition_of_strings = function(eqn, var_names) {
       left_adjacent = left_adjacents[cond]
 
       if (is.na(idxs_plus_adj)) {
-        done = T
+        done = TRUE
       } else {
         left_arg = stringr::str_sub(eqn, paired_idxs[right_adjacent, ][["start"]], paired_idxs[right_adjacent, ][["end"]])
         right_arg = stringr::str_sub(eqn, paired_idxs[left_adjacent, ][["start"]], paired_idxs[left_adjacent, ][["end"]])

@@ -22,7 +22,7 @@
 
 \item{palette}{Colour palette. Must be one of hcl.pals().}
 
-\item{colors}{Vector of colours. If NULL, the colour palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.}
+\item{colors}{Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.}
 
 \item{font_family}{Font family. Defaults to "Times New Roman".}
 
@@ -36,7 +36,7 @@
 Plot object
 }
 \description{
-Visualise simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.
+Visualize simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.
 }
 \examples{
 sfm = xmile("SIR")
@@ -46,10 +46,10 @@ plot(sim)
 # The default plot title and axis labels can be changed like so:
 plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
 
-# If you want to add constants to the plot, set `add_constants = TRUE`
+# Add constants to the plot
 plot(sim, add_constants = TRUE)
 
-# To plot all model variables, run the simulation with `only_stocks = FALSE`
+# Plot all model variables
 sim = simulate(sfm, only_stocks = FALSE)
 plot(sim, add_constants = TRUE)
 
@@ -59,9 +59,11 @@ plot(sim, add_constants = TRUE)
 
 Other simulate: 
 \code{\link{ensemble}()},
+\code{\link{julia_setup_ok}()},
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
-\code{\link{use_julia}()}
+\code{\link{use_julia}()},
+\code{\link{use_threads}()}
 }
 \concept{simulate}

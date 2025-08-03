@@ -2,7 +2,7 @@
 % Please edit documentation in R/compile.R
 \name{ensemble}
 \alias{ensemble}
-\title{Run ensemble simulation}
+\title{Run ensemble simulations}
 \usage{
 ensemble(
   sfm,
@@ -11,7 +11,6 @@ ensemble(
   range = NULL,
   cross = TRUE,
   quantiles = c(0.025, 0.975),
-  threaded = TRUE,
   only_stocks = TRUE,
   keep_nonnegative_flow = TRUE,
   keep_nonnegative_stock = FALSE,
@@ -31,8 +30,6 @@ ensemble(
 \item{cross}{If TRUE, cross the parameters in the range list to generate all possible combinations of parameters. Defaults to TRUE.}
 
 \item{quantiles}{Quantiles to calculate in the summary, e.g. c(0.025, 0.975).}
-
-\item{threaded}{If TRUE, run the simulation on multiple threads. The number of threads is taken from the use_julia() argument JULIA_NUM_THREADS, which defaults to four. Defaults to TRUE.}
 
 \item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.}
 
@@ -63,7 +60,7 @@ Object of class sdbuildR_ensemble, which is a list containing:
 }
 }
 \description{
-Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in \code{range}. By default, the ensemble is run in parallel using multiple threads. The results are returned as a dataframe with summary statistics and optionally individual simulations.
+Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in \code{range}. The ensemble can be run in parallel using multiple threads by first setting \code{use_threads()}. The results are returned as a dataframe with summary statistics and optionally individual simulations.
 }
 \details{
 To run large simulations, it is recommended to limit the output size by saving fewer values. To create a reproducible ensemble simulation, set a seed using sim_specs().
@@ -72,7 +69,7 @@ If you do not see any variation within a condition of the ensemble (i.e. the con
 }
 \examples{
 # Load example and set simulation language to Julia
-sfm = sim_specs(xmile("predator-prey"), language = "Julia")
+sfm = xmile("predator-prey") |> sim_specs(language = "Julia")
 
 # Set random initial conditions
 sfm = build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
@@ -82,6 +79,7 @@ sfm = build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
 # the first 100 time units, use:
 sfm = sim_specs(sfm, save_at = 1, save_from = 100)
 
+\dontshow{if (not_on_cran()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 # Run ensemble simulation with 100 simulations
 sims = ensemble(sfm, n = 100)
 plot(sims)
@@ -102,8 +100,7 @@ plot(sims, central_tendency = "median", type = "sims", alpha = 0.1)
 # condition. By default, the parameters are crossed, meaning that all
 # combinations of the parameters are run.
 sims = ensemble(sfm, n = 50,
-               range = list("predator" = c(10, 50),
-                            "delta" = c(.025, .05)))
+                range = list("predator" = c(10, 50), "delta" = c(.025, .05)))
 
 plot(sims)
 
@@ -113,29 +110,34 @@ plot(sims, j = c(1, 3), nrows = 1)
 
 # Generate a non-crossed design, where the length of each range needs to be
 # equal:
-sims = ensemble(sfm, n = 10,
-               range = list("predator" = c(10, 20, 30),
-                            "delta" = c(.020, .025, .03)), cross = FALSE)
+sims = ensemble(sfm, n = 10, cross = FALSE,
+  range = list(
+    "predator" = c(10, 20, 30),
+    "delta" = c(.020, .025, .03)
+ ))
 plot(sims, nrows = 3)
 
-# Run simulation not in parallel
-sims = ensemble(sfm, n = 10, threaded = FALSE)
+# Run simulation in parallel
+use_threads(4)
+sims = ensemble(sfm, n = 10)
 
-# To run simulations with more threads than the default, set e.g.:
-use_julia(JULIA_NUM_THREADS = 10)
+# Stop using threads
+use_threads(stop = TRUE)
 
 # Close Julia
 use_julia(stop = TRUE)
-
+\dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=sim_specs]{sim_specs()}}, \code{\link[=use_julia]{use_julia()}}
+\code{\link[=use_threads]{use_threads()}}, \code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=sim_specs]{sim_specs()}}, \code{\link[=use_julia]{use_julia()}}
 
 Other simulate: 
+\code{\link{julia_setup_ok}()},
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
-\code{\link{use_julia}()}
+\code{\link{use_julia}()},
+\code{\link{use_threads}()}
 }
 \concept{simulate}

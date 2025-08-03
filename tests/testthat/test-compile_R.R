@@ -1,3 +1,32 @@
+test_that("simulate R for templates", {
+
+  for (s in c("SIR", "predator-prey", "logistic_model", "Crielaard2022","Duffing", "Chua")){
+    sfm = xmile(s)
+
+    if (s == "Crielaard2022"){
+      sfm = sfm |>
+        # Update initial condition to be non-stochastic
+        build(c("Food_intake", "Hunger", "Compensatory_behaviour"), eqn = round(runif(3), 8))
+
+    }
+
+    sim1 = simulate(sfm |> sim_specs(language = "R"), only_stocks = TRUE)
+    expect_equal(sim1$success, TRUE)
+    expect_equal(nrow(sim1$df) > 0, TRUE)
+
+    sim1 = simulate(sfm |> sim_specs(language = "R"), only_stocks = FALSE)
+    expect_equal(sim1$success, TRUE)
+    expect_equal(nrow(sim1$df) > 0, TRUE)
+
+    if (s == "logistic_model"){
+      # Check whether the population converges to the carrying capacity
+      expect_equal(dplyr::last(sim1$df[sim1$df$variable == "X", "value"]),
+                   sim1$constants[["K"]], tolerance = .01)
+    }
+
+  }
+
+})
 
 test_that("simulate with different components works", {
 
@@ -122,6 +151,28 @@ test_that("throw error in compile_R for unsupported functions", {
     build("A", "stock", eqn = "100") |>
     build("B", "flow", eqn = "smoothN(A, 5, 3)", to = "A")
   expect_error(simulate(sfm), "The model contains either delayN\\(\\) or smoothN\\(\\), which are not supported for simulations in R")
+
+})
+
+
+test_that("save_at works", {
+  # Cannot set save_at to lower than dt
+  sfm = xmile("SIR")
+
+  # Check whether dataframe is returned at save_at times
+  sfm = sfm |>
+    sim_specs(save_at = 0.1, dt = 0.001, start = 100, stop = 200)
+
+  sim = simulate(sfm |> sim_specs(language = "R"))
+  expect_equal(diff(sim$df[sim$df$variable == "Infected", "time"])[1],
+               as.numeric(sfm$sim_specs$save_at))
+})
+
+
+test_that("negative times are possible", {
+
+  sfm = xmile("logistic_model") |> sim_specs(start = -100, language = "R")
+  expect_no_error({sim = simulate(sfm)})
 
 })
 

@@ -37,8 +37,7 @@ sim = simulate(sfm, only_stocks = FALSE)
 plot(sim)
 
 # Create a pulse that repeats every 5 time units
-sfm = sfm |>
-  build("input", eqn = "pulse(5, 2, 1, 5)")
+sfm = build(sfm, "input", eqn = "pulse(5, 2, 1, 5)")
 
 sim = simulate(sfm, only_stocks = FALSE)
 plot(sim)

@@ -2,6 +2,8 @@
 
 test_that("compare output Julia and R for templates", {
 
+  testthat::skip_on_cran()
+
   sfm = xmile("SIR")
   sim1 = simulate(sfm |> sim_specs(language = "R"))
   sim2 = simulate(sfm |> sim_specs(language = "Julia"))
@@ -142,9 +144,6 @@ test_that("compare output Julia and R for templates", {
 test_that("as.data.frame(sim) works", {
 
   sfm = xmile("SIR")
-  sim = simulate(sfm |> sim_specs(language = "Julia"), only_stocks = TRUE)
-  expect_equal(class(as.data.frame(sim)), "data.frame")
-  expect_equal(nrow(as.data.frame(sim)) > 0, TRUE)
 
   sim = simulate(sfm |> sim_specs(language = "R"))
   expect_equal(class(as.data.frame(sim)), "data.frame")
@@ -152,5 +151,10 @@ test_that("as.data.frame(sim) works", {
 
   df = expect_no_error(as.data.frame(sim, direction = "wide"))
   expect_equal(sort(colnames(df)), c("Infected", "Recovered", "Susceptible", "time"))
+
+  testthat::skip_on_cran()
+  sim = simulate(sfm |> sim_specs(language = "Julia"), only_stocks = TRUE)
+  expect_equal(class(as.data.frame(sim)), "data.frame")
+  expect_equal(nrow(as.data.frame(sim)) > 0, TRUE)
 
 })

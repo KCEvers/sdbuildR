@@ -52,7 +52,7 @@ template = function(name){
     # https://github.com/JimDuggan/SDMR/blob/master/models/07%20Chapter/R/02%20Screening.R
 
     sfm = xmile() |> header(name = "Susceptible-Infected-Recovered (SIR)") |>
-      sim_specs(start = 0, stop = 20) |>
+      sim_specs(start = 0, stop = 20, time_units = "weeks") |>
       build("Susceptible", "stock", eqn = "99999") |>
       build("Infected", "stock", eqn = "1") |>
       build("Recovered", "stock", eqn = "0.0") |>
