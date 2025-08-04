@@ -15,7 +15,7 @@
 Print summary of stock-and-flow model, including number of stocks, flows, constants, auxiliaries, graphical functions, macros, custom model units, and use of delay functions. Also prints simulation specifications.
 }
 \examples{
-sfm = xmile("SIR")
+sfm <- xmile("SIR")
 summary(sfm)
 
 }

@@ -38,20 +38,21 @@ The following potential problems are detected:
 }
 \examples{
 # No issues
-sfm = xmile("SIR")
+sfm <- xmile("SIR")
 debugger(sfm)
 
 # Detect absence of stocks or flows
-sfm = xmile()
+sfm <- xmile()
 debugger(sfm)
 
 # Detect stocks without inflows or outflows
-sfm = xmile() |> build("Prey", "stock")
+sfm <- xmile() |> build("Prey", "stock")
 debugger(sfm)
 
 # Detect circularity in equation definitions
-sfm = xmile() |> build("Prey", "stock", eqn = "Predator") |>
- build("Predator", "stock", eqn = "Prey")
+sfm <- xmile() |>
+  build("Prey", "stock", eqn = "Predator") |>
+  build("Predator", "stock", eqn = "Prey")
 debugger(sfm)
 
 }

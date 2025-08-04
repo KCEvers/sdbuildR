@@ -107,14 +107,16 @@ The obligatory properties of an auxiliary are "name", "type", "xpts", and "ypts"
 \examples{
 
 # First initialize an empty model:
-sfm = xmile()
+sfm <- xmile()
 summary(sfm)
-\dontshow{sfm = sim_specs(sfm, save_at = .1)}
+\dontshow{
+sfm <- sim_specs(sfm, save_at = .1)
+}
 
 # Add two stocks. Specify their initial values in the "eqn" property, as well
 # as their plotting label
-sfm = build(sfm, "predator", "stock", eqn = 10, label = "Predator") |>
- build("prey", "stock", eqn = 50, label = "Prey")
+sfm <- build(sfm, "predator", "stock", eqn = 10, label = "Predator") |>
+  build("prey", "stock", eqn = 50, label = "Prey")
 
 # Plot the stock-and-flow diagram
 plot(sfm, center_stocks = TRUE)
@@ -124,27 +126,53 @@ plot(sfm, center_stocks = TRUE)
 # Add four flows: the births and deaths of both the predators and prey. The
 # "eqn" property of flows represents the rate of the flow. In addition, we
 # specify which stock the flow is coming from ("from") or flowing to ("to").
-sfm = build(sfm, "predator_births", "flow", eqn = "delta*prey*predator",
-       label = "Predator Births", to = "predator") |>
- build("predator_deaths", "flow", eqn = "gamma*predator",
-       label = "Predator Deaths", from = "predator") |>
- build("prey_births", "flow", eqn = "alpha*prey",
-       label = "Prey Births", to = "prey") |>
- build("prey_deaths", "flow", eqn = "beta*prey*predator",
-       label = "Prey Deaths", from = "prey")
+sfm <- build(sfm, "predator_births", "flow",
+  eqn = "delta*prey*predator",
+  label = "Predator Births", to = "predator"
+) |>
+  build("predator_deaths", "flow",
+    eqn = "gamma*predator",
+    label = "Predator Deaths", from = "predator"
+  ) |>
+  build("prey_births", "flow",
+    eqn = "alpha*prey",
+    label = "Prey Births", to = "prey"
+  ) |>
+  build("prey_deaths", "flow",
+    eqn = "beta*prey*predator",
+    label = "Prey Deaths", from = "prey"
+  )
 plot(sfm)
 
 # The flows make use of four other variables: "delta", "gamma", "alpha", and
 # "beta". Define these as constants in a vectorized manner for efficiency:
-sfm = build(sfm, c("delta", "gamma", "alpha", "beta"), "constant",
-       eqn = c(.025, .5, .5, .05),
-       label = c("Delta", "Gamma", "Alpha", "Beta"),
-       doc = c("Birth rate of predators", "Death rate of predators",
-               "Birth rate of prey", "Death rate of prey by predators"))
+sfm <- build(sfm, c("delta", "gamma", "alpha", "beta"), "constant",
+  eqn = c(.025, .5, .5, .05),
+  label = c("Delta", "Gamma", "Alpha", "Beta"),
+  doc = c(
+    "Birth rate of predators", "Death rate of predators",
+    "Birth rate of prey", "Death rate of prey by predators"
+  )
+)
 
 # We now have a complete predator-prey model which is ready to be simulated
-sim = simulate(sfm)
+sim <- simulate(sfm)
 plot(sim)
+
+# Modify variable
+sfm <- build(sfm, "delta", eqn = .03, label = "DELTA")
+
+# Change variable name (throughout the model)
+sfm <- build(sfm, "delta", change_name = "DELTA")
+
+# Change variable type
+sfm <- build(sfm, "DELTA", change_type = "stock")
+
+# Remove variable
+sfm <- build(sfm, "prey", erase = TRUE)
+
+# Identify problems
+debugger(sfm)
 
 }
 \seealso{

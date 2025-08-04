@@ -16,7 +16,7 @@
 #'
 #' @returns Directory
 #' @noRd
-julia_default_install_dir <- function(){
+julia_default_install_dir <- function() {
   if (exists("R_user_dir", asNamespace("tools"))) {
     R_user_dir <- get("R_user_dir", envir = asNamespace("tools"))
     return(file.path(R_user_dir("JuliaCall"), "julia"))
@@ -41,12 +41,12 @@ julia_default_install_dir <- function(){
 #'
 #' @noRd
 #' @returns String with version number
-julia_latest_version <- function(){
+julia_latest_version <- function() {
   url <- "https://julialang-s3.julialang.org/bin/versions.json"
   file <- tempfile()
   utils::download.file(url, file, quiet = TRUE)
   readfile <- jsonlite::fromJSON(file)
-  versions = names(Filter(function(v) v$stable, readfile))
+  versions <- names(Filter(function(v) v$stable, readfile))
   as.character(max(package_version(versions))) # KCE: Edit to get correct latest version
 }
 
@@ -57,7 +57,7 @@ julia_latest_version <- function(){
 #'
 #' @noRd
 #' @returns URL
-julia_url <- function(version){
+julia_url <- function(version) {
   sysmachine <- Sys.info()["machine"]
   arch <- if (sysmachine == "arm64") {
     "aarch64"
@@ -67,7 +67,7 @@ julia_url <- function(version){
     "x86"
   }
   # short_version <- substr(version, 1, 3) # KCE: Edit for correct version
-  short_version = paste0(strsplit(version, "\\.")[[1]][1:2], collapse = ".")
+  short_version <- paste0(strsplit(version, "\\.")[[1]][1:2], collapse = ".")
   sysname <- Sys.info()["sysname"]
   if (sysname == "Linux") {
     os <- "linux"
@@ -96,7 +96,7 @@ julia_url <- function(version){
 #'
 #' @noRd
 #' @returns Directory
-julia_default_depot <- function(){
+julia_default_depot <- function() {
   key <- if (Sys.info()["sysname"] == "Windows") {
     "USERPROFILE"
   } else {
@@ -112,7 +112,7 @@ julia_default_depot <- function(){
 #'
 #' @noRd
 #' @returns NULL
-julia_save_install_dir <- function(dir){
+julia_save_install_dir <- function(dir) {
   depot <- Sys.getenv("JULIA_DEPOT_PATH", unset = julia_default_depot())
   prefs <- file.path(depot, "prefs")
   dir.create(prefs, recursive = TRUE, showWarnings = FALSE)
@@ -126,32 +126,35 @@ julia_save_install_dir <- function(dir){
 #' @param dir the directory where Julia will be installed.
 #' @noRd
 #'
-install_julia_sdbuildR <- function(version, dir){
-
-  if (is.null(dir)){
-    dir = julia_default_install_dir()
-  } else if (!file.exists(dir)){
+install_julia_sdbuildR <- function(version, dir) {
+  if (is.null(dir)) {
+    dir <- julia_default_install_dir()
+  } else if (!file.exists(dir)) {
     stop("The specified directory does not exist.")
   }
 
-  if (is.null(dir) || length(julia_default_install_dir) == 0){
+  if (is.null(dir) || length(julia_default_install_dir) == 0) {
     stop("Please specify a valid directory for the Julia installation in dir.")
   }
 
   url <- julia_url(version)
 
   file <- tempfile()
-  tryCatch({
-    old_timeout = getOption("timeout")
-    options(timeout = 300)
-    utils::download.file(url, file)
-    options(timeout = old_timeout)
-  }, error = function(err) {
-    stop(paste("There was an error downloading Julia. This could be due ",
-               "to network issues, and might be resolved by re-running ",
-               "`install_julia`.",
-               sep = ""))
-  })
+  tryCatch(
+    {
+      old_timeout <- getOption("timeout")
+      options(timeout = 300)
+      utils::download.file(url, file)
+      options(timeout = old_timeout)
+    },
+    error = function(err) {
+      stop(paste("There was an error downloading Julia. This could be due ",
+        "to network issues, and might be resolved by re-running ",
+        "`install_julia`.",
+        sep = ""
+      ))
+    }
+  )
 
   dest <- file.path(dir, version)
   if (dir.exists(dest)) {
@@ -160,14 +163,14 @@ install_julia_sdbuildR <- function(version, dir){
 
   sysname <- Sys.info()["sysname"]
   if (sysname == "Linux") {
-    utils::untar(file, exdir=dest)
-    subfolder <- paste("julia-", version, sep="")
+    utils::untar(file, exdir = dest)
+    subfolder <- paste("julia-", version, sep = "")
   } else if (sysname == "Darwin") {
-    utils::untar(file, exdir=dest)
-    subfolder <- paste("julia-", version, sep="")
+    utils::untar(file, exdir = dest)
+    subfolder <- paste("julia-", version, sep = "")
   } else if (sysname == "Windows") {
     utils::unzip(file, exdir = dest)
-    subfolder <- paste("julia-", version, sep="")
+    subfolder <- paste("julia-", version, sep = "")
   }
   dest <- file.path(dest, subfolder)
 
@@ -188,14 +191,14 @@ install_julia_sdbuildR <- function(version, dir){
 #' @returns Filepath to Julia installation or NULL if not found
 #' @noRd
 #'
-julia_locate <- function(JULIA_HOME = NULL){
+julia_locate <- function(JULIA_HOME = NULL) {
   if (is.null(JULIA_HOME)) {
     JULIA_HOME <- getOption("JULIA_HOME")
   }
   if (is.null(JULIA_HOME)) {
     JULIA_HOME <- if (Sys.getenv("JULIA_HOME") == "") {
       NULL
-    } else{
+    } else {
       Sys.getenv("JULIA_HOME")
     }
   }
@@ -216,13 +219,13 @@ julia_locate <- function(JULIA_HOME = NULL){
     if (julia_bin == "") {
       if (.Platform$OS.type == "unix") {
         julia_bin <- system2("bash", "-l -c 'which julia'", stdout = TRUE)[1]
-      } else if (.Platform$OS.type == "windows" ) {
+      } else if (.Platform$OS.type == "windows") {
         # look for julia in the most common installation path
         appdata_local_path <- Sys.getenv("LOCALAPPDATA")
 
 
         # if the path is not defined, then try to construct it manually
-        if(appdata_local_path == "") {
+        if (appdata_local_path == "") {
           windows_login_id <- Sys.info()[["login"]]
           # if(windows_login_id == "unknown") {
           #     stop("The Windows login is 'unknown'. Can not find julia executable")
@@ -235,7 +238,7 @@ julia_locate <- function(JULIA_HOME = NULL){
         ld <- list.dirs(appdata_local_path, recursive = FALSE, full.names = FALSE)
 
         # which of these folers start with "Julia"
-        x = ld[sort(which(substr(ld,1,5) == "Julia"))]
+        x <- ld[sort(which(substr(ld, 1, 5) == "Julia"))]
 
         # if(length(x) == 0) {
         #     stop(sprintf("Can not find the Julia installation in the default installation path '%s'", appdata_local_path))
@@ -243,7 +246,7 @@ julia_locate <- function(JULIA_HOME = NULL){
         if (length(x) > 0) {
           # TODO if interactive() let the user choose a version of Julia
           # keep the lastest version of Julia as that is likeley to be the default
-          x = x[length(x)]
+          x <- x[length(x)]
 
           # filter the ld for folders that starts with Julia
           julia_bin <- file.path(appdata_local_path, x, "bin/julia.exe")
@@ -252,20 +255,31 @@ julia_locate <- function(JULIA_HOME = NULL){
         julia_bin <- "julia"
       }
     }
-    tryCatch({r <- system2(julia_bin, "--startup-file=no -E \"1;\"", stdout = TRUE);
-    r <- system2(julia_bin, "--startup-file=no -E \"try println(JULIA_HOME) catch e println(Sys.BINDIR) end;\"", stdout = TRUE);
-    r[length(r)-1]},
-    warning = function(war) {},
-    error = function(err) NULL)
-  }
-  else {
-    tryCatch({r <- system2(file.path(JULIA_HOME, "julia"),
-                           "--startup-file=no -E \"1;\"", stdout = TRUE);
-    r <- system2(file.path(JULIA_HOME, "julia"),
-                 "--startup-file=no -E \"try println(JULIA_HOME) catch e println(Sys.BINDIR) end;\"", stdout = TRUE);
-    r[length(r)-1]},
-    warning = function(war) {},
-    error = function(err) NULL)
+    tryCatch(
+      {
+        r <- system2(julia_bin, "--startup-file=no -E \"1;\"", stdout = TRUE)
+        r <- system2(julia_bin, "--startup-file=no -E \"try println(JULIA_HOME) catch e println(Sys.BINDIR) end;\"", stdout = TRUE)
+        r[length(r) - 1]
+      },
+      warning = function(war) {},
+      error = function(err) NULL
+    )
+  } else {
+    tryCatch(
+      {
+        r <- system2(file.path(JULIA_HOME, "julia"),
+          "--startup-file=no -E \"1;\"",
+          stdout = TRUE
+        )
+        r <- system2(file.path(JULIA_HOME, "julia"),
+          "--startup-file=no -E \"try println(JULIA_HOME) catch e println(Sys.BINDIR) end;\"",
+          stdout = TRUE
+        )
+        r[length(r) - 1]
+      },
+      warning = function(war) {},
+      error = function(err) NULL
+    )
   }
 }
 
@@ -277,8 +291,7 @@ julia_locate <- function(JULIA_HOME = NULL){
 #' @returns String with version number
 #' @noRd
 #'
-julia_version = function(JULIA_HOME){
-  command = c("--startup-file=no", "-e", "print(VERSION)")
+julia_version <- function(JULIA_HOME) {
+  command <- c("--startup-file=no", "-e", "print(VERSION)")
   system2(file.path(JULIA_HOME, "julia"), shQuote(command), stdout = TRUE)
 }
-

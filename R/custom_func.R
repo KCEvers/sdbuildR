@@ -1,4 +1,3 @@
-
 #' Equivalent of Insight Maker's Round() function to R
 #'
 #' This function ensures that rounding in R matches rounding in Insight Maker. R base's round() rounds .5 to 0, whereas round_IM() rounds .5 to 1.
@@ -13,11 +12,11 @@
 #' @export
 #'
 #' @examples round_IM(.5)
-round_IM = function(x, digits = 0) {
-
+round_IM <- function(x, digits = 0) {
   return(ifelse(x %% 1 == 0.5 | x %% 1 == -0.5,
-         ceiling(x),
-         round(x, digits)))
+    ceiling(x),
+    round(x, digits)
+  ))
 }
 
 
@@ -31,8 +30,8 @@ round_IM = function(x, digits = 0) {
 #'
 #' @examples
 #' logit(.1)
-logit = function(p){
-  return(log(p/(1-p)))
+logit <- function(p) {
+  return(log(p / (1 - p)))
 }
 
 
@@ -48,8 +47,8 @@ logit = function(p){
 #'
 #' @examples
 #' expit(1)
-expit = function(x){
-  return(1 / (1+exp(-x)))
+expit <- function(x) {
+  return(1 / (1 + exp(-x)))
 }
 
 
@@ -66,7 +65,7 @@ expit = function(x){
 #'
 #' @examples
 #' rbool(.5)
-rbool = function(p){
+rbool <- function(p) {
   return(stats::runif(1) < p)
 }
 
@@ -83,8 +82,8 @@ rbool = function(p){
 #' @export
 #'
 #' @examples
-#' rdist(c(1,2,3), c(.5, .25, .25))
-rdist = function(a, b){
+#' rdist(c(1, 2, 3), c(.5, .25, .25))
+rdist <- function(a, b) {
   return(sample(a, size = 1, prob = b))
 }
 
@@ -103,13 +102,12 @@ rdist = function(a, b){
 #' @examples
 #' indexof(c("a", "b", "c"), "b") # 2
 #' indexof("haystack", "hay") # 1
-indexof = function(haystack, needle){
+indexof <- function(haystack, needle) {
+  if (length(haystack) == 1 & is.character(haystack)) {
+    matches <- stringr::str_locate(haystack, stringr::fixed(needle))
+    positions <- unname(matches[, "start"][1]) # First match
 
-  if (length(haystack) == 1 & is.character(haystack)){
-    matches = stringr::str_locate(haystack, stringr::fixed(needle))
-    positions = unname(matches[,"start"][1]) # First match
-
-    if (!is.na(positions)){
+    if (!is.na(positions)) {
       return(positions)
     } else {
       return(0) # Return 0 if there is no match
@@ -118,7 +116,7 @@ indexof = function(haystack, needle){
     # Returns first occurrence of match, 0 if no match
     result <- which(haystack == needle)
     if (length(result) == 0) {
-      return(0)  # Return 0 if the value is not found
+      return(0) # Return 0 if the value is not found
     } else {
       return(result[1]) # Return the position of the first occurrence of the element
     }
@@ -140,8 +138,8 @@ indexof = function(haystack, needle){
 #' length_IM(c("a", "b", "c")) # 3
 #' length_IM("abcdef") # 6
 #' length_IM(c("abcdef")) # 6
-length_IM = function(x){
-  if (length(x) == 1 & is.character(x)){
+length_IM <- function(x) {
+  if (length(x) == 1 & is.character(x)) {
     return(stringr::str_length(x))
   } else {
     return(length(x))
@@ -163,8 +161,8 @@ length_IM = function(x){
 #' @examples
 #' contains_IM(c("a", "b", "c"), "d") # FALSE
 #' contains_IM(c("abcdef"), "bc") # TRUE
-contains_IM = function(haystack, needle){
-  if (length(haystack) == 1 & is.character(haystack)){
+contains_IM <- function(haystack, needle) {
+  if (length(haystack) == 1 & is.character(haystack)) {
     return(grepl(needle, haystack, fixed = TRUE))
   } else {
     return(needle %in% haystack)
@@ -186,8 +184,8 @@ contains_IM = function(haystack, needle){
 #' @examples
 #' substr_i("InsightMaker", 3) # "s"
 #' substr_i("InsightMaker", c(1, 5, 10)) # "Igk"
-substr_i = function(string, idxs){
-  paste0(strsplit(string,"")[[1]][idxs], collapse = "")
+substr_i <- function(string, idxs) {
+  paste0(strsplit(string, "")[[1]][idxs], collapse = "")
 }
 
 
@@ -203,15 +201,24 @@ substr_i = function(string, idxs){
 #' @export
 #'
 #' @examples
-#' filter_IM(c(a = 1, b = 2, c = 3), function(x, key){x > 1})
+#' filter_IM(c(a = 1, b = 2, c = 3), function(x, key) {
+#'   x > 1
+#' })
 #' # b c
 #' # 2 3
-#' filter_IM(c(a = 1, b = 2, c = 3), function(x, key){x > 1 & key != "b"})
+#' filter_IM(c(a = 1, b = 2, c = 3), function(x, key) {
+#'   x > 1 & key != "b"
+#' })
 #' # c
 #' # 3
-filter_IM = function(y, condition_func){
-  purrr::map2(y, names(y), function(x,key){if (condition_func(x, key)){return(x)}}) |>
-    purrr::compact() |> unlist()
+filter_IM <- function(y, condition_func) {
+  purrr::map2(y, names(y), function(x, key) {
+    if (condition_func(x, key)) {
+      return(x)
+    }
+  }) |>
+    purrr::compact() |>
+    unlist()
 }
 
 
@@ -232,35 +239,38 @@ filter_IM = function(y, condition_func){
 #' @seealso [step()], [pulse()], [seasonal()]
 #' @examples
 #' # Create a simple model with a ramp function
-#' sfm = xmile() |>
-#' build("a", "stock") |>
-#' build("input", "constant", eqn = "ramp(20, 30, 3)") |>
-#' build("inflow", "flow", eqn = "input(t)", to = "a")
+#' sfm <- xmile() |>
+#'   build("a", "stock") |>
+#'   build("input", "constant", eqn = "ramp(20, 30, 3)") |>
+#'   build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
-#' \dontshow{sfm = sim_specs(sfm, save_at = .1)}
+#' \dontshow{
+#' sfm <- sim_specs(sfm, save_at = .1)
+#' }
 #'
-#' sim = simulate(sfm, only_stocks = FALSE)
+#' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
 #' # To create a decreasing ramp, set the height to a negative value
-#' sfm = build(sfm, "input", eqn = "ramp(20, 30, -3)")
+#' sfm <- build(sfm, "input", eqn = "ramp(20, 30, -3)")
 #'
-#' sim = simulate(sfm, only_stocks = FALSE)
+#' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
-ramp <- function(start, finish, height = 1){
-
-  if (finish < start){
+ramp <- function(start, finish, height = 1) {
+  if (finish < start) {
     stop("The finish time of the ramp cannot be before the start time. To specify a decreasing ramp, set the height to a negative value.")
   }
 
   # Create dataframe with signal
-  signal = data.frame(times = c(start, finish),
-                      y = c(0, height))
+  signal <- data.frame(
+    times = c(start, finish),
+    y = c(0, height)
+  )
 
   # If the ramp is after the start of signal, add a zero at the start
-  if (min(start) > .sdbuildR_env[["times"]][1]){
-    signal = rbind(data.frame(times = .sdbuildR_env[["times"]][1], y = 0), signal)
+  if (min(start) > .sdbuildR_env[["times"]][1]) {
+    signal <- rbind(data.frame(times = .sdbuildR_env[["times"]][1], y = 0), signal)
   }
 
   # # If the ramp ends before the end of the signal, add height of ramp at the end
@@ -269,7 +279,7 @@ ramp <- function(start, finish, height = 1){
   # }
 
   # Create linear approximation function
-  input = stats::approxfun(signal, rule = 2, method = "linear")
+  input <- stats::approxfun(signal, rule = 2, method = "linear")
   return(input)
 }
 
@@ -294,53 +304,55 @@ ramp <- function(start, finish, height = 1){
 #' # Create a simple model with a pulse function
 #' # that starts at time 5, jumps to a height of 2
 #' # with a width of 1, and does not repeat
-#' sfm = xmile() |>
+#' sfm <- xmile() |>
 #'   build("a", "stock") |>
 #'   build("input", "constant", eqn = "pulse(5, 2, 1)") |>
 #'   build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
-#' sim = simulate(sfm, only_stocks = FALSE)
+#' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
 #' # Create a pulse that repeats every 5 time units
-#' sfm = build(sfm, "input", eqn = "pulse(5, 2, 1, 5)")
+#' sfm <- build(sfm, "input", eqn = "pulse(5, 2, 1, 5)")
 #'
-#' sim = simulate(sfm, only_stocks = FALSE)
+#' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
-pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
-
-  if (width <= 0){
+pulse <- function(start, height = 1, width = 1, repeat_interval = NULL) {
+  if (width <= 0) {
     stop(paste0("The width of the pulse cannot be equal to or less than 0; to indicate an 'instantaneous' pulse, specify the simulation step size (", .sdbuildR_env[["P"]][["timestep_name"]], ")"))
   }
 
   # Define time and indices of pulses
-  start_ts = seq(start, .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])],
-                 # If the number of repeat is NULL, ensure no repeats
-                 by = ifelse(is.null(repeat_interval),
-                             .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])] + 1,
-                             repeat_interval))
-  end_ts = start_ts + width
+  start_ts <- seq(start, .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])],
+    # If the number of repeat is NULL, ensure no repeats
+    by = ifelse(is.null(repeat_interval),
+      .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])] + 1,
+      repeat_interval
+    )
+  )
+  end_ts <- start_ts + width
 
-  signal = rbind(
-        data.frame(times = start_ts, y = height),
-        data.frame(times = end_ts, y = 0))
+  signal <- rbind(
+    data.frame(times = start_ts, y = height),
+    data.frame(times = end_ts, y = 0)
+  )
 
   # If pulse is after the start of signal, add a zero at the start
-  if (min(start_ts) > .sdbuildR_env[["times"]][1]){
-    signal = rbind(signal, data.frame(times = .sdbuildR_env[["times"]][1], y = 0))
+  if (min(start_ts) > .sdbuildR_env[["times"]][1]) {
+    signal <- rbind(signal, data.frame(times = .sdbuildR_env[["times"]][1], y = 0))
   }
 
   # If pulse does not cover end of signal, add a zero at the end
   # (I don't fully understand why this is necessary, but otherwise it gives incorrect results with repeat_interval <= 0 in Julia, so for consistency's sake)
-  if (max(end_ts) < .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])]){
-    signal = rbind(signal, data.frame(times = .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])], y = 0))
+  if (max(end_ts) < .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])]) {
+    signal <- rbind(signal, data.frame(times = .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])], y = 0))
   }
 
-  signal = signal[order(signal[["times"]]), ]
+  signal <- signal[order(signal[["times"]]), ]
 
   # Create linear approximation function, use constant interpolation to get a block shape even at finer sampling times
-  input = stats::approxfun(signal, rule = 2, method = 'constant')
+  input <- stats::approxfun(signal, rule = 2, method = "constant")
   return(input)
 }
 
@@ -363,30 +375,29 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL){
 #' @examples
 #' # Create a simple model with a step function
 #' # that jumps at time 50 to a height of 5
-#' sfm = xmile() |>
-#' build("a", "stock") |>
-#' build("input", "constant", eqn = "step(50, 5)") |>
-#' build("inflow", "flow", eqn = "input(t)", to = "a")
+#' sfm <- xmile() |>
+#'   build("a", "stock") |>
+#'   build("input", "constant", eqn = "step(50, 5)") |>
+#'   build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
-#' sim = simulate(sfm, only_stocks = FALSE)
+#' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
 #' # Negative heights are also possible
-#' sfm = build(sfm, "input", eqn = "step(50, -10)")
+#' sfm <- build(sfm, "input", eqn = "step(50, -10)")
 #'
-#' sim = simulate(sfm, only_stocks = FALSE)
+#' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
-step <- function(start, height = 1){
-
+step <- function(start, height = 1) {
   # Create dataframe with signal
-  signal = data.frame(times = c(start, .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])]), y = c(height, height))
+  signal <- data.frame(times = c(start, .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])]), y = c(height, height))
 
-  if (start > .sdbuildR_env[["times"]][1]){
-    signal = rbind(data.frame(times = .sdbuildR_env[["times"]][1], y = 0), signal)
+  if (start > .sdbuildR_env[["times"]][1]) {
+    signal <- rbind(data.frame(times = .sdbuildR_env[["times"]][1], y = 0), signal)
   }
 
   # Create linear approximation function
-  input = stats::approxfun(signal, rule = 2, method = "constant")
+  input <- stats::approxfun(signal, rule = 2, method = "constant")
   return(input)
 }
 
@@ -407,25 +418,23 @@ step <- function(start, height = 1){
 #'
 #' @examples
 #' # Create a simple model with a seasonal wave
-#' sfm = xmile() |>
-#' build("a", "stock") |>
-#' build("input", "constant", eqn = "seasonal(10, 0)") |>
-#' build("inflow", "flow", eqn = "input(t)", to = "a")
+#' sfm <- xmile() |>
+#'   build("a", "stock") |>
+#'   build("input", "constant", eqn = "seasonal(10, 0)") |>
+#'   build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
-#' sim = simulate(sfm, only_stocks = FALSE)
+#' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
-seasonal = function(period = 1, shift = 0){
-
-  if (period <= 0){
+seasonal <- function(period = 1, shift = 0) {
+  if (period <= 0) {
     stop("The period of the seasonal wave must be greater than 0.")
   }
 
   # Create linear approximation function - define wave in advance so that the period and shift argument do not need to be kept
-  signal = cos(2 * pi * (.sdbuildR_env[["times"]] - shift) / period)
-  input = stats::approxfun(x = .sdbuildR_env[["times"]], y = signal, rule = 2, method = "linear")
+  signal <- cos(2 * pi * (.sdbuildR_env[["times"]] - shift) / period)
+  input <- stats::approxfun(x = .sdbuildR_env[["times"]], y = signal, rule = 2, method = "linear")
   return(input)
-
 }
 
 
@@ -446,9 +455,9 @@ seasonal = function(period = 1, shift = 0){
 #' @examples nonnegative(NA)
 #' nonnegative(-1)
 #'
-nonnegative = function(x){
+nonnegative <- function(x) {
   # Safe comparison to zero
-  if (is.na(x)){
+  if (is.na(x)) {
     return(x)
   } else {
     return(max(c(0, x)))
@@ -469,16 +478,20 @@ nonnegative = function(x){
 #' @export
 #'
 #' @examples
-#' a = 7; b = 3
+#' a <- 7
+#' b <- 3
 #' rem(a, b)
 #' mod(a, b)
-#' a = -7; b = 3
+#' a <- -7
+#' b <- 3
 #' rem(a, b)
 #' mod(a, b)
-#' a = 7; b = -3
+#' a <- 7
+#' b <- -3
 #' rem(a, b)
 #' mod(a, b)
-#' a = -7; b = -3
+#' a <- -7
+#' b <- -3
 #' rem(a, b)
 #' mod(a, b)
 rem <- function(a, b) {
@@ -500,19 +513,23 @@ rem <- function(a, b) {
 #'
 #' # mod(a, b) is the same as a %% b
 #'
-#' a = 7; b = 3
+#' a <- 7
+#' b <- 3
 #' rem(a, b)
 #' mod(a, b)
-#' a = -7; b = 3
+#' a <- -7
+#' b <- 3
 #' rem(a, b)
 #' mod(a, b)
-#' a = 7; b = -3
+#' a <- 7
+#' b <- -3
 #' rem(a, b)
 #' mod(a, b)
-#' a = -7; b = -3
+#' a <- -7
+#' b <- -3
 #' rem(a, b)
 #' mod(a, b)
-mod = function(a, b){
+mod <- function(a, b) {
   return(a %% b)
 }
 
@@ -545,7 +562,7 @@ mod = function(a, b){
 #'
 #' @examples
 #' shuffle(1:10)
-shuffle = function(x){
+shuffle <- function(x) {
   return(sample(x, length(x), replace = FALSE))
 }
 
@@ -569,7 +586,7 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
   stopifnot("midpoint must be numeric!" = is.numeric(midpoint))
   stopifnot("upper must be numeric!" = is.numeric(upper))
 
-  return(upper / (1 + exp(-slope*(x-midpoint))))
+  return(upper / (1 + exp(-slope * (x - midpoint))))
 }
 
 
@@ -607,4 +624,3 @@ saveat_func <- function(df, time_col, new_times) {
 
   return(result)
 }
-

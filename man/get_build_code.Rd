@@ -4,12 +4,10 @@
 \alias{get_build_code}
 \title{Generate code to build stock-and-flow model}
 \usage{
-get_build_code(sfm, format_code = TRUE)
+get_build_code(sfm)
 }
 \arguments{
 \item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
-
-\item{format_code}{If TRUE, format the R script with the styler package; only works if language is set to "R" in sim_specs. Defaults to TRUE.}
 }
 \value{
 String with code to build stock-and-flow model from scratch.
@@ -18,7 +16,7 @@ String with code to build stock-and-flow model from scratch.
 Create R code to rebuild an existing stock-and-flow model. This may help to understand how a model is built, or to modify an existing one.
 }
 \examples{
-sfm = xmile("SIR")
+sfm <- xmile("SIR")
 get_build_code(sfm)
 }
 \seealso{

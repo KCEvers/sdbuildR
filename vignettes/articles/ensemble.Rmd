@@ -16,10 +16,10 @@ editor_options:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 10,          
-  fig.height = 4,       
-  fig.align = "center",   # Center all figures
-  out.width = "80%"      # Display figures at 80% of container width
+  fig.width = 10,
+  fig.height = 4,
+  fig.align = "center", # Center all figures
+  out.width = "80%" # Display figures at 80% of container width
   # fig.retina = 2,         # Optimize for retina displays
   # dpi = 96               # Standard DPI for web
 )
@@ -36,7 +36,7 @@ After having built a stock-and-flow model, you may want to explore how different
 For this example, we will use Crielaard et al.'s (2022) model of eating behaviour, including the stocks hunger, eating, and compensatory behaviour (i.e. disordered eating behaviour such as purging and overexercising). For more details, see Crielaard et al. (2022). We can load this example from the model library and look what is inside:
 
 ```{r}
-sfm = xmile("Crielaard2022")
+sfm <- xmile("Crielaard2022")
 summary(sfm)
 ```
 
@@ -44,18 +44,18 @@ Ensemble simulations are only supported in Julia, so we need to load the Julia e
 
 ```{r, results='hide'}
 use_julia()
-sfm = sim_specs(sfm, language = "Julia")
+sfm <- sim_specs(sfm, language = "Julia")
 ```
 
 Without changing the parameters, we can run a single simulation to see how the model behaves:
 
 ```{r include=FALSE}
 # Add seed to ensure the difference between trajectories is immediately visible
-sfm = sim_specs(sfm, seed = 1)
+sfm <- sim_specs(sfm, seed = 1)
 ```
 
 ```{r}
-sim = simulate(sfm)
+sim <- simulate(sfm)
 plot(sim)
 ```
 
@@ -63,11 +63,11 @@ As the model has random initial conditions, another run will be different:
 
 ```{r include=FALSE}
 # Add seed to ensure the difference between trajectories is immediately visible
-sfm = sim_specs(sfm, seed = 3)
+sfm <- sim_specs(sfm, seed = 3)
 ```
 
 ```{r}
-sim = simulate(sfm)
+sim <- simulate(sfm)
 plot(sim)
 ```
 
@@ -78,20 +78,21 @@ To explore this more systematically, we can run an ensemble simulation using the
 Ensemble simulations create multiple runs of the model, which only makes sense if the model either has some random elements or if parameters are being varied. Our model already has random initial conditions, but if it had not, we could create these:
 
 ```{r}
-sfm = build(sfm, c("Food_intake", "Hunger", "Compensatory_behaviour"),
-                    eqn = "runif(1)")
+sfm <- build(sfm, c("Food_intake", "Hunger", "Compensatory_behaviour"),
+  eqn = "runif(1)"
+)
 ```
 
 With random initial conditions, multiple runs of the same model will be different. As running ensemble simulations can be quite memory intensive, it is highly recommended to reduce the size of the returned timeseries. This will save memory and speed up the simulation. For example, we can only save the timeseries every 1 time units, and only save from time 10:
 
 ```{r}
-sfm = sim_specs(sfm, save_at = 1, save_from = 10)
+sfm <- sim_specs(sfm, save_at = 1, save_from = 10)
 ```
 
 The model is now ready for running ensemble simulations. We complete 100 runs using the `ensemble()` function:
 
 ```{r}
-sims = ensemble(sfm, n = 100)
+sims <- ensemble(sfm, n = 100)
 ```
 
 ```{r}
@@ -101,7 +102,7 @@ plot(sims)
 The plot shows the mean and confidence interval of the stocks (mean with 95% confidence interval). We can also plot the individual runs, for which we first have to rerun the simulation and set `return_sims = TRUE`:
 
 ```{r}
-sims = ensemble(sfm, n = 30, return_sims = TRUE)
+sims <- ensemble(sfm, n = 30, return_sims = TRUE)
 ```
 
 
@@ -119,7 +120,7 @@ plot(sims, type = "sims", i = 15:30)
 By default, only the stocks are saved. To save all variables, set `only_stocks = FALSE`:
 
 ```{r}
-sims = ensemble(sfm, n = 100, only_stocks = FALSE)
+sims <- ensemble(sfm, n = 100, only_stocks = FALSE)
 ```
 
 ```{r}
@@ -141,8 +142,10 @@ To stop using parallel simulations, run `use_threads(stop = TRUE)`.
 Instead of generating an ensemble with random initial conditions, we can also specify ensembles with exact parameter values. For example, we could vary the $a_2$ parameter, which determines how strongly having eaten increases compensatory behaviour.
 
 ```{r}
-sims = ensemble(sfm, n = 100,
-                range = list("a2" = c(0.2, 0.4, 0.6, 0.8)))
+sims <- ensemble(sfm,
+  n = 100,
+  range = list("a2" = c(0.2, 0.4, 0.6, 0.8))
+)
 ```
 
 
@@ -153,10 +156,13 @@ plot(sims)
 We can also vary multiple parameters at once. For example, we can vary both $a_2$ and $a_1$, where the latter influences how strongly food intake leads to more food intake. `n` now specifies the number of simulations per condition. By default, `cross = TRUE`, which means that all possible combinations of parameters are simulated.
 
 ```{r}
-sims = ensemble(sfm, 
-                range = list("a2" = c(0.2, 0.8),
-                             "a1" = c(1.3, 1.5)), 
-                n = 100)
+sims <- ensemble(sfm,
+  range = list(
+    "a2" = c(0.2, 0.8),
+    "a1" = c(1.3, 1.5)
+  ),
+  n = 100
+)
 ```
 
 ```{r, fig.height = 6}
@@ -172,10 +178,13 @@ sims$conditions
 To generate a non-crossed designed, set `cross = FALSE`. In this case, the length of each range needs to be the same.
 
 ```{r}
-sims = ensemble(sfm, 
-                range = list("a2" = c(0.4, 0.5, 0.6),
-                             "a1" = c(1.3, 1.4, 1.5)), 
-                n = 100, cross = FALSE, return_sims = TRUE)
+sims <- ensemble(sfm,
+  range = list(
+    "a2" = c(0.4, 0.5, 0.6),
+    "a1" = c(1.3, 1.4, 1.5)
+  ),
+  n = 100, cross = FALSE, return_sims = TRUE
+)
 ```
 
 ```{r}

@@ -35,14 +35,18 @@ Insight Maker models can be imported using either a URL or an Insight Maker file
 \examples{
 \dontshow{if (has_internet()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 # Load a model from Insight Maker
-sfm = insightmaker_to_sfm(URL =
- 'https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022')
+sfm <- insightmaker_to_sfm(
+  URL =
+    "https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022"
+)
 plot(sfm)
 
-\dontshow{sfm = sim_specs(sfm, save_at = .5)}
+\dontshow{
+sfm <- sim_specs(sfm, save_at = .5)
+}
 
 # Simulate the model
-sim = simulate(sfm)
+sim <- simulate(sfm)
 plot(sim)
 \dontshow{\}) # examplesIf}
 }

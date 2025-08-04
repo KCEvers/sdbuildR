@@ -11,7 +11,7 @@
 #'
 #' @examplesIf not_on_cran()
 #'
-past = function(variable, length = NULL){
+past <- function(variable, length = NULL) {
 
 }
 
@@ -30,8 +30,7 @@ past = function(variable, length = NULL){
 #'
 #' @examplesIf not_on_cran()
 #'
-#'
-delay = function(variable, length, default_value = NULL){
+delay <- function(variable, length, default_value = NULL) {
 
 }
 
@@ -51,7 +50,7 @@ delay = function(variable, length, default_value = NULL){
 #'
 #' @examplesIf not_on_cran()
 #'
-delayN = function(variable, length, order, initial = NULL){
+delayN <- function(variable, length, order, initial = NULL) {
 
 }
 
@@ -71,6 +70,6 @@ delayN = function(variable, length, order, initial = NULL){
 #'
 #' @examplesIf not_on_cran()
 #'
-smoothN = function(variable, length, order, initial = NULL){
+smoothN <- function(variable, length, order, initial = NULL) {
 
 }

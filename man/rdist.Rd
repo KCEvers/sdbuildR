@@ -18,7 +18,7 @@ One sample from custom distribution
 Equivalent of RandDist() in Insight Maker
 }
 \examples{
-rdist(c(1,2,3), c(.5, .25, .25))
+rdist(c(1, 2, 3), c(.5, .25, .25))
 }
 \seealso{
 Other custom: 

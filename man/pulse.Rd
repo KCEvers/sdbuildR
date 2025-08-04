@@ -28,18 +28,18 @@ Equivalent of Pulse() in Insight Maker
 # Create a simple model with a pulse function
 # that starts at time 5, jumps to a height of 2
 # with a width of 1, and does not repeat
-sfm = xmile() |>
+sfm <- xmile() |>
   build("a", "stock") |>
   build("input", "constant", eqn = "pulse(5, 2, 1)") |>
   build("inflow", "flow", eqn = "input(t)", to = "a")
 
-sim = simulate(sfm, only_stocks = FALSE)
+sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim)
 
 # Create a pulse that repeats every 5 time units
-sfm = build(sfm, "input", eqn = "pulse(5, 2, 1, 5)")
+sfm <- build(sfm, "input", eqn = "pulse(5, 2, 1, 5)")
 
-sim = simulate(sfm, only_stocks = FALSE)
+sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim)
 
 }
