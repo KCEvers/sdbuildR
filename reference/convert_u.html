@@ -79,10 +79,11 @@
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Change the unit of rate from minutes to hours</span></span></span>
-<span class="r-in"><span><span class="va">sfm</span> <span class="op">=</span> <span class="fu"><a href="xmile.html">xmile</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span> <span class="fu"><a href="build.html">build</a></span><span class="op">(</span><span class="st">"rate"</span>, <span class="st">"constant"</span>, eqn <span class="op">=</span> <span class="st">"10"</span>, units <span class="op">=</span> <span class="st">"minutes"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span> <span class="fu"><a href="build.html">build</a></span><span class="op">(</span><span class="st">"change"</span>, <span class="st">"flow"</span>,</span></span>
-<span class="r-in"><span>     eqn <span class="op">=</span> <span class="st">"(room_temperature - coffee_temperature) / convert_u(rate, u('hour'))"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sfm</span> <span class="op">&lt;-</span> <span class="fu"><a href="xmile.html">xmile</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="build.html">build</a></span><span class="op">(</span><span class="st">"rate"</span>, <span class="st">"constant"</span>, eqn <span class="op">=</span> <span class="st">"10"</span>, units <span class="op">=</span> <span class="st">"minutes"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="build.html">build</a></span><span class="op">(</span><span class="st">"change"</span>, <span class="st">"flow"</span>,</span></span>
+<span class="r-in"><span>    eqn <span class="op">=</span> <span class="st">"(room_temperature - coffee_temperature) / convert_u(rate, u('hour'))"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
