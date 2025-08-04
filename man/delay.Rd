@@ -21,7 +21,6 @@ Also known as a pipeline or fixed delay. Note that this function is only usable 
 }
 \examples{
 \dontshow{if (not_on_cran()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-
 \dontshow{\}) # examplesIf}
 }
 \seealso{

@@ -18,10 +18,14 @@ Vector with elements which meet condition_func
 Equivalent of .Filter() in Insight Maker when using arguments x and key in the filter function
 }
 \examples{
-filter_IM(c(a = 1, b = 2, c = 3), function(x, key){x > 1})
+filter_IM(c(a = 1, b = 2, c = 3), function(x, key) {
+  x > 1
+})
 # b c
 # 2 3
-filter_IM(c(a = 1, b = 2, c = 3), function(x, key){x > 1 & key != "b"})
+filter_IM(c(a = 1, b = 2, c = 3), function(x, key) {
+  x > 1 & key != "b"
+})
 # c
 # 3
 }

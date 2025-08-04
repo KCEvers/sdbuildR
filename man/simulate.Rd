@@ -6,7 +6,6 @@
 \usage{
 simulate(
   sfm,
-  format_code = TRUE,
   keep_nonnegative_flow = TRUE,
   keep_nonnegative_stock = FALSE,
   keep_unit = TRUE,
@@ -17,8 +16,6 @@ simulate(
 }
 \arguments{
 \item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
-
-\item{format_code}{If TRUE, format the R script with the styler package; only works if language is set to "R" in sim_specs. Defaults to TRUE.}
 
 \item{keep_nonnegative_flow}{If TRUE, keeps original non-negativity setting of flows. Defaults to TRUE.}
 
@@ -48,18 +45,18 @@ Object of class sdbuildR_sim, which is a list containing:
 Simulate a stock-and-flow model with simulation specifications defined by \code{sim_specs()}. If not already run, the Julia environment will first be set up with \code{use_julia()}. If any problems are detected by \code{debugger()}, the model cannot be simulated.
 }
 \examples{
-sfm = xmile("SIR")
-sim = simulate(sfm)
+sfm <- xmile("SIR")
+sim <- simulate(sfm)
 plot(sim)
 
 # Obtain all model variables
-sim = simulate(sfm, only_stocks = FALSE)
+sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim, add_constants = TRUE)
 
 \dontshow{if (not_on_cran()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 # Use Julia for models with units or delay functions
-sfm = sim_specs(xmile("coffee_cup"), language = "Julia")
-sim = simulate(sfm)
+sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
+sim <- simulate(sfm)
 plot(sim)
 
 # Close Julia session

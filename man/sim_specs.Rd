@@ -45,32 +45,32 @@ Updated stock-and-flow model with new simulation specifications
 Simulation specifications are the settings that determine how the model is simulated, such as the integration method, start and stop time, and timestep. Modify these specifications for an existing stock-and-flow model.
 }
 \examples{
-sfm = xmile("predator-prey") |>
- sim_specs(start = 0, stop = 10, dt = 0.01)
-sim = simulate(sfm)
+sfm <- xmile("predator-prey") |>
+  sim_specs(start = 0, stop = 10, dt = 0.01)
+sim <- simulate(sfm)
 plot(sim)
 
 # Change the simulation method to "rk4"
-sfm = sim_specs(sfm, method = "rk4")
+sfm <- sim_specs(sfm, method = "rk4")
 
 # Change the time units to "years", such that one time unit is one year
-sfm = sim_specs(sfm, time_units = "years")
+sfm <- sim_specs(sfm, time_units = "years")
 
 # To save storage but not affect accuracy, use save_at and save_from
-sfm = sim_specs(sfm, dt = 0.001, save_at = .1, save_from = 1)
-sim = simulate(sfm)
+sfm <- sim_specs(sfm, dt = 0.001, save_at = .1, save_from = 1)
+sim <- simulate(sfm)
 head(as.data.frame(sim))
 
 # Add stochastic initial condition but specify seed to obtain same result
-sfm = sim_specs(sfm, seed = 1) |>
- build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
-sim1 = simulate(sfm)
-sim2 = simulate(sfm)
+sfm <- sim_specs(sfm, seed = 1) |>
+  build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
+sim1 <- simulate(sfm)
+sim2 <- simulate(sfm)
 plot(sim1)
 plot(sim2)
 
 # Change the simulation language to Julia to use units and delay functions
-sfm = sim_specs(sfm, language = "Julia")
+sfm <- sim_specs(sfm, language = "Julia")
 
 }
 \seealso{

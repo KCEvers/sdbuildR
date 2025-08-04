@@ -16,7 +16,7 @@ Vector of dependencies (variable names in equation)
 Find which other variables each variable is dependent on.
 }
 \examples{
-sfm = xmile("SIR")
+sfm <- xmile("SIR")
 find_dependencies(sfm)
 
 }

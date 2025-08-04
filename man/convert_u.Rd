@@ -19,10 +19,11 @@ In rare cases, it may be desirable to change the units of a variable within an e
 }
 \examples{
 # Change the unit of rate from minutes to hours
-sfm = xmile() |>
- build("rate", "constant", eqn = "10", units = "minutes") |>
- build("change", "flow",
-     eqn = "(room_temperature - coffee_temperature) / convert_u(rate, u('hour'))")
+sfm <- xmile() |>
+  build("rate", "constant", eqn = "10", units = "minutes") |>
+  build("change", "flow",
+    eqn = "(room_temperature - coffee_temperature) / convert_u(rate, u('hour'))"
+  )
 
 }
 \seealso{

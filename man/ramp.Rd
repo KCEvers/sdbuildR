@@ -24,20 +24,22 @@ Equivalent of Ramp() in Insight Maker
 }
 \examples{
 # Create a simple model with a ramp function
-sfm = xmile() |>
-build("a", "stock") |>
-build("input", "constant", eqn = "ramp(20, 30, 3)") |>
-build("inflow", "flow", eqn = "input(t)", to = "a")
+sfm <- xmile() |>
+  build("a", "stock") |>
+  build("input", "constant", eqn = "ramp(20, 30, 3)") |>
+  build("inflow", "flow", eqn = "input(t)", to = "a")
 
-\dontshow{sfm = sim_specs(sfm, save_at = .1)}
+\dontshow{
+sfm <- sim_specs(sfm, save_at = .1)
+}
 
-sim = simulate(sfm, only_stocks = FALSE)
+sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim)
 
 # To create a decreasing ramp, set the height to a negative value
-sfm = build(sfm, "input", eqn = "ramp(20, 30, -3)")
+sfm <- build(sfm, "input", eqn = "ramp(20, 30, -3)")
 
-sim = simulate(sfm, only_stocks = FALSE)
+sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim)
 
 }

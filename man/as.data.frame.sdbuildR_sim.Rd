@@ -24,8 +24,8 @@ Dataframe with simulation results
 Convert simulation results to a dataframe. The first column is time, followed by all stocks, and then all other auxiliary and flow variables.
 }
 \examples{
-sfm = xmile("SIR")
-sim = simulate(sfm)
+sfm <- xmile("SIR")
+sim <- simulate(sfm)
 head(as.data.frame(sim))
 
 }

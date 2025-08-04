@@ -45,7 +45,7 @@ Stock-and-flow diagram plotted with DiagrammeR()
 Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Hover over the stocks and flows to see their equations.
 }
 \examples{
-sfm = xmile("SIR")
+sfm <- xmile("SIR")
 plot(sfm)
 
 }

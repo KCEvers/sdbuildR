@@ -18,16 +18,20 @@ Remainder
 Note that modulus and remainder are not the same in case either a or b is negative. If you work with negative numbers, modulus is always non-negative (it matches the sign of the divisor).
 }
 \examples{
-a = 7; b = 3
+a <- 7
+b <- 3
 rem(a, b)
 mod(a, b)
-a = -7; b = 3
+a <- -7
+b <- 3
 rem(a, b)
 mod(a, b)
-a = 7; b = -3
+a <- 7
+b <- -3
 rem(a, b)
 mod(a, b)
-a = -7; b = -3
+a <- -7
+b <- -3
 rem(a, b)
 mod(a, b)
 }

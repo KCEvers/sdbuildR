@@ -100,7 +100,7 @@ use_julia()
 For all models, the simulation engine has to be changed to Julia:
 
 ```{r}
-sfm = xmile() |>
+sfm <- xmile() |>
   sim_specs(language = "Julia")
 ```
 
@@ -112,10 +112,10 @@ We first specify the simulation time unit. Think of the time axis of your simula
 
 ```{r}
 # Simulation time unit of a day
-sfm = sim_specs(sfm, time_units = "day")
+sfm <- sim_specs(sfm, time_units = "day")
 
 # Simulation time unit of a year
-sfm = sim_specs(sfm, time_units = "year")
+sfm <- sim_specs(sfm, time_units = "year")
 ```
 
 The simulation specifications can be viewed using `summary()`:
@@ -129,7 +129,7 @@ Note that units can be specified with full words, but that they are converted to
 For our example of the coffee cup, we'll set the simulation time unit to minutes.
 
 ```{r}
-sfm = sim_specs(sfm, time_units = "minute")
+sfm <- sim_specs(sfm, time_units = "minute")
 ```
 
 ### Units of variables
@@ -137,10 +137,14 @@ sfm = sim_specs(sfm, time_units = "minute")
 By default, variables are unitless, as indicated by `units = "1"`. To set the unit of a variable, specify the `units` property in `build()`. We now add the stock coffee temperature and the constant room temperature, which both have units of Celsius:
 
 ```{r}
-sfm = build(sfm, "coffee_temperature", "stock", eqn = "100", 
-        units = "Celsius", label = "Coffee temperature") |>
-  build("room_temperature", "constant", eqn = "18", 
-        units = "Celsius", label = "Room temperature")
+sfm <- build(sfm, "coffee_temperature", "stock",
+  eqn = "100",
+  units = "Celsius", label = "Coffee temperature"
+) |>
+  build("room_temperature", "constant",
+    eqn = "18",
+    units = "Celsius", label = "Room temperature"
+  )
 ```
 
 The unit is translated to a standard unit, which can be viewed with `as.data.frame()`:
@@ -152,8 +156,10 @@ as.data.frame(sfm)
 All standard units can be found with `get_units()`. Units may also have power-of-ten prefixes, such as milli, kilo, or nano. For example, the contents of the coffee cup could be specified in milliliters:
 
 ```{r}
-sfm = build(sfm, "coffee_amount", "aux", eqn = "250", 
-                    units = "milliliters", label = "Coffee amount")
+sfm <- build(sfm, "coffee_amount", "aux",
+  eqn = "250",
+  units = "milliliters", label = "Coffee amount"
+)
 ```
 
 All possible prefixes can be found using `unit_prefixes()`. Note that these only work for units compatible with prefixes, where for instance the unit `inch` does not allow prefixes.
@@ -161,17 +167,17 @@ All possible prefixes can be found using `unit_prefixes()`. Note that these only
 Similarly, we can use powers in units. For example, if we wanted to instead specify the volume of coffee in the cup in cubic centimeters, we could change it like this:
 
 ```{r}
-sfm = build(sfm, "coffee_amount", units = "cm^3")
+sfm <- build(sfm, "coffee_amount", units = "cm^3")
 
 # or:
 
-sfm = build(sfm, "coffee_amount", units = "cubed centimeters")
+sfm <- build(sfm, "coffee_amount", units = "cubed centimeters")
 ```
 
 We leave out the coffee amount for now, as it is not relevant for the example.
 
 ```{r}
-sfm = build(sfm, "coffee_amount", erase = TRUE)
+sfm <- build(sfm, "coffee_amount", erase = TRUE)
 ```
 
 ### Units in equations
@@ -179,24 +185,27 @@ sfm = build(sfm, "coffee_amount", erase = TRUE)
 Sometimes, it may be necessary to use units within equations. For example, a flow to the stock `coffee_temperature` in degrees Celsius needs to have compatible units, such as degrees Celsius per minute. We first set up the flow in the model:
 
 ```{r}
-sfm = build(sfm, "change", "flow", 
-                    units = "Celsius/minute", 
-                    to = "coffee_temperature", 
-                    label = "Cooling or heating") 
+sfm <- build(sfm, "change", "flow",
+  units = "Celsius/minute",
+  to = "coffee_temperature",
+  label = "Cooling or heating"
+)
 ```
 
 The coffee temperature adapts to the room temperature. However, the equation `room_temperature - coffee_temperature` evaluates to Celsius, and the equation of the flow needs to match the specified units `Celsius/minute`. We are missing a rate - the speed at which the coffee temperature adjusts to the room temperature. To do so, we can divide the difference by time, such as 10 minutes. To use units in equations, enclose them in `u()`:
 
 ```{r}
-sfm = build(sfm, "change", 
-                    eqn = "(room_temperature - coffee_temperature) / u('10minutes')") 
+sfm <- build(sfm, "change",
+  eqn = "(room_temperature - coffee_temperature) / u('10minutes')"
+)
 ```
 
 The model is now dimensionally consistent: the units on both sides of the equation match. Note that the units on both sides of the equation need to be compatible, but do not need to be the same. For example, the equation could also evaluate to degrees Celsius per hour:
 
 ```{r}
-sfm = build(sfm, "change", 
-                    eqn = "(room_temperature - coffee_temperature) / u('1/6 * hour')")
+sfm <- build(sfm, "change",
+  eqn = "(room_temperature - coffee_temperature) / u('1/6 * hour')"
+)
 ```
 
 When specifying fractions, take care to use the correct syntax. For example, `1/6 * hour` is interpreted as one sixth of an hour, but `1/6 hour` is interpreted as one sixth of $\frac{1}{hour}$. 
@@ -206,9 +215,10 @@ When specifying fractions, take care to use the correct syntax. For example, `1/
 In rare cases, you may want to change the units of a variable within an equation. For example, if we have an auxiliary variable `rate` which is defined in minutes, but we'd like to use it in hours, we can do so with `convert_u()`:
 
 ```{r}
-sfm = build(sfm, "rate", "constant", eqn = "10", units = "minutes") |>  
-  build("change", 
-        eqn = "(room_temperature - coffee_temperature) / convert_u(rate, u('hour'))")
+sfm <- build(sfm, "rate", "constant", eqn = "10", units = "minutes") |>
+  build("change",
+    eqn = "(room_temperature - coffee_temperature) / convert_u(rate, u('hour'))"
+  )
 ```
 
 In other rare cases, it may be necessary to drop units in a part of the equation. For example, the cosine function only accepts unitless arguments or arguments with units in radians or degrees. To compute the cosine of another type of argument, enclose the variable in `drop_u()`, e.g. `cos(drop_u(a))`.
@@ -216,17 +226,23 @@ In other rare cases, it may be necessary to drop units in a part of the equation
 We have now fully specified all units in the model, and are ready to simulate! We repeat the full model here for clarity:
 
 ```{r}
-sfm = xmile() |> header(name = "Coffee cup") |> 
+sfm <- xmile() |>
+  header(name = "Coffee cup") |>
   sim_specs(time_units = "minute", language = "Julia") |>
-  build("coffee_temperature", "stock", eqn = "100", 
-        units = "Celsius", label = "Coffee temperature") |>
-  build("room_temperature", "constant", eqn = "18", 
-        units = "Celsius", label = "Room temperature") |>
-  build("cooling", "flow", 
-        eqn = "(room_temperature - coffee_temperature) / u('10minutes')", 
-        units = "Celsius/minute", to = "coffee_temperature", 
-        label = "Cooling or heating")
-sim = simulate(sfm)
+  build("coffee_temperature", "stock",
+    eqn = "100",
+    units = "Celsius", label = "Coffee temperature"
+  ) |>
+  build("room_temperature", "constant",
+    eqn = "18",
+    units = "Celsius", label = "Room temperature"
+  ) |>
+  build("cooling", "flow",
+    eqn = "(room_temperature - coffee_temperature) / u('10minutes')",
+    units = "Celsius/minute", to = "coffee_temperature",
+    label = "Cooling or heating"
+  )
+sim <- simulate(sfm)
 plot(sim)
 ```
 
@@ -236,12 +252,16 @@ plot(sim)
 For convenience, you may want to define custom units. Custom units can be added to your model with `model_units()`. Some examples:
 
 ```{r}
-sfm = xmile() |> 
-  model_units("BMI", eqn = "kilograms/meters^2", 
-                          doc = "Body Mass Index") |>
-  model_units("BAC", eqn = "grams/deciliter", 
-              doc = "Blood Alcohol Concentration") |>
-  model_units("bottle", eqn = "2liters") |> 
+sfm <- xmile() |>
+  model_units("BMI",
+    eqn = "kilograms/meters^2",
+    doc = "Body Mass Index"
+  ) |>
+  model_units("BAC",
+    eqn = "grams/deciliter",
+    doc = "Blood Alcohol Concentration"
+  ) |>
+  model_units("bottle", eqn = "2liters") |>
   model_units("meal", eqn = "700kcal")
 ```
 
@@ -250,42 +270,44 @@ To keep track of the meaning of your units, document them with the `doc` propert
 However, you may not have a definition for your custom unit in terms of other units. For example, the definition of employee morale, motivation, or self-efficacy is not straight-forward. In this case, simply leave out the `eqn` argument or specify `eqn = 1`:
 
 ```{r}
-sfm = model_units(sfm, "BDI", doc = "Beck Depression Inventory")
+sfm <- model_units(sfm, "BDI", doc = "Beck Depression Inventory")
 ```
 
 Custom units may also be defined in terms of each other. 
 
 ```{r}
-sfm = model_units(sfm, "quality", doc = "Quality of life; also known as utility") |>
+sfm <- model_units(sfm, "quality",
+  doc = "Quality of life; also known as utility"
+) |>
   model_units("QALY", eqn = "years*quality", doc = "Quality-adjusted life year")
 ```
 
 Note that custom units are case-sensitive, and may be modified to create syntactically valid names. For example, special characters such as ^, &, - are not allowed in unit names:
 
 ```{r}
-sfm = model_units(sfm, "CO^2")
+sfm <- model_units(sfm, "CO^2")
 ```
 
 Similarly, custom unit names cannot be the same as existing units in *Unitful*:
 
 ```{r, error = TRUE}
-sfm = model_units(sfm, "kg")
+sfm <- model_units(sfm, "kg")
 ```
 
 ```{r, error = TRUE}
-sfm = model_units(sfm, "kilograms")
+sfm <- model_units(sfm, "kilograms")
 ```
 
 Changing the name of a custom unit is also possible with `model_units()`, which will ensure that any uses of the unit in the model are updated:
 
 ```{r}
-sfm = model_units(sfm, "CO_2", change_name = "C02")
+sfm <- model_units(sfm, "CO_2", change_name = "C02")
 ```
 
 Previously added model units can be removed by setting `erase = TRUE`:
 
 ```{r}
-sfm = model_units(sfm, "BDI", erase = TRUE) 
+sfm <- model_units(sfm, "BDI", erase = TRUE)
 ```
 
 For an overview of all custom units in the model, use `as.data.frame()`:
@@ -297,7 +319,7 @@ as.data.frame(sfm, type = "model_units")
 The simulation will not run in case any units are undefined. Find undefined units with `debugger()`:
 
 ```{r}
-sfm = xmile() |> build("health", "stock", units = "BMI")
+sfm <- xmile() |> build("health", "stock", units = "BMI")
 debugger(sfm)
 ```
 

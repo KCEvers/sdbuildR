@@ -27,7 +27,7 @@ Macros are global variables or functions that can be used throughout your stock-
 }
 \examples{
 # If the logistic() function did not exist, you could create it yourself:
-sfm = macro(xmile(), "func", eqn = "function(x, slope = 1, midpoint = .5){
+sfm <- macro(xmile(), "func", eqn = "function(x, slope = 1, midpoint = .5){
    1 / (1 + exp(-slope*(x-midpoint)))
  }")
 

@@ -39,8 +39,8 @@ Plot object
 Visualize simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.
 }
 \examples{
-sfm = xmile("SIR")
-sim = simulate(sfm)
+sfm <- xmile("SIR")
+sim <- simulate(sfm)
 plot(sim)
 
 # The default plot title and axis labels can be changed like so:
@@ -50,7 +50,7 @@ plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
 plot(sim, add_constants = TRUE)
 
 # Plot all model variables
-sim = simulate(sfm, only_stocks = FALSE)
+sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim, add_constants = TRUE)
 
 }

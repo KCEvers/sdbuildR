@@ -1,17 +1,15 @@
-
 #' Customary functions written in Julia
 #'
 #' @return List with Julia code
 #' @noRd
-get_func_julia = function(){
-
-  func_def = list(
+get_func_julia <- function() {
+  func_def <- list(
 
     # extrapolation = 1: return NA when outside of bounds
     # extrapolation = 2: return nearest value when outside of bounds
     "custom_func" = list(
       "is_function_or_interp" = "is_function_or_interp(x) = isa(x, Function) || isa(x, DataInterpolations.AbstractInterpolation)",
-      "itp"= "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = \"nearest\")
+      "itp" = "# Extrapolation function\nfunction itp(x, y; method = \"linear\", extrapolation = \"nearest\")
 
   # Ensure y is sorted along x
   idx = sortperm(x)
@@ -78,7 +76,6 @@ end",
 
     return(func)
 end ",
-
       "make_step" = "# Make step signal
 function make_step(times, time_units, start, height = 1.0)
 
@@ -115,7 +112,6 @@ function make_step(times, time_units, start, height = 1.0)
 end
 
     ",
-
       "pulse" = "# Make pulse signal
 function pulse(times, time_units, start, height = 1.0, width = 1.0 * time_units, repeat_interval = nothing)
 
@@ -192,7 +188,6 @@ function pulse(times, time_units, start, height = 1.0, width = 1.0 * time_units,
 
     return(func)
 end",
-
       "seasonal" = "# Create seasonal wave \nfunction seasonal(times, dt, period = u\"1yr\", shift = u\"0yr\")
 
     @assert Unitful.ustrip(period) > 0 \"The period of the seasonal wave must be greater than 0.\"
@@ -204,7 +199,6 @@ end",
 
     return(func)
 end",
-
       "round_IM" = "# Convert Insight Maker's Round() function to R\n# Difference: in Insight Maker, Round(.5) = 1; in R, round(.5) = 0; in julia, round(.5) = 0.0\nfunction round_IM(x::Real, digits::Int=0)
     # Compute the fractional part after scaling by 10^digits
     scaled_x = x * 10.0^digits
@@ -239,11 +233,9 @@ nonnegative(x::AbstractArray{<:Real}) = max.(0.0, x)
 
 # Array case: Unitful.Quantity elements
 nonnegative(x::AbstractArray{<:Unitful.Quantity}) = max.(0.0, Unitful.ustrip.(x)) .* Unitful.unit.(x)",
-
       "rbool" = "# Generate random boolean value, equivalent of RandBoolean() in Insight Maker\nfunction rbool(p)
     return rand() < p
 end",
-
       "rdist" = "function rdist(a::Vector{T}, b::Vector{<:Real}) where T
     # Check lengths match
     if length(a) != length(b)
@@ -267,7 +259,6 @@ end",
         return isnothing(pos) ? 0 : pos
     end
 end",
-
       "contains_IM" = "function contains_IM(haystack, needle)
     if isa(haystack, AbstractString) && isa(needle, AbstractString)
         return occursin(needle, haystack)
@@ -289,7 +280,6 @@ end",
     end
     return collect(values(result)), collect(keys(result))
 end",
-
       "round_" = "
 #round_(x::Unitful.Quantity) = round(Unitful.ustrip.(x)) * Unitful.unit(x)
 #round_(x::Unitful.Quantity, digits::Int) = round(Unitful.ustrip.(x), digits=digits) * Unitful.unit(x)
@@ -308,15 +298,13 @@ round_(x; digits::Real=0) = round(x, digits=round(Int, digits))
 round_(x::Unitful.Quantity, digits::Real) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)
 
 round_(x::Unitful.Quantity; digits::Real=0) = round(Unitful.ustrip(x), digits=round(Int, digits)) * Unitful.unit(x)",
-
       "\\u2295" = "# Define the operator \\u2295 for the modulus
 function \\u2295(x, y)
     return mod(x, y)
-end"),
-
+end"
+    ),
     "unit_func" = list(
-
-      "convert_u"= sprintf("# Set or convert unit wrappers per type
+      "convert_u" = sprintf("# Set or convert unit wrappers per type
 function convert_u(x::Unitful.Quantity, unit_def::Unitful.Quantity)
     if Unitful.unit(x) == Unitful.unit(unit_def)
         return x  # No conversion needed
@@ -343,7 +331,6 @@ function convert_u(x::Float64, unit_def::Unitful.Units)
 end
 ")
     ),
-
     "delay" = list(
       "retrieve_delay" = "function retrieve_delay(var_value, delay_time, default_value, t, var_name, intermediaries, intermediary_names)
     # Handle empty intermediaries
@@ -382,7 +369,6 @@ end
     end
 
 end",
-
       "retrieve_past" = "function retrieve_past(var_value, delay_time, default_value, t, var_name, intermediaries, intermediary_names)
     # Handle empty intermediaries
     if isempty(intermediaries.saveval)
@@ -437,7 +423,6 @@ end",
     end
 
 end",
-
       "compute_delayN" = "function compute_delayN(inflow, accumulator::AbstractVector{Float64}, length_delay, order_delay::Float64)
     order_delay = round(Int, order_delay)
     d_accumulator = zeros(eltype(accumulator), order_delay)
@@ -451,7 +436,6 @@ end",
     outflow = exit_rate_stage[order_delay] # in delayN, the outflow is the last stage
     return (outflow=outflow, update=d_accumulator)
 end",
-
       "compute_smoothN" = "function compute_smoothN(input, state::AbstractVector{Float64}, length_delay, order::Float64)
     order = round(Int, order)
     d_state = zeros(eltype(state), order)
@@ -465,7 +449,6 @@ end",
     outflow = state[end] # in smoothN, the outflow is the last state
     return (outflow=outflow, update=d_state)
 end",
-
       "setup_delayN" = sprintf("function setup_delayN(initial_value, length_delay, order_delay::Float64, name::Symbol)
     # Compute the initial value for each accumulator
     # from https://www.simulistics.com/help/equations/functions/delay.htm
@@ -475,8 +458,7 @@ end",
     # Create a dictionary with names like \"name_acc1\", \"name_acc2\", ...
     #return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
     return Dict(Symbol(name, \"%s\", i) => value for i in 1:order_delay)
-end",.sdbuildR_env[["P"]][["acc_suffix"]]),
-
+end", .sdbuildR_env[["P"]][["acc_suffix"]]),
       "setup_smoothN" = sprintf("function setup_smoothN(initial_value, length_delay, order_delay::Float64, name::Symbol)
     # Compute the initial value for each accumulator
     # from https://www.simulistics.com/help/equations/functions/delay.htm
@@ -486,15 +468,14 @@ end",.sdbuildR_env[["P"]][["acc_suffix"]]),
     # Create a dictionary with names like \"name_acc1\", \"name_acc2\", ...
     #return Dict(string(name, \"_acc\", i) => value for i in 1:order_delay)
     return Dict(Symbol(name, \"%s\", i) => value for i in 1:order_delay)
-end",.sdbuildR_env[["P"]][["acc_suffix"]])),
-
+end", .sdbuildR_env[["P"]][["acc_suffix"]])
+    ),
     "clean" = list(
       "saveat_func" = "# Function to save dataframe at specific times
 function saveat_func(t, y, new_times)
     # Interpolate y at new_times
     itp(t, y, method = \"linear\", extrapolation = \"nearest\")(new_times)
 end",
-
       "clean_df" = "function clean_df(prob, solve_out, init_names, intermediaries=nothing, intermediary_names=nothing)
     \"\"\"
 Convert a single (non-ensemble) solution to a DataFrame, including intermediaries, and extract parameter/initial values.
@@ -658,7 +639,6 @@ Returns:
 
     return timeseries_df, param_values, param_names, init_values, init_val_names
 end",
-
       "clean_constants" = sprintf("function clean_constants(%s)
     %s = (; (name => isa(val, Unitful.Quantity) ? Unitful.ustrip(val) : val for (name, val) in pairs(%s))...)
 
@@ -675,8 +655,8 @@ end
 ", .sdbuildR_env[["P"]][["parameter_name"]], .sdbuildR_env[["P"]][["parameter_name"]], .sdbuildR_env[["P"]][["parameter_name"]], .sdbuildR_env[["P"]][["parameter_name"]], .sdbuildR_env[["P"]][["parameter_name"]], .sdbuildR_env[["P"]][["parameter_name"]]),
       "clean_init" = sprintf("function clean_init(%s, %s)
     Dict(%s .=> Unitful.ustrip.(%s))
-end", .sdbuildR_env[["P"]][["initial_value_name"]], .sdbuildR_env[["P"]][["initial_value_names"]], .sdbuildR_env[["P"]][["initial_value_names"]], .sdbuildR_env[["P"]][["initial_value_name"]])),
-
+end", .sdbuildR_env[["P"]][["initial_value_name"]], .sdbuildR_env[["P"]][["initial_value_names"]], .sdbuildR_env[["P"]][["initial_value_names"]], .sdbuildR_env[["P"]][["initial_value_name"]])
+    ),
     "ensemble" = list(
       "transform_intermediaries" = "function transform_intermediaries(intermediaries, intermediary_names=nothing)
     \"\"\"
@@ -702,8 +682,6 @@ This creates a pseudo-solution object that can be processed with the same logic.
 
     return transformed
 end",
-
-
       "ensemble_to_df" = "function ensemble_to_df(solve_out, init_names,
     intermediaries, intermediary_names, ensemble_n)
     \"\"\"
@@ -921,7 +899,6 @@ Unified processing where intermediaries are transformed to solve_out format firs
     return timeseries_df, param_matrix, param_names, init_val_matrix, init_val_names
 end
 ",
-
       "generate_param_combinations" = "
 \"\"\"
 generate_param_combinations(param_ranges; crossed=true, n_replicates=100)
@@ -990,8 +967,7 @@ function generate_param_combinations(param_ranges;
     return param_combinations, total_sims
 end
 ",
-
-"ensemble_to_df_threaded" = "function ensemble_to_df_threaded(solve_out, init_names, intermediaries, intermediary_names, ensemble_n)
+      "ensemble_to_df_threaded" = "function ensemble_to_df_threaded(solve_out, init_names, intermediaries, intermediary_names, ensemble_n)
     \"\"\"
 Unified processing where intermediaries are transformed to solve_out format first.
 \"\"\"
@@ -1220,8 +1196,7 @@ Unified processing where intermediaries are transformed to solve_out format firs
     return timeseries_df, param_matrix, param_names, init_val_matrix, init_val_names
 end
 ",
-
-"ensemble_summ" = "function ensemble_summ(timeseries_df, quantiles=[0.025, 0.0975])
+      "ensemble_summ" = "function ensemble_summ(timeseries_df, quantiles=[0.025, 0.0975])
     # Group by time and variable, then compute statistics
     stats_df = combine(groupby(timeseries_df, [:j, :time, :variable])) do group
         values = group.value
@@ -1264,8 +1239,7 @@ end
 
     return stats_df
 end",
-
-"ensemble_summ_threaded" = "function ensemble_summ_threaded(timeseries_df, quantiles=[0.025, 0.975])
+      "ensemble_summ_threaded" = "function ensemble_summ_threaded(timeseries_df, quantiles=[0.025, 0.975])
    # Group the data
     grouped_df = groupby(timeseries_df, [:j, :time, :variable])
 
@@ -1350,8 +1324,8 @@ end",
     return stats_df
 end
 "
-    ))
+    )
+  )
 
-return(func_def)
+  return(func_def)
 }
-

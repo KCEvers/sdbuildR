@@ -820,7 +820,6 @@ test_that("detect_undefined_units() works", {
 test_that("get_build_code() works", {
 
   expect_no_error(get_build_code(xmile()))
-  expect_no_message(get_build_code(xmile()))
 
   for (s in c("SIR", "Crielaard2022")){
 
@@ -834,7 +833,6 @@ test_that("get_build_code() works", {
 
     sim1 = simulate(sfm)
     script = expect_no_error(get_build_code(sfm))
-    script = expect_no_message(get_build_code(sfm))
 
     # Create a new environment to collect variables
     envir <- new.env()

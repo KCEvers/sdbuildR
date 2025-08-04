@@ -16,14 +16,16 @@ Stock-and-flow model of class sdbuildR_xmile.
 Initialize an empty stock-and-flow model of class sdbuildR_xmile. You can either create an empty stock-and-flow model or load a template from the model library.
 }
 \examples{
-sfm = xmile()
+sfm <- xmile()
 summary(sfm)
 
-\dontshow{sfm = sim_specs(sfm, save_at = 1)}
+\dontshow{
+sfm <- sim_specs(sfm, save_at = 1)
+}
 
 # Load a template
-sfm = xmile("Lorenz")
-sim = simulate(sfm)
+sfm <- xmile("Lorenz")
+sim <- simulate(sfm)
 plot(sim)
 }
 \seealso{

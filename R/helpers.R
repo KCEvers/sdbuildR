@@ -10,11 +10,14 @@
 #' has_internet()
 #'
 has_internet <- function() {
-  tryCatch({
-    con <- url("https://www.r-project.org")
-    close(con)
-    TRUE
-  }, error = function(e) FALSE)
+  tryCatch(
+    {
+      con <- url("https://www.r-project.org")
+      close(con)
+      TRUE
+    },
+    error = function(e) FALSE
+  )
 }
 
 
@@ -43,7 +46,7 @@ not_on_cran <- function() {
 #'
 #' @returns List with NULL values removed
 #' @noRd
-compact_ = function(x){
+compact_ <- function(x) {
   Filter(Negate(rlang::is_empty), Filter(Negate(is.null), x))
 }
 
@@ -56,19 +59,17 @@ compact_ = function(x){
 #'
 #' @return Boolean; whether the value is defined
 #' @noRd
-is_defined = function(x){
-
+is_defined <- function(x) {
   # Safely check whether x is defined
-  if (length(x) == 0){
+  if (length(x) == 0) {
     return(FALSE)
   } else {
-    if (any(is.na(x))){
+    if (any(is.na(x))) {
       return(FALSE)
     } else {
       return(any(nzchar(x)))
     }
   }
-
 }
 
 
@@ -89,7 +90,7 @@ list_extract <- function(nested_list, entry, keep_entry_name = FALSE) {
     if (is.list(x)) {
       for (name in names(x)) {
         if (name == entry) {
-          if (keep_entry_name){
+          if (keep_entry_name) {
             result <<- c(result, stats::setNames(list(x[[name]]), name))
           } else {
             result <<- c(result, x[[name]])
@@ -117,15 +118,16 @@ list_extract <- function(nested_list, entry, keep_entry_name = FALSE) {
 #' @return Vector
 #' @noRd
 #'
-get_map = function(x, element_name, change_null_to = ""){
-
-  if (length(x) == 0){
+get_map <- function(x, element_name, change_null_to = "") {
+  if (length(x) == 0) {
     return(c())
   }
 
-  x_list = lapply(x, `[[`, element_name)
+  x_list <- lapply(x, `[[`, element_name)
   # Unlist preserving NULL
-  x_list[sapply(x_list, function(x){is.null(x) | length(x) == 0 })] = change_null_to
+  x_list[sapply(x_list, function(x) {
+    is.null(x) | length(x) == 0
+  })] <- change_null_to
   return(unlist(x_list))
 }
 
@@ -142,11 +144,13 @@ get_map = function(x, element_name, change_null_to = ""){
 #'
 ensure_length <- function(arg, target) {
   if (length(arg) != 1 && length(arg) != length(target)) {
-    stop(sprintf("The length of %s = %s must be either 1 or equal to the length of %s = %s.",
-                 deparse(substitute(arg)), paste0(arg, collapse = ", "),
-                 deparse(substitute(target)), paste0(target, collapse = ", ")))
+    stop(sprintf(
+      "The length of %s = %s must be either 1 or equal to the length of %s = %s.",
+      deparse(substitute(arg)), paste0(arg, collapse = ", "),
+      deparse(substitute(target)), paste0(target, collapse = ", ")
+    ))
   } else if (length(arg) < length(target)) {
-    arg <- rep(arg, length.out = length(target))  # Repeat to match the target length
+    arg <- rep(arg, length.out = length(target)) # Repeat to match the target length
   }
   return(arg)
 }
