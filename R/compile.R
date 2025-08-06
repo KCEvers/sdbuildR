@@ -112,25 +112,16 @@ detect_undefined_var <- function(sfm) {
   missing_ref <- unlist(sfm[["model"]][["variables"]], recursive = FALSE, use.names = FALSE) |>
     lapply(function(x) {
       y <- x[names(x) %in% c("eqn", "to", "from")]
-      y <- y[sapply(y, is_defined)]
+      y <- y[vapply(y, is_defined, logical(1))]
 
-      A <- sapply(y, function(z) {
+      A <- lapply(y, function(z) {
         dependencies <- find_dependencies_(sfm, z, only_var = TRUE, only_model_var = FALSE)
-
-        # # Check whether the function exists
-        # set only_var = FALSE
-        # is_existing_function = sapply(dependencies,
-        #        function(name){
-        #          exists(name, mode = "function", inherits = TRUE) &&
-        #            is.function(get(name, mode = "function", inherits = TRUE))
-        #        })
-        #
-        # dependencies = dependencies[!is_existing_function]
 
         # Find all undefined variables and functions
         setdiff(
           unlist(dependencies),
-          c(possible_func, var_names)
+          # Cannot depend on itself
+          c(possible_func, setdiff(var_names, x[["name"]]))
         )
       })
       A <- A[lengths(A) > 0]
@@ -203,7 +194,7 @@ topological_sort <- function(dependencies_dict) {
   })
 
   # Order parameters according to dependencies
-  edges <- lapply(1:length(dependencies), function(i) {
+  edges <- lapply(seq_along(dependencies), function(i) {
     # If no dependencies, repeat own name
     if (all(dependencies[[i]] == "")) {
       edge <- rep(eq_names[i], 2)
@@ -232,7 +223,7 @@ topological_sort <- function(dependencies_dict) {
       list(order = igraph::topo_sort(g, mode = "out") |> names(), issue = FALSE, msg = "")
     },
     error = function(msg) {
-      # print("Something went wrong when attempting to order the equations in your ODE, which may be because of circular definition (e.g. x = y, y = x). The correct order is important as e.g. for x = 1/a, a needs to be defined before x. Please check the order manually.")
+      # message("Something went wrong when attempting to order the equations in your ODE, which may be because of circular definition (e.g. x = y, y = x). The correct order is important as e.g. for x = 1/a, a needs to be defined before x. Please check the order manually.")
       out <- circularity(g)
 
       list(order = eq_names, issue = out[["issue"]], msg = out[["msg"]])
@@ -296,13 +287,13 @@ find_newly_defined_var <- function(eqn) {
   new_var <- c()
   if (nrow(assignment) > 0 & length(newlines) > 0) {
     # Find preceding newline before assignment
-    start_idxs <- sapply(assignment[, "start"], function(idx) {
+    start_idxs <- vapply(assignment[, "start"], function(idx) {
       idxs_newline <- which(newlines <= idx)
       newlines[idxs_newline[length(idxs_newline)]] # select last newline before assignment
-    })
+    }, numeric(1))
 
     # Isolate defined variables
-    new_var <- lapply(1:nrow(assignment), function(i) {
+    new_var <- lapply(seq_len(nrow(assignment)), function(i) {
       # Extract equation indices
       trimws(stringr::str_sub(eqn, start_idxs[i], assignment[i, "start"] - 1))
     })
@@ -747,7 +738,7 @@ ensemble <- function(sfm,
     }
 
     # All must be numerical values
-    if (!all(sapply(range, is.numeric))) {
+    if (!all(vapply(range, is.numeric, logical(1)))) {
       stop("All elements in range must be numeric vectors!")
     }
 
@@ -777,7 +768,7 @@ ensemble <- function(sfm,
     }
 
     # All ranges must be of the same length if not a crossed design
-    range_lengths <- sapply(range, length)
+    range_lengths <- vapply(range, length, numeric(1))
     if (!cross) {
       if (length(unique(range_lengths)) != 1) {
         stop("All ranges must be of the same length when cross = FALSE! Please check the lengths of the ranges in range.")
@@ -889,7 +880,7 @@ ensemble <- function(sfm,
       if (!is.null(ensemble_pars[["range"]])) {
         conditions <- JuliaConnectoR::juliaEval(paste0("Matrix(hcat(", .sdbuildR_env[["P"]][["ensemble_pars"]], "...)')"))
         colnames(conditions) <- names(ensemble_pars[["range"]])
-        conditions <- cbind(j = 1:nrow(conditions), conditions)
+        conditions <- cbind(j = seq_len(nrow(conditions)), conditions)
       } else {
         conditions <- NULL
       }

@@ -7,6 +7,7 @@
 \method{plot}{sdbuildR_sim}(
   x,
   add_constants = FALSE,
+  vars = NULL,
   palette = "Dark 2",
   colors = NULL,
   font_family = "Times New Roman",
@@ -19,6 +20,8 @@
 \item{x}{Output of simulate().}
 
 \item{add_constants}{If TRUE, include constants in plot. Defaults to FALSE.}
+
+\item{vars}{Variables to plot. Defaults to NULL to plot all variables.}
 
 \item{palette}{Colour palette. Must be one of hcl.pals().}
 
@@ -63,6 +66,7 @@ Other simulate:
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
+\code{\link{solvers}()},
 \code{\link{use_julia}()},
 \code{\link{use_threads}()}
 }

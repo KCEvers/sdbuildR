@@ -1,3 +1,3 @@
 # sdbuildR (development version)
 
-* Initial CRAN submission.
+* Added extensive solver options

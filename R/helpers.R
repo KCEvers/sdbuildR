@@ -125,9 +125,9 @@ get_map <- function(x, element_name, change_null_to = "") {
 
   x_list <- lapply(x, `[[`, element_name)
   # Unlist preserving NULL
-  x_list[sapply(x_list, function(x) {
+  x_list[vapply(x_list, function(x) {
     is.null(x) | length(x) == 0
-  })] <- change_null_to
+  }, logical(1))] <- change_null_to
   return(unlist(x_list))
 }
 
@@ -172,10 +172,30 @@ get_exported_functions <- function(package) {
   exports <- getNamespaceExports(package)
 
   # Filter for functions
-  functions <- exports[sapply(exports, function(x) {
+  functions <- exports[vapply(exports, function(x) {
     is.function(get(x, envir = ns))
-  })]
+  }, logical(1))]
 
   # Return sorted for consistency
   sort(functions)
+}
+
+
+
+#' Helper function to clean coding language
+#'
+#' @param langauge Language
+#'
+#' @returns Cleaned language
+#' @noRd
+#'
+clean_language = function(language){
+  language <- trimws(tolower(language))
+  if (!language %in% c("r", "julia", "jl")) {
+    stop(sprintf("The language %s is not one of the languages available in sdbuildR. The available languages are 'Julia' or 'R'.", language))
+  } else {
+    language <- stringr::str_to_title(language)
+    language <- ifelse(language == "Jl", "Julia", language)
+  }
+  return(language)
 }

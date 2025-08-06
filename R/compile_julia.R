@@ -41,7 +41,11 @@ simulate_julia <- function(sfm,
       start_t <- Sys.time()
 
       # Wrap in invisible and capture.output to not show message of units module being overwritten
-      invisible(utils::capture.output(JuliaConnectoR::juliaEval(paste0('include("', filepath, '")'))))
+      out = invisible({
+        utils::capture.output({
+          JuliaConnectoR::juliaEval(paste0('include("', filepath, '")'))
+          })
+        })
 
       end_t <- Sys.time()
 
@@ -102,8 +106,8 @@ compile_julia <- function(sfm, filepath_sim,
                           ensemble_pars,
                           keep_nonnegative_flow,
                           keep_nonnegative_stock,
-                          keep_unit, only_stocks,
-                          verbose) {
+                          keep_unit, only_stocks) {
+
   # Add "inflow" and "outflow" entries to stocks to match flow "to" and "from" entries
   flow_df <- get_flow_df(sfm)
 
@@ -298,7 +302,7 @@ check_no_keyword_arg <- function(sfm, var_names) {
     # Get the equations that use variables as functions
     eqns <- eqns[idx]
 
-    named_idxs <- sapply(eqns, function(eqn) {
+    named_idxs <- vapply(eqns, function(eqn) {
       # Find all round brackets
       paired_idxs <- get_range_all_pairs(eqn, var_names = var_names, type = "round")
       if (nrow(paired_idxs) == 0) {
@@ -321,14 +325,14 @@ check_no_keyword_arg <- function(sfm, var_names) {
       # Remove NA
       paired <- paired[!is.na(paired[["match"]]), ]
 
-      named_idxs <- sapply(paired[["match"]], function(x) {
+      named_idxs <- vapply(paired[["match"]], function(x) {
         y <- parse_args(gsub("\\)$", "", gsub("^\\(", "", x)))
 
         # Check for named arguments
         any(stringr::str_detect(y, "="))
-      })
+      }, logical(1))
       any(unlist(unname(named_idxs)))
-    })
+    }, logical(1))
 
     if (any(named_idxs)) {
       stop(
@@ -368,7 +372,7 @@ prep_ensemble_range <- function(sfm, ensemble_pars) {
     names_df <- get_names(sfm)
     stocks <- names_df[match(names(ensemble_pars[["range"]]), names_df[["name"]]), "type"]
 
-    for (i in 1:length(ensemble_pars[["range"]])) {
+    for (i in seq_along(ensemble_pars[["range"]])) {
       name <- names(ensemble_pars[["range"]])[i]
       # Replace the equations of the chosen variables with ensemble_pars.name[i]
       sfm[["model"]][["variables"]][[stocks[i]]][[name]][["eqn_julia"]] <- "0.0"
@@ -469,16 +473,25 @@ prep_delayN_smoothN <- function(sfm, delayN_smoothN) {
 #'
 #' @noRd
 compile_units_julia <- function(sfm, keep_unit) {
-  script <- ""
+
+#   script <- sprintf("\n# Clear any existing definitions to avoid conflicts
+# if @isdefined(%s)
+#     # Force garbage collection to clean up old module
+#     %s = nothing
+#     GC.gc()
+# end\n", .sdbuildR_env[["P"]][["MyCustomUnits"]], .sdbuildR_env[["P"]][["MyCustomUnits"]])
+  script = ""
 
   if (length(sfm[["model_units"]]) > 0) {
-    # Topological sort of units
+
     if (length(sfm[["model_units"]]) > 1) {
+
+      # Topological sort of units
       eq_names <- names(sfm[["model_units"]])
       dependencies <- lapply(
-        sfm[["model_units"]] |> get_map("eqn"),
+        lapply(sfm[["model_units"]], `[[`, "eqn"),
         function(x) {
-          stringr::str_extract_all(x, eq_names) |> unlist()
+          unlist(stringr::str_extract_all(x, eq_names))
         }
       )
       out <- topological_sort(dependencies)
@@ -504,14 +517,11 @@ compile_units_julia <- function(sfm, keep_unit) {
       )
     }) |> paste0(collapse = sprintf("\n\tUnitful.register(%s)\n\t", .sdbuildR_env[["P"]][["MyCustomUnits"]]))
 
-    script <- paste0(
+    script <- paste0(script,
       "\n# Define custom units; register after each unit as some units may be defined by other units\nmodule ", .sdbuildR_env[["P"]][["MyCustomUnits"]], "\n\tusing Unitful\n\tusing ", .sdbuildR_env[["P"]][["jl_pkg_name"]], ".", .sdbuildR_env[["P"]][["sdbuildR_units"]], "\n\t",
       unit_str,
       "\n\tUnitful.register(", .sdbuildR_env[["P"]][["MyCustomUnits"]], ")\nend\n\n",
       "Unitful.register(", .sdbuildR_env[["P"]][["MyCustomUnits"]], ")\n"
-      # .sdbuildR_env[["P"]][["unit_context"]], " = [Unitful.Unitful, ",
-      # .sdbuildR_env[["P"]][["jl_pkg_name"]], ".", .sdbuildR_env[["P"]][["sdbuildR_units"]],
-      # ", ", .sdbuildR_env[["P"]][["MyCustomUnits"]], "];\n\n"
     )
   }
 
@@ -1054,7 +1064,8 @@ compile_static_eqn_julia <- function(sfm, ensemble_pars, ordering, intermediarie
 #' @noRd
 #'
 prep_stock_change_julia <- function(sfm, keep_unit) {
-  # Add temporary property to sum change in Stocks
+
+ # Add temporary property to sum change in Stocks
   stock_names <- names(sfm[["model"]][["variables"]][["stock"]])
   sfm[["model"]][["variables"]][["stock"]] <- lapply(
     sfm[["model"]][["variables"]][["stock"]],
@@ -1071,13 +1082,13 @@ prep_stock_change_julia <- function(sfm, keep_unit) {
 
       # In case no inflow and no outflow is defined, update with 0
       if (!is_defined(x[["inflow"]]) & !is_defined(x[["outflow"]])) {
-        # If keep_unit = TRUE, flows always need to have units as the times variable has units
-        if (keep_unit) {
-          # Safer: in case x evaluates to a unit but no units were set
-          x[["sum_eqn"]] <- paste0(.sdbuildR_env[["P"]][["convert_u_func"]], "(0.0, Unitful.unit.(", x[["name"]], ")/", .sdbuildR_env[["P"]][["time_units_name"]], ")")
-        } else {
+        # # If keep_unit = TRUE, flows always need to have units as the times variable has units
+        # if (keep_unit) {
+        #   # Safer: in case x evaluates to a unit but no units were set
+        #   x[["sum_eqn"]] <- paste0(.sdbuildR_env[["P"]][["convert_u_func"]], "(0.0, Unitful.unit.(", x[["name"]], ")/", .sdbuildR_env[["P"]][["time_units_name"]], ")")
+        # } else {
           x[["sum_eqn"]] <- "0.0"
-        }
+        # }
       } else {
         if (is_defined(x[["inflow"]])) {
           inflow <- paste0(x[["inflow"]], collapse = " + ")
@@ -1350,7 +1361,8 @@ compile_run_ode_julia <- function(sfm,
         ", adaptive = false"
       ),
       ifelse(!only_stocks,
-        paste0(", ", .sdbuildR_env[["P"]][["callback_name"]], " = ", .sdbuildR_env[["P"]][["callback_name"]]), ""
+        paste0(", ", .sdbuildR_env[["P"]][["callback_name"]], " = ",
+               .sdbuildR_env[["P"]][["callback_name"]]), ""
       ),
       ")\n",
       .sdbuildR_env[["P"]][["sim_df_name"]],

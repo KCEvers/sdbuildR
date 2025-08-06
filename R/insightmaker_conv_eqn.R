@@ -20,10 +20,10 @@ convert_equations_IM <- function( # Simulation time unit used for converting all
                                  var_names,
                                  regex_units) {
   if (.sdbuildR_env[["P"]][["debug"]]) {
-    print("")
-    # print(type)
-    print(name)
-    print(eqn)
+    message("")
+    # message(type)
+    message(name)
+    message(eqn)
   }
 
   # Check whether eqn is empty or NULL
@@ -86,7 +86,7 @@ convert_equations_IM <- function( # Simulation time unit used for converting all
 
 
     if (.sdbuildR_env[["P"]][["debug"]]) {
-      print(eqn)
+      message(eqn)
     }
   }
 
@@ -125,7 +125,7 @@ replace_comments <- function(eqn) {
       next
     }
 
-    idxs_comments[["char"]] <- rep(comment_char, sapply(idxs_comments_, nrow))
+    idxs_comments[["char"]] <- rep(comment_char, vapply(idxs_comments_, nrow, numeric(1)))
 
     # Remove those that are in comments (#) or quotation marks
     idxs_exclude <- get_seq_exclude(eqn, type = "quot", names_with_brackets = TRUE)
@@ -314,9 +314,6 @@ replace_colon <- function(eqn, var_names) {
 
   # Only keep those between vector brackets
   paired_idxs <- get_range_all_pairs(eqn, var_names, type = "vector", names_with_brackets = TRUE)
-  # for (i in 1:nrow(paired_idxs)){
-  #   print(stringr::str_sub(eqn, paired_idxs[i,"start"],paired_idxs[i,"end"]))
-  # }
   seq_paired_idxs <- unlist(mapply(seq, paired_idxs[["start"]], paired_idxs[["end"]], SIMPLIFY = FALSE))
 
   # Replace colons that are not used to define a range with "="
@@ -324,7 +321,6 @@ replace_colon <- function(eqn, var_names) {
 
   for (i in replace_idxs) {
     stringr::str_sub(eqn, i, i) <- "="
-    # print(stringr::str_sub(eqn, i-10, i+10))
   }
 
   return(eqn)
@@ -340,7 +336,6 @@ replace_colon <- function(eqn, var_names) {
 #' @noRd
 #'
 curly_to_vector_brackets <- function(eqn, var_names) {
-  # print(eqn)
 
   # Curly brackets can be:
   # - Indexers, e.g. "b{1}.length()"
@@ -359,7 +354,7 @@ curly_to_vector_brackets <- function(eqn, var_names) {
     if (nrow(paired_idxs) > 0) {
       # Create dataframe with properties per pair
       paired_idxs_prop <- paired_idxs
-      paired_idxs_prop["id"] <- 1:nrow(paired_idxs_prop)
+      paired_idxs_prop["id"] <- seq_len(nrow(paired_idxs_prop))
 
       # Find which pairs this pair is nested within; this will be in order of highest to lowest level
       paired_idxs_prop[["nested_within"]] <- which(
@@ -427,8 +422,6 @@ curly_to_vector_brackets <- function(eqn, var_names) {
         end_idx <- chosen_pair[["end"]]
         string <- stringr::str_sub(eqn, start_idx + 1, end_idx - 1)
 
-        # print(string)
-
         if (x_is_indexer) {
           replacement <- paste0("[", string, "]")
         } else if (x_is_vector) {
@@ -438,8 +431,6 @@ curly_to_vector_brackets <- function(eqn, var_names) {
         } else {
           replacement <- stringr::str_sub(eqn, start_idx, end_idx) # No replacement
         }
-
-        # print(replacement)
 
         # Replace in string
         stringr::str_sub(eqn, start_idx, end_idx) <- replacement
@@ -492,7 +483,7 @@ replace_op_IM <- function(eqn, var_names) {
     # Get match and replacement
     df_logical_op <- as.data.frame(do.call(rbind, idxs_logical_op))
     df_logical_op[["match"]] <- stringr::str_sub(eqn, df_logical_op[["start"]], df_logical_op[["end"]])
-    df_logical_op[["replacement"]] <- rep(unname(logical_op), sapply(idxs_logical_op, nrow))
+    df_logical_op[["replacement"]] <- rep(unname(logical_op), vapply(idxs_logical_op, nrow, numeric(1)))
     df_logical_op <- df_logical_op[order(df_logical_op[["start"]]), ]
 
     # Remove those that are in quotation marks or names
@@ -518,7 +509,7 @@ replace_op_IM <- function(eqn, var_names) {
 
       if (nrow(df_logical_op) > 0) {
         # Replace in reverse order; no nested functions, so we can replace them in one go
-        for (i in rev(1:nrow(df_logical_op))) {
+        for (i in rev(seq_len(nrow(df_logical_op)))) {
           stringr::str_sub(eqn, df_logical_op[i, ][["start"]], df_logical_op[i, ][["end"]]) <- df_logical_op[i, ][["replacement"]]
         }
         # Remove double spaces
@@ -538,7 +529,7 @@ replace_op_IM <- function(eqn, var_names) {
 
     if (nrow(df_logical_op) > 0) {
       # Replace in reverse order; no nested functions, so we can replace them in one go
-      for (i in rev(1:nrow(df_logical_op))) {
+      for (i in rev(seq_len(nrow(df_logical_op)))) {
         stringr::str_sub(eqn, df_logical_op[i, ][["start"]], df_logical_op[i, ][["end"]]) <- "="
       }
     }
@@ -679,7 +670,7 @@ convert_statement <- function(line, var_names) {
   words_function <- words_function[tolower(words_function[["word"]]) == "function", ]
 
   if (nrow(words_function) > 0) {
-    for (i in 1:nrow(words_function)) {
+    for (i in seq_len(nrow(words_function))) {
       stringr::str_sub(equation, words_function[i, "start"], words_function[i, "end"]) <- "function"
     }
   }
@@ -711,10 +702,10 @@ convert_statement <- function(line, var_names) {
   # join_str = paste0(c(join_str), comment, collapse = "")
 
   if (.sdbuildR_env[["P"]][["debug"]]) {
-    print("Converting statements:")
-    print(line)
-    print(join_str)
-    print("")
+    message("Converting statements:")
+    message(line)
+    message(join_str)
+    message("")
   }
   return(join_str)
 }
@@ -736,16 +727,16 @@ convert_all_statements <- function(eqn, var_names) {
 
   # For each end if, check whether first preceding line with "Then" or "Else" or "If"
   for (i in idx_end_if) {
-    last_idx <- sapply(
+    last_idx <- vapply(
       c("else", "else if", "if"),
       function(x) {
-        idx <- which(stringr::str_detect(formula_split[1:(i - 1)], stringr::regex(sprintf("\\b%s\\b", x), ignore_case = TRUE)))
+        idx <- which(stringr::str_detect(formula_split[seq_len(i - 1)], stringr::regex(sprintf("\\b%s\\b", x), ignore_case = TRUE)))
         if (length(idx) > 0) {
           return(max(idx))
         } else {
           return(0)
         }
-      }
+      }, numeric(1)
     )
     last_idx
 
@@ -1053,7 +1044,7 @@ get_seq_exclude <- function(eqn,
 
   # Create sequence
   if (nrow(comb) > 0) {
-    paired_seq <- lapply(1:nrow(comb), function(i) {
+    paired_seq <- lapply(seq_len(nrow(comb)), function(i) {
       seq(comb[i, ][["start"]], comb[i, ][["end"]])
     }) |>
       unlist() |>
@@ -1098,7 +1089,7 @@ get_range_names <- function(eqn, var_names, names_with_brackets = FALSE) {
     if (length(unlist(idxs_names)) > 0) {
       # Create indices dataframe with detected variable names
       idxs_df <- as.data.frame(do.call(rbind, idxs_names))
-      idxs_df[["name"]] <- rep(original_names, sapply(idxs_names, nrow))
+      idxs_df[["name"]] <- rep(original_names, vapply(idxs_names, nrow, numeric(1)))
 
       # Remove matches in characters
       idxs_exclude <- get_seq_exclude(eqn, type = "quot", names_with_brackets = names_with_brackets)
@@ -1377,7 +1368,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
       })
 
       # Remove NULL entries
-      idx_df <- idx_df[!sapply(idx_df, is.null)]
+      idx_df <- idx_df[!vapply(idx_df, is.null, logical(1))]
 
       if (length(idx_df) == 0) {
         done <- TRUE
@@ -1404,13 +1395,12 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
           stringr::fixed(c("\\b" = "", "\\(" = "(", "\\)" = ")"))
         )
 
-        for (j in rev(1:nrow(idx_df))) {
+        for (j in rev(seq_len(nrow(idx_df)))) {
           stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) <- idx_df[j, ][["insightmaker_regex"]]
         }
       }
 
       if (i == 1) {
-        # print(eqn)
         ignore_case_arg <- FALSE
         IM_regex <- syntax_df[["insightmaker_regex"]]
         i <- i + 1
@@ -1562,14 +1552,14 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
           add_Rcode_list <- append(add_Rcode_list, add_Rcode)
 
           # Add newly created variables to names_df so that they are safe from replacement, e.g. if a variable contains the word "Time"
-          add_names <- unname(sapply(add_Rcode, names))
+          add_names <- vapply(add_Rcode, names, character(1), USE.NAMES = FALSE)
           var_names <- c(var_names, add_names)
         }
 
         if (.sdbuildR_env[["P"]][["debug"]]) {
-          print(stringr::str_sub(eqn, start_idx, end_idx))
-          print(replacement)
-          print("")
+          message(stringr::str_sub(eqn, start_idx, end_idx))
+          message(replacement)
+          message("")
         }
 
         # Replace eqn

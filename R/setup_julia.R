@@ -65,6 +65,7 @@ use_julia <- function(
     dir = NULL,
     force = FALSE,
     force_install = FALSE, ...) {
+
   if (stop) {
     .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] <- NULL
     JuliaConnectoR::stopJulia()
@@ -144,19 +145,41 @@ use_julia <- function(
     }
   }
 
-  # Set path to Julia executable
-  # old_path = Sys.getenv("JULIA_BINDIR")
+  .sdbuildR_env[["JULIA_HOME"]] = JULIA_HOME
+
+  # message("JULIA_BINDIR needs to be set to the new installation.")
+  # ans <- readline("Proceed? (y/n) ")
+  # if (trimws(tolower(ans)) %in% c("y", "yes")) {
+  #   # Set path to Julia executable
+  #   Sys.setenv(JULIA_BINDIR = dest)
+  # } else {
+  #   stop("sdbuildR set-up could not be completed.")
+  # }
+
+  # old_option = Sys.getenv("JULIA_BINDIR")
   Sys.setenv(JULIA_BINDIR = JULIA_HOME)
+
   # on.exit({
-  #   if (is.na(old_path)){
+  #   if (is.null(old_option)){
   #     Sys.unsetenv("JULIA_BINDIR")
   #   } else {
-  #     Sys.setenv("JULIA_BINDIR" = old_path)
+  #     Sys.setenv(JULIA_BINDIR = old_option)
   #   }
   # })
 
-  JuliaConnectoR::startJuliaServer()
-  JuliaConnectoR::juliaSetupOk()
+  tryCatch({
+    JuliaConnectoR::startJuliaServer()
+  }, warning = function(w) {
+    if (grepl("There is already a connection to Julia established",
+              conditionMessage(w))){
+      use_julia(stop = TRUE)
+      use_julia()
+    }
+  })
+
+  if (!JuliaConnectoR::juliaSetupOk()){
+    stop("Set-up of Julia environment FAILED!")
+  }
 
   # Find set-up location for sdbuildR in Julia
   env_path <- system.file(package = "sdbuildR")
@@ -184,7 +207,7 @@ use_julia <- function(
 
   # Set global option of initialization
   if (isFALSE(JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["init_sdbuildR"]]))) {
-    stop("Set up of Julia environment FAILED!")
+    stop("Set-up of Julia environment FAILED!")
   } else {
     .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] <- TRUE
     return(invisible())

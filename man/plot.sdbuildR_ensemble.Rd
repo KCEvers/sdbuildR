@@ -9,6 +9,7 @@
   type = c("summary", "sims")[1],
   i = seq(1, min(c(x[["n"]], 10))),
   j = seq(1, min(c(x[["n_conditions"]], 9))),
+  vars = NULL,
   nrows = ceiling(sqrt(max(j))),
   shareX = TRUE,
   shareY = TRUE,
@@ -30,6 +31,8 @@
 \item{i}{Indices of the individual trajectories to plot if type = "sims". Defaults to 1:10. Including a high number of trajectories will slow down plotting considerably.}
 
 \item{j}{Indices of the condition to plot. Defaults to 1:9. If only one condition is specified, the plot will not be a grid of subplots.}
+
+\item{vars}{Variables to plot. Defaults to NULL to plot all variables.}
 
 \item{nrows}{Number of rows in the plot grid. Defaults to ceiling(sqrt(n_conditions)).}
 
@@ -68,6 +71,7 @@ Other simulate:
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
+\code{\link{solvers}()},
 \code{\link{use_julia}()},
 \code{\link{use_threads}()}
 }

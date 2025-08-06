@@ -18,7 +18,7 @@ simulate_R <- function(sfm,
   argg <- argg[!lengths(argg) == 0]
 
   # Compile script without plot
-  script <- compile_R(sfm,
+  script <- compile_r(sfm,
     keep_nonnegative_flow = keep_nonnegative_flow,
     keep_nonnegative_stock = keep_nonnegative_stock,
     only_stocks = only_stocks
@@ -76,11 +76,10 @@ simulate_R <- function(sfm,
 #' @return R script
 #' @noRd
 #'
-compile_R <- function(sfm,
+compile_r <- function(sfm,
                       keep_nonnegative_flow,
                       keep_nonnegative_stock,
-                      only_stocks,
-                      verbose) {
+                      only_stocks) {
   # Get flows and connections
   flow_df <- get_flow_df(sfm)
 
@@ -284,7 +283,7 @@ compile_destructuring_assign <- function(sfm, static_eqn) {
 #' Add prefixes to static equations
 #'
 #' @inheritParams build
-#' @inheritParams compile_R
+#' @inheritParams compile_r
 #' @inheritParams order_equations
 #'
 #' @return Updated stock-and-flow model
@@ -368,7 +367,7 @@ compile_macros <- function(sfm) {
 #'
 #' @return List
 #' @importFrom rlang .data
-#' @inheritParams compile_R
+#' @inheritParams compile_r
 #' @noRd
 #'
 compile_times <- function(sfm) {
@@ -442,7 +441,7 @@ compile_constraints_old <- function(sfm) {
 
 #' Compile script for static variables, i.e. initial conditions, functions, and parameters
 #'
-#' @inheritParams compile_R
+#' @inheritParams compile_r
 #' @inheritParams order_equations
 #' @param ordering List with order of static and dynamic variables, output of order_equations()
 #'
@@ -611,7 +610,7 @@ prep_equations_variables <- function(sfm, keep_nonnegative_flow) {
 #' Prepare for summing change in stocks in stock-and-flow model
 #'
 #' @inheritParams build
-#' @inheritParams compile_R
+#' @inheritParams compile_r
 #'
 #' @noRd
 #' @return Updated stock-and-flow model
@@ -656,7 +655,7 @@ prep_stock_change <- function(sfm) {
 #' Compile script for non-negative Stocks
 #'
 #' @inheritParams build
-#' @inheritParams compile_R
+#' @inheritParams compile_r
 #'
 #' @noRd
 #' @return List with necessary scripts for ensuring non-negative Stocks
@@ -724,7 +723,7 @@ attributes(%s)$valroot
 #' @inheritParams compile
 #' @inheritParams order_equations
 #' @inheritParams compile_static_eqn
-#' @param prep_script Intermediate output of compile_R()
+#' @param prep_script Intermediate output of compile_r()
 #' @param static_eqn Output of compile_static_eqn()
 #'
 #' @return List
@@ -845,7 +844,7 @@ compile_ode <- function(sfm, ordering, prep_script, static_eqn,
 #' @inheritParams compile_ode
 #'
 #' @return List
-#' @inheritParams compile_R
+#' @inheritParams compile_r
 #' @noRd
 #'
 compile_run_ode <- function(sfm, nonneg_stocks) {
@@ -913,7 +912,7 @@ compile_run_ode <- function(sfm, nonneg_stocks) {
 #' @inheritParams compile_ode
 #'
 #' @return List
-#' @inheritParams compile_R
+#' @inheritParams compile_r
 #' @noRd
 #'
 compile_plot_ode <- function(sfm) {

@@ -60,10 +60,10 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
 #'
 convert_equations_julia <- function(sfm, type, name, eqn, var_names, regex_units) {
   if (.sdbuildR_env[["P"]][["debug"]]) {
-    # print("")
-    # print(type)
-    # print(name)
-    print(eqn)
+    # message("")
+    # message(type)
+    # message(name)
+    message(eqn)
   }
 
   if (length(eqn) > 1) {
@@ -130,10 +130,6 @@ convert_equations_julia <- function(sfm, type, name, eqn, var_names, regex_units
     # **to do
     # conv_destructuring_assignment()
 
-
-    # print("eqn")
-    # print(eqn)
-
     # Step 3. Statements (if, for, while, functions, try)
     eqn <- convert_all_statements_julia(eqn, var_names)
 
@@ -173,8 +169,6 @@ convert_equations_julia <- function(sfm, type, name, eqn, var_names, regex_units
     # if (stringr::str_detect(eqn, stringr::fixed("\n")) & !stringr::str_starts(eqn, "begin") & !stringr::str_ends(eqn, "end")) {
     #   eqn = paste0("begin\n", eqn, "\nend")
     # }
-
-    # if (.sdbuildR_env[["P"]][["debug"]]){print(eqn)}
 
     out <- append(list(eqn_julia = eqn), add_Rcode)
 
@@ -343,7 +337,8 @@ replace_op_julia <- function(eqn, var_names) {
     # Get match and replacement
     df_logical_op <- as.data.frame(do.call(rbind, idxs_logical_op))
     df_logical_op[["match"]] <- stringr::str_sub(eqn, df_logical_op[["start"]], df_logical_op[["end"]])
-    df_logical_op[["replacement"]] <- rep(unname(logical_op), sapply(idxs_logical_op, nrow))
+    df_logical_op[["replacement"]] <- rep(unname(logical_op),
+                                          vapply(idxs_logical_op, nrow, numeric(1)))
     df_logical_op <- df_logical_op[order(df_logical_op[["start"]]), ]
     df_logical_op
 
@@ -356,7 +351,7 @@ replace_op_julia <- function(eqn, var_names) {
 
     if (nrow(df_logical_op) > 0) {
       # Replace in reverse order; no nested functions, so we can replace them in one go
-      for (i in rev(1:nrow(df_logical_op))) {
+      for (i in rev(seq_len(nrow(df_logical_op)))) {
         stringr::str_sub(eqn, df_logical_op[i, ][["start"]], df_logical_op[i, ][["end"]]) <- df_logical_op[i, ][["replacement"]]
       }
       # Remove double spaces
@@ -453,8 +448,6 @@ convert_all_statements_julia <- function(eqn, var_names) {
   #   v <- rnorm(10, 0, 1)
   #   min(v)
   # })
-  # print(result)        # e.g., -1.023122
-  # print(exists("v"))   # FALSE
 
 
   # If curly brackets surround entire eqn, replace and surround with begin ... end
@@ -483,7 +476,8 @@ convert_all_statements_julia <- function(eqn, var_names) {
       # Look for statements
       idx_statements <- stringr::str_locate_all(eqn, unname(statement_regex))
       df_statements <- as.data.frame(do.call(rbind, idx_statements))
-      df_statements[["statement"]] <- rep(names(statement_regex), sapply(idx_statements, nrow))
+      df_statements[["statement"]] <- rep(names(statement_regex),
+                                          vapply(idx_statements, nrow, numeric(1)))
 
       # # Remove those matches that are in quotation marks or names
       idxs_exclude <- get_seq_exclude(eqn, var_names, type = "quot")
@@ -550,7 +544,7 @@ convert_all_statements_julia <- function(eqn, var_names) {
           # # At first iteration, replace all with uppercase versions, as the statement names are the same in R and Julia. This is necessart because someone may have enclosed their if statement etc. in extra round brackets, such that it still matches
           if (i == 1) {
             # Replace all statement names with uppercase versions
-            for (i in 1:nrow(df_statements)) {
+            for (i in seq_len(nrow(df_statements))) {
               stringr::str_sub(eqn, df_statements[i, "start"], df_statements[i, "end"]) <- toupper(stringr::str_sub(eqn, df_statements[i, "start"], df_statements[i, "end"]))
             }
             statement_regex <- toupper(statement_regex)
@@ -1183,7 +1177,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
       })
 
       # Remove NULL entries
-      idx_df <- idx_df[!sapply(idx_df, is.null)]
+      idx_df <- idx_df[!vapply(idx_df, is.null, logical(1))]
 
       if (length(idx_df) == 0) {
         done <- TRUE
@@ -1207,13 +1201,12 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           stringr::fixed(c("(?<!\\.)\\b" = "", "\\(" = "(", "\\)" = ")"))
         )
 
-        for (j in rev(1:nrow(idx_df))) {
+        for (j in rev(seq_len(nrow(idx_df)))) {
           stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) <- idx_df[j, ][["R_regex"]] #|>
         }
       }
 
       if (i == 1) {
-        # print(eqn)
         R_regex <- syntax_df[["R_regex"]]
         i <- i + 1
         # Stop first iteration
@@ -1263,22 +1256,16 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
         idx_func <- idx_funcs_ordered[1, ] # Select first match
 
         if (.sdbuildR_env[["P"]][["debug"]]) {
-          print("idx_func")
-          print(idx_func)
+          message("idx_func")
+          message(idx_func)
         }
 
         # Extract argument between brackets (excluding brackets)
         bracket_arg <- stringr::str_sub(eqn, idx_func[["start_bracket"]] + 1, idx_func[["end"]] - 1)
 
-        # print("bracket_arg")
-        # print(bracket_arg)
-
         arg <- parse_args(bracket_arg)
         named_arg <- sort_args(arg, idx_func[["R_first_iter"]], var_names = var_names)
         arg <- unname(unlist(named_arg))
-
-        # print("arg")
-        # print(arg)
 
         # Indices of replacement in eqn
         start_idx <- idx_func[["start"]]
@@ -1483,9 +1470,9 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
         }
 
         if (.sdbuildR_env[["P"]][["debug"]]) {
-          print(stringr::str_sub(eqn, start_idx, end_idx))
-          print(replacement)
-          print("")
+          message(stringr::str_sub(eqn, start_idx, end_idx))
+          message(replacement)
+          message("")
         }
 
         # Replace eqn
@@ -1570,7 +1557,7 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
     standard_order <- names(default_arg)
     if (length(idx) > 0 && length(standard_order) > 0) {
       new_names <- setdiff(standard_order, stats::na.omit(names_arg)) # names which are missing from the passed argument names
-      names_arg[idx] <- new_names[1:length(idx)] # Assign new names to unnamed arguments; only select as many as there are unnamed arguments
+      names_arg[idx] <- new_names[seq_along(idx)] # Assign new names to unnamed arguments; only select as many as there are unnamed arguments
     }
 
 
@@ -1597,11 +1584,8 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
     order_arg <- c(names(default_arg), setdiff(names(arg_R), names(default_arg)))
     arg_R <- arg_R[order_arg]
 
-    # print("arg_R")
-    # print(arg_R)
-
     # Check if any of the arguments are calls - these will need to be evaluated
-    if (any(sapply(arg_R, class) == "call")) {
+    if (any(vapply(arg_R, class, character(1)) == "call")) {
       arg_R_num <- lapply(arg_R, function(x) {
         if (!is.call(x)) {
           if (!grepl("'|\"", x) & !is.na(suppressWarnings(as.numeric(x)))) {
@@ -1734,8 +1718,6 @@ conv_distribution <- function(arg, julia_func, distribution) {
 #' @noRd
 #'
 conv_seq <- function(arg, R_func, julia_func) {
-  # print("arg in conv_seq")
-  # print(arg)
 
   if (R_func == "seq_along") {
     julia_str <- paste0(julia_func, "(1.0, length(", arg[["along.with"]], "))")
@@ -1783,8 +1765,6 @@ conv_seq <- function(arg, R_func, julia_func) {
 #' @returns String with Julia code
 #' @noRd
 conv_sample <- function(arg, R_func, julia_func) {
-  # print("arg in conv_sample")
-  # print(arg)
 
   # Order in StatsBase.sample() is different
   if (R_func == "sample.int") {
@@ -1835,7 +1815,7 @@ vector_to_square_brackets <- function(eqn, var_names) {
     paired_idxs <- paired_idxs[order(paired_idxs[["start"]]), ]
 
     # Replace opening brackets c( with [
-    for (j in rev(1:nrow(paired_idxs))) {
+    for (j in rev(seq_len(nrow(paired_idxs)))) {
       # Replace c( with [
       stringr::str_sub(eqn, paired_idxs[j, "start"], paired_idxs[j, "start"] + 1) <- "["
     }
@@ -1875,7 +1855,6 @@ scientific_notation <- function(eqn, task = c("remove", "add")[1], digits_max = 
   reformat_scientific <- function(match) {
     # Convert digit match to numeric
     num <- as.numeric(match)
-    # print(match)
 
     # Keep any white space padding
     leading_whitespace <- stringr::str_extract(match, "^[ ]*")

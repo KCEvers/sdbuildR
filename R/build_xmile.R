@@ -26,7 +26,8 @@ xmile <- function(name = NULL) {
   }
 
   header_defaults <- as.list(formals(header))
-  header_defaults <- header_defaults[!names(header_defaults) %in% c("sfm", "...")]
+  header_defaults <- header_defaults[!names(header_defaults) %in%
+                                       c("sfm", "...")]
   header_defaults[["created"]] <- Sys.time() # manually overwrite
 
   spec_defaults <- as.list(formals(sim_specs))
@@ -144,7 +145,7 @@ plot.sdbuildR_xmile <- function(x, format_label = TRUE,
     # Fill in NA in flow_df with numbered clouds; these are flows that are flowing from the external environment, not another stock
     idxs <- which(flow_df == "")
     if (length(idxs) > 0) {
-      cloud_names <- paste0("Cloud", 1:length(idxs))
+      cloud_names <- paste0("Cloud", seq_along(idxs))
       flow_df[idxs] <- cloud_names
       # External environment is represented as a cloud
       cloud_nodes <- sprintf(
@@ -223,12 +224,162 @@ get_flow_df <- function(sfm) {
 
 
 
+#' Prepare for plotting simulation
+#'
+#' @param df Dataframe to plot
+#' @param constants Constants to plot
+#' @inheritParams plot.sdbuildR_sim
+#' @inheritParams build
+#'
+#' @returns List
+#' @noRd
+#'
+prep_plot = function(sfm, df, constants, add_constants, vars, palette, colors, wrap_width){
+
+  # Get names of stocks and non-stock variables
+  names_df <- get_names(sfm)
+
+  if (!is.null(vars)){
+
+    if (!is.character(vars)){
+      stop("vars must be a character vector!")
+    }
+
+    # Check whether specified variables are in the model
+    idx = !(vars %in% names_df[["name"]])
+    if (any(idx)){
+      stop(paste0(paste0(vars[idx], collapse = ", "),
+                  ifelse(sum(idx) > 1, " is not a variable", " are not variables"),
+                  " in the model! Model variables: ",
+                  paste0(names_df[["name"]], collapse = ", ")))
+    } else {
+      names_df = names_df[names_df[["name"]] %in% vars, , drop = FALSE]
+      df = df[df[["variable"]] %in% vars, , drop = FALSE]
+      constants_in_vars = any(names_df[["type"]] %in% c("constant", "gf"))
+    }
+
+  } else {
+    constants_in_vars = FALSE
+  }
+
+  # Check labels are unique
+  if (nrow(names_df) != length(unique(names_df[["label"]]))) {
+    labels <- names_df[["label"]]
+    dup_indices <- which(labels %in% labels[duplicated(labels) | duplicated(labels, fromLast = TRUE)])
+
+    # Relabel, otherwise plotting will go wrong with recoded variables
+    names_df[dup_indices, "label"] <- paste0(names_df[dup_indices, "label"], "(", names_df[dup_indices, "name"], ")")
+  }
+
+  if (add_constants | constants_in_vars ) {
+    if (length(constants) > 0) {
+
+      # Ensure functions are not added
+      idx_func <- vapply(constants, is.function, logical(1), USE.NAMES = FALSE)
+      constants <- constants[!idx_func]
+
+      # Remove from names
+      names_df <- names_df[!names_df[["name"]] %in% names(idx_func[idx_func]), , drop = FALSE]
+
+      # Duplicate long format for each constant
+      if (length(constants) > 0) {
+        # Find time vector from first variable
+        times <- df[df[["variable"]] == df[["variable"]][1], "time"]
+        temp <- lapply(names(constants), function(y) {
+          data.frame(
+            time = times, variable = y,
+            value = constants[[y]]
+          )
+        }) |>
+          do.call(rbind, args = _) |>
+          as.data.frame()
+        df <- dplyr::bind_rows(df, temp)
+        rm(temp)
+      }
+    }
+  }
+
+  # Ensure only variables which are in the dataframe are included
+  names_df <- names_df[names_df[["name"]] %in% unique(df[["variable"]]), , drop = FALSE]
+
+
+
+  # Create dictionary with stock and non-stock names and labels
+  stock_names <- names_df[names_df[["type"]] == "stock", ]
+  stock_names <- stats::setNames(stock_names[["name"]], stock_names[["label"]])
+  nonstock_names <- names_df[names_df[["type"]] != "stock", ]
+  nonstock_names <- stats::setNames(nonstock_names[["name"]], nonstock_names[["label"]])
+
+  # Wrap names to prevent long names from squishing the plot
+  names(stock_names) <- stringr::str_wrap(names(stock_names), width = wrap_width)
+  names(nonstock_names) <- stringr::str_wrap(names(nonstock_names), width = wrap_width)
+
+
+  # Split dataframe into stocks and non-stocks
+  df_stocks <- df[df[["variable"]] %in% unname(stock_names), , drop = FALSE]
+  df_nonstocks <- df[df[["variable"]] %in% unname(nonstock_names), , drop = FALSE]
+
+  # Change labels of variables
+  df_stocks[["variable"]] <- factor(
+    df_stocks[["variable"]],
+    levels = unname(stock_names),
+    labels = names(stock_names)
+  )
+  df_nonstocks[["variable"]] <- factor(
+    df_nonstocks[["variable"]],
+    levels = unname(nonstock_names),
+    labels = names(nonstock_names)
+  )
+
+  # Create colours
+  # nr_var <- length(c(stock_names, nonstock_names))
+  nr_var <- length(unique(df[["variable"]]))
+
+  gen_colors <- FALSE
+  if (!is.null(colors)) {
+    if (length(colors) < nr_var) {
+      stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing palette instead..."))
+      gen_colors <- TRUE
+    }
+  } else {
+    gen_colors <- TRUE
+  }
+
+  if (gen_colors) {
+    # Minimum number of variables needed for color palette generation
+    if (nr_var < 3) {
+      nr_var_c <- 3
+    } else {
+      nr_var_c <- nr_var
+    }
+
+    colors <- grDevices::hcl.colors(n = nr_var_c, palette = palette)
+  }
+
+  # The colors are unintuitively plotted from back to front
+  colors <- rev(colors)
+
+  # Cut number of colors to number of variables
+  colors <- colors[seq_len(nr_var)]
+
+
+  return(list(
+    stock_names = stock_names,
+    nonstock_names = nonstock_names,
+    df_stocks = df_stocks,
+    df_nonstocks = df_nonstocks,
+    colors = colors))
+}
+
+
+
 #' Plot timeseries of simulation
 #'
 #' Visualize simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.
 #'
 #' @param x Output of simulate().
 #' @param add_constants If TRUE, include constants in plot. Defaults to FALSE.
+#' @param vars Variables to plot. Defaults to NULL to plot all variables.
 #' @param palette Colour palette. Must be one of hcl.pals().
 #' @param colors Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
 #' @param font_family Font family. Defaults to "Times New Roman".
@@ -259,6 +410,7 @@ get_flow_df <- function(sfm) {
 #'
 plot.sdbuildR_sim <- function(x,
                               add_constants = FALSE,
+                              vars = NULL,
                               palette = "Dark 2",
                               colors = NULL,
                               font_family = "Times New Roman",
@@ -304,104 +456,16 @@ plot.sdbuildR_sim <- function(x,
     dots[["ylab"]]
   }
 
-  # Get names of stocks and non-stock variables
-  names_df <- get_names(x[["sfm"]])
-
-  # Check labels are unique
-  if (nrow(names_df) != length(unique(names_df[["label"]]))) {
-    labels <- names_df[["label"]]
-    dup_indices <- which(labels %in% labels[duplicated(labels) | duplicated(labels, fromLast = TRUE)])
-
-    # Relabel, otherwise plotting will go wrong with recoded variables
-    names_df[dup_indices, "label"] <- paste0(names_df[dup_indices, "label"], "(", names_df[dup_indices, "name"], ")")
-  }
-
-  stock_names <- names_df[names_df[["type"]] == "stock", ]
-  stock_names <- stats::setNames(stock_names[["name"]], stock_names[["label"]])
-  nonstock_names <- names_df[names_df[["type"]] != "stock", ]
-  nonstock_names <- stats::setNames(nonstock_names[["name"]], nonstock_names[["label"]])
-
-  # Wrap names to prevent long names from squishing the plot
-  names(stock_names) <- stringr::str_wrap(names(stock_names), width = wrap_width)
-  names(nonstock_names) <- stringr::str_wrap(names(nonstock_names), width = wrap_width)
-
-  if (add_constants) {
-    if (length(x[["constants"]]) > 0) {
-      # Ensure functions are not added
-      idx_func <- sapply(x[["constants"]], is.function)
-      x[["constants"]] <- x[["constants"]][!idx_func]
-
-      # Remove from names
-      nonstock_names <- nonstock_names[!nonstock_names %in% names(idx_func[idx_func])]
-
-      # Duplicate long format for each constant
-      if (length(x[["constants"]]) > 0) {
-        # Find time vector from first stock variable
-        times <- x[["df"]][x[["df"]][["variable"]] == stock_names[1], "time"]
-        temp <- lapply(names(x[["constants"]]), function(y) {
-          data.frame(
-            time = times, variable = y,
-            value = x[["constants"]][[y]]
-          )
-        }) |>
-          do.call(rbind, args = _) |>
-          as.data.frame()
-        x[["df"]] <- dplyr::bind_rows(x[["df"]], temp)
-      }
-    }
-  }
-
-  # Use colnames because the constants have been added as columns
-  nonstock_names <- nonstock_names[unname(nonstock_names) %in% unique(x[["df"]][["variable"]])]
+  out = prep_plot(x[["sfm"]], x[["df"]], x[["constants"]], add_constants, vars, palette, colors, wrap_width)
+  stock_names = out[["stock_names"]]
+  nonstock_names = out[["nonstock_names"]]
+  df_stocks = out[["df_stocks"]]
+  df_nonstocks = out[["df_nonstocks"]]
+  colors = out[["colors"]]
 
   if (requireNamespace("plotly", quietly = TRUE)) {
-    # Put dataframe in long format
+
     x_col <- "time"
-
-    df_long <- x[["df"]]
-    df_long_stocks <- df_long[df_long[["variable"]] %in% unname(stock_names), ]
-    df_long_nonstocks <- df_long[df_long[["variable"]] %in% unname(nonstock_names), ]
-
-    # Change labels of variables
-    df_long_stocks[["variable"]] <- factor(
-      df_long_stocks[["variable"]],
-      levels = unname(stock_names),
-      labels = names(stock_names)
-    )
-    df_long_nonstocks[["variable"]] <- factor(
-      df_long_nonstocks[["variable"]],
-      levels = unname(nonstock_names),
-      labels = names(nonstock_names)
-    )
-
-    nr_var <- length(c(stock_names, nonstock_names))
-
-    gen_colors <- FALSE
-    if (!is.null(colors)) {
-      if (length(colors) < nr_var) {
-        stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing palette instead..."))
-        gen_colors <- TRUE
-      }
-    } else {
-      gen_colors <- TRUE
-    }
-
-    if (gen_colors) {
-      # Minimum number of variables needed for color palette generation
-      if (nr_var < 3) {
-        nr_var_c <- 3
-      } else {
-        nr_var_c <- nr_var
-      }
-
-      colors <- grDevices::hcl.colors(n = nr_var_c, palette = palette)
-    }
-
-    # The colors are unintuitively plotted from back to front
-    colors <- rev(colors)
-
-    # Cut number of colors to number of variables
-    colors <- colors[1:nr_var]
 
     # Initialize plotly object
     pl <- plotly::plot_ly()
@@ -409,7 +473,7 @@ plot.sdbuildR_sim <- function(x,
     # Add traces for non-stock variables (visible = "legendonly")
     if (length(nonstock_names) > 0) {
       pl <- plotly::add_trace(pl,
-        data = df_long_nonstocks,
+        data = df_nonstocks,
         x = ~ get(x_col),
         y = ~value,
         color = ~variable,
@@ -423,7 +487,7 @@ plot.sdbuildR_sim <- function(x,
     # Add traces for stock variables (visible = TRUE)
     if (length(stock_names) > 0) {
       pl <- plotly::add_trace(pl,
-        data = df_long_stocks,
+        data = df_stocks,
         x = ~ get(x_col),
         y = ~value,
         color = ~variable,
@@ -513,6 +577,7 @@ plot.sdbuildR_sim <- function(x,
 #' @param central_tendency Central tendency to use for the mean line. Either "mean", "median", or FALSE to not plot the central tendency. Defaults to "mean".
 #' @param central_tendency_width Line width of central tendency. Defaults to 3.
 #' @param ... Optional parameters
+#' @inheritParams plot.sdbuildR_sim
 #'
 #' @return Plot of ensemble simulation.
 #' @export
@@ -524,6 +589,7 @@ plot.sdbuildR_ensemble <- function(x,
                                    type = c("summary", "sims")[1],
                                    i = seq(1, min(c(x[["n"]], 10))),
                                    j = seq(1, min(c(x[["n_conditions"]], 9))),
+                                   vars = NULL,
                                    nrows = ceiling(sqrt(max(j))),
                                    shareX = TRUE,
                                    shareY = TRUE,
@@ -677,7 +743,7 @@ plot.sdbuildR_ensemble <- function(x,
       }
 
       # Filter condition
-      df <- df[df[["i"]] %in% i, ]
+      df <- df[df[["i"]] %in% i, , drop = FALSE]
     } else {
       stop("No simulation data available! Run ensemble() with return_sims = TRUE.")
     }
@@ -689,33 +755,79 @@ plot.sdbuildR_ensemble <- function(x,
     df <- NULL
   }
 
-  # Get names of stocks and non-stock variables
-  names_df <- get_names(x[["sfm"]])
+  # Prepare for plotting
+  out = prep_plot(x[["sfm"]], summary_df, constants = NULL, add_constants = FALSE,
+                  vars = vars, palette = palette, colors = colors, wrap_width = wrap_width)
+  stock_names = out[["stock_names"]]
+  nonstock_names = out[["nonstock_names"]]
+  summary_df_stocks = out[["df_stocks"]]
+  summary_df_nonstocks = out[["df_nonstocks"]]
+  colors = out[["colors"]]
 
-  # Only keep the ones that are in the summary_df
-  names_df <- names_df[names_df[["name"]] %in% unique(summary_df[["variable"]]), ]
-
-  # Check labels are unique
-  if (nrow(names_df) != length(unique(names_df[["label"]]))) {
-    labels <- names_df[["label"]]
-    dup_indices <- which(labels %in% labels[duplicated(labels) | duplicated(labels, fromLast = TRUE)])
-
-    # Relabel, otherwise plotting will go wrong with recoded variables
-    names_df[dup_indices, "label"] <- paste0(names_df[dup_indices, "label"], "(", names_df[dup_indices, "name"], ")")
+  if (type == "sims") {
+    out = prep_plot(x[["sfm"]], df, constants = NULL, add_constants = FALSE,
+                    vars = vars, palette = palette, colors = colors, wrap_width = wrap_width)
+    df_stocks = out[["df_stocks"]]
+    df_nonstocks = out[["df_nonstocks"]]
+  } else {
+    df_stocks = df_nonstocks = NULL
   }
 
-  stock_names <- names_df[names_df[["type"]] == "stock", ]
-  stock_names <- stats::setNames(stock_names[["name"]], stock_names[["label"]])
-  nonstock_names <- names_df[names_df[["type"]] != "stock", ]
-  nonstock_names <- stats::setNames(nonstock_names[["name"]], nonstock_names[["label"]])
+  # # Get names of stocks and non-stock variables
+  # names_df <- get_names(x[["sfm"]])
 
-  # Wrap names to prevent long names from squishing the plot
-  names(stock_names) <- stringr::str_wrap(names(stock_names), width = wrap_width)
-  names(nonstock_names) <- stringr::str_wrap(names(nonstock_names), width = wrap_width)
+  # # Only keep the ones that are in the summary_df
+  # names_df <- names_df[names_df[["name"]] %in% unique(summary_df[["variable"]]), ]
 
+  # # Check labels are unique
+  # if (nrow(names_df) != length(unique(names_df[["label"]]))) {
+  #   labels <- names_df[["label"]]
+  #   dup_indices <- which(labels %in% labels[duplicated(labels) | duplicated(labels, fromLast = TRUE)])
+  #
+  #   # Relabel, otherwise plotting will go wrong with recoded variables
+  #   names_df[dup_indices, "label"] <- paste0(names_df[dup_indices, "label"], "(", names_df[dup_indices, "name"], ")")
+  # }
+  #
+  # stock_names <- names_df[names_df[["type"]] == "stock", ]
+  # stock_names <- stats::setNames(stock_names[["name"]], stock_names[["label"]])
+  # nonstock_names <- names_df[names_df[["type"]] != "stock", ]
+  # nonstock_names <- stats::setNames(nonstock_names[["name"]], nonstock_names[["label"]])
+  #
+  # # Wrap names to prevent long names from squishing the plot
+  # names(stock_names) <- stringr::str_wrap(names(stock_names), width = wrap_width)
+  # names(nonstock_names) <- stringr::str_wrap(names(nonstock_names), width = wrap_width)
 
+  # # Don't add check for template in hcl.pals(), because hcl is more flexible in palette names matching.
+  # nr_var <- length(unique(summary_df[["variable"]]))
 
-  x_col <- "time"
+  # gen_colors <- FALSE
+  # if (!is.null(colors)) {
+  #   if (length(colors) < nr_var) {
+  #     stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing palette instead..."))
+  #     gen_colors <- TRUE
+  #   }
+  # } else {
+  #   gen_colors <- TRUE
+  # }
+  #
+  # if (gen_colors) {
+  #   # Minimum number of variables needed for color palette generation
+  #   if (nr_var < 3) {
+  #     nr_var_c <- 3
+  #   } else {
+  #     nr_var_c <- nr_var
+  #   }
+  #
+  #   colors <- grDevices::hcl.colors(n = nr_var_c, palette = palette)
+  # }
+  #
+  #
+  # # The colors are unintuitively plotted from back to front
+  # colors <- rev(colors)
+  #
+  # # Cut number of colors to number of variables
+  # colors <- colors[seq_len(nr_var)]
+
 
   # Find qlow and qhigh
   q_cols <- colnames(summary_df)[grepl("^q", colnames(summary_df))]
@@ -727,39 +839,6 @@ plot.sdbuildR_ensemble <- function(x,
   mode <- ifelse(length(unique(summary_df[["time"]])) == 1, "markers", "lines")
 
 
-  # Don't add check for template in hcl.pals(), because hcl is more flexible in palette names matching.
-  nr_var <- length(unique(summary_df[["variable"]]))
-
-  gen_colors <- FALSE
-  if (!is.null(colors)) {
-    if (length(colors) < nr_var) {
-      stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing palette instead..."))
-      gen_colors <- TRUE
-    }
-  } else {
-    gen_colors <- TRUE
-  }
-
-  if (gen_colors) {
-    # Minimum number of variables needed for color palette generation
-    if (nr_var < 3) {
-      nr_var_c <- 3
-    } else {
-      nr_var_c <- nr_var
-    }
-
-    colors <- grDevices::hcl.colors(n = nr_var_c, palette = palette)
-  }
-
-
-  # The colors are unintuitively plotted from back to front
-  colors <- rev(colors)
-
-  # Cut number of colors to number of variables
-  colors <- colors[1:nr_var]
-
-
-
   # Plot
   if (!create_subplots) {
     j_idx <- 1
@@ -769,8 +848,10 @@ plot.sdbuildR_ensemble <- function(x,
       j_name = j_name, j = j,
       type = type,
       create_subplots = create_subplots,
-      summary_df = summary_df,
-      df = df,
+      summary_df_stocks = summary_df_stocks,
+      summary_df_nonstocks = summary_df_nonstocks,
+      df_stocks = df_stocks,
+      df_nonstocks = df_nonstocks,
       central_tendency = central_tendency,
       central_tendency_width = central_tendency_width,
       q_low = q_low,
@@ -780,8 +861,6 @@ plot.sdbuildR_ensemble <- function(x,
       dots = dots,
       main = main,
       xlab = xlab, ylab = ylab,
-      stock_names = stock_names,
-      nonstock_names = nonstock_names,
       font_family = font_family,
       font_size = font_size,
       alpha = alpha
@@ -797,8 +876,10 @@ plot.sdbuildR_ensemble <- function(x,
         j_name = j_name, j = j,
         type = type,
         create_subplots = create_subplots,
-        summary_df = summary_df,
-        df = df,
+        summary_df_stocks = summary_df_stocks[summary_df_stocks[["j"]] == j_name, , drop = FALSE],
+        summary_df_nonstocks = summary_df_nonstocks[summary_df_nonstocks[["j"]] == j_name, , drop = FALSE],
+        df_stocks = df_stocks[df_stocks[["j"]] == j_name, , drop = FALSE],
+        df_nonstocks = df_nonstocks[df_nonstocks[["j"]] == j_name, , drop = FALSE],
         central_tendency = central_tendency,
         central_tendency_width = central_tendency_width,
         q_low = q_low,
@@ -808,8 +889,6 @@ plot.sdbuildR_ensemble <- function(x,
         dots = dots,
         main = main,
         xlab = xlab, ylab = ylab,
-        stock_names = stock_names,
-        nonstock_names = nonstock_names,
         font_family = font_family,
         font_size = font_size,
         alpha = alpha
@@ -869,8 +948,10 @@ plot.sdbuildR_ensemble <- function(x,
 #' @param j Index of the condition to plot. Used to determine whether to show the legend.
 #' @param type Type of plot. Must be one of "summary" or "sims". Defaults to "summary". If "summary", the plot will show the mean and confidence intervals of the simulation results. If "sims", the plot will show all individual simulation runs in i.
 #' @param create_subplots If TRUE, create subplots for each condition. If FALSE, plot all conditions in one plot.
-#' @param summary_df Dataframe with summary statistics of the ensemble simulation results. Must contain columns "j", "variable", "mean", and confidence interval columns (e.g., "q0.025", "q0.975").
-#' @param df Dataframe with individual simulation results. Must contain columns "i", "j", "variable", and "value". Only used if type = "sims".
+#' @param summary_df_stocks Dataframe with summary statistics of the ensemble simulation results (stocks). Must contain columns "j", "variable", "mean", and confidence interval columns (e.g., "q0.025", "q0.975").
+#' @param summary_df_nonstocks Dataframe with summary statistics of the ensemble simulation results (non-stocks). Must contain columns "j", "variable", "mean", and confidence interval columns (e.g., "q0.025", "q0.975").
+#' @param df_stocks Dataframe with individual simulation results (stocks). Must contain columns "i", "j", "variable", and "value". Only used if type = "sims".
+#' @param df_nonstocks Dataframe with individual simulation results (non-stocks). Must contain columns "i", "j", "variable", and "value". Only used if type = "sims".
 #' @param central_tendency Column name for the central tendency (e.g., "mean").
 #' @param q_low Column name for the lower bound of the confidence interval (e.g., "q0.025").
 #' @param q_high Column name for the upper bound of the confidence interval (e.g., "q0.975").
@@ -880,8 +961,6 @@ plot.sdbuildR_ensemble <- function(x,
 #' @param main Main title of the plot. Defaults to the name of the stock-and-flow model and the number of simulations.
 #' @param xlab Label on x-axis.
 #' @param ylab Label on y-axis.
-#' @param stock_names Vector of stock variable names. Used to filter the summary_df and df dataframes.
-#' @param nonstock_names Vector of non-stock variable names. Used to filter the summary_df and df dataframes.
 #' @param font_family Font family.
 #' @param font_size Font size.
 #' @param alpha Opacity of the confidence bands or individual trajectories. Defaults to 0.3.
@@ -889,67 +968,72 @@ plot.sdbuildR_ensemble <- function(x,
 #' @returns Plotly object
 #' @noRd
 plot_ensemble_helper <- function(j_idx, j_name, j, type, create_subplots,
-                                 summary_df, df,
+                                 summary_df_stocks,
+                                 summary_df_nonstocks,
+                                 df_stocks,
+                                 df_nonstocks,
                                  central_tendency,
                                  central_tendency_width,
                                  q_low, q_high,
                                  mode,
                                  colors, dots,
                                  main, xlab, ylab,
-                                 stock_names, nonstock_names,
                                  font_family, font_size, alpha) {
   showlegend <- ifelse(j_name != max(j), FALSE, TRUE)
   x_col <- "time"
 
-  # Filter data for the current condition
-  summary_df <- summary_df[summary_df[["j"]] == j_name, ]
-  summary_df_stocks <- summary_df[summary_df[["variable"]] %in% unname(stock_names), ]
-  summary_df_nonstocks <- summary_df[!summary_df[["variable"]] %in% unname(stock_names), ]
+  plot_stocks = nrow(summary_df_stocks) > 0
+  plot_nonstocks = nrow(summary_df_nonstocks) > 0
 
-  # Change labels of variables
-  summary_df_stocks[["variable"]] <- factor(
-    summary_df_stocks[["variable"]],
-    levels = unname(stock_names),
-    labels = names(stock_names)
-  )
-
-  # Change labels of variables
-  if (length(nonstock_names) > 0) {
-    summary_df_nonstocks[["variable"]] <- factor(
-      summary_df_nonstocks[["variable"]],
-      levels = unname(nonstock_names),
-      labels = names(nonstock_names)
-    )
-  }
-
-  if (type == "sims") {
-    df <- df[df[["j"]] == j_name, ]
-    df_stocks <- df[df[["variable"]] %in% unname(stock_names), ]
-    df_nonstocks <- df[!df[["variable"]] %in% unname(stock_names), ]
-
-    # Change labels of variables
-    df_stocks[["variable"]] <- factor(
-      df_stocks[["variable"]],
-      levels = unname(stock_names),
-      labels = names(stock_names)
-    )
-
-    # Change labels of variables
-    if (length(nonstock_names) > 0) {
-      df_nonstocks[["variable"]] <- factor(
-        df_nonstocks[["variable"]],
-        levels = unname(nonstock_names),
-        labels = names(nonstock_names)
-      )
-    }
-  }
+  # # Filter data for the current condition
+  # summary_df <- summary_df[summary_df[["j"]] == j_name, ]
+  # summary_df_stocks <- summary_df[summary_df[["variable"]] %in% unname(stock_names), , drop = FALSE]
+  # summary_df_nonstocks <- summary_df[!summary_df[["variable"]] %in% unname(stock_names), , drop = FALSE]
+  #
+  # # Change labels of variables
+  # summary_df_stocks[["variable"]] <- factor(
+  #   summary_df_stocks[["variable"]],
+  #   levels = unname(stock_names),
+  #   labels = names(stock_names)
+  # )
+  #
+  # # Change labels of variables
+  # if (length(nonstock_names) > 0) {
+  #   summary_df_nonstocks[["variable"]] <- factor(
+  #     summary_df_nonstocks[["variable"]],
+  #     levels = unname(nonstock_names),
+  #     labels = names(nonstock_names)
+  #   )
+  # }
+  #
+  # if (type == "sims") {
+  #   df <- df[df[["j"]] == j_name, ]
+  #   df_stocks <- df[df[["variable"]] %in% unname(stock_names), , drop = FALSE]
+  #   df_nonstocks <- df[!df[["variable"]] %in% unname(stock_names), , drop = FALSE]
+  #
+  #   # Change labels of variables
+  #   df_stocks[["variable"]] <- factor(
+  #     df_stocks[["variable"]],
+  #     levels = unname(stock_names),
+  #     labels = names(stock_names)
+  #   )
+  #
+  #   # Change labels of variables
+  #   if (length(nonstock_names) > 0) {
+  #     df_nonstocks[["variable"]] <- factor(
+  #       df_nonstocks[["variable"]],
+  #       levels = unname(nonstock_names),
+  #       labels = names(nonstock_names)
+  #     )
+  #   }
+  # }
 
   # Initialize plotly object
   pl <- plotly::plot_ly()
 
   if (type == "summary") {
     if (mode == "lines") {
-      if (length(nonstock_names) > 0) {
+      if (plot_nonstocks) {
         pl <- plotly::add_ribbons(pl,
           data = summary_df_nonstocks,
           x = ~ get(x_col),
@@ -969,7 +1053,7 @@ plot_ensemble_helper <- function(j_idx, j_name, j, type, create_subplots,
       }
 
       # First plot confidence bands
-      if (length(stock_names) > 0) {
+      if (plot_stocks) {
         pl <- plotly::add_ribbons(pl,
           data = summary_df_stocks,
           x = ~ get(x_col),
@@ -990,7 +1074,7 @@ plot_ensemble_helper <- function(j_idx, j_name, j, type, create_subplots,
     }
   } else if (type == "sims") {
     # Add traces for non-stock variables (visible = "legendonly")
-    if (length(nonstock_names) > 0) {
+    if (plot_nonstocks) {
       pl <- plotly::add_trace(pl,
         data = df_nonstocks,
         x = ~ get(x_col),
@@ -1007,7 +1091,7 @@ plot_ensemble_helper <- function(j_idx, j_name, j, type, create_subplots,
       )
     }
 
-    if (length(stock_names) > 0) {
+    if (plot_stocks) {
       pl <- plotly::add_trace(pl,
         data = df_stocks,
         x = ~ get(x_col),
@@ -1046,7 +1130,7 @@ plot_ensemble_helper <- function(j_idx, j_name, j, type, create_subplots,
 
   # Plot mean/median points/lines
   if (mode == "lines") {
-    if (length(nonstock_names) > 0) {
+    if (plot_nonstocks) {
       pl <- plotly::add_trace(pl,
         data = summary_df_nonstocks,
         x = ~ get(x_col),
@@ -1062,7 +1146,7 @@ plot_ensemble_helper <- function(j_idx, j_name, j, type, create_subplots,
       )
     }
 
-    if (length(stock_names) > 0) {
+    if (plot_stocks) {
       pl <- plotly::add_trace(pl,
         data = summary_df_stocks,
         x = ~ get(x_col),
@@ -1078,7 +1162,7 @@ plot_ensemble_helper <- function(j_idx, j_name, j, type, create_subplots,
       )
     }
   } else if (mode == "markers" & type == "summary") {
-    if (length(nonstock_names) > 0) {
+    if (plot_nonstocks) {
       pl <- plotly::add_trace(pl,
         data = summary_df_nonstocks,
         x = ~ get(x_col),
@@ -1100,7 +1184,7 @@ plot_ensemble_helper <- function(j_idx, j_name, j, type, create_subplots,
       )
     }
 
-    if (length(stock_names) > 0) {
+    if (plot_stocks) {
       pl <- plotly::add_trace(pl,
         data = summary_df_stocks,
         x = ~ get(x_col),
@@ -1122,7 +1206,7 @@ plot_ensemble_helper <- function(j_idx, j_name, j, type, create_subplots,
       )
     }
   } else if (mode == "markers" & type == "sims") {
-    if (length(nonstock_names) > 0) {
+    if (plot_nonstocks) {
       pl <- plotly::add_trace(pl,
         data = summary_df_nonstocks,
         x = ~ get(x_col),
@@ -1138,7 +1222,7 @@ plot_ensemble_helper <- function(j_idx, j_name, j, type, create_subplots,
       )
     }
 
-    if (length(stock_names) > 0) {
+    if (plot_stocks) {
       pl <- plotly::add_trace(pl,
         data = summary_df_stocks,
         x = ~ get(x_col),
@@ -1271,6 +1355,9 @@ as.data.frame.sdbuildR_sim <- function(x,
 
     # Remove value. prefix
     names(df) <- sub("^value\\.", "", names(df))
+
+    # Remove row names
+    rownames(df) <- NULL
   }
 
   # Handle row.names if provided
@@ -1456,25 +1543,6 @@ check_xmile <- function(sfm) {
 validate_xmile <- function(sfm) {
   check_xmile(sfm)
 
-  # Ensure simulation method matches language
-  if (sfm[["sim_specs"]][["language"]] == "Julia") {
-    if (grepl("euler", sfm[["sim_specs"]][["method"]], ignore.case = TRUE)) {
-      sfm[["sim_specs"]][["method"]] <- "Euler()"
-    } else if (grepl("rk4", sfm[["sim_specs"]][["method"]], ignore.case = TRUE)) {
-      sfm[["sim_specs"]][["method"]] <- "RK4()"
-    } else {
-      stop("Simulation method must be either 'euler' or 'rk4' for Julia simulations!")
-    }
-  } else if (sfm[["sim_specs"]][["language"]] == "R") {
-    if (grepl("euler", sfm[["sim_specs"]][["method"]], ignore.case = TRUE)) {
-      sfm[["sim_specs"]][["method"]] <- "euler"
-    } else if (grepl("rk4", sfm[["sim_specs"]][["method"]], ignore.case = TRUE)) {
-      sfm[["sim_specs"]][["method"]] <- "rk4"
-    } else {
-      stop("Simulation method must be either 'euler' or 'rk4' for R simulations!")
-    }
-  }
-
   # No need to validate model variables if there are no variables
   nr_var <- sum(lengths(sfm[["model"]][["variables"]]))
   if (nr_var > 0) {
@@ -1588,8 +1656,16 @@ validate_xmile <- function(sfm) {
     })
 
     # Ensure sfm$behavior matches non-negativity properties of variables: Get non-negative stocks and flows
-    nonneg_stock <- names(sfm[["model"]][["variables"]][["stock"]])[sapply(sfm[["model"]][["variables"]][["stock"]], function(x) x[["non_negative"]] == TRUE)]
-    nonneg_flow <- names(sfm[["model"]][["variables"]][["flow"]])[sapply(sfm[["model"]][["variables"]][["flow"]], function(x) x[["non_negative"]] == TRUE)]
+    check_nonneg <- function(y){
+      unlist(lapply(y, function(x){
+        if (isTRUE(x[["non_negative"]])){
+          return(x[["name"]])
+        }
+      }))
+    }
+
+    nonneg_stock <- check_nonneg(sfm[["model"]][["variables"]][["stock"]])
+    nonneg_flow <- check_nonneg(sfm[["model"]][["variables"]][["flow"]])
     sfm[["behavior"]][["stock"]][["non_negative"]] <- nonneg_stock
     sfm[["behavior"]][["flow"]][["non_negative"]] <- nonneg_flow
   }
@@ -1729,9 +1805,12 @@ model_units <- function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_na
       chosen_name <- name
     }
 
-    name <- sapply(chosen_name, function(x) {
+    # name <- sapply(chosen_name, function(x) {
+    #   clean_unit(x, regex_units, unit_name = TRUE)
+    # }, USE.NAMES = FALSE)
+    name <- vapply(chosen_name, function(x) {
       clean_unit(x, regex_units, unit_name = TRUE)
-    }, USE.NAMES = FALSE)
+    }, character(1), USE.NAMES = FALSE)
 
     # Keep existing names the same
     name[!idx_nonexist] <- chosen_name[!idx_nonexist]
@@ -1842,7 +1921,8 @@ model_units <- function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_na
     argg[["name"]] <- name
 
     if ("eqn" %in% passed_arg) {
-      eqn <- sapply(eqn, clean_unit, regex_units, USE.NAMES = FALSE)
+      # eqn <- sapply(eqn, clean_unit, regex_units, USE.NAMES = FALSE)
+      eqn <- vapply(eqn, clean_unit, character(1), regex_units, USE.NAMES = FALSE)
       eqn <- ensure_length(eqn, name)
       argg[["eqn"]] <- eqn
     }
@@ -1957,7 +2037,7 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
             idx_df <- get_range_names(x[["eqn"]], name, names_with_brackets = FALSE)
             if (nrow(idx_df) > 0) {
               # Reverse indices to replace correctly
-              for (i in rev(1:nrow(idx_df))) {
+              for (i in rev(seq_len(nrow(idx_df)))) {
                 stringr::str_sub(x[["eqn"]], idx_df[i, "start"], idx_df[i, "end"]) <- change_name
               }
 
@@ -1965,7 +2045,7 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
               idx_df <- get_range_names(x[["eqn_julia"]], name, names_with_brackets = FALSE)
               if (nrow(idx_df) > 0) {
                 # Reverse indices to replace correctly
-                for (i in rev(1:nrow(idx_df))) {
+                for (i in rev(seq_len(nrow(idx_df)))) {
                   stringr::str_sub(x[["eqn_julia"]], idx_df[i, "start"], idx_df[i, "end"]) <- change_name
                 }
               }
@@ -2024,7 +2104,7 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
       eqn <- ensure_length(eqn, name)
 
       # Convert equation to Julia
-      eqn_julia <- sapply(1:length(name), function(i) {
+      eqn_julia <- vapply(seq_along(name), function(i) {
         # Assign name already to convert functions correctly
         x <- paste0(name[i], " = ", eqn[i])
 
@@ -2033,7 +2113,7 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
           regex_units = regex_units
         )[["eqn_julia"]]
         # No need to save $func because delay family cannot be used for macros
-      }, USE.NAMES = FALSE)
+      }, character(1), USE.NAMES = FALSE)
 
       argg[["eqn"]] <- eqn
       argg[["eqn_julia"]] <- eqn_julia
@@ -2131,7 +2211,7 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 
 #' Modify simulation specifications
 #'
-#' Simulation specifications are the settings that determine how the model is simulated, such as the integration method, start and stop time, and timestep. Modify these specifications for an existing stock-and-flow model.
+#' Simulation specifications are the settings that determine how the model is simulated, such as the integration method (i.e. solver), start and stop time, and timestep. Modify these specifications for an existing stock-and-flow model.
 #'
 #' @inheritParams build
 #' @param method Integration method. Defaults to "euler".
@@ -2146,6 +2226,7 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #'
 #' @return Updated stock-and-flow model with new simulation specifications
 #' @family simulate
+#' @seealso [solvers()]
 #' @export
 #'
 #' @examples sfm <- xmile("predator-prey") |>
@@ -2257,35 +2338,43 @@ sim_specs <- function(sfm,
     }
   }
 
-  # Check whether method is a valid deSolve method
-  # ** https://docs.sciml.ai/DiffEqDocs/stable/solvers/ode_solve/
-  if (!missing(method)) {
-    method <- stringr::str_replace(tolower(method), "\\(\\)$", "")
-    if (!method %in% c("euler", "rk4")) {
-      stop(sprintf("The method %s is not one of the methods available. Choose either 'euler' or 'rk4' (soon to be expanded)."))
-    }
+
+  if ("method" %in% passed_arg) {
+    method = trimws(method)
   }
 
+  # Check coding language
+  if ("language" %in% passed_arg) {
+    language = clean_language(language)
 
-  # # Check simulation method
-  # if (sfm[["sim_specs"]][["language"]] == "R"){
-  #   if (!requireNamespace("deSolve", quietly = TRUE)){
-  #     warning("deSolve is not installed! Please install deSolve to simulate in R, or simulate in julia by setting\nsdm |> sim_specs(language = 'julia')")
-  #   } else {
-  #     if (!sfm$sim_specs$method %in% deSolve::rkMethod()){
-  #       warning("Invalid simulation method for deSolve! Use one of ", paste0(paste0("'", deSolve::rkMethod(), "'"), collapse = ", "), ".")
-  #       sfm$sim_specs$method = formals(sim_specs)$method
-  #     }
-  #   }
-  # } else if (sfm[["sim_specs"]][["language"]] == "julia"){
-  #
-  #   # Try
-  #
-  #   if (!sfm$sim_specs$method %in% c("euler")){
-  #     warning("Invalid simulation method for julia! Use one of 'VODE', 'CVODE', 'Radau', 'LSODA', or 'LSODAR'.")
-  #   }
-  # }
+    # Translate method if method was not specified
+    old_language = sfm[["sim_specs"]][["language"]]
+    if (!"method" %in% passed_arg & language != old_language){
+      method = solvers(sfm[["sim_specs"]][["method"]],
+                       from = old_language, to = language,
+                       show_info = TRUE)
 
+      if (is.null(method[["translation"]])){
+        method = method[["alternatives"]][1]
+      } else {
+        method = method[["translation"]]
+      }
+      passed_arg = c(passed_arg, "method")
+
+    } else if ("method" %in% passed_arg ){
+
+      # If method was specified, check whether it is a valid method in the new coding language
+      method = solvers(method, from = language, show_info = TRUE)
+      method = method[["name"]]
+
+    }
+
+  } else if ("method" %in% passed_arg) {
+    # If language was not specified but methods were, check method
+    language <- sfm[["sim_specs"]][["language"]]
+    method = solvers(method, from = language, show_info = TRUE)
+    method = method[["name"]]
+  }
 
   # Check whether start is smaller than stop
   if ("start" %in% passed_arg) {
@@ -2403,17 +2492,6 @@ sim_specs <- function(sfm,
       } else {
         seed <- NULL
       }
-    }
-  }
-
-  # Check coding language
-  if ("language" %in% passed_arg) {
-    language <- trimws(tolower(language))
-    if (!language %in% c("r", "julia", "jl")) {
-      stop(sprintf("The language %s is not one of the languages available in sdbuildR. The available languages are 'Julia' (recommended) or 'R'.", language))
-    } else {
-      language <- stringr::str_to_title(language)
-      language <- ifelse(language == "Jl", "Julia", language)
     }
   }
 
@@ -2567,17 +2645,13 @@ report_name_change <- function(old_names, new_names) {
 #' sfm <- xmile()
 #' summary(sfm)
 #' \dontshow{
-#' sfm <- sim_specs(sfm, save_at = .1)
+#' sfm <- sim_specs(sfm, save_at = .5)
 #' }
 #'
 #' # Add two stocks. Specify their initial values in the "eqn" property, as well
 #' # as their plotting label
 #' sfm <- build(sfm, "predator", "stock", eqn = 10, label = "Predator") |>
 #'   build("prey", "stock", eqn = 50, label = "Prey")
-#'
-#' # Plot the stock-and-flow diagram
-#' plot(sfm, center_stocks = TRUE)
-#'
 #'
 #'
 #' # Add four flows: the births and deaths of both the predators and prey. The
@@ -2944,7 +3018,7 @@ build <- function(sfm, name, type,
           )
           if (nrow(idx_df) > 0) {
             # Reverse indices to replace correctly
-            for (i in rev(1:nrow(idx_df))) {
+            for (i in rev(seq_len(nrow(idx_df)))) {
               stringr::str_sub(x[["eqn"]], idx_df[i, "start"], idx_df[i, "end"]) <- change_name
             }
 
@@ -2954,7 +3028,7 @@ build <- function(sfm, name, type,
             )
             if (nrow(idx_df) > 0) {
               # Reverse indices to replace correctly
-              for (i in rev(1:nrow(idx_df))) {
+              for (i in rev(seq_len(nrow(idx_df)))) {
                 stringr::str_sub(x[["eqn_julia"]], idx_df[i, "start"], idx_df[i, "end"]) <- change_name
               }
             }
@@ -3043,7 +3117,7 @@ build <- function(sfm, name, type,
     eqn <- ensure_length(eqn, name)
 
     # Convert to julia - note that with delay() and past(), an intermediary property is added; with delayN() and smoothN(), a func property (nested list) is added
-    eqn_julia <- lapply(1:length(name), function(i) {
+    eqn_julia <- lapply(seq_along(name), function(i) {
       convert_equations_julia(sfm, type[i], name[i], eqn[i], var_names,
         regex_units = regex_units
       )
@@ -3067,9 +3141,9 @@ build <- function(sfm, name, type,
     }
 
     # Units are not supported well in R, so translate to julia directly
-    units <- sapply(units, function(x) {
+    units <- vapply(units, function(x) {
       clean_unit(x, regex_units)
-    }, USE.NAMES = FALSE)
+    }, character(1), USE.NAMES = FALSE)
     units <- ensure_length(units, name)
   }
 
@@ -3403,9 +3477,9 @@ get_build_code <- function(sfm) {
   defaults_header <- defaults_header[!names(defaults_header) %in% c("sfm", "created", "...")]
 
   # Find which elements in h are identical to those in defaults_header
-  h <- h[sapply(names(h), function(name) {
+  h <- h[vapply(names(h), function(name) {
     !name %in% names(defaults_header) || !identical(h[[name]], defaults_header[[name]])
-  })]
+  }, logical(1))]
 
   h <- lapply(h, function(z) if (is.character(z) | inherits(z, "POSIXt")) paste0("\"", z, "\"") else z)
 
@@ -3429,9 +3503,9 @@ get_build_code <- function(sfm) {
         z[grepl("_julia", names(z))] <- NULL
 
         # Find which elements in h are identical to those in defaults_header
-        z <- z[sapply(names(z), function(name) {
+        z <- z[vapply(names(z), function(name) {
           !name %in% names(defaults) || !identical(z[[name]], defaults[[name]])
-        })]
+        }, logical(1))]
 
         # Order z according to default
         order_names <- intersect(keep_prop[[z[["type"]]]], names(z))
@@ -3706,6 +3780,7 @@ debugger <- function(sfm, quietly = FALSE) {
 #' @noRd
 #' @returns Logical value
 static_depend_on_dyn <- function(sfm) {
+
   # Check whether a stock depends on a dynamic variable, give warning
   dependencies <- sfm[["model"]][["variables"]][c("stock", "constant")] |>
     unname() |>
@@ -3720,8 +3795,9 @@ static_depend_on_dyn <- function(sfm) {
     x[x %in% dynamic_var]
   }) |> compact_()
 
-  if (length(static_with_dyn_dep)) {
-    static_with_dyn_dep <- sapply(static_with_dyn_dep, paste0, collapse = ", ")
+  if (length(static_with_dyn_dep) > 0) {
+    # static_with_dyn_dep <- sapply(static_with_dyn_dep, paste0, collapse = ", ")
+    static_with_dyn_dep <- vapply(static_with_dyn_dep, paste0, character(1), collapse = ", ")
     stock_or_constant <- names_df[match(names(static_with_dyn_dep), names_df[["name"]]), "type"]
 
     msg <- paste0(

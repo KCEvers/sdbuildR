@@ -37,8 +37,8 @@ insightmaker_to_sfm <- function(URL,
                                 keep_nonnegative_stock = FALSE,
                                 keep_solver = FALSE) {
   if (.sdbuildR_env[["P"]][["debug"]]) {
-    print(URL)
-    print(filepath_IM)
+    message(URL)
+    message(filepath_IM)
   }
 
   if (missing(URL) & missing(filepath_IM)) {
@@ -98,7 +98,7 @@ insightmaker_to_sfm <- function(URL,
 
   # Clean up units
   if (.sdbuildR_env[["P"]][["debug"]]) {
-    print("Cleaning units...")
+    message("Cleaning units...")
   }
   # Get regular expressions to convert units to Julia
   regex_units <- get_regex_units()
@@ -109,7 +109,7 @@ insightmaker_to_sfm <- function(URL,
 
   # Convert Insight Maker equation to R, including macros
   if (.sdbuildR_env[["P"]][["debug"]]) {
-    print("Converting equations from Insight Maker to R...")
+    message("Converting equations from Insight Maker to R...")
   }
 
   # Convert macros - important to do before equations, as some macros may have

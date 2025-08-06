@@ -53,6 +53,7 @@ Other simulate:
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
+\code{\link{solvers}()},
 \code{\link{use_threads}()}
 }
 \concept{simulate}
