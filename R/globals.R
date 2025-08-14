@@ -44,6 +44,8 @@ if (!exists(".sdbuildR_env")) {
     ensemble_total_n = "ensemble_total_n",
     ensemble_func_name = "prob_func",
     summary_df_name = "summary_df",
+    summary_df_constants_name = "summary_df_constants",
+    summary_df_init_name = "summary_df_init",
     sim_df_name = "df",
     prob_name = "prob",
     solution_name = "solve_out",

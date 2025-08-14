@@ -52,8 +52,8 @@ Object of class sdbuildR_ensemble, which is a list containing:
 \item{n_total}{Total number of simulations run in the ensemble (across all conditions if range is specified).}
 \item{n_conditions}{Total number of conditions.}
 \item{conditions}{Dataframe with the conditions used in the ensemble, if range is specified.}
-\item{init}{Dataframe with the initial values of the stocks used in the ensemble. The first two columns are "j" (iteration number) and "i" (parameter index), followed by the stock names.}
-\item{constants}{Dataframe with the constant parameters used in the ensemble. The first two columns are "j" (iteration number) and "i" (parameter index), followed by the parameter names.}
+\item{init}{List with df (if return_sims = TRUE) and summary, containing dataframe with the initial values of the stocks used in the ensemble.}
+\item{constants}{List with df (if return_sims = TRUE) and summary, containing dataframe with the constant parameters used in the ensemble.}
 \item{script}{Julia script used for the ensemble simulation.}
 \item{duration}{Duration of the simulation in seconds.}
 \item{...}{Other parameters passed to ensemble}

@@ -247,6 +247,7 @@ run_init <- function() {
 #' @noRd
 #'
 create_julia_env <- function() {
+
   # Initialize Julia
   use_julia()
 
@@ -376,6 +377,7 @@ Base.trunc(x::Unitful.Quantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)\n"
 #' @noRd
 #'
 create_julia_pkg <- function() {
+
   # Initialize Julia
   use_julia()
 

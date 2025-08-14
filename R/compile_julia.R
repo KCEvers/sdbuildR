@@ -1449,7 +1449,10 @@ compile_run_ode_julia <- function(sfm,
     # Save timeseries dataframe
     script <- paste0(
       script, "\n# Save timeseries dataframe\n",
-      .sdbuildR_env[["P"]][["sim_df_name"]], ", ", .sdbuildR_env[["P"]][["parameter_name"]], ", ", .sdbuildR_env[["P"]][["parameter_names"]], ", ", .sdbuildR_env[["P"]][["initial_value_name"]], ", ", .sdbuildR_env[["P"]][["initial_value_names"]],
+      .sdbuildR_env[["P"]][["sim_df_name"]], ", ", .sdbuildR_env[["P"]][["parameter_name"]], ", ",
+      # .sdbuildR_env[["P"]][["parameter_names"]], ", ",
+      .sdbuildR_env[["P"]][["initial_value_name"]],
+      # ", ", .sdbuildR_env[["P"]][["initial_value_names"]],
       ifelse(ensemble_pars[["threaded"]], " = ensemble_to_df_threaded(", " = ensemble_to_df("),
       .sdbuildR_env[["P"]][["solution_name"]], ", ",
       .sdbuildR_env[["P"]][["model_setup_name"]], ".", .sdbuildR_env[["P"]][["initial_value_names"]],
@@ -1462,7 +1465,9 @@ compile_run_ode_julia <- function(sfm,
     )
 
     if (ensemble_pars[["return_sims"]]) {
-      script <- paste0(script, 'CSV.write("', ensemble_pars[["filepath_df"]], '", ', .sdbuildR_env[["P"]][["sim_df_name"]], ")\n")
+      script <- paste0(script, 'CSV.write("', ensemble_pars[["filepath_df"]][["df"]], '", ', .sdbuildR_env[["P"]][["sim_df_name"]], ")\n")
+      script <- paste0(script, 'CSV.write("', ensemble_pars[["filepath_df"]][["constants"]], '", ', .sdbuildR_env[["P"]][["parameter_name"]], ")\n")
+      script <- paste0(script, 'CSV.write("', ensemble_pars[["filepath_df"]][["init"]], '", ', .sdbuildR_env[["P"]][["initial_value_name"]], ")\n")
     }
 
 
@@ -1470,16 +1475,39 @@ compile_run_ode_julia <- function(sfm,
     script <- paste0(
       script, "\n# Compute summary statisics\n",
 
-      # .sdbuildR_env[["P"]][["sim_df_name"]], " = SciMLBase.EnsembleSummary(", .sdbuildR_env[["P"]][["solution_name"]], ".", .sdbuildR_env[["P"]][["solution_name"]], ", quantiles = [", quantiles[1], ", ", quantiles[2], "])\n"
 
       .sdbuildR_env[["P"]][["summary_df_name"]],
       ifelse(ensemble_pars[["threaded"]], " = ensemble_summ_threaded(", " = ensemble_summ("),
       .sdbuildR_env[["P"]][["sim_df_name"]], ", ",
       "[", paste0(ensemble_pars[["quantiles"]], collapse = ", "),
-      "])\n\n# Save to CSV\n",
-      "CSV.write(\"", ensemble_pars[["filepath_summ"]], "\", ", .sdbuildR_env[["P"]][["summary_df_name"]], ")\n\n# Delete variables\n",
+      "])\n\n",
+
+      .sdbuildR_env[["P"]][["parameter_name"]], "[!, :time] .= 0.0\n",
+      .sdbuildR_env[["P"]][["summary_df_constants_name"]],
+      ifelse(ensemble_pars[["threaded"]], " = ensemble_summ_threaded(", " = ensemble_summ("),
+      .sdbuildR_env[["P"]][["parameter_name"]], ", ",
+      "[", paste0(ensemble_pars[["quantiles"]], collapse = ", "),
+      "])\n",
+      "select!(", .sdbuildR_env[["P"]][["summary_df_constants_name"]], ", Not(:time))\n\n",
+
+      .sdbuildR_env[["P"]][["initial_value_name"]], "[!, :time] .= 0.0\n",
+      .sdbuildR_env[["P"]][["summary_df_init_name"]],
+      ifelse(ensemble_pars[["threaded"]], " = ensemble_summ_threaded(", " = ensemble_summ("),
+      .sdbuildR_env[["P"]][["initial_value_name"]], ", ",
+      "[", paste0(ensemble_pars[["quantiles"]], collapse = ", "),
+      "])\n",
+      "select!(", .sdbuildR_env[["P"]][["summary_df_init_name"]], ", Not(:time))\n\n",
+
+      "\n# Save to CSV\n",
+      "CSV.write(\"", ensemble_pars[["filepath_summary"]][["df"]], "\", ", .sdbuildR_env[["P"]][["summary_df_name"]], ")\n\n",
+      "CSV.write(\"", ensemble_pars[["filepath_summary"]][["constants"]], "\", ", .sdbuildR_env[["P"]][["summary_df_constants_name"]],  ")\n\n",
+      "CSV.write(\"", ensemble_pars[["filepath_summary"]][["init"]], "\", ", .sdbuildR_env[["P"]][["summary_df_init_name"]], ")\n\n# Delete variables\n",
       .sdbuildR_env[["P"]][["sim_df_name"]], " = Nothing\n",
+      .sdbuildR_env[["P"]][["parameter_name"]], " = Nothing\n",
+      .sdbuildR_env[["P"]][["initial_value_name"]], " = Nothing\n",
       .sdbuildR_env[["P"]][["summary_df_name"]], " = Nothing\n",
+      .sdbuildR_env[["P"]][["summary_df_constants_name"]], " = Nothing\n",
+      .sdbuildR_env[["P"]][["summary_df_init_name"]], " = Nothing\n",
       .sdbuildR_env[["P"]][["solution_name"]], " = Nothing\n",
       .sdbuildR_env[["P"]][["intermediaries"]], " = Nothing\n"
     )

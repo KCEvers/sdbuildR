@@ -1,3 +1,4 @@
+
 test_that("ensemble works", {
   testthat::skip_on_cran()
 
@@ -63,14 +64,14 @@ test_that("ensemble works", {
   expect_equal(sort(unique(sims[["summary"]][["j"]])), 1)
 
   # Check returned constants and init
-  expect_equal(sort(colnames(sims[["constants"]])), c("a0", "a1", "a2", "i", "j"))
-  expect_equal(sort(colnames(sims[["init"]])), c(
+  expect_equal(sort(unique(sims[["constants"]][["summary"]][["variable"]])), c("a0", "a1", "a2"))
+  expect_equal(sort(unique(sims[["init"]][["summary"]][["variable"]])), c(
     "Compensatory_behaviour",
     "Food_intake",
-    "Hunger", "i", "j"
+    "Hunger"
   ))
-  expect_equal(nrow(sims[["constants"]]), nr_sims)
-  expect_equal(nrow(sims[["init"]]), nr_sims)
+  expect_equal(max(as.numeric(sims[["constants"]][["df"]][["i"]])), nr_sims)
+  expect_equal(max(as.numeric(sims[["init"]][["df"]][["i"]])), nr_sims)
 
   # Check plot
   expect_no_error(plot(sims))
@@ -114,13 +115,13 @@ test_that("ensemble works", {
       "a1" = c(1.3, 1.4, 1.5)
     ),
     cross = FALSE,
-    n = 10
+    n = 10, return_sims = TRUE
   ))
   expect_equal(as.data.frame(sims$conditions)$j, 1:3)
   expect_equal(as.data.frame(sims$conditions)$a2, c(0.2, 0.3, 0.4))
   expect_equal(as.data.frame(sims$conditions)$a1, c(1.3, 1.4, 1.5))
-  expect_equal(as.data.frame(sims$constants)$i, rep(1:10, 3))
-  expect_equal(as.data.frame(sims$constants)$j, rep(1:3, each = 10))
+  expect_equal(unique(sims$constants$df$i), 1:10)
+  expect_equal(unique(sims$constants$df$j), 1:3)
 })
 
 

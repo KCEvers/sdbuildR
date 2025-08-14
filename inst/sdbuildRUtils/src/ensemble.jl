@@ -30,10 +30,80 @@ This creates a pseudo-solution object that can be processed with the same logic.
     return transformed
 end
 
+
+"""
+generate_param_combinations(param_ranges; crossed=true, n_replicates=100)
+
+Generate parameter combinations for ensemble simulations.
+
+# Arguments
+- `param_ranges`: Dict or NamedTuple of parameter names to ranges/vectors
+- `crossed`: Boolean, whether to cross all parameter combinations (default: true)
+- `n_replicates`: Number of replicates per condition (default: 100)
+
+# Returns
+- `param_combinations`: Vector of parameter combinations
+- `total_sims`: Total number of simulations (combinations x replicates)
+
+# Examples
+```julia
+# Using named parameters (recommended)
+param_ranges = Dict(
+  :alpha => [0.1, 0.5, 1.0],
+  :beta => [2.0, 5.0],
+  :gamma => [0.01, 0.05, 0.1]
+)
+
+# Crossed design (all combinations)
+param_combinations, total_sims = generate_param_combinations(
+  param_ranges; crossed=true, n_replicates=50
+)
+
+# Non-crossed design (paired parameters)
+param_combinations, total_sims = generate_param_combinations(
+  param_ranges; crossed=false, n_replicates=100
+)
+
+# Using positional parameters
+param_ranges = [[0.1, 0.5], [2.0, 5.0]]
+param_combinations, total_sims = generate_param_combinations(
+  param_ranges; param_names=[:alpha, :beta], crossed=true
+)
+```
+"""
+function generate_param_combinations(param_ranges;
+                                   crossed=true, n_replicates=100)
+
+       # Sort keys for consistent ordering
+    names_list = sort(collect(keys(param_ranges)))
+    values_list = [param_ranges[name] for name in names_list]
+
+    # Generate parameter combinations
+    if crossed
+        # All combinations (Cartesian product)
+        param_combinations = collect(Iterators.product(values_list...))
+        param_combinations = [collect(combo) for combo in vec(param_combinations)]
+    else
+        # Paired combinations (requires all ranges to have same length)
+        lengths = [length(range) for range in values_list]
+        if !all(l == lengths[1] for l in lengths)
+            throw(ArgumentError("For non-crossed design, all parameter ranges must have the same length"))
+        end
+        param_combinations = [[values_list[i][j] for i in 1:length(values_list)] for j in 1:lengths[1]]
+    end
+
+    # Calculate total simulations
+    total_sims = length(param_combinations) * n_replicates
+
+    return param_combinations, total_sims
+end
+
+
 function ensemble_to_df(solve_out, init_names,
     intermediaries, intermediary_names, ensemble_n)
     """
 Unified processing where intermediaries are transformed to solve_out format first.
+Parameters are also returned in long format.
 """
     n_trajectories = length(solve_out)
 
@@ -164,7 +234,7 @@ Unified processing where intermediaries are transformed to solve_out format firs
         value = main_val
     )
 
-    # Extract parameter matrix (same as before)
+    # Extract parameter names
     param_names = String[]
     first_params = solve_out[1].p
     if isa(first_params, NamedTuple)
@@ -181,145 +251,106 @@ Unified processing where intermediaries are transformed to solve_out format firs
         end
     end
 
-    # Parameter matrix: (trajectories, parameters)
-    param_matrix = Array{Float64, 2}(undef, n_trajectories, length(param_names))
+    # Create parameters DataFrame in long format
+    param_df = DataFrame()
+    if !isempty(param_names)
+        param_traj_vec = Int[]
+        param_j_vec = Int[]
+        param_i_vec = Int[]
+        param_name_vec = String[]
+        param_value_vec = Float64[]
 
-    for (traj_idx, result) in enumerate(solve_out)
-        params = result.p
-        for (param_idx, param_name) in enumerate(param_names)
-            if isa(params, NamedTuple)
-                param_val = getproperty(params, Symbol(param_name))
-            else
-                p_idx = parse(Int, param_name[2:end])
-                param_val = params[p_idx]
+        for (traj_idx, result) in enumerate(solve_out)
+            params = result.p
+            for param_name in param_names
+                if isa(params, NamedTuple)
+                    param_val = getproperty(params, Symbol(param_name))
+                else
+                    p_idx = parse(Int, param_name[2:end])
+                    param_val = params[p_idx]
+                end
+
+                param_val_stripped = isa(param_val, Quantity) ? ustrip(param_val) : param_val
+
+                push!(param_traj_vec, traj_idx)
+                push!(param_j_vec, div(traj_idx - 1, ensemble_n) + 1)  # Parameter ensemble index
+                push!(param_i_vec, rem(traj_idx - 1, ensemble_n) + 1)  # Trajectory index within ensemble
+                push!(param_name_vec, param_name)
+                push!(param_value_vec, param_val_stripped)
             end
-
-            param_val_stripped = isa(param_val, Quantity) ? ustrip(param_val) : param_val
-            param_matrix[traj_idx, param_idx] = param_val_stripped
         end
+
+        param_df = DataFrame(
+            j = param_j_vec,
+            i = param_i_vec,
+            variable = param_name_vec,
+            value = param_value_vec
+        )
     end
 
-    # Add parameter index
-    b = 1:size(param_matrix, 1)
-    param_matrix = hcat(
-        # Parameter ensemble index
-        div.(b .- 1, ensemble_n) .+ 1,
-        # Trajectory index within the ensemble
-        rem.(b .- 1, ensemble_n) .+ 1,
-        param_matrix)
-
-    # Extract initial values matrix
+    # Extract initial values in long format
     init_val_names = [string(name) for name in init_names]
 
-    # Initial values matrix: (trajectories, initial values)
-    init_val_matrix = Array{Float64, 2}(undef, n_trajectories, length(init_val_names))
+    init_df = DataFrame()
+    if !isempty(init_val_names)
+        init_traj_vec = Int[]
+        init_j_vec = Int[]
+        init_i_vec = Int[]
+        init_name_vec = String[]
+        init_value_vec = Float64[]
 
-    for (traj_idx, result) in enumerate(solve_out)
-        init_vals = result.u0
+        for (traj_idx, result) in enumerate(solve_out)
+            init_vals = result.u0
 
-        if isa(init_vals, NamedTuple)
-            for (init_idx, init_name) in enumerate(init_val_names)
-                init_val = getproperty(init_vals, Symbol(init_name))
-                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
-                init_val_matrix[traj_idx, init_idx] = init_val_stripped
+            if isa(init_vals, NamedTuple)
+                for init_name in init_val_names
+                    init_val = getproperty(init_vals, Symbol(init_name))
+                    init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+
+                    push!(init_traj_vec, traj_idx)
+                    push!(init_j_vec, div(traj_idx - 1, ensemble_n) + 1)
+                    push!(init_i_vec, rem(traj_idx - 1, ensemble_n) + 1)
+                    push!(init_name_vec, init_name)
+                    push!(init_value_vec, init_val_stripped)
+                end
+            elseif isa(init_vals, AbstractVector)
+                for (init_idx, init_name) in enumerate(init_val_names)
+                    init_val = init_vals[init_idx]
+                    init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+
+                    push!(init_traj_vec, traj_idx)
+                    push!(init_j_vec, div(traj_idx - 1, ensemble_n) + 1)
+                    push!(init_i_vec, rem(traj_idx - 1, ensemble_n) + 1)
+                    push!(init_name_vec, init_name)
+                    push!(init_value_vec, init_val_stripped)
+                end
+            else
+                # Single initial value
+                init_val_stripped = isa(init_vals, Quantity) ? ustrip(init_vals) : init_vals
+
+                push!(init_traj_vec, traj_idx)
+                push!(init_j_vec, div(traj_idx - 1, ensemble_n) + 1)
+                push!(init_i_vec, rem(traj_idx - 1, ensemble_n) + 1)
+                push!(init_name_vec, init_val_names[1])
+                push!(init_value_vec, init_val_stripped)
             end
-        elseif isa(init_vals, AbstractVector)
-            for (init_idx, init_name) in enumerate(init_val_names)
-                init_val = init_vals[init_idx]
-                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
-                init_val_matrix[traj_idx, init_idx] = init_val_stripped
-            end
-        else
-            # Single initial value
-            init_val_stripped = isa(init_vals, Quantity) ? ustrip(init_vals) : init_vals
-            init_val_matrix[traj_idx, 1] = init_val_stripped
         end
+
+        init_df = DataFrame(
+            j = init_j_vec,
+            i = init_i_vec,
+            variable = init_name_vec,
+            value = init_value_vec
+        )
     end
 
-    # Add initial values index
-    init_val_matrix = hcat(
-        # Parameter ensemble index
-        div.(b .- 1, ensemble_n) .+ 1,
-        # Trajectory index within the ensemble
-        rem.(b .- 1, ensemble_n) .+ 1,
-        init_val_matrix)
-
-    return timeseries_df, param_matrix, param_names, init_val_matrix, init_val_names
+    return timeseries_df, param_df, init_df
 end
-
-
-
-"""
-generate_param_combinations(param_ranges; crossed=true, n_replicates=100)
-
-Generate parameter combinations for ensemble simulations.
-
-# Arguments
-- `param_ranges`: Dict or NamedTuple of parameter names to ranges/vectors
-- `crossed`: Boolean, whether to cross all parameter combinations (default: true)
-- `n_replicates`: Number of replicates per condition (default: 100)
-
-# Returns
-- `param_combinations`: Vector of parameter combinations
-- `total_sims`: Total number of simulations (combinations x replicates)
-
-# Examples
-```julia
-# Using named parameters (recommended)
-param_ranges = Dict(
-  :alpha => [0.1, 0.5, 1.0],
-  :beta => [2.0, 5.0],
-  :gamma => [0.01, 0.05, 0.1]
-)
-
-# Crossed design (all combinations)
-param_combinations, total_sims = generate_param_combinations(
-  param_ranges; crossed=true, n_replicates=50
-)
-
-# Non-crossed design (paired parameters)
-param_combinations, total_sims = generate_param_combinations(
-  param_ranges; crossed=false, n_replicates=100
-)
-
-# Using positional parameters
-param_ranges = [[0.1, 0.5], [2.0, 5.0]]
-param_combinations, total_sims = generate_param_combinations(
-  param_ranges; param_names=[:alpha, :beta], crossed=true
-)
-```
-"""
-function generate_param_combinations(param_ranges;
-                                   crossed=true, n_replicates=100)
-
-       # Sort keys for consistent ordering
-    names_list = sort(collect(keys(param_ranges)))
-    values_list = [param_ranges[name] for name in names_list]
-
-    # Generate parameter combinations
-    if crossed
-        # All combinations (Cartesian product)
-        param_combinations = collect(Iterators.product(values_list...))
-        param_combinations = [collect(combo) for combo in vec(param_combinations)]
-    else
-        # Paired combinations (requires all ranges to have same length)
-        lengths = [length(range) for range in values_list]
-        if !all(l == lengths[1] for l in lengths)
-            throw(ArgumentError("For non-crossed design, all parameter ranges must have the same length"))
-        end
-        param_combinations = [[values_list[i][j] for i in 1:length(values_list)] for j in 1:lengths[1]]
-    end
-
-    # Calculate total simulations
-    total_sims = length(param_combinations) * n_replicates
-
-    return param_combinations, total_sims
-end
-
 
 function ensemble_to_df_threaded(solve_out, init_names, intermediaries, intermediary_names, ensemble_n)
     """
-Unified processing where intermediaries are transformed to solve_out format first.
+Threaded version with unified processing where intermediaries are transformed to solve_out format first.
+Parameters are also returned in long format.
 """
     n_trajectories = length(solve_out)
 
@@ -461,7 +492,7 @@ Unified processing where intermediaries are transformed to solve_out format firs
         value = main_val
     )
 
-    # Extract parameter matrix (same as before)
+    # Extract parameter names
     param_names = String[]
     first_params = solve_out[1].p
     if isa(first_params, NamedTuple)
@@ -478,74 +509,107 @@ Unified processing where intermediaries are transformed to solve_out format firs
         end
     end
 
-    # Parameter matrix: (trajectories, parameters)
-    param_matrix = Array{Float64, 2}(undef, n_trajectories, length(param_names))
+    # Create parameters DataFrame in long format (with threading)
+    param_df = DataFrame()
+    if !isempty(param_names)
+        # Pre-allocate arrays
+        total_param_rows = n_trajectories * length(param_names)
+        param_j_vec = Vector{Int}(undef, total_param_rows)
+        param_i_vec = Vector{Int}(undef, total_param_rows)
+        param_name_vec = Vector{String}(undef, total_param_rows)
+        param_value_vec = Vector{Float64}(undef, total_param_rows)
 
-    Base.Threads.@threads for traj_idx in 1:length(solve_out)
-        result = solve_out[traj_idx]
-        params = result.p
-        for (param_idx, param_name) in enumerate(param_names)
-            if isa(params, NamedTuple)
-                param_val = getproperty(params, Symbol(param_name))
-            else
-                p_idx = parse(Int, param_name[2:end])
-                param_val = params[p_idx]
+        Base.Threads.@threads for traj_idx in 1:n_trajectories
+            result = solve_out[traj_idx]
+            params = result.p
+
+            for (param_idx, param_name) in enumerate(param_names)
+                row_idx = (traj_idx - 1) * length(param_names) + param_idx
+
+                if isa(params, NamedTuple)
+                    param_val = getproperty(params, Symbol(param_name))
+                else
+                    p_idx = parse(Int, param_name[2:end])
+                    param_val = params[p_idx]
+                end
+
+                param_val_stripped = isa(param_val, Quantity) ? ustrip(param_val) : param_val
+
+                param_j_vec[row_idx] = div(traj_idx - 1, ensemble_n) + 1
+                param_i_vec[row_idx] = rem(traj_idx - 1, ensemble_n) + 1
+                param_name_vec[row_idx] = param_name
+                param_value_vec[row_idx] = param_val_stripped
             end
-
-            param_val_stripped = isa(param_val, Quantity) ? ustrip(param_val) : param_val
-            param_matrix[traj_idx, param_idx] = param_val_stripped
         end
+
+        param_df = DataFrame(
+            j = param_j_vec,
+            i = param_i_vec,
+            variable = param_name_vec,
+            value = param_value_vec
+        )
     end
 
-    # Add parameter index
-    b = 1:size(param_matrix, 1)
-    param_matrix = hcat(
-        # Parameter ensemble index
-        div.(b .- 1, ensemble_n) .+ 1,
-        # Trajectory index within the ensemble
-        rem.(b .- 1, ensemble_n) .+ 1,
-        param_matrix)
-
-    # Extract initial values matrix
+    # Extract initial values in long format (with threading)
     init_val_names = [string(name) for name in init_names]
 
-    # Initial values matrix: (trajectories, initial values)
-    init_val_matrix = Array{Float64, 2}(undef, n_trajectories, length(init_val_names))
+    init_df = DataFrame()
+    if !isempty(init_val_names)
+        # Pre-allocate arrays
+        total_init_rows = n_trajectories * length(init_val_names)
+        init_j_vec = Vector{Int}(undef, total_init_rows)
+        init_i_vec = Vector{Int}(undef, total_init_rows)
+        init_name_vec = Vector{String}(undef, total_init_rows)
+        init_value_vec = Vector{Float64}(undef, total_init_rows)
 
-    Base.Threads.@threads for traj_idx in 1:length(solve_out)
-        result = solve_out[traj_idx]
-        init_vals = result.u0
+        Base.Threads.@threads for traj_idx in 1:n_trajectories
+            result = solve_out[traj_idx]
+            init_vals = result.u0
 
-        if isa(init_vals, NamedTuple)
-            for (init_idx, init_name) in enumerate(init_val_names)
-                init_val = getproperty(init_vals, Symbol(init_name))
-                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
-                init_val_matrix[traj_idx, init_idx] = init_val_stripped
+            if isa(init_vals, NamedTuple)
+                for (init_idx, init_name) in enumerate(init_val_names)
+                    row_idx = (traj_idx - 1) * length(init_val_names) + init_idx
+                    init_val = getproperty(init_vals, Symbol(init_name))
+                    init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+
+                    init_j_vec[row_idx] = div(traj_idx - 1, ensemble_n) + 1
+                    init_i_vec[row_idx] = rem(traj_idx - 1, ensemble_n) + 1
+                    init_name_vec[row_idx] = init_name
+                    init_value_vec[row_idx] = init_val_stripped
+                end
+            elseif isa(init_vals, AbstractVector)
+                for (init_idx, init_name) in enumerate(init_val_names)
+                    row_idx = (traj_idx - 1) * length(init_val_names) + init_idx
+                    init_val = init_vals[init_idx]
+                    init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
+
+                    init_j_vec[row_idx] = div(traj_idx - 1, ensemble_n) + 1
+                    init_i_vec[row_idx] = rem(traj_idx - 1, ensemble_n) + 1
+                    init_name_vec[row_idx] = init_name
+                    init_value_vec[row_idx] = init_val_stripped
+                end
+            else
+                # Single initial value
+                row_idx = (traj_idx - 1) * length(init_val_names) + 1
+                init_val_stripped = isa(init_vals, Quantity) ? ustrip(init_vals) : init_vals
+
+                init_j_vec[row_idx] = div(traj_idx - 1, ensemble_n) + 1
+                init_i_vec[row_idx] = rem(traj_idx - 1, ensemble_n) + 1
+                init_name_vec[row_idx] = init_val_names[1]
+                init_value_vec[row_idx] = init_val_stripped
             end
-        elseif isa(init_vals, AbstractVector)
-            for (init_idx, init_name) in enumerate(init_val_names)
-                init_val = init_vals[init_idx]
-                init_val_stripped = isa(init_val, Quantity) ? ustrip(init_val) : init_val
-                init_val_matrix[traj_idx, init_idx] = init_val_stripped
-            end
-        else
-            # Single initial value
-            init_val_stripped = isa(init_vals, Quantity) ? ustrip(init_vals) : init_vals
-            init_val_matrix[traj_idx, 1] = init_val_stripped
         end
+
+        init_df = DataFrame(
+            j = init_j_vec,
+            i = init_i_vec,
+            variable = init_name_vec,
+            value = init_value_vec
+        )
     end
 
-    # Add initial values index
-    init_val_matrix = hcat(
-        # Parameter ensemble index
-        div.(b .- 1, ensemble_n) .+ 1,
-        # Trajectory index within the ensemble
-        rem.(b .- 1, ensemble_n) .+ 1,
-        init_val_matrix)
-
-    return timeseries_df, param_matrix, param_names, init_val_matrix, init_val_names
+    return timeseries_df, param_df, init_df
 end
-
 
 function ensemble_summ(timeseries_df, quantiles=[0.025, 0.0975])
     # Group by time and variable, then compute statistics

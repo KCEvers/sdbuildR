@@ -596,8 +596,8 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 #'  \item{n_total}{Total number of simulations run in the ensemble (across all conditions if range is specified).}
 #'  \item{n_conditions}{Total number of conditions.}
 #'  \item{conditions}{Dataframe with the conditions used in the ensemble, if range is specified.}
-#'  \item{init}{Dataframe with the initial values of the stocks used in the ensemble. The first two columns are "j" (iteration number) and "i" (parameter index), followed by the stock names.}
-#'  \item{constants}{Dataframe with the constant parameters used in the ensemble. The first two columns are "j" (iteration number) and "i" (parameter index), followed by the parameter names.}
+#'  \item{init}{List with df (if return_sims = TRUE) and summary, containing dataframe with the initial values of the stocks used in the ensemble.}
+#'  \item{constants}{List with df (if return_sims = TRUE) and summary, containing dataframe with the constant parameters used in the ensemble.}
 #'  \item{script}{Julia script used for the ensemble simulation.}
 #'  \item{duration}{Duration of the simulation in seconds.}
 #'  \item{...}{Other parameters passed to ensemble}
@@ -833,8 +833,15 @@ ensemble <- function(sfm,
 
 
   # Get output filepaths
-  ensemble_pars[["filepath_df"]] <- get_tempfile(fileext = ".csv")
-  ensemble_pars[["filepath_summ"]] <- get_tempfile(fileext = ".csv")
+  # ensemble_pars[["filepath_df"]] <- get_tempfile(fileext = ".csv")
+  # ensemble_pars[["filepath_summary"]] <- get_tempfile(fileext = ".csv")
+
+  ensemble_pars[["filepath_df"]] <- c("df" = get_tempfile(fileext = ".csv"),
+                                      "constants" = get_tempfile(fileext = ".csv"),
+                                      "init" = get_tempfile(fileext = ".csv"))
+  ensemble_pars[["filepath_summary"]] <- c("df" = get_tempfile(fileext = ".csv"),
+                                      "constants" = get_tempfile(fileext = ".csv"),
+                                      "init" = get_tempfile(fileext = ".csv"))
   filepath <- get_tempfile(fileext = ".jl")
 
   # Compile script
@@ -885,29 +892,40 @@ ensemble <- function(sfm,
         conditions <- NULL
       }
 
-      # Read the constants
-      constants <- JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_name"]])
-      colnames(constants) <- c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_names"]]))
+      # # Read the constants
+      # constants <- JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_name"]])
+      # colnames(constants) <- c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_names"]]))
+      #
+      # # Read the initial values of stocks
+      # init <- JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_name"]])
+      # colnames(init) <- c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_names"]]))
 
-      # Read the initial values of stocks
-      init <- JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_name"]])
-      colnames(init) <- c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_names"]]))
+      constants = list()
+      init = list()
 
       # Read the simulation results
       if (return_sims) {
-        df <- as.data.frame(data.table::fread(ensemble_pars[["filepath_df"]], na.strings = c("", "NA")))
+        df <- as.data.frame(data.table::fread(ensemble_pars[["filepath_df"]][["df"]], na.strings = c("", "NA")))
+        constants[["df"]] <- as.data.frame(data.table::fread(ensemble_pars[["filepath_df"]][["constants"]], na.strings = c("", "NA")))
+        init[["df"]] <- as.data.frame(data.table::fread(ensemble_pars[["filepath_df"]][["init"]], na.strings = c("", "NA")))
 
         # Delete files
-        file.remove(ensemble_pars[["filepath_df"]])
+        file.remove(ensemble_pars[["filepath_df"]][["df"]])
+        file.remove(ensemble_pars[["filepath_df"]][["constants"]])
+        file.remove(ensemble_pars[["filepath_df"]][["init"]])
       } else {
         df <- NULL
       }
 
       # Read the summary file
-      summary <- as.data.frame(data.table::fread(ensemble_pars[["filepath_summ"]], na.strings = c("", "NA")))
+      summary <- as.data.frame(data.table::fread(ensemble_pars[["filepath_summary"]][["df"]], na.strings = c("", "NA")))
+      constants[["summary"]] <- as.data.frame(data.table::fread(ensemble_pars[["filepath_summary"]][["constants"]], na.strings = c("", "NA")))
+      init[["summary"]] <- as.data.frame(data.table::fread(ensemble_pars[["filepath_summary"]][["init"]], na.strings = c("", "NA")))
 
       # Delete files
-      file.remove(ensemble_pars[["filepath_summ"]])
+      file.remove(ensemble_pars[["filepath_summary"]][["df"]])
+      file.remove(ensemble_pars[["filepath_summary"]][["constants"]])
+      file.remove(ensemble_pars[["filepath_summary"]][["init"]])
 
       list(
         success = TRUE,
