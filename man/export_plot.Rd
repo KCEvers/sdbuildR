@@ -31,7 +31,7 @@ sim = simulate(sfm)
 export_plot(plot(sim), filepath)
 
 # Remove plot again:
-unlink(filepath)
+file.remove(filepath)
 }
 \seealso{
 Other simulate: 

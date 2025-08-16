@@ -6,7 +6,7 @@
 #' @examples
 #' julia_setup_ok()
 julia_setup_ok <- function() {
-  isTRUE(.sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]])
+  isTRUE(.sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]]) && !is.null(.sdbuildR_env[["JULIA_BINDIR"]])
 
   # # Suppress talkative check
   # result = invisible(capture.output(
@@ -78,7 +78,7 @@ use_julia <- function(
   }
 
   # Required Julia version for sdbuildR
-  required_version <- "1.11"
+  required_version <- .sdbuildR_env[["P"]][["jl_required_version"]]
 
   # If Julia location was specified, check presence of Julia
   if (!is.null(JULIA_HOME)) {
@@ -145,27 +145,17 @@ use_julia <- function(
     }
   }
 
-  .sdbuildR_env[["JULIA_HOME"]] = JULIA_HOME
-
-  # message("JULIA_BINDIR needs to be set to the new installation.")
-  # ans <- readline("Proceed? (y/n) ")
-  # if (trimws(tolower(ans)) %in% c("y", "yes")) {
-  #   # Set path to Julia executable
-  #   Sys.setenv(JULIA_BINDIR = dest)
-  # } else {
-  #   stop("sdbuildR set-up could not be completed.")
-  # }
-
-  # old_option = Sys.getenv("JULIA_BINDIR")
+  old_option = Sys.getenv("JULIA_BINDIR")
   Sys.setenv(JULIA_BINDIR = JULIA_HOME)
+  .sdbuildR_env[["JULIA_BINDIR"]] = JULIA_HOME
 
-  # on.exit({
-  #   if (is.null(old_option)){
-  #     Sys.unsetenv("JULIA_BINDIR")
-  #   } else {
-  #     Sys.setenv(JULIA_BINDIR = old_option)
-  #   }
-  # })
+  on.exit({
+    if (is.null(old_option)){
+      Sys.unsetenv("JULIA_BINDIR")
+    } else {
+      Sys.setenv(JULIA_BINDIR = old_option)
+    }
+  })
 
   tryCatch({
     JuliaConnectoR::startJuliaServer()

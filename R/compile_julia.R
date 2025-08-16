@@ -11,6 +11,7 @@ simulate_julia <- function(sfm,
                            keep_unit,
                            only_stocks,
                            verbose) {
+
   # Collect arguments
   argg <- c(as.list(environment()))
   # Remove NULL arguments
@@ -36,6 +37,18 @@ simulate_julia <- function(sfm,
   sim <- tryCatch(
     {
       use_julia()
+
+      # Set Julia BINDIR
+      old_option = Sys.getenv("JULIA_BINDIR")
+      Sys.setenv(JULIA_BINDIR = .sdbuildR_env[["JULIA_BINDIR"]])
+
+      on.exit({
+        if (is.null(old_option)){
+          Sys.unsetenv("JULIA_BINDIR")
+        } else {
+          Sys.setenv(JULIA_BINDIR = old_option)
+        }
+      })
 
       # Evaluate script
       start_t <- Sys.time()

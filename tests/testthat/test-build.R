@@ -939,11 +939,12 @@ test_that("get_build_code() works", {
 
   for (s in c("SIR", "Crielaard2022")) {
     # Replicate with get_build_code
-    sfm <- xmile(s)
+    sfm <- xmile(s) |> sim_specs(save_at = 1)
 
     if (s == "Crielaard2022") {
       sfm <- sfm |>
-        build(c("Food_intake", "Hunger", "Compensatory_behaviour"), eqn = c(.5, .3, .1))
+        build(c("Food_intake", "Hunger", "Compensatory_behaviour"),
+              eqn = c(.5, .3, .1))
     }
 
     sim1 <- simulate(sfm)

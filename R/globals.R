@@ -8,6 +8,7 @@ if (!exists(".sdbuildR_env")) {
   .sdbuildR_env[["P"]] <- list(
     debug = FALSE,
     insightmaker_version = 38,
+    jl_required_version = "1.11",
     jl_pkg_name = "sdbuildRUtils",
     model_setup_name = "model_setup",
     macro_name = "macro",
