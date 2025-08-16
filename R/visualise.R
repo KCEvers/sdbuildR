@@ -24,7 +24,7 @@
 #' export_plot(plot(sim), filepath)
 #'
 #' # Remove plot again:
-#' unlink(filepath)
+#' file.remove(filepath)
 export_plot = function(pl, filepath, width = 3, height = 4, units = "cm", dpi = 300){
 
   # Auto-detect format
@@ -144,7 +144,7 @@ export_plotly <- function(pl, filepath, format, width, height) {
   do.call(webshot2::webshot, webshot_params)
 
   # Cleanup
-  unlink(temp_html)
+  file.remove(temp_html)
   # return(file.exists(filepath))
   return(invisible())
 }
