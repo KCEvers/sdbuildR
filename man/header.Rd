@@ -60,6 +60,7 @@ Other build:
 \code{\link{get_build_code}()},
 \code{\link{macro}()},
 \code{\link{plot.sdbuildR_xmile}()},
+\code{\link{print.summary.sdbuildR_xmile}()},
 \code{\link{summary.sdbuildR_xmile}()},
 \code{\link{xmile}()}
 }

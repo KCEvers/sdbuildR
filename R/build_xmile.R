@@ -145,8 +145,6 @@ as.data.frame.sdbuildR_sim <- function(x,
   return(df)
 }
 
-
-
 #' Print overview of stock-and-flow model
 #'
 #' Print summary of stock-and-flow model, including number of stocks, flows, constants, auxiliaries, graphical functions, macros, custom model units, and use of delay functions. Also prints simulation specifications.
@@ -164,6 +162,7 @@ as.data.frame.sdbuildR_sim <- function(x,
 #' summary(sfm)
 #'
 summary.sdbuildR_xmile <- function(object, ...) {
+  # Extract model components
   stocks <- names(object[["model"]][["variables"]][["stock"]])
   flows <- names(object[["model"]][["variables"]][["flow"]])
   constants <- names(object[["model"]][["variables"]][["constant"]])
@@ -174,66 +173,118 @@ summary.sdbuildR_xmile <- function(object, ...) {
     unlist() |>
     Filter(nzchar, x = _)
 
-  ans <- ""
-  ans <- paste0(ans, "Your model contains:\n")
-  ans <- paste0(ans, sprintf("* %d Stocks%s%s\n", length(stocks), ifelse(length(stocks) > 0, ": ", ""), paste0(stocks, collapse = ", ")))
-  ans <- paste0(ans, sprintf("* %d Flows%s%s\n", length(flows), ifelse(length(flows) > 0, ": ", ""), paste0(flows, collapse = ", ")))
-  ans <- paste0(ans, sprintf("* %d Constants%s%s\n", length(constants), ifelse(length(constants) > 0, ": ", ""), paste0(constants, collapse = ", ")))
-  ans <- paste0(ans, sprintf("* %d Auxiliaries%s%s\n", length(auxs), ifelse(length(auxs) > 0, ": ", ""), paste0(auxs, collapse = ", ")))
-  ans <- paste0(ans, sprintf("* %d Graphical Functions%s%s\n", length(gfs), ifelse(length(gfs) > 0, ": ", ""), paste0(gfs, collapse = ", ")))
-  ans <- paste0(ans, sprintf(
-    "* %d Custom model units%s%s\n", length(model_units_str),
-    ifelse(length(model_units_str) > 0, ": ", ""), paste0(model_units_str, collapse = ", ")
-  ))
-  ans <- paste0(ans, sprintf("* %d Macro%s\n", length(macro_str), ifelse(length(macro_str) == 1, "", "s")))
-
-
-  # Check for use of past() or delay()
+  # Check for delay functions
   delay_past <- get_delay_past(object)
-
-  if (length(delay_past) > 0) {
-    names_delay <- unique(names(delay_past))
-
-    ans <- paste0(ans, "\nDelay family functions:\n")
-    ans <- paste0(ans, sprintf(
-      "* %d variable%s uses past() or delay(): %s\n",
-      length(names_delay),
-      ifelse(length(names_delay) == 1, "", "s"), paste0(names_delay, collapse = ", ")
-    ))
-  }
-
-  # Check for use of delayN() and smoothN()
   delay_func <- get_delayN_smoothN(object)
-
-  if (length(delay_func) > 0) {
-    delay_func_names <- unique(names(delay_func))
-    if (length(delay_past) == 0) {
-      ans <- paste0(ans, "\n\nDelay family functions:\n")
-    }
-    ans <- paste0(ans, sprintf(
-      "* %d variable%s uses delayN() or smoothN(): %s\n", length(delay_func_names),
-      ifelse(length(delay_func_names) == 1, "", "s"), paste0(delay_func_names, collapse = ", ")
-    ))
-  }
-
   matched_time_unit <- find_matching_regex(object[["sim_specs"]][["time_units"]], get_regex_time_units())
 
-  # Simulation specifications
-  ans <- paste0(ans, paste0(
-    "\nSimulation time: ",
-    object[["sim_specs"]][["start"]], " to ",
-    object[["sim_specs"]][["stop"]], " ",
-    matched_time_unit, " (dt = ", object[["sim_specs"]][["dt"]],
-    ifelse(object[["sim_specs"]][["save_at"]] == object[["sim_specs"]][["dt"]], "", paste0(", save_at = ", object[["sim_specs"]][["save_at"]])),
-    ")\nSimulation settings: solver ",
-    object[["sim_specs"]][["method"]],
-    ifelse(is_defined(object[["sim_specs"]][["seed"]]), paste0(" and seed ", object[["sim_specs"]][["seed"]]), ""),
-    " in ", object[["sim_specs"]][["language"]]
-  ))
+  # Create structured summary object
+  summary_obj <- list(
+    model_components = list(
+      stocks = stocks,
+      flows = flows,
+      constants = constants,
+      auxiliaries = auxs,
+      graphical_functions = gfs,
+      custom_units = model_units_str,
+      macros = macro_str
+    ),
+    delay_functions = list(
+      delay_past = if(length(delay_past) > 0) unique(names(delay_past)) else character(0),
+      delay_func = if(length(delay_func) > 0) unique(names(delay_func)) else character(0)
+    ),
+    simulation = list(
+      start = object[["sim_specs"]][["start"]],
+      stop = object[["sim_specs"]][["stop"]],
+      dt = object[["sim_specs"]][["dt"]],
+      save_at = object[["sim_specs"]][["save_at"]],
+      time_units = matched_time_unit,
+      method = object[["sim_specs"]][["method"]],
+      seed = object[["sim_specs"]][["seed"]],
+      language = object[["sim_specs"]][["language"]]
+    )
+  )
 
-  class(ans) <- "summary.sdbuildR_xmile"
-  cat(ans)
-  invisible(ans)
+  class(summary_obj) <- "summary.sdbuildR_xmile"
+  return(summary_obj)
+}
+
+
+#' Print method for summary.sdbuildR_xmile
+#'
+#' @param x A summary object of class "summary.sdbuildR_xmile"
+#' @param ... Additional arguments (unused)
+#'
+#' @return Invisibly returns the input object
+#' @export
+#' @family build
+print.summary.sdbuildR_xmile <- function(x, ...) {
+  cat("Your model contains:\n")
+
+  # Print model components
+  with(x$model_components, {
+    cat(sprintf("* %d Stocks%s%s\n",
+                length(stocks),
+                ifelse(length(stocks) > 0, ": ", ""),
+                paste0(stocks, collapse = ", ")))
+    cat(sprintf("* %d Flows%s%s\n",
+                length(flows),
+                ifelse(length(flows) > 0, ": ", ""),
+                paste0(flows, collapse = ", ")))
+    cat(sprintf("* %d Constants%s%s\n",
+                length(constants),
+                ifelse(length(constants) > 0, ": ", ""),
+                paste0(constants, collapse = ", ")))
+    cat(sprintf("* %d Auxiliaries%s%s\n",
+                length(auxiliaries),
+                ifelse(length(auxiliaries) > 0, ": ", ""),
+                paste0(auxiliaries, collapse = ", ")))
+    cat(sprintf("* %d Graphical Functions%s%s\n",
+                length(graphical_functions),
+                ifelse(length(graphical_functions) > 0, ": ", ""),
+                paste0(graphical_functions, collapse = ", ")))
+    cat(sprintf("* %d Custom model units%s%s\n",
+                length(custom_units),
+                ifelse(length(custom_units) > 0, ": ", ""),
+                paste0(custom_units, collapse = ", ")))
+    cat(sprintf("* %d Macro%s\n",
+                length(macros),
+                ifelse(length(macros) == 1, "", "s")))
+  })
+
+  # Print delay functions if present
+  if (length(x$delay_functions$delay_past) > 0 || length(x$delay_functions$delay_func) > 0) {
+    cat("\nDelay family functions:\n")
+
+    if (length(x$delay_functions$delay_past) > 0) {
+      cat(sprintf("* %d variable%s uses past() or delay(): %s\n",
+                  length(x$delay_functions$delay_past),
+                  ifelse(length(x$delay_functions$delay_past) == 1, "", "s"),
+                  paste0(x$delay_functions$delay_past, collapse = ", ")))
+    }
+
+    if (length(x$delay_functions$delay_func) > 0) {
+      cat(sprintf("* %d variable%s uses delayN() or smoothN(): %s\n",
+                  length(x$delay_functions$delay_func),
+                  ifelse(length(x$delay_functions$delay_func) == 1, "", "s"),
+                  paste0(x$delay_functions$delay_func, collapse = ", ")))
+    }
+  }
+
+  # Print simulation specifications
+  cat(sprintf("\nSimulation time: %s to %s %s (dt = %s%s)\n",
+              x$simulation$start, x$simulation$stop, x$simulation$time_units,
+              x$simulation$dt,
+              ifelse(x$simulation$save_at == x$simulation$dt, "",
+                     paste0(", save_at = ", x$simulation$save_at))))
+
+  cat(sprintf("Simulation settings: solver %s%s in %s\n",
+              x$simulation$method,
+              ifelse(is_defined(x$simulation$seed),
+                     paste0(" and seed ", x$simulation$seed), ""),
+              x$simulation$language))
+
+  invisible(x)
 }
 
 

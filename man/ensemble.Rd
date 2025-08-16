@@ -136,6 +136,7 @@ use_julia(stop = TRUE)
 \code{\link[=use_threads]{use_threads()}}, \code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=sim_specs]{sim_specs()}}, \code{\link[=use_julia]{use_julia()}}
 
 Other simulate: 
+\code{\link{export_plot}()},
 \code{\link{julia_setup_ok}()},
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{plot.sdbuildR_sim}()},

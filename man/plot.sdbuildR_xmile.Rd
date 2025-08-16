@@ -20,7 +20,7 @@
 \arguments{
 \item{x}{Stock-and-flow model of class sdbuildR_xmile}
 
-\item{format_label}{If TRUE, apply default formatting to labels if labels are the same as variable names.}
+\item{format_label}{If TRUE, apply default formatting (removing periods and underscores) to labels if labels are the same as variable names.}
 
 \item{wrap_width}{Width of text wrapping for labels. Must be an integer. Defaults to 20.}
 
@@ -61,6 +61,7 @@ Other build:
 \code{\link{get_build_code}()},
 \code{\link{header}()},
 \code{\link{macro}()},
+\code{\link{print.summary.sdbuildR_xmile}()},
 \code{\link{summary.sdbuildR_xmile}()},
 \code{\link{xmile}()}
 }

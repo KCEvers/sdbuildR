@@ -10,6 +10,7 @@
   i = seq(1, min(c(x[["n"]], 10))),
   j = seq(1, min(c(x[["n_conditions"]], 9))),
   vars = NULL,
+  add_constants = FALSE,
   nrows = ceiling(sqrt(max(j))),
   shareX = TRUE,
   shareY = TRUE,
@@ -35,6 +36,8 @@
 \item{j}{Indices of the condition to plot. Defaults to 1:9. If only one condition is specified, the plot will not be a grid of subplots.}
 
 \item{vars}{Variables to plot. Defaults to NULL to plot all variables.}
+
+\item{add_constants}{If TRUE, include constants in plot. Defaults to FALSE.}
 
 \item{nrows}{Number of rows in the plot grid. Defaults to ceiling(sqrt(n_conditions)).}
 
@@ -73,6 +76,7 @@ Visualize ensemble simulation results of a stock-and-flow model. Either summary 
 
 Other simulate: 
 \code{\link{ensemble}()},
+\code{\link{export_plot}()},
 \code{\link{julia_setup_ok}()},
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},

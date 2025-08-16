@@ -1041,7 +1041,7 @@ test_that("as.data.frame(sfm) works", {
 
 test_that("summary() works", {
   ans <- summary(xmile("SIR"))
-  expect_equal(!grepl("NULL", ans), TRUE)
+  expect_equal(length(ans) > 0, TRUE)
 })
 
 

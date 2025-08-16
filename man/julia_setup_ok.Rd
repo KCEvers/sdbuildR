@@ -18,6 +18,7 @@ julia_setup_ok()
 \seealso{
 Other simulate: 
 \code{\link{ensemble}()},
+\code{\link{export_plot}()},
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},

@@ -68,6 +68,7 @@ use_julia(stop = TRUE)
 
 Other simulate: 
 \code{\link{ensemble}()},
+\code{\link{export_plot}()},
 \code{\link{julia_setup_ok}()},
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{plot.sdbuildR_sim}()},

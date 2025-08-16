@@ -27,10 +27,12 @@ Imports:
     xml2
 Suggests: 
     DiagrammeR,
+    DiagrammeRsvg,
     htmlwidgets,
     kableExtra,
     knitr,
     plotly,
+    rsvg,
     styler,
     testthat (>= 3.0.0),
     textutils,

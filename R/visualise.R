@@ -1,19 +1,106 @@
 
 
+#' Save plot to a file
+#'
+#' Save a plot of a stock-and-flow diagram or a simulation to a specified filepath.
+#'
+#' @param pl Plot object.
+#' @param filepath Filepath to save plot to.
+#' @param width Width of image in units.
+#' @param height Height of image in units.
+#' @param units Units in which width and heigth are specified. Either "cm", "in", or "px".
+#' @param dpi Resolution of image. Only used if units is not "px".
+#'
+#' @returns NULL
+#' @export
+#' @family simulate
+#'
+#' @examples
+#' sfm = xmile("SIR")
+#' filepath = tempfile(fileext  = ".png")
+#' export_plot(plot(sfm), filepath)
+#'
+#' sim = simulate(sfm)
+#' export_plot(plot(sim), filepath)
+#'
+#' # Remove plot again:
+#' unlink(filepath)
+export_plot = function(pl, filepath, width = 3, height = 4, units = "cm", dpi = 300){
+
+  # Auto-detect format
+  format <- tolower(tools::file_ext(filepath))
+
+  # Convert dimensions to pixels
+  if (units == "in") {
+    width <- width * dpi
+    height <- height * dpi
+  } else if (units == "cm") {
+    width <- width * dpi / 2.54
+    height <- height * dpi / 2.54
+  }
+
+  if ("grViz" %in% class(pl)){
+    export_diagram(pl, filepath, format,
+                   width = width, height = height)
+  } else if ("plotly" %in% class(pl)){
+    export_plotly(pl, filepath, format = format,
+                  width = width, height = height)
+  } else {
+    stop("export_plot does not support pl of class ", class(pl))
+  }
+
+}
+
+
+#' Export diagram
+#'
+#' @inheritParams export_plot
+#' @param format Output format.
+#'
+#' @returns NULL
+#' @noRd
+#'
+export_diagram = function(pl, filepath, format, width, height){
+
+  if (!requireNamespace("rsvg", quietly = TRUE)){
+    stop("rsvg needs to be installed!")
+  }
+
+  if (!requireNamespace("DiagrammeRsvg", quietly = TRUE)){
+    stop("DiagrammeRsvg needs to be installed!")
+  }
+
+  temp = charToRaw(DiagrammeRsvg::export_svg(pl))
+
+  if (format == "webp"){
+    rsvg::rsvg_webp(temp, filepath, width = width, height = height)
+  } else if (format == "png"){
+    rsvg::rsvg_png(temp, filepath, width = width, height = height)
+  } else if (format == "pdf"){
+    rsvg::rsvg_pdf(temp, filepath, width = width, height = height)
+  } else if (format == "svg"){
+    rsvg::rsvg_svg(temp, filepath, width = width, height = height)
+  } else if (format == "ps"){
+    rsvg::rsvg_ps(temp, filepath, width = width, height = height)
+  } else if (format == "eps"){
+    rsvg::rsvg_eps(temp, filepath, width = width, height = height)
+  } else {
+    stop("format ", format, " not supported")
+  }
+  return(invisible())
+}
+
+
 
 #' Export plotly object
 #'
-#' @param pl Plot object
-#' @param filepath Filepath
-#' @param width Width
-#' @param height Height
-#' @param units Units
-#' @param dpi DPI
+#' @inheritParams export_plot
+#' @param format Output format.
 #'
-#' @returns Logical value indicating whether file was created successfully
+#' @returns NULL
 #' @noRd
 #'
-plotly_export <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi = 300) {
+export_plotly <- function(pl, filepath, format, width, height) {
 
   if (!requireNamespace("htmlwidgets", quietly = TRUE)){
     stop("htmlwidgets needs to be installed!")
@@ -21,21 +108,6 @@ plotly_export <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi
 
   if (!requireNamespace("webshot2", quietly = TRUE)){
     stop("webshot2 needs to be installed!")
-  }
-
-  # Auto-detect format
-  format <- tolower(tools::file_ext(filepath))
-
-  # Convert dimensions to pixels
-  if (units == "in") {
-    width_px <- width * dpi
-    height_px <- height * dpi
-  } else if (units == "cm") {
-    width_px <- width * dpi / 2.54
-    height_px <- height * dpi / 2.54
-  } else {
-    width_px <- width
-    height_px <- height
   }
 
   # Create temporary HTML file
@@ -46,8 +118,8 @@ plotly_export <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi
   webshot_params <- list(
     url = temp_html,
     file = filepath,
-    vwidth = width_px,
-    vheight = height_px,
+    vwidth = width,
+    vheight = height,
     delay = 1,
     quiet = TRUE # Doesn't seem to work
   )
@@ -73,7 +145,8 @@ plotly_export <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi
 
   # Cleanup
   unlink(temp_html)
-  return(file.exists(filepath))
+  # return(file.exists(filepath))
+  return(invisible())
 }
 
 
@@ -84,7 +157,7 @@ plotly_export <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi
 #' Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Hover over the stocks and flows to see their equations.
 #'
 #' @param x Stock-and-flow model of class sdbuildR_xmile
-#' @param format_label If TRUE, apply default formatting to labels if labels are the same as variable names.
+#' @param format_label If TRUE, apply default formatting (removing periods and underscores) to labels if labels are the same as variable names.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 20.
 #' @param center_stocks If TRUE, stocks are vertically aligned in the middle of the diagram. Defaults to FALSE.
 #' @param font_size Font size. Defaults to 18.
@@ -104,7 +177,8 @@ plotly_export <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi
 #' sfm <- xmile("SIR")
 #' plot(sfm)
 #'
-plot.sdbuildR_xmile <- function(x, format_label = TRUE,
+plot.sdbuildR_xmile <- function(x,
+                                format_label = TRUE,
                                 wrap_width = 20,
                                 center_stocks = FALSE,
                                 font_size = 18,
@@ -113,15 +187,23 @@ plot.sdbuildR_xmile <- function(x, format_label = TRUE,
                                 flow_col = "#f48153",
                                 minlen = 2,
                                 ...) {
-  sfm <- x
 
-  # Check whether there are any variables
-  nr_var <- sum(lengths(sfm[["model"]][["variables"]]))
-  if (nr_var == 0) {
-    stop("Your model contains no variables!")
+  sfm <- x
+  check_xmile(x)
+
+  ## Check whether there are any variables
+  # nr_var <- sum(lengths(sfm[["model"]][["variables"]]))
+  # if (nr_var == 0) {
+  #   stop("Your model contains no variables!")
+  # }
+
+  # Check whether there are any stocks or flows
+  temp <- length(sfm[["model"]][["variables"]][["stock"]]) == 0 & length(sfm[["model"]][["variables"]][["flow"]]) == 0
+  if (temp) {
+    stop("Your model contains no stocks or flows!")
   }
 
-  # names_df = get_names(sfm)
+  # Get property dataframe
   df <- as.data.frame(sfm, properties = c("type", "name", "label", "eqn"))
 
   if (format_label) {
@@ -138,7 +220,8 @@ plot.sdbuildR_xmile <- function(x, format_label = TRUE,
   dict <- stats::setNames(df[["label"]], df[["name"]])
 
   # Get equations and remove quotation marks from unit strings
-  dict_eqn <- stats::setNames(stringr::str_replace_all(df[["eqn"]], c("'" = "", "\"" = "")), df[["name"]])
+  dict_eqn <- stats::setNames(stringr::str_replace_all(df[["eqn"]],
+                                                       c("'" = "", "\"" = "")), df[["name"]])
 
   highlight_names <- df[df[["type"]] == "stock", "name"]
   flow_names <- df[df[["type"]] == "flow", "name"]
@@ -152,6 +235,7 @@ plot.sdbuildR_xmile <- function(x, format_label = TRUE,
 
   cloud_nodes <- flow_edges <- ""
   if (length(flow_names) > 0) {
+
     # Create dataframe with direction of flows
     flow_df <- get_flow_df(sfm)
     # If the flow is to a stock that doesn't exist, remove
@@ -166,7 +250,7 @@ plot.sdbuildR_xmile <- function(x, format_label = TRUE,
       flow_df[idxs] <- cloud_names
       # External environment is represented as a cloud
       cloud_nodes <- sprintf(
-        "%s [label='', tooltip = '',shape=doublecircle, fixedsize=true, width = .25, height = .25, orientation=15]",
+        "%s [label='', tooltip = ' ',shape=doublecircle, fixedsize=true, width = .25, height = .25, orientation=15]",
         paste0("'", cloud_names, "'")
       )
     }
@@ -176,14 +260,18 @@ plot.sdbuildR_xmile <- function(x, format_label = TRUE,
       paste0("'", flow_df[, "from"], "'"),
       " -> ",
       paste0("'", flow_df[, "to"], "'"),
-      " [arrowhead='normal', label='", dict[flow_df[, "name"]], "', tooltip = 'eqn = ", dict_eqn[flow_df[, "name"]], "', fontsize=", font_size, ",fontname='", font_family, "', color='black:", flow_col, ":black',arrowsize = 1.2,penwidth=1.1,minlen=", minlen, "]"
+      " [arrowhead='normal', label='", dict[flow_df[, "name"]],
+      # Add a tooltip, which also appears when hovering over the label
+      "', tooltip = 'eqn = ",
+      dict_eqn[flow_df[, "name"]], "', labeltooltip = 'eqn = ",
+      dict_eqn[flow_df[, "name"]], "', fontsize=", font_size, ",fontname='", font_family, "', color='black:", flow_col,":", flow_col,  ":black',arrowsize = 1.5,penwidth=1.1,minlen=", minlen, "]"
     )
   }
 
   # Compile string for diagram
   viz_str <- sprintf(
     "
-    digraph stock_and_flow {
+    digraph sfm {
 
       graph [layout = dot, rankdir = LR, center=true]
       margin=0 # in inches
@@ -199,7 +287,9 @@ plot.sdbuildR_xmile <- function(x, format_label = TRUE,
 
       %s
     }
-          ", stock_nodes |> rev() |> paste0(collapse = "\n\t\t"),
+          ",
+
+    stock_nodes |> rev() |> paste0(collapse = "\n\t\t"),
     cloud_nodes |> paste0(collapse = "\n\t\t"),
     flow_edges |> paste0(collapse = "\n\t\t"),
     ifelse(center_stocks, paste0("{rank = same; ", paste0(highlight_names, collapse = ", "), "}"), "")
@@ -211,7 +301,6 @@ plot.sdbuildR_xmile <- function(x, format_label = TRUE,
   # { rank = max; %s }      # Bottom level
 
   pl <- DiagrammeR::grViz(viz_str)
-  pl
 
   return(pl)
 }
@@ -234,7 +323,19 @@ prep_plot = function(sfm, type_sim, df, constants, add_constants, vars, palette,
   # Get names of stocks and non-stock variables
   names_df <- get_names(sfm)
 
+  if (!is.null(vars)){
 
+    if (!is.character(vars)){
+      stop("vars must be a character vector!")
+    }
+
+    vars = unique(vars)
+
+    if (length(vars) == 0){
+      stop("vars cannot be of length zero!")
+    }
+
+  }
   # If vars is specified and it contains a constant, set add_constants = TRUE
   if (!is.null(vars)){
     constant_names = names_df[names_df[["type"]] %in% c("constant", "gf"), "name"]
@@ -320,14 +421,6 @@ prep_plot = function(sfm, type_sim, df, constants, add_constants, vars, palette,
 
   # Keep only specified variables
   if (!is.null(vars)){
-
-    if (!is.character(vars)){
-      stop("vars must be a character vector!")
-    }
-
-    if (length(vars) == 0){
-      stop("vars cannot be of length zero!")
-    }
 
     # Check whether specified variables are in the model
     idx = !(vars %in% names_df[["name"]])
@@ -590,12 +683,6 @@ plot.sdbuildR_sim <- function(x,
                          legend = list(
                            traceorder = "reversed",
                            font = list(size = ceiling(font_size * .85))
-                           # itemsizing = "constant",  # Keeps legend symbols same size
-                           # itemwidth = 10,           # Control item width
-                           # x = 1.02,                 # Position legend outside plot
-                           # y = 1,
-                           # xanchor = "left",
-                           # yanchor = "top"
                          ),
                          title = main,
                          xaxis = list(title = xlab, font = list(size = font_size)),
@@ -678,6 +765,7 @@ plot.sdbuildR_ensemble <- function(x,
                                    i = seq(1, min(c(x[["n"]], 10))),
                                    j = seq(1, min(c(x[["n_conditions"]], 9))),
                                    vars = NULL,
+                                   add_constants = FALSE,
                                    nrows = ceiling(sqrt(max(j))),
                                    shareX = TRUE,
                                    shareY = TRUE,
@@ -854,7 +942,7 @@ plot.sdbuildR_ensemble <- function(x,
   }
 
   # Prepare for plotting
-  out = prep_plot(x[["sfm"]], "ensemble", summary_df, constants = x[["constants"]][["summary"]], add_constants = FALSE,
+  out = prep_plot(x[["sfm"]], "ensemble", summary_df, constants = x[["constants"]][["summary"]], add_constants = add_constants,
                   vars = vars, palette = palette, colors = colors, wrap_width = wrap_width)
   highlight_names = out[["highlight_names"]]
   nonhighlight_names = out[["nonhighlight_names"]]
@@ -863,7 +951,7 @@ plot.sdbuildR_ensemble <- function(x,
   colors = out[["colors"]]
 
   if (type == "sims") {
-    out = prep_plot(x[["sfm"]], "ensemble", df, constants = x[["constants"]][["df"]], add_constants = FALSE,
+    out = prep_plot(x[["sfm"]], "ensemble", df, constants = x[["constants"]][["df"]], add_constants = add_constants,
                     vars = vars, palette = palette, colors = colors, wrap_width = wrap_width)
     df_highlight = out[["df_highlight"]]
     df_nonhighlight = out[["df_nonhighlight"]]
@@ -1256,12 +1344,6 @@ plot_ensemble_helper <- function(j_idx, j_name, j, j_labels,
                        legend = list(
                          traceorder = "reversed",
                          font = list(size = ceiling(font_size * .85))
-                         # itemsizing = "constant",  # Keeps legend symbols same size
-                         # itemwidth = 10,           # Control item width
-                         # x = 1.02,                 # Position legend outside plot
-                         # y = 1,
-                         # xanchor = "left",
-                         # yanchor = "top"
                        )
   )
 
