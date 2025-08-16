@@ -23,6 +23,23 @@ test_that("xmile() works", {
 })
 
 
+test_that("plot(sfm) works", {
+  sfm = xmile("SIR")
+  expect_no_error(plot(sfm))
+
+  # Plot without stocks or flows throws error
+  expect_error(plot(xmile()), "Your model contains no stocks or flows")
+
+  # Plot with only one stock works
+  expect_no_error(xmile() |> build("a", "stock"))
+
+  # Plot with only one flow works
+  expect_no_error(xmile() |> build("a", "flow"))
+
+
+})
+
+
 test_that("sim_specs() works", {
   # Ensure that default simulation specifications are with digits
   sfm <- xmile()

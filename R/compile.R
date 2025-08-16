@@ -47,6 +47,8 @@ simulate <- function(sfm,
                      only_stocks = TRUE,
                      verbose = FALSE,
                      ...) {
+  check_xmile(sfm)
+
   # First assess whether the model is valid
   problems <- debugger(sfm, quietly = TRUE)
   if (nzchar(problems[["problems"]])) {
@@ -54,9 +56,6 @@ simulate <- function(sfm,
   }
 
   if (tolower(sfm[["sim_specs"]][["language"]]) == "julia") {
-    # if (!julia_setup_ok()){
-    #   stop("The Julia environment has not been set up yet! Run use_julia().")
-    # }
 
     return(simulate_julia(sfm,
       keep_nonnegative_flow = keep_nonnegative_flow,
