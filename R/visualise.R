@@ -23,7 +23,7 @@
 #' # Remove plot
 #' file.remove(filepath)
 #'
-#' @examplesIf not_on_cran()
+#' @examplesIf not_on_cran() & interactive()
 # # Requires Chrome to save plotly plot:
 #'sim = simulate(sfm)
 #'export_plot(plot(sim), filepath)

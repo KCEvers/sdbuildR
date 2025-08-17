@@ -96,8 +96,13 @@ use_julia <- function(
       stop("Multiple Julia installations found in ", JULIA_HOME0, ". Please specify a more specific location.")
     }
   } else {
-    # Try to find Julia installation if JULIA_HOME is not specified
-    JULIA_HOME <- julia_locate(JULIA_HOME)
+
+    if (!is.null(.sdbuildR_env[["JULIA_BINDIR"]])){
+      JULIA_HOME <- .sdbuildR_env[["JULIA_BINDIR"]]
+    } else {
+      # Try to find Julia installation if JULIA_HOME is not specified
+      JULIA_HOME <- julia_locate(JULIA_HOME)
+    }
 
     if (is.null(JULIA_HOME)) {
       message("No Julia installation found.")
@@ -145,15 +150,14 @@ use_julia <- function(
     }
   }
 
-  old_option = Sys.getenv("JULIA_BINDIR")
-  Sys.setenv(JULIA_BINDIR = JULIA_HOME)
-  .sdbuildR_env[["JULIA_BINDIR"]] = JULIA_HOME
+  old_option = Sys.getenv("JULIA_BINDIR", unset = NA)
+  Sys.setenv("JULIA_BINDIR" = JULIA_HOME)
 
   on.exit({
-    if (is.null(old_option)){
+    if (is.na(old_option)){
       Sys.unsetenv("JULIA_BINDIR")
     } else {
-      Sys.setenv(JULIA_BINDIR = old_option)
+      Sys.setenv("JULIA_BINDIR" = old_option)
     }
   })
 
