@@ -7,28 +7,6 @@
 #' julia_setup_ok()
 julia_setup_ok <- function() {
   isTRUE(.sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]]) && !is.null(.sdbuildR_env[["JULIA_BINDIR"]])
-
-  # # Suppress talkative check
-  # result = invisible(capture.output(
-  #   capture.output({
-  #     result <- JuliaConnectoR::juliaSetupOk()
-  #   }, type = "message"),
-  #   type = "output"
-  # ))
-  # result = TRUE
-  #
-  # if (isTRUE(result)){
-
-  # # Check whether initialization variable of sdbuildR evaluates to TRUE in Julia
-  # tryCatch({
-  #   isTRUE(JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["init_sdbuildR"]]))
-  # }, error = function(e){
-  #   return(FALSE)
-  # })
-  # return(check)
-  # } else {
-  #   return(FALSE)
-  # }
 }
 
 #' Set up Julia environment
@@ -181,7 +159,8 @@ use_julia <- function(
 
   # Check if the package is already developed to avoid redundant operations
   pkg_already_developed <- JuliaConnectoR::juliaEval(
-    paste0('using Pkg; "', .sdbuildR_env[["P"]][["jl_pkg_name"]], '" in [pkg.name for pkg in values(Pkg.dependencies())]')
+    paste0('using Pkg; "', .sdbuildR_env[["P"]][["jl_pkg_name"]],
+           '" in [pkg.name for pkg in values(Pkg.dependencies())]')
   )
 
   # Make sdbuildRUtils available to sdbuildR package environment
@@ -225,7 +204,8 @@ run_init <- function() {
 
   # Source the init.jl script
   JuliaConnectoR::juliaEval(julia_cmd)
-  JuliaConnectoR::juliaEval(paste0('include("', normalizePath(file.path(env_path, "init.jl"),
+  JuliaConnectoR::juliaEval(paste0('include("',
+                                   normalizePath(file.path(env_path, "init.jl"),
     winslash = "/", mustWork = FALSE
   ), '")'))
 
