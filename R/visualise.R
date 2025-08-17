@@ -20,11 +20,17 @@
 #' filepath = tempfile(fileext  = ".png")
 #' export_plot(plot(sfm), filepath)
 #'
-#' sim = simulate(sfm)
-#' export_plot(plot(sim), filepath)
-#'
-#' # Remove plot again:
+#' # Remove plot
 #' file.remove(filepath)
+#'
+#' @examplesIf not_on_cran()
+# # Requires Chrome to save plotly plot:
+#'sim = simulate(sfm)
+#'export_plot(plot(sim), filepath)
+#'
+#' # Remove plot
+#' file.remove(filepath)
+#'
 export_plot = function(pl, filepath, width = 3, height = 4, units = "cm", dpi = 300){
 
   # Auto-detect format
@@ -145,7 +151,10 @@ export_plotly <- function(pl, filepath, format, width, height) {
 
   # Cleanup
   file.remove(temp_html)
-  # return(file.exists(filepath))
+
+  # # Explicit cleanup to avoid "connections left open"
+  # gc()
+
   return(invisible())
 }
 

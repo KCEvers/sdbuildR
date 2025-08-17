@@ -16,8 +16,9 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
     function(x) {
       lapply(x, function(y) {
         if (is_defined(y[["eqn"]])) {
-          out <- convert_equations_julia(sfm, y[["type"]], y[["name"]], y[["eqn"]], var_names,
-            regex_units = regex_units
+          out <- convert_equations_julia(sfm, y[["type"]], y[["name"]],
+                                         y[["eqn"]], var_names,
+                                         regex_units = regex_units
           )
           y <- utils::modifyList(y, out)
         }

@@ -199,3 +199,83 @@ clean_language = function(language){
   }
   return(language)
 }
+
+
+
+#' Quickly get names of model variables
+#'
+#' @inheritParams build
+#'
+#' @noRd
+#' @returns Vector with names of model variables
+get_model_var <- function(sfm) {
+  c(unname(unlist(lapply(sfm[["model"]][["variables"]], names))), names(sfm[["macro"]]))
+}
+
+
+
+#' Create dataframe with stock-and-flow model variables, types, labels, and units
+#'
+#' @inheritParams build
+#'
+#' @return Dataframe
+#' @noRd
+#'
+get_names <- function(sfm) {
+  # Return empty dataframe if no variables
+  nr_var <- sum(lengths(sfm[["model"]][["variables"]]))
+  if (nr_var == 0) {
+    names_df <- data.frame(
+      type = character(0),
+      name = character(0),
+      label = character(0),
+      units = character(0)
+    )
+    return(names_df)
+  }
+
+  # Building blocks to check
+  blocks <- c("stock", "aux", "constant", "flow", "gf")
+  entries <- list()
+
+  # Collect variable information
+  for (block in blocks) {
+    if (!is.null(sfm[["model"]][["variables"]][[block]])) {
+      for (var in sfm[["model"]][["variables"]][[block]]) {
+        if (!is.null(var[["name"]])) {
+          entries[[length(entries) + 1]] <- list(
+            type = block,
+            name = var[["name"]],
+            label = var[["label"]],
+            units = var[["units"]]
+          )
+        }
+      }
+    }
+  }
+
+  # Convert to dataframe
+  if (length(entries) > 0) {
+    names_df <- do.call(rbind, lapply(entries, as.data.frame, stringsAsFactors = FALSE))
+  } else {
+    column_names <- c("type", "name", "label", "units")
+    names_df <- as.data.frame(matrix(NA, nrow = 1, ncol = length(column_names)))
+    colnames(names_df) <- column_names
+  }
+
+  # Add macros if any
+  if (!is.null(sfm[["macro"]]) && length(names(sfm[["macro"]])) > 0) {
+    macro_df <- data.frame(
+      type = "macro",
+      name = names(sfm[["macro"]]),
+      label = names(sfm[["macro"]]),
+      units = "",
+      stringsAsFactors = FALSE
+    )
+    names_df <- rbind(names_df, macro_df)
+  }
+
+  rownames(names_df) <- NULL
+  return(names_df)
+}
+

@@ -832,9 +832,6 @@ ensemble <- function(sfm,
 
 
   # Get output filepaths
-  # ensemble_pars[["filepath_df"]] <- get_tempfile(fileext = ".csv")
-  # ensemble_pars[["filepath_summary"]] <- get_tempfile(fileext = ".csv")
-
   ensemble_pars[["filepath_df"]] <- c("df" = get_tempfile(fileext = ".csv"),
                                       "constants" = get_tempfile(fileext = ".csv"),
                                       "init" = get_tempfile(fileext = ".csv"))

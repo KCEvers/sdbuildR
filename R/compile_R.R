@@ -80,6 +80,7 @@ compile_r <- function(sfm,
                       keep_nonnegative_flow,
                       keep_nonnegative_stock,
                       only_stocks) {
+
   # Get flows and connections
   flow_df <- get_flow_df(sfm)
 
@@ -127,7 +128,6 @@ compile_r <- function(sfm,
 
   # Compile all parts of the R script
   times <- compile_times(sfm)
-  # constraints = compile_constraints(sfm)
   ordering <- order_equations(sfm)
 
   # Only need to save stocks if there are no dynamic variables
@@ -152,7 +152,7 @@ compile_r <- function(sfm,
   sfm <- prep_stock_change(sfm)
   nonneg_stocks <- compile_nonneg_stocks(sfm, keep_nonnegative_stock)
 
-  zeallot_def <- compile_destructuring_assign(sfm, static_eqn)
+  # zeallot_def <- compile_destructuring_assign(sfm, static_eqn)
 
   seed_str <- ifelse(!is_defined(sfm[["sim_specs"]][["seed"]]), "",
     sprintf("# Ensure reproducibility across runs in case of random elements
@@ -160,17 +160,12 @@ set.seed(%s)", as.character(sfm[["sim_specs"]][["seed"]]))
   )
 
 
-  prep_script <- sprintf("# Script generated on %s by sdbuildR.
-
-# Load packages
-%s
-library(sdbuildR)
-
-%s
-%s
-%s
-%s
-", Sys.time(), zeallot_def[["script"]], seed_str, times[["script"]], macros[["script"]], nonneg_stocks[["func_def"]])
+  prep_script <- paste0("# Load packages\nlibrary(sdbuildR)\n",
+                        # Sys.time(),
+                         # zeallot_def[["script"]],
+                         seed_str, "\n", times[["script"]],
+                        "\n", macros[["script"]],
+                        "\n", nonneg_stocks[["func_def"]])
 
 
   ode <- compile_ode(
@@ -190,6 +185,7 @@ library(sdbuildR)
 
   # Format code
   if (requireNamespace("styler", quietly = TRUE)) {
+
     # Temporarily set option
     old_option <- getOption("styler.colored_print.vertical")
     options(styler.colored_print.vertical = FALSE)
@@ -261,7 +257,6 @@ find_unit_strings <- function(sfm) {
 compile_destructuring_assign <- function(sfm, static_eqn) {
   # Add package for destructuring assignment in case it was used
   eqns <- c(static_eqn[["script"]], unlist(
-    # purrr::map_depth(sfm[["model"]][["variables"]], 2, "eqn")
     lapply(
       sfm[["model"]][["variables"]],
       function(x) {
@@ -278,56 +273,6 @@ compile_destructuring_assign <- function(sfm, static_eqn) {
 
   return(list(script = script))
 }
-
-
-#' Add prefixes to static equations
-#'
-#' @inheritParams build
-#' @inheritParams compile_r
-#' @inheritParams order_equations
-#'
-#' @return Updated stock-and-flow model
-#' @noRd
-#'
-substitute_var_old <- function(sfm) {
-  # Replace variable references in static equations
-  static_var <- c(names(sfm[["model"]][["variables"]][["stock"]]), names(sfm[["model"]][["variables"]][["constant"]]))
-  dynamic_var <- c(
-    names(sfm[["model"]][["variables"]][["flow"]]),
-    setdiff(names(sfm[["model"]][["variables"]][["aux"]]), names(sfm[["model"]][["variables"]][["constant"]]))
-  )
-
-  static_replacements <-
-    c(
-      paste0(.sdbuildR_env[["P"]][["initial_value_name"]], "$", names(sfm[["model"]][["variables"]][["stock"]])),
-      paste0(.sdbuildR_env[["P"]][["parameter_name"]], "$", names(sfm[["model"]][["variables"]][["constant"]]))
-    ) |>
-    as.list() |>
-    stats::setNames(static_var) |>
-    # Convert to expressions for substitutions
-    lapply(function(x) {
-      parse(text = x)[[1]]
-    })
-
-  # Implement replacements
-  sfm[["model"]][["variables"]] <- lapply(sfm[["model"]][["variables"]], function(y) {
-    lapply(y, function(x) {
-      if (x[["name"]] %in% static_var) {
-        expr1 <- parse(text = x[["eqn"]])
-        replace_expr <- do.call("substitute", list(expr1[[1]], static_replacements))
-        x[["eqn"]] <- deparse1(replace_expr)
-
-        # x[["eqn"]] = stringr::str_replace_all(x[["eqn"]], static_replacements)
-      }
-
-      return(x)
-    })
-  })
-
-  return(sfm)
-}
-
-
 
 
 
@@ -375,7 +320,7 @@ compile_times <- function(sfm) {
     "
 # Define time sequence
 %s = %s
-%s <- seq(from=%s, to=%s, by=%s) # needs to be global to be used in step, pulse, ramp, seasonal functions
+%s <- seq(from=%s, to=%s, by=%s)
 %s = %s[1]
 
 # Simulation time unit (smallest time scale in your model)
@@ -387,7 +332,8 @@ compile_times <- function(sfm) {
     as.character(sfm[["sim_specs"]][["start"]]),
     as.character(sfm[["sim_specs"]][["stop"]]),
     .sdbuildR_env[["P"]][["timestep_name"]],
-    .sdbuildR_env[["P"]][["time_name"]], .sdbuildR_env[["P"]][["times_name"]],
+    .sdbuildR_env[["P"]][["time_name"]],
+    .sdbuildR_env[["P"]][["times_name"]],
     .sdbuildR_env[["P"]][["time_units_name"]],
     sfm[["sim_specs"]][["time_units"]]
   )
@@ -401,42 +347,6 @@ compile_times <- function(sfm) {
   return(list(script = script))
 }
 
-
-
-#' Compile script for setting minimum and maximum constraints
-#'
-#'
-#' @return List
-#' @importFrom rlang .data
-#' @inheritParams build
-#' @noRd
-#'
-compile_constraints_old <- function(sfm) {
-  # Compile string of minimum and maximum constraints
-  constraint_def <- lapply(sfm[["model"]][["variables"]], function(x) {
-    lapply(x, function(y) {
-      if ("min" %in% names(y)) {
-        min_str <- ifelse(is_defined(y[["min"]]), paste0("min = ", y[["min"]]), "")
-        max_str <- ifelse(is_defined(y[["max"]]), paste0("max = ", y[["max"]]), "")
-
-        if (nzchar(min_str) | nzchar(max_str)) {
-          return(sprintf("%s = c(%s%s%s)", x[["name"]], min_str, ifelse(nzchar(min_str) & nzchar(max_str), ", ", ""), max_str))
-        }
-      }
-    })
-  }) |>
-    unlist() |>
-    paste0(collapse = ",\n\t\t\t\t\t\t\t\t\t\t")
-
-  script <- ifelse(nzchar(constraint_def), sprintf("\n\n# Constraints of minimum and maximum value\n%s = list(%s) |> \n\tget_logical_constraints()\n", .sdbuildR_env[["P"]][["constraint_def"]], constraint_def), "")
-
-  update_ode <- ifelse(nzchar(constraint_def), sprintf("\n\n\t\t# Check constraints\n\t\tcheck_constraints(%s, environment(), %s)\n", .sdbuildR_env[["P"]][["constraint_def"]], .sdbuildR_env[["P"]][["time_name"]]), "")
-
-  return(list(
-    script = script,
-    update_ode = update_ode
-  ))
-}
 
 
 #' Compile script for static variables, i.e. initial conditions, functions, and parameters
@@ -507,12 +417,8 @@ compile_static_eqn <- function(sfm, ordering) {
 
   return(list(script = paste0(
     macros_script,
-    #                               sprintf("\n\n# Set-up parameters and initial condition
-    # %s = list()
-    # %s = list()", .sdbuildR_env[["P"]][["parameter_name"]], .sdbuildR_env[["P"]][["initial_value_name"]]),
     "\n\n# Define parameters, initial conditions, and functions in correct order\n",
     static_eqn_str,
-    # sprintf("\n\n# Turn initial condition into alphabetically ordered named vector\n%s = unlist(%s)[order(names(%s))]", .sdbuildR_env[["P"]][["initial_value_name"]], .sdbuildR_env[["P"]][["initial_value_name"]], .sdbuildR_env[["P"]][["initial_value_name"]])
     constants_def, init_def
   )))
 }
@@ -527,7 +433,8 @@ compile_static_eqn <- function(sfm, ordering) {
 #' @noRd
 prep_equations_variables <- function(sfm, keep_nonnegative_flow) {
   # Graphical functions
-  sfm[["model"]][["variables"]][["gf"]] <- lapply(sfm[["model"]][["variables"]][["gf"]], function(x) {
+  sfm[["model"]][["variables"]][["gf"]] <- lapply(sfm[["model"]][["variables"]][["gf"]],
+                                                  function(x) {
     if (is_defined(x[["xpts"]])) {
       if (inherits(x[["xpts"]], "numeric")) {
         xpts_str <- paste0("c(", paste0(as.character(x[["xpts"]]), collapse = ", "), ")")
@@ -565,14 +472,16 @@ prep_equations_variables <- function(sfm, keep_nonnegative_flow) {
   })
 
   # Initial states of Stocks
-  sfm[["model"]][["variables"]][["stock"]] <- lapply(sfm[["model"]][["variables"]][["stock"]], function(x) {
+  sfm[["model"]][["variables"]][["stock"]] <- lapply(sfm[["model"]][["variables"]][["stock"]],
+                                                     function(x) {
     x[["eqn_str"]] <- paste0(x[["name"]], " = ", x[["eqn"]])
 
     return(x)
   })
 
   # Auxiliary equations (dynamic auxiliaries)
-  sfm[["model"]][["variables"]][["aux"]] <- lapply(sfm[["model"]][["variables"]][["aux"]], function(x) {
+  sfm[["model"]][["variables"]][["aux"]] <- lapply(sfm[["model"]][["variables"]][["aux"]],
+                                                   function(x) {
     x[["eqn_str"]] <- sprintf("%s <- %s", x[["name"]], x[["eqn"]])
 
     if (!is.null(x[["preceding_eqn"]])) {
@@ -731,10 +640,8 @@ attributes(%s)$valroot
 #' @noRd
 #'
 compile_ode <- function(sfm, ordering, prep_script, static_eqn,
-                        # constraints,
                         keep_nonnegative_flow, keep_nonnegative_stock,
                         only_stocks) {
-  # @param constraints Output of compile_constraints()
 
   # Auxiliary equations (dynamic auxiliaries)
   aux_eqn <- lapply(sfm[["model"]][["variables"]][["aux"]], `[[`, "eqn_str")
@@ -771,6 +678,7 @@ compile_ode <- function(sfm, ordering, prep_script, static_eqn,
   )
 
   # Graphical functions (gf)
+  gf_str <- ""
   if (length(sfm[["model"]][["variables"]][["gf"]]) > 0) {
     # Some gf have other gf as source; recursively replace
     gf_sources <- unlist(lapply(sfm[["model"]][["variables"]][["gf"]], `[[`, "source"))
@@ -783,11 +691,7 @@ compile_ode <- function(sfm, ordering, prep_script, static_eqn,
       gf_str <- stringr::str_replace_all(unname(dict), dict2)
 
       gf_str <- paste0(", ", paste0(paste0("'", gf_str, "' = "), gf_str, collapse = ", "))
-    } else {
-      gf_str <- ""
     }
-  } else {
-    gf_str <- ""
   }
 
   # Save all variables in return statement
@@ -906,23 +810,3 @@ compile_run_ode <- function(sfm, nonneg_stocks) {
 }
 
 
-
-#' Compile script for plotting ODE
-#'
-#' @inheritParams compile_ode
-#'
-#' @return List
-#' @inheritParams compile_r
-#' @noRd
-#'
-compile_plot_ode <- function(sfm) {
-  # Add sources of graphical functions if necessary
-  var_names <- get_model_var(sfm)
-  plot_var <- var_names[var_names %in% sfm[["display_var"]]]
-
-  script <- sprintf("
-# Plot ODE
-plot_sim(sfm, %s)", .sdbuildR_env[["P"]][["sim_df_name"]])
-
-  return(list(script = script))
-}

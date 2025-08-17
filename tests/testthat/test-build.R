@@ -275,29 +275,6 @@ test_that("change_name and change_type in build()", {
     build("abc", "aux")
   expect_equal(sfm$model$variables$aux$abc$eqn, "def")
 
-  # Check that change_name updates delay equation -> also important for change_type!
-  sfm <- xmile() |>
-    build("abc", "aux", eqn = "delayN(a, 10, 2)") |>
-    build("abc", change_name = "xyz")
-  expect_equal(sfm$model$variables$aux$abc, NULL)
-  expect_equal(sfm$model$variables$aux$xyz$eqn, "delayN(a, 10, 2)")
-  expect_equal(names(sfm$model$variables$aux$xyz$func), "delayN")
-  expect_equal(names(sfm$model$variables$aux$xyz$func[[1]]), "xyz_delayN1")
-
-  sfm <- xmile() |>
-    build("abc", "aux", eqn = "delayN(a, 10, 2)") |>
-    build("abc", change_type = "flow")
-  expect_equal(sfm$model$variables$aux$abc, NULL)
-  expect_equal(sfm$model$variables$flow$abc$eqn, "delayN(a, 10, 2)")
-  expect_equal(names(sfm$model$variables$flow$abc$func), "delayN")
-  expect_equal(names(sfm$model$variables$flow$abc$func[[1]]), "abc_delayN1")
-
-
-  # Throw warning if change_type = "constant"
-  sfm <- xmile() |> build("abc", "aux", eqn = "delayN(a, 10, 2)")
-  expect_error(sfm |> build("abc", change_type = "constant"), "Adjust equation of abc: delayN\\(\\) cannot be used for a constant")
-  expect_error(sfm |> build("abc", change_type = "stock"), "Adjust equation of abc: delayN\\(\\) cannot be used for a stock")
-  expect_equal(sfm$model$variables$aux$abc$eqn, "delayN(a, 10, 2)")
 
   # Check multiple change names
   sfm <- template("predator-prey")
@@ -545,7 +522,7 @@ test_that("build() works", {
   expect_error(xmile() |> build("b", change_name = "c"), "b does not exist in your model!")
 
   # Ensure NULL changes to "0"
-  expect_warning(xmile() |> build("c", "aux", eqn = NULL), "Equation cannot be NULL!")
+  expect_warning(xmile() |> build("c", "aux", eqn = NULL), "eqn cannot be NULL!")
   suppressWarnings({
     sfm <- xmile() |> build("c", "aux", eqn = NULL)
   })
@@ -553,7 +530,7 @@ test_that("build() works", {
   expect_equal(sfm$model$variables$aux$c$eqn_julia, "0.0")
 
   # Ensure empty equation changes to "0"
-  expect_warning(xmile() |> build("c", "aux", eqn = ""), "Equation cannot be empty!")
+  expect_warning(xmile() |> build("c", "aux", eqn = ""), "eqn cannot be empty!")
   suppressWarnings({
     sfm <- xmile() |> build("c", "aux", eqn = "")
   })
@@ -1140,34 +1117,8 @@ test_that("macro() works", {
   expect_equal(sfm$macro$G$eqn_julia, "function G(x)\n 1.0 .+ x\nend")
   expect_equal(sfm$macro$F1, NULL)
 
-  # Try to add delay()
-  sfm <- xmile()
-  expect_error(sfm |> macro("a", eqn = "delay()"), "Obligatory arguments variable, length are missing for function delay")
-  expect_error(sfm |> macro("a", eqn = "past()"), "Obligatory argument variable is missing for function past")
-  expect_error(sfm |> macro("a", eqn = "delayN()"), "Obligatory arguments variable, length, order are missing for function delayN")
-  expect_error(sfm |> macro("a", eqn = "smoothN()"), "Obligatory arguments variable, length, order are missing for function smoothN")
-  # expect_error(sfm |> macro("a", eqn = "delay()"), "Adjust equation of a: delay\\(\\) cannot be used for a macro")
-  # expect_error(sfm |> macro("a", eqn = "past()"), "Adjust equation of a: past\\(\\) cannot be used for a macro")
-  # expect_error(sfm |> macro("a", eqn = "delayN()"), "Adjust equation of a: delayN\\(\\) cannot be used for a macro")
-  # expect_error(sfm |> macro("a", eqn = "smoothN()"), "Adjust equation of a: smoothN\\(\\) cannot be used for a macro")
 })
 
-
-test_that("delay family is updated with new eqn in build()", {
-  sfm <- xmile() |>
-    build("abc", "aux", eqn = "delayN(a, 10, 2)") |>
-    build("abc", eqn = "0")
-  expect_equal(sfm$model$variables$aux$abc$eqn, "0")
-  expect_equal(length(sfm$model$variables$aux$abc$func), 0)
-
-  sfm <- xmile() |>
-    build("abc", "aux", eqn = "delayN(a, 10, 2)") |>
-    build("abc", eqn = "past(a, 10)")
-  expect_equal(sfm$model$variables$aux$abc$eqn, "past(a, 10)")
-  expect_equal(length(sfm$model$variables$aux$abc$func), 1)
-  expect_equal(names(sfm$model$variables$aux$abc$func), "past")
-  expect_equal(names(sfm$model$variables$aux$abc$func$past), paste0("abc", .sdbuildR_env[["P"]][["past_suffix"]], "1"))
-})
 
 
 test_that("clean_language works", {

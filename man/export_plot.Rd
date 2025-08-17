@@ -27,11 +27,16 @@ sfm = xmile("SIR")
 filepath = tempfile(fileext  = ".png")
 export_plot(plot(sfm), filepath)
 
+# Remove plot
+file.remove(filepath)
+
+\dontshow{if (not_on_cran()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 sim = simulate(sfm)
 export_plot(plot(sim), filepath)
 
-# Remove plot again:
+# Remove plot
 file.remove(filepath)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other simulate: 

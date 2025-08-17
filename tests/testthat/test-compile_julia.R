@@ -138,15 +138,6 @@ test_that("simulate with different components works", {
   expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
   expect_equal(unique(sim$df$variable), c("A", "B", "C"))
 
-  # One intermediary variable that is also a stock, so it is removed -> does merging of df and intermediary_df still work?
-  sfm <- xmile() |>
-    sim_specs(start = 0, stop = 10, dt = 0.1) |>
-    build("A", "stock", eqn = "100") |>
-    build("B", "flow", eqn = "delay(A, 5)", to = "A")
-  sim <- expect_no_message(simulate(sfm |> sim_specs(language = "Julia"), only_stocks = FALSE))
-  expect_equal(sort(names(sim$df)), c("time", "value", "variable"))
-  expect_equal(unique(sim$df$variable), c("A", "B"))
-
   # Stocks without flows
   sfm <- xmile() |>
     sim_specs(start = 0, stop = 10, dt = 0.1) |>

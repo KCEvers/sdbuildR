@@ -51,10 +51,9 @@ remotes::install_github("KCEvers/sdbuildR")
 
 sdbuildR offers two simulation engines: R and Julia (supported by
 [JuliaConnectoR](https://github.com/stefan-m-lenz/JuliaConnectoR/)). If
-you would like to run ensemble simulations, use units and implement
-delay functions, you will need to set up the Julia environment. Run
-`use_julia()` to install Julia and required packages (initial setup may
-take 5–15 minutes):
+you would like to run ensemble simulations and use units, you will need
+to set up the Julia environment. Run `use_julia()` to install Julia and
+required packages (initial setup may take 5–15 minutes):
 
 ``` r
 sdbuildR::use_julia()
@@ -62,15 +61,21 @@ sdbuildR::use_julia()
 
 ## Limitations
 
-Unlike in other System Dynamics software, sdbuildR minimally supports
-non-negative stocks and flows. Setting stocks to non-negative will not
-adjust flows. In any case, enforcing either stocks or flows to be
-non-negative is not recommended, as it may mask model misspecification.
-Stocks and flows that logically cannot be negative (e.g., animals or
-deaths) should ideally remain non-negative as a result of the model’s
-equations and parameters, rather than by forcing them to be
-non-negative. In addition, sdbuildR does not support vectorized
-operations.
+- Unlike in other System Dynamics software, sdbuildR minimally supports
+  non-negative stocks and flows. Setting stocks to non-negative will not
+  adjust flows. In any case, enforcing either stocks or flows to be
+  non-negative is not recommended, as it may mask model
+  misspecification. Stocks and flows that logically cannot be negative
+  (e.g., animals or deaths) should ideally remain non-negative as a
+  result of the model’s equations and parameters, rather than by forcing
+  them to be non-negative.
+
+- sdbuildR does not support vectorized operations, destructuring
+  assignment, or variable constraints.
+
+- sdbuildR does not support the Insight Maker functions Pause(), Fix(),
+  Map(), Filter(), and Repeat(). A message is issued if any of these are
+  detected.
 
 ## Other System Dynamics software
 

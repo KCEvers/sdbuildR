@@ -94,7 +94,7 @@ IM_to_xmile <- function(xml_file) {
   }
 
   # Get attributes, also of children
-  tags <- c("Setting", "Display", "Variable", "Converter", "Stock", "Flow", "Link", "Ghost")
+  tags <- c("Setting", "Variable", "Converter", "Stock", "Flow", "Link", "Ghost")
   node_names <- xml2::xml_name(children)
 
   # Check whether the model has any components
@@ -271,7 +271,8 @@ IM_to_xmile <- function(xml_file) {
 
   # Replace old names with new names
   model_elements <- lapply(model_elements, function(x) {
-    x[["eqn_insightmaker"]] <- stringr::str_replace_all(x[["eqn_insightmaker"]], stringr::fixed(c("\\n" = "\n")))
+    x[["eqn_insightmaker"]] <- stringr::str_replace_all(x[["eqn_insightmaker"]],
+                                                        stringr::fixed(c("\\n" = "\n")))
     x[["eqn_insightmaker"]] <- replace_names_IM(x[["eqn_insightmaker"]],
       original = old_names[ids %in% x[["access_ids"]]],
       replacement = new_names[ids %in% x[["access_ids"]]]
@@ -297,7 +298,8 @@ IM_to_xmile <- function(xml_file) {
 
   # Converters
   converter_prop <- c(
-    "doc", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "xpts", "ypts", "interpolation", "source", "extrapolation",
+    "doc", "units_insightmaker", "name_insightmaker", "type", "name",
+    "min", "max", "xpts", "ypts", "interpolation", "source", "extrapolation",
     # "access", "access_ids",
     "id_insightmaker"
   )
@@ -327,7 +329,8 @@ IM_to_xmile <- function(xml_file) {
 
   # Variables -> Auxiliaries
   variable_prop <- c(
-    "doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max",
+    "doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker",
+    "type", "name", "min", "max",
     # "access", "access_ids",
     "id_insightmaker"
   )
@@ -345,19 +348,17 @@ IM_to_xmile <- function(xml_file) {
 
   # Stocks
   stock_prop <- c(
-    "doc", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max",
-    # "delayn",
-    "eqn_insightmaker",
+    "doc", "units_insightmaker", "name_insightmaker", "type", "name",
+    "min", "max", "eqn_insightmaker",
     # "StockMode", "Delay",
-    "conveyor", "len",
-    "non_negative",
+    "conveyor", "len", "non_negative",
     # "access", "access_ids",
     "id_insightmaker"
   )
   flows <- model_elements["Flow" == model_element_names]
-  flow_ids <- flows |> get_map("id")
-  flow_sources <- flows |> get_map("source")
-  flow_targets <- flows |> get_map("target")
+  flow_ids <- get_map(flows, "id")
+  flow_sources <- get_map(flows, "source")
+  flow_targets <- get_map(flows, "target")
 
   # Only keep selected properties and rename
   model_elements["Stock" == model_element_names] <-
@@ -381,7 +382,8 @@ IM_to_xmile <- function(xml_file) {
 
   # Flows
   flow_prop <- c(
-    "doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "from", "to", "non_negative",
+    "doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker",
+    "type", "name", "min", "max", "from", "to", "non_negative",
     # "access", "access_ids",
     "id_insightmaker"
   )
@@ -418,27 +420,6 @@ IM_to_xmile <- function(xml_file) {
   # Name elements
   model_elements <- stats::setNames(model_elements, get_map(model_elements, "name"))
 
-
-  # Find which primitives to plot
-  displays <- children_attrs[match("Display", node_names)]
-  display_types <- displays |> get_map("Type")
-  # Get the first time series display
-  display <- displays[[which(display_types == "Time Series")[1]]]
-  # Get all ids which are plotted; sometimes, the primitives are listed as "Primitives", "Primitives2"
-  display_ids <- display[grepl("^Primitives", names(display))] |>
-    unlist() |>
-    unname() |>
-    Filter(nzchar, x = _) |>
-    paste0(collapse = ",")
-  display_ids_split <- trimws(strsplit(display_ids, ",")[[1]])
-  # If display ids is empty, use Stocks
-  if (length(display_ids_split) > 0) {
-    display_var <- new_names[match(display_ids_split, ids)]
-  } else {
-    display_var <- names(model_elements["Stock" == model_element_names])
-  }
-
-
   # Ensure year and month match Insight Maker's unit definition - a year in Insight Maker is 365 days, not 365.25 days
   time_units <- settings[["TimeUnits"]] |>
     stringr::str_replace_all(stringr::regex(c(
@@ -448,7 +429,7 @@ IM_to_xmile <- function(xml_file) {
     ), ignore_case = TRUE))
 
   # Set-up basic structure
-  sfm <- xmile() |>
+  sfm <- new_sdbuildR_xmile() |>
     sim_specs(
       method = settings[["method"]],
       time_units = time_units,
@@ -486,8 +467,6 @@ IM_to_xmile <- function(xml_file) {
     eqn_insightmaker = out_global[["eqn"]],
     doc = out_global[["doc"]]
   )
-
-  sfm[["display"]] <- list(variables = display_var)
 
   if (.sdbuildR_env[["P"]][["debug"]]) {
     message(sprintf(

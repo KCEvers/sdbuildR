@@ -25,6 +25,17 @@ xmile <- function(name = NULL) {
     return(template(name))
   }
 
+  sfm <- new_sdbuildR_xmile()
+  return(sfm)
+}
+
+
+#' Create new object of class sdbuildR_xmile
+#'
+#' @returns Stock-and-flow model of class sdbuildR_xmile.
+#' @noRd
+#'
+new_sdbuildR_xmile <- function(){
   header_defaults <- as.list(formals(header))
   header_defaults <- header_defaults[!names(header_defaults) %in%
                                        c("sfm", "...")]
@@ -33,10 +44,12 @@ xmile <- function(name = NULL) {
   spec_defaults <- as.list(formals(sim_specs))
   spec_defaults <- spec_defaults[!names(spec_defaults) %in% c("sfm", "...")]
 
-  # Manually overwrite these as the defaults of save_at and save_from are defined in terms of other variables
+  # Manually overwrite these as the defaults of save_at and save_from are
+  # defined in terms of other variables
   spec_defaults[["save_at"]] <- spec_defaults[["dt"]]
   spec_defaults[["save_from"]] <- spec_defaults[["start"]]
 
+  # Create list
   obj <- list(
     header = header_defaults,
     sim_specs = spec_defaults,
@@ -50,15 +63,13 @@ xmile <- function(name = NULL) {
       )
     ),
     macro = list(),
-    model_units = list(),
-    display = list(variables = c())
+    model_units = list()
   )
 
   sfm <- structure(obj, class = "sdbuildR_xmile")
-
+  sfm <- validate_xmile(sfm)
   return(sfm)
 }
-
 
 
 #' Get the sources and destinations of flows
@@ -368,9 +379,24 @@ check_xmile <- function(sfm) {
 validate_xmile <- function(sfm) {
   check_xmile(sfm)
 
+  # Ensure model units have default properties
+  defaults <- as.list(formals(model_units))
+  defaults <- defaults[!names(defaults) %in% c("sfm", "name", "erase", "change_name")]
+  sfm[["model_units"]] <- lapply(sfm[["model_units"]], function(x) {
+    x[["prefix"]] <- FALSE
+
+    # Merge with defaults
+    utils::modifyList(defaults, x)
+  })
+
+  # Ensure names are the same as names properties
+  names(sfm[["model_units"]]) <- unname(unlist(lapply(sfm[["model_units"]], `[[`, "name")))
+
+
   # No need to validate model variables if there are no variables
   nr_var <- sum(lengths(sfm[["model"]][["variables"]]))
   if (nr_var > 0) {
+
     # Make sure name property matches with the name of the list entry
     type_names <- names(sfm[["model"]][["variables"]])
     sfm[["model"]][["variables"]] <- lapply(
@@ -425,25 +451,25 @@ validate_xmile <- function(sfm) {
 
     # Ensure to and from in flows are only referring to stocks
     names_df <- get_names(sfm)
-    highlight_names <- names_df[names_df[["type"]] == "stock", "name"]
-    nonhighlight_names <- names_df[names_df[["type"]] != "stock", "name"]
+    stock_names <- names_df[names_df[["type"]] == "stock", "name"]
+    nonstock_names <- names_df[names_df[["type"]] != "stock", "name"]
 
     sfm[["model"]][["variables"]][["flow"]] <- lapply(sfm[["model"]][["variables"]][["flow"]], function(x) {
       if (is_defined(x[["from"]])) {
-        # If length of from is more than 1, select first
-        if (length(x[["from"]]) > 1) {
-          message(paste0(
-            x[["name"]], " is flowing from more than one variable (",
-            paste0(x[["from"]], collapse = ", "), ")! Only keeping ", x[["from"]][1], "..."
-          ))
-          x[["from"]] <- x[["from"]][1]
-        }
+        # # If length of from is more than 1, select first
+        # if (length(x[["from"]]) > 1) {
+        #   message(paste0(
+        #     x[["name"]], " is flowing from more than one variable (",
+        #     paste0(x[["from"]], collapse = ", "), ")! Only keeping ", x[["from"]][1], "..."
+        #   ))
+        #   x[["from"]] <- x[["from"]][1]
+        # }
 
         # If from is not in stocks but is another variable, remove
-        non_stocks <- x[["from"]][!x[["from"]] %in% highlight_names & x[["from"]] %in% nonhighlight_names]
+        non_stocks <- x[["from"]][!x[["from"]] %in% stock_names & x[["from"]] %in% nonstock_names]
         if (length(non_stocks) > 0) {
           message(paste0(x[["name"]], " is flowing from variables which are not stocks (", paste0(non_stocks, collapse = ", "), ")! Removing non-stocks from `from`..."))
-          x[["from"]] <- intersect(x[["from"]], highlight_names)
+          x[["from"]] <- intersect(x[["from"]], stock_names)
           if (length(x[["from"]]) == 0) {
             x[["from"]] <- ""
           }
@@ -451,20 +477,20 @@ validate_xmile <- function(sfm) {
       }
 
       if (is_defined(x[["to"]])) {
-        # If length of to is more than 1, select first
-        if (length(x[["to"]]) > 1) {
-          message(paste0(
-            x[["name"]], " is flowing to more than one variable (",
-            paste0(x[["to"]], collapse = ", "), ")! Only keeping ", x[["to"]][1], "..."
-          ))
-          x[["to"]] <- x[["to"]][1]
-        }
+        # # If length of to is more than 1, select first
+        # if (length(x[["to"]]) > 1) {
+        #   message(paste0(
+        #     x[["name"]], " is flowing to more than one variable (",
+        #     paste0(x[["to"]], collapse = ", "), ")! Only keeping ", x[["to"]][1], "..."
+        #   ))
+        #   x[["to"]] <- x[["to"]][1]
+        # }
 
         # If to is not in stocks but is another variable, remove
-        non_stocks <- x[["to"]][!x[["to"]] %in% highlight_names & x[["to"]] %in% nonhighlight_names]
+        non_stocks <- x[["to"]][!x[["to"]] %in% stock_names & x[["to"]] %in% nonstock_names]
         if (length(non_stocks) > 0) {
           message(paste0(x[["name"]], " is flowing to a variable which is not a stock (", paste0(non_stocks, collapse = ", "), ")! Removing ", paste0(non_stocks, collapse = ", "), " from `to`..."))
-          x[["to"]] <- intersect(x[["to"]], highlight_names)
+          x[["to"]] <- intersect(x[["to"]], stock_names)
           if (length(x[["to"]]) == 0) {
             x[["to"]] <- ""
           }
@@ -480,33 +506,7 @@ validate_xmile <- function(sfm) {
       return(x)
     })
 
-    # Ensure sfm$behavior matches non-negativity properties of variables: Get non-negative stocks and flows
-    check_nonneg <- function(y){
-      unlist(lapply(y, function(x){
-        if (isTRUE(x[["non_negative"]])){
-          return(x[["name"]])
-        }
-      }))
-    }
-
-    nonneg_stock <- check_nonneg(sfm[["model"]][["variables"]][["stock"]])
-    nonneg_flow <- check_nonneg(sfm[["model"]][["variables"]][["flow"]])
-    sfm[["behavior"]][["stock"]][["non_negative"]] <- nonneg_stock
-    sfm[["behavior"]][["flow"]][["non_negative"]] <- nonneg_flow
   }
-
-  # Ensure model units have default properties
-  defaults <- as.list(formals(model_units))
-  defaults <- defaults[!names(defaults) %in% c("sfm", "name", "erase", "change_name")]
-  sfm[["model_units"]] <- lapply(sfm[["model_units"]], function(x) {
-    x[["prefix"]] <- FALSE
-
-    # Merge with defaults
-    utils::modifyList(defaults, x)
-  })
-
-  # Ensure names are the same as names properties
-  names(sfm[["model_units"]]) <- unname(unlist(lapply(sfm[["model_units"]], `[[`, "name")))
 
   # Ensure macros have default properties
   defaults <- as.list(formals(macro))
@@ -581,7 +581,8 @@ switch_list <- function(x) {
 #' # Unit names may be changed to be syntactically valid and avoid overlap:
 #' sfm <- model_units(xmile(), "C0^2")
 #'
-model_units <- function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_name = NULL) {
+model_units <- function(sfm, name, eqn = "1", doc = "",
+                        erase = FALSE, change_name = NULL) {
   # Basic check
   if (missing(sfm)) {
     stop("No model specified!")
@@ -630,9 +631,6 @@ model_units <- function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_na
       chosen_name <- name
     }
 
-    # name <- sapply(chosen_name, function(x) {
-    #   clean_unit(x, regex_units, unit_name = TRUE)
-    # }, USE.NAMES = FALSE)
     name <- vapply(chosen_name, function(x) {
       clean_unit(x, regex_units, unit_name = TRUE)
     }, character(1), USE.NAMES = FALSE)
@@ -642,7 +640,8 @@ model_units <- function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_na
 
     idx_changed <- name != chosen_name
 
-    # Check if unit already exists in unit package. Default units cannot be overwritten
+    # Check if unit already exists in unit package.
+    # Default units cannot be overwritten
     name_in_units <- name %in% unname(regex_units)
 
     if (any(name_in_units)) {
@@ -746,7 +745,6 @@ model_units <- function(sfm, name, eqn = "1", doc = "", erase = FALSE, change_na
     argg[["name"]] <- name
 
     if ("eqn" %in% passed_arg) {
-      # eqn <- sapply(eqn, clean_unit, regex_units, USE.NAMES = FALSE)
       eqn <- vapply(eqn, clean_unit, character(1), regex_units, USE.NAMES = FALSE)
       eqn <- ensure_length(eqn, name)
       argg[["eqn"]] <- eqn
@@ -1017,20 +1015,6 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 
   return(sfm)
 }
-
-
-# get_regex_method = function(){
-#
-#   matrix(c(
-#     "euler", "rk2", "rk4", "rk23", "rk23bs", "rk34f", "rk45f", "rk45ck", "rk45e", "rk45dp6", "rk45dp7", "rk78dp",
-#     "rk78f", "irk3r", "irk5r", "irk4hh", "irk6kb", "irk4l", "irk6l", "ode23", "ode45"
-#
-#   ))
-#
-#   ncol = 6, byrow = TRUE, dimnames = list(NULL, c("R", "julia", "syntax", "add_first_arg", "add_second_arg", "add_broadcast"))
-#
-#
-# }
 
 
 
@@ -1364,17 +1348,21 @@ sim_specs <- function(sfm,
 #'
 erase_var <- function(sfm, name) {
   # Erase specified variables
-  sfm[["model"]][["variables"]] <- lapply(sfm[["model"]][["variables"]], function(x) {
+  sfm[["model"]][["variables"]] <- lapply(sfm[["model"]][["variables"]],
+                                          function(x) {
     # Remove variable from model
     x <- x[!names(x) %in% name]
 
-    # Remove variable from to, from
+    # Remove variable from to, from, source
     lapply(x, function(y) {
       if (is_defined(y[["to"]])) {
         if (y[["to"]] %in% name) y[["to"]] <- NULL
       }
       if (is_defined(y[["from"]])) {
         if (y[["from"]] %in% name) y[["from"]] <- NULL
+      }
+      if (is_defined(y[["source"]])) {
+        if (y[["source"]] %in% name) y[["source"]] <- NULL
       }
       return(y)
     })
@@ -1612,7 +1600,15 @@ build <- function(sfm, name, type,
     # Find corresponding building block
     type <- names_df[match(name, names_df[["name"]]), "type"]
   } else if (!missing(type)) {
+
     type <- trimws(tolower(type))
+
+    # Allow for use of auxiliary instead of aux
+    type[type == "auxiliary"] <- "aux"
+
+    # Remove trailing s if present
+    type <- gsub("s$", "", type)
+
     if (!all(type %in% c("stock", "flow", "constant", "aux", "gf"))) {
       stop("type needs to be one of 'stock', 'flow', 'constant', 'aux', or 'gf'!")
     }
@@ -1918,12 +1914,12 @@ build <- function(sfm, name, type,
 
   if ("eqn" %in% passed_arg) {
     if (any(is.null(eqn))) {
-      warning("Equation cannot be NULL! Setting empty equations to 0...")
+      warning("eqn cannot be NULL! Setting empty equations to 0...")
       eqn[is.null(eqn)] <- "0.0"
     }
 
     if (any(!nzchar(eqn))) {
-      warning("Equation cannot be empty! Setting empty equations to 0...")
+      warning("eqn cannot be empty! Setting empty equations to 0...")
       eqn[!nzchar(eqn)] <- "0.0"
     }
 
@@ -2076,84 +2072,6 @@ get_building_block_prop <- function() {
 
 
 
-#' Quickly get names of model variables
-#'
-#' @inheritParams build
-#'
-#' @noRd
-#' @returns Vector with names of model variables
-get_model_var <- function(sfm) {
-  c(unname(unlist(lapply(sfm[["model"]][["variables"]], names))), names(sfm[["macro"]]))
-}
-
-
-#' Create dataframe with stock-and-flow model variables, types, labels, and units
-#'
-#' @inheritParams build
-#'
-#' @return Dataframe
-#' @noRd
-#'
-get_names <- function(sfm) {
-  # Return empty dataframe if no variables
-  nr_var <- sum(lengths(sfm[["model"]][["variables"]]))
-  if (nr_var == 0) {
-    names_df <- data.frame(
-      type = character(0),
-      name = character(0),
-      label = character(0),
-      units = character(0)
-    )
-    return(names_df)
-  }
-
-  # Building blocks to check
-  blocks <- c("stock", "aux", "constant", "flow", "gf")
-  entries <- list()
-
-  # Collect variable information
-  for (block in blocks) {
-    if (!is.null(sfm[["model"]][["variables"]][[block]])) {
-      for (var in sfm[["model"]][["variables"]][[block]]) {
-        if (!is.null(var[["name"]])) {
-          entries[[length(entries) + 1]] <- list(
-            type = block,
-            name = var[["name"]],
-            label = var[["label"]],
-            units = var[["units"]]
-          )
-        }
-      }
-    }
-  }
-
-  # Convert to dataframe
-  if (length(entries) > 0) {
-    names_df <- do.call(rbind, lapply(entries, as.data.frame, stringsAsFactors = FALSE))
-  } else {
-    column_names <- c("type", "name", "label", "units")
-    names_df <- as.data.frame(matrix(NA, nrow = 1, ncol = length(column_names)))
-    colnames(names_df) <- column_names
-  }
-
-  # Add macros if any
-  if (!is.null(sfm[["macro"]]) && length(names(sfm[["macro"]])) > 0) {
-    macro_df <- data.frame(
-      type = "macro",
-      name = names(sfm[["macro"]]),
-      label = names(sfm[["macro"]]),
-      units = "",
-      stringsAsFactors = FALSE
-    )
-    names_df <- rbind(names_df, macro_df)
-  }
-
-  rownames(names_df) <- NULL
-  return(names_df)
-}
-
-
-
 
 #' Create syntactically valid, unique names for use in R and Julia
 #'
@@ -2198,12 +2116,12 @@ create_R_names <- function(create_names, names_df, protected = c()) {
     as.character(stats::na.omit(names_df[["name"]]))
   ) |> unique()
 
-  highlight_names <- names_df[names_df[["type"]] == "stock", "name"]
-  if (length(highlight_names) > 0) {
-    if (all(!is.null(highlight_names) & !is.na(highlight_names))) {
+  stock_names <- names_df[names_df[["type"]] == "stock", "name"]
+  if (length(stock_names) > 0) {
+    if (all(!is.null(stock_names) & !is.na(stock_names))) {
       protected_names <- c(
         protected_names,
-        paste0(.sdbuildR_env[["P"]][["change_prefix"]], highlight_names)
+        paste0(.sdbuildR_env[["P"]][["change_prefix"]], stock_names)
       )
     }
   }
@@ -2449,22 +2367,22 @@ debugger <- function(sfm, quietly = FALSE) {
 
   constant_names <- names(sfm[["model"]][["variables"]][["constant"]])
   aux_names <- names(sfm[["model"]][["variables"]][["aux"]])
-  highlight_names <- names(sfm[["model"]][["variables"]][["stock"]])
+  stock_names <- names(sfm[["model"]][["variables"]][["stock"]])
   flow_df <- get_flow_df(sfm)
   flow_names <- flow_df[["name"]]
   names_df <- get_names(sfm)
 
   ### Check whether all Stocks have inflows and/or outflows
-  if (length(highlight_names) > 0 & nrow(flow_df) > 0) {
-    idx <- highlight_names %in% flow_df[["to"]] | highlight_names %in% flow_df[["from"]]
+  if (length(stock_names) > 0 & nrow(flow_df) > 0) {
+    idx <- stock_names %in% flow_df[["to"]] | stock_names %in% flow_df[["from"]]
 
     if (any(!idx)) {
       potential_problems <- c(potential_problems, paste0(
         "* These stocks are not connected to any flows:\n- ",
-        paste0(highlight_names[!idx], collapse = ", ")
+        paste0(stock_names[!idx], collapse = ", ")
       ))
     }
-  } else if (length(highlight_names) == 0) {
+  } else if (length(stock_names) == 0) {
     problems <- c(problems, "* Your model has no stocks.")
   }
 
@@ -2481,8 +2399,8 @@ debugger <- function(sfm, quietly = FALSE) {
     }
 
     ### Find whether the from and to stocks exist
-    idx_to <- (!flow_df[["to"]] %in% highlight_names) & nzchar(flow_df[["to"]])
-    idx_from <- (!flow_df[["from"]] %in% highlight_names) & nzchar(flow_df[["from"]])
+    idx_to <- (!flow_df[["to"]] %in% stock_names) & nzchar(flow_df[["to"]])
+    idx_from <- (!flow_df[["from"]] %in% stock_names) & nzchar(flow_df[["from"]])
 
     if (any(idx_to) | any(idx_from)) {
       problems <- c(problems, paste0(
@@ -2493,7 +2411,7 @@ debugger <- function(sfm, quietly = FALSE) {
 
     ### Find whether both flows and stocks have units
     flows_units <- names_df[match(flow_names, names_df[["name"]]), "units"]
-    stock_units <- names_df[match(highlight_names, names_df[["name"]]), "units"]
+    stock_units <- names_df[match(stock_names, names_df[["name"]]), "units"]
   } else {
     potential_problems <- c(potential_problems, "* Your model has no flows.")
   }
@@ -2798,12 +2716,6 @@ as.data.frame.sdbuildR_xmile <- function(x,
         ifelse(length(properties[!idx_exist]) > 1, "are not existing properties", "is not an existing property")
       ))
     }
-
-    # if (!all(prop_in_df)){
-    #   stop(sprintf("%s %s!",
-    #                paste0(properties[!prop_in_df], collapse = ", "),
-    #                ifelse(length(properties[!prop_in_df]) > 1, "are not existing properties", "is not an existing property")))
-    # }
 
     # Always show name and type
     properties <- unique(c("type", "name", properties))

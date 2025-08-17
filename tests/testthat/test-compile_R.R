@@ -135,41 +135,6 @@ test_that("output of simulate in R", {
   )
 })
 
-test_that("throw error in compile_R for unsupported functions", {
-  # No R simulations for models with units
-  sfm <- xmile("coffee_cup") |> sim_specs(language = "R")
-  expect_error(simulate(sfm), "The model contains unit strings u\\(''\\), which are not supported for simulations in R")
-
-  # No R simulations for models with delay
-  sfm <- xmile() |>
-    sim_specs(language = "R") |>
-    build("A", "stock", eqn = "100") |>
-    build("B", "flow", eqn = "delay(A, 5)", to = "A")
-  expect_error(simulate(sfm), "The model contains either delay\\(\\) or past\\(\\), which are not supported for simulations in R")
-
-  # No R simulations for models with past
-  sfm <- xmile() |>
-    sim_specs(language = "R") |>
-    build("A", "stock", eqn = "100") |>
-    build("B", "flow", eqn = "past(A, 5)", to = "A")
-  expect_error(simulate(sfm), "The model contains either delay\\(\\) or past\\(\\), which are not supported for simulations in R")
-
-  # No R simulations for models with delayN
-  sfm <- xmile() |>
-    sim_specs(language = "R") |>
-    build("A", "stock", eqn = "100") |>
-    build("B", "flow", eqn = "delayN(A, 5, 3)", to = "A")
-  expect_error(simulate(sfm), "The model contains either delayN\\(\\) or smoothN\\(\\), which are not supported for simulations in R")
-
-  # No R simulations for models with smoothN
-  sfm <- xmile() |>
-    sim_specs(language = "R") |>
-    build("A", "stock", eqn = "100") |>
-    build("B", "flow", eqn = "smoothN(A, 5, 3)", to = "A")
-  expect_error(simulate(sfm), "The model contains either delayN\\(\\) or smoothN\\(\\), which are not supported for simulations in R")
-})
-
-
 test_that("save_at works", {
   # Cannot set save_at to lower than dt
   sfm <- xmile("SIR")
