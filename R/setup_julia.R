@@ -9,6 +9,7 @@ julia_setup_ok <- function() {
   isTRUE(.sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]]) && !is.null(.sdbuildR_env[["JULIA_BINDIR"]])
 }
 
+
 #' Set up Julia environment
 #'
 #' Create Julia environment to simulate stock-and-flow models. `use_julia()` looks for a Julia installation, and will install Julia as well as some required packages if not found. A Julia environment is created in the inst directory of the sdbuildR package.
@@ -130,6 +131,7 @@ use_julia <- function(
 
   old_option = Sys.getenv("JULIA_BINDIR", unset = NA)
   Sys.setenv("JULIA_BINDIR" = JULIA_HOME)
+  .sdbuildR_env[["JULIA_BINDIR"]] = JULIA_HOME
 
   on.exit({
     if (is.na(old_option)){
@@ -165,14 +167,26 @@ use_julia <- function(
 
   # Make sdbuildRUtils available to sdbuildR package environment
   if (!pkg_already_developed) {
-    # Navigate to Julia package directory
-    JuliaConnectoR::juliaEval(paste0('cd("', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
 
-    # Activate the sdbuildR package environment
-    JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, '")'))
+    # message("The following Julia packages may need to be installed: ",
+    #         paste0(names(.sdbuildR_env[["jl_pkg_pkg"]]), collapse = ", "))
+    # ans <- readline(paste0("Proceed? (y/n) "))
+    # if (trimws(tolower(ans)) %in% c("y", "yes")) {
 
-    # Develop the package in the current environment
-    JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
+
+      # Navigate to Julia package directory
+      JuliaConnectoR::juliaEval(paste0('cd("', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
+
+      # Activate the sdbuildR package environment
+      JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, '")'))
+
+      # Develop the package in the current environment
+      JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
+
+    # } else {
+    #   stop("sdbuildR set-up could not be completed.")
+    # }
+
   }
 
   # Run initialization
@@ -312,24 +326,13 @@ Base.trunc(x::Unitful.Quantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)\n"
   write_script(script, filepath)
 
   # Add dependencies
-  pkgs <- c(
-    "OrdinaryDiffEq" = "6.98",
-    "DiffEqCallbacks" = "4.8",
-    "DataFrames" = "1.7",
-    "Distributions" = "0.25",
-    "Statistics" = "1.11",
-    "StatsBase" = "0.34",
-    "Unitful" = "1.23",
-    "DataInterpolations" = "8.1",
-    "Random" = "1.11",
-    "CSV" = "0.10",
-    "SciMLBase" = "2.102"
-  )
+  pkgs <- .sdbuildR_env[["jl_env_pkg"]]
 
   for (pkg in names(pkgs)) {
     JuliaConnectoR::juliaEval(paste0("Pkg.add(\"", pkg, "\")"))
     JuliaConnectoR::juliaEval(paste0("Pkg.status(\"", pkg, "\")"))
-    JuliaConnectoR::juliaEval(paste0("Pkg.compat(\"", pkg, "\", \"", pkgs[[pkg]], "\")"))
+    JuliaConnectoR::juliaEval(paste0("Pkg.compat(\"", pkg, "\", \"",
+                                     pkgs[[pkg]], "\")"))
   }
 
   # JuliaConnectoR::juliaEval(paste0("Pkg.update()"))
@@ -452,14 +455,7 @@ create_julia_pkg <- function() {
   JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, "\\\\", .sdbuildR_env[["P"]][["jl_pkg_name"]], '")'))
 
   # Add dependencies
-  pkgs <- c(
-    "DataFrames" = "1.7",
-    "Distributions" = "0.25",
-    "Statistics" = "1.11",
-    "Unitful" = "1.23",
-    "DataInterpolations" = "8.1",
-    "Random" = "1.11"
-  )
+  pkgs <- .sdbuildR_env[["jl_pkg_pkg"]]
 
   for (pkg in names(pkgs)) {
     JuliaConnectoR::juliaEval(paste0("Pkg.add(\"", pkg, "\")"))
