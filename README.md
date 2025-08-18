@@ -57,6 +57,9 @@ required packages (initial setup may take 5–15 minutes):
 
 ``` r
 sdbuildR::use_julia()
+#> Starting Julia ...
+#> Connecting to Julia TCP server at localhost:11980 ...
+#> Setting up Julia environment for sdbuildR...
 ```
 
 ## Limitations

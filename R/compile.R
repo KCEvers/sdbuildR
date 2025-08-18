@@ -1006,7 +1006,7 @@ use_threads <- function(n = parallel::detectCores() - 1, stop = FALSE) {
     }
 
     # Save user's old setting
-    .sdbuildR_env[["prev_JULIA_NUM_THREADS"]] <- Sys.getenv("JULIA_NUM_THREADS")
+    .sdbuildR_env[["prev_JULIA_NUM_THREADS"]] <- Sys.getenv("JULIA_NUM_THREADS", unset = NA)
 
     .sdbuildR_env[["JULIA_NUM_THREADS"]] <- n
   }

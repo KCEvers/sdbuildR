@@ -90,10 +90,13 @@ Moreover, units help identify and differentiate between time scales in the syste
 
 ## Units with sdbuildR
 
+```{r libraries, echo=TRUE, message=FALSE}
+library(sdbuildR)
+```
+
 Units thus help to verify and interpret our models. Next, we'll use the simple example of a coffee cup to explore how to specify the simulation time unit, units of variables, and units in equations. We will finish with how to define and use your own custom units. Note that using units is only supported for running models with `sim_specs(language = 'Julia')`, not in R (see *Why are units not supported in R?* below). Set up the Julia environment first:
 
-```{r libraries, echo=FALSE}
-library(sdbuildR)
+```{r, echo=TRUE}
 use_julia()
 ```
 
