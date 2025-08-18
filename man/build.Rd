@@ -110,17 +110,13 @@ The obligatory properties of an auxiliary are "name", "type", "xpts", and "ypts"
 sfm <- xmile()
 summary(sfm)
 \dontshow{
-sfm <- sim_specs(sfm, save_at = .1)
+sfm <- sim_specs(sfm, save_at = .5)
 }
 
 # Add two stocks. Specify their initial values in the "eqn" property, as well
 # as their plotting label
 sfm <- build(sfm, "predator", "stock", eqn = 10, label = "Predator") |>
   build("prey", "stock", eqn = 50, label = "Prey")
-
-# Plot the stock-and-flow diagram
-plot(sfm, center_stocks = TRUE)
-
 
 
 # Add four flows: the births and deaths of both the predators and prey. The
@@ -187,6 +183,7 @@ Other build:
 \code{\link{header}()},
 \code{\link{macro}()},
 \code{\link{plot.sdbuildR_xmile}()},
+\code{\link{print.summary.sdbuildR_xmile}()},
 \code{\link{summary.sdbuildR_xmile}()},
 \code{\link{xmile}()}
 }

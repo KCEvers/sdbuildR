@@ -12,18 +12,16 @@
 #' @noRd
 #' @importFrom rlang .data
 #'
-convert_equations_IM <- function( # Simulation time unit used for converting all time units to the same unit
-                                 # Name of model element, only needed in step, ramp, pulse functions
-                                 type,
+convert_equations_IM <- function(type,
                                  name,
                                  eqn,
                                  var_names,
                                  regex_units) {
   if (.sdbuildR_env[["P"]][["debug"]]) {
-    print("")
-    # print(type)
-    print(name)
-    print(eqn)
+    message("")
+    # message(type)
+    message(name)
+    message(eqn)
   }
 
   # Check whether eqn is empty or NULL
@@ -46,11 +44,11 @@ convert_equations_IM <- function( # Simulation time unit used for converting all
     add_Rcode <- list()
   } else {
     # Step 2. Syntax (bracket types, destructuring assignment, time units {1 Month})
-    eqn <- eqn |>
+    eqn <-
       # Replace curly brackets {} with c()
-      curly_to_vector_brackets(var_names) |>
-      # Destructuring assignment, e.g. x, y <- {a, b}
-      conv_destructuring_assignment()
+      curly_to_vector_brackets(eqn, var_names) #|>
+      # # Destructuring assignment, e.g. x, y <- {a, b}
+      # conv_destructuring_assignment()
 
 
     # Step 3. Statements (if, for, while, functions, try)
@@ -86,7 +84,7 @@ convert_equations_IM <- function( # Simulation time unit used for converting all
 
 
     if (.sdbuildR_env[["P"]][["debug"]]) {
-      print(eqn)
+      message(eqn)
     }
   }
 
@@ -125,7 +123,7 @@ replace_comments <- function(eqn) {
       next
     }
 
-    idxs_comments[["char"]] <- rep(comment_char, sapply(idxs_comments_, nrow))
+    idxs_comments[["char"]] <- rep(comment_char, vapply(idxs_comments_, nrow, numeric(1)))
 
     # Remove those that are in comments (#) or quotation marks
     idxs_exclude <- get_seq_exclude(eqn, type = "quot", names_with_brackets = TRUE)
@@ -225,28 +223,6 @@ conv_destructuring_assignment <- function(eqn) {
   done <- FALSE
 
   while (!done) {
-    # In-line function assignment without using the word function
-    idxs_inline <- stringr::str_locate_all(
-      eqn,
-      stringr::regex(
-        "^(.*?)\\)[ ]*[^%]<-",
-        dotall = FALSE,
-        multiline = TRUE
-      )
-    )[[1]]
-    idxs_inline
-
-    if (nrow(idxs_inline) == 0) {
-      done <- TRUE
-    } else {
-      idx_inline <- idxs_inline[1, ]
-      # Change to one-liner function
-      stringr::str_sub(eqn, idx_inline["start"], idx_inline["end"]) <-
-        stringr::str_sub(eqn, idx_inline["start"], idx_inline["end"]) |>
-        stringr::str_replace("[ ]*<-[ ]*", " ") |>
-        stringr::str_replace("\\(", " <- function(") # Replace first opening bracket; important to change it to <- and not =, as otherwise = will be replaced by ==
-    }
-
 
     # Check whether any string uses destructuring assignment
     idxs_assignment <- stringr::str_locate_all(
@@ -314,9 +290,6 @@ replace_colon <- function(eqn, var_names) {
 
   # Only keep those between vector brackets
   paired_idxs <- get_range_all_pairs(eqn, var_names, type = "vector", names_with_brackets = TRUE)
-  # for (i in 1:nrow(paired_idxs)){
-  #   print(stringr::str_sub(eqn, paired_idxs[i,"start"],paired_idxs[i,"end"]))
-  # }
   seq_paired_idxs <- unlist(mapply(seq, paired_idxs[["start"]], paired_idxs[["end"]], SIMPLIFY = FALSE))
 
   # Replace colons that are not used to define a range with "="
@@ -324,7 +297,6 @@ replace_colon <- function(eqn, var_names) {
 
   for (i in replace_idxs) {
     stringr::str_sub(eqn, i, i) <- "="
-    # print(stringr::str_sub(eqn, i-10, i+10))
   }
 
   return(eqn)
@@ -340,7 +312,6 @@ replace_colon <- function(eqn, var_names) {
 #' @noRd
 #'
 curly_to_vector_brackets <- function(eqn, var_names) {
-  # print(eqn)
 
   # Curly brackets can be:
   # - Indexers, e.g. "b{1}.length()"
@@ -359,7 +330,7 @@ curly_to_vector_brackets <- function(eqn, var_names) {
     if (nrow(paired_idxs) > 0) {
       # Create dataframe with properties per pair
       paired_idxs_prop <- paired_idxs
-      paired_idxs_prop["id"] <- 1:nrow(paired_idxs_prop)
+      paired_idxs_prop["id"] <- seq_len(nrow(paired_idxs_prop))
 
       # Find which pairs this pair is nested within; this will be in order of highest to lowest level
       paired_idxs_prop[["nested_within"]] <- which(
@@ -427,8 +398,6 @@ curly_to_vector_brackets <- function(eqn, var_names) {
         end_idx <- chosen_pair[["end"]]
         string <- stringr::str_sub(eqn, start_idx + 1, end_idx - 1)
 
-        # print(string)
-
         if (x_is_indexer) {
           replacement <- paste0("[", string, "]")
         } else if (x_is_vector) {
@@ -438,8 +407,6 @@ curly_to_vector_brackets <- function(eqn, var_names) {
         } else {
           replacement <- stringr::str_sub(eqn, start_idx, end_idx) # No replacement
         }
-
-        # print(replacement)
 
         # Replace in string
         stringr::str_sub(eqn, start_idx, end_idx) <- replacement
@@ -492,7 +459,7 @@ replace_op_IM <- function(eqn, var_names) {
     # Get match and replacement
     df_logical_op <- as.data.frame(do.call(rbind, idxs_logical_op))
     df_logical_op[["match"]] <- stringr::str_sub(eqn, df_logical_op[["start"]], df_logical_op[["end"]])
-    df_logical_op[["replacement"]] <- rep(unname(logical_op), sapply(idxs_logical_op, nrow))
+    df_logical_op[["replacement"]] <- rep(unname(logical_op), vapply(idxs_logical_op, nrow, numeric(1)))
     df_logical_op <- df_logical_op[order(df_logical_op[["start"]]), ]
 
     # Remove those that are in quotation marks or names
@@ -518,7 +485,7 @@ replace_op_IM <- function(eqn, var_names) {
 
       if (nrow(df_logical_op) > 0) {
         # Replace in reverse order; no nested functions, so we can replace them in one go
-        for (i in rev(1:nrow(df_logical_op))) {
+        for (i in rev(seq_len(nrow(df_logical_op)))) {
           stringr::str_sub(eqn, df_logical_op[i, ][["start"]], df_logical_op[i, ][["end"]]) <- df_logical_op[i, ][["replacement"]]
         }
         # Remove double spaces
@@ -538,7 +505,7 @@ replace_op_IM <- function(eqn, var_names) {
 
     if (nrow(df_logical_op) > 0) {
       # Replace in reverse order; no nested functions, so we can replace them in one go
-      for (i in rev(1:nrow(df_logical_op))) {
+      for (i in rev(seq_len(nrow(df_logical_op)))) {
         stringr::str_sub(eqn, df_logical_op[i, ][["start"]], df_logical_op[i, ][["end"]]) <- "="
       }
     }
@@ -634,20 +601,24 @@ convert_statement <- function(line, var_names) {
     # Add "}" to else if
     if (first_word == "else" & second_word == "if") {
       statement <- sprintf("} %s %s", first_word, second_word)
-      equation <- stringr::str_replace(equation, sprintf("^[ ]*%s", second_word_orig), "") # Remove statement from equation
+      equation <- stringr::str_replace(equation, sprintf("^[ ]*%s", second_word_orig), "")
+      # Remove statement from equation
     }
 
     # Add round brackets around equation
     equation <- trimws(equation)
-    equation <- ifelse(stringr::str_starts(equation, "\\(") & stringr::str_ends(equation, "\\)"), equation,
+    equation <- ifelse(stringr::str_starts(equation, "\\(") &
+                         stringr::str_ends(equation, "\\)"), equation,
       paste0("(", equation, ")")
     )
-    equation <- ifelse(!(first_word %in% c("return", "throw")), paste0(" ", equation), equation)
+    equation <- ifelse(!(first_word %in% c("return", "throw")),
+                       paste0(" ", equation), equation)
 
     # Replace ranges in for-loop
     if (first_word == "for") {
       equation <- stringr::str_replace(
-        equation, stringr::regex("from (.*?) to (.*?) by (.*?)\\)", ignore_case = TRUE),
+        equation, stringr::regex("from (.*?) to (.*?) by (.*?)\\)",
+                                 ignore_case = TRUE),
         "in seq(\\1, \\2, by = \\3))"
       ) |>
         stringr::str_replace(
@@ -657,7 +628,8 @@ convert_statement <- function(line, var_names) {
     }
   } else if (first_word == "else") {
     statement <- paste0("} ", first_word, " {")
-    equation <- stringr::str_replace(equation, sprintf("^%s", first_word_orig), "") # Remove statement from equation
+    # Remove statement from equation
+    equation <- stringr::str_replace(equation, sprintf("^%s", first_word_orig), "")
 
     # Try-statement
   } else if (first_word == "try") {
@@ -666,10 +638,14 @@ convert_statement <- function(line, var_names) {
   } else if (first_word == "catch") {
     statement <- "}, error = function("
     closing_statement <- "){"
-    equation <- stringr::str_replace(equation, sprintf("^%s", first_word_orig), "") # Remove statement from equation
+    # Remove statement from equation
+    equation <- stringr::str_replace(equation, sprintf("^%s", first_word_orig), "")
   } else if (first_word == "end" & second_word == "try") {
     statement <- "})"
-    equation <- stringr::str_replace(equation, sprintf("^%s %s", first_word_orig, second_word_orig), "") # Remove statement from equation
+    # Remove statement from equation
+    equation <- stringr::str_replace(equation,
+                                     sprintf("^%s %s", first_word_orig,
+                                             second_word_orig), "")
   }
 
 
@@ -679,7 +655,7 @@ convert_statement <- function(line, var_names) {
   words_function <- words_function[tolower(words_function[["word"]]) == "function", ]
 
   if (nrow(words_function) > 0) {
-    for (i in 1:nrow(words_function)) {
+    for (i in seq_len(nrow(words_function))) {
       stringr::str_sub(equation, words_function[i, "start"], words_function[i, "end"]) <- "function"
     }
   }
@@ -707,14 +683,11 @@ convert_statement <- function(line, var_names) {
     comma = comma
   ) |> stringr::str_c(collapse = "")
 
-  # comment = sprintf("%s%s%s", ifelse(nzchar(join_str) & nzchar(comment), " ", ""), ifelse(nzchar(comment), "#", ""), comment)
-  # join_str = paste0(c(join_str), comment, collapse = "")
-
   if (.sdbuildR_env[["P"]][["debug"]]) {
-    print("Converting statements:")
-    print(line)
-    print(join_str)
-    print("")
+    message("Converting statements:")
+    message(line)
+    message(join_str)
+    message("")
   }
   return(join_str)
 }
@@ -729,6 +702,36 @@ convert_statement <- function(line, var_names) {
 #' @noRd
 #'
 convert_all_statements <- function(eqn, var_names) {
+
+  # Convert inline functions
+  done <- FALSE
+
+  while (!done) {
+    # In-line function assignment without using the word function
+    idxs_inline <- stringr::str_locate_all(
+      eqn,
+      stringr::regex(
+        "^(.*?)\\)[ ]*[^%]<-",
+        dotall = FALSE,
+        multiline = TRUE
+      )
+    )[[1]]
+    idxs_inline
+
+    if (nrow(idxs_inline) == 0) {
+      done <- TRUE
+    } else {
+      idx_inline <- idxs_inline[1, ]
+      # Change to one-liner function
+      stringr::str_sub(eqn, idx_inline["start"], idx_inline["end"]) <-
+        stringr::str_sub(eqn, idx_inline["start"], idx_inline["end"]) |>
+        stringr::str_replace("[ ]*<-[ ]*", " ") |>
+        stringr::str_replace("\\(", " <- function(") # Replace first opening bracket; important to change it to <- and not =, as otherwise = will be replaced by ==
+    }
+
+  }
+
+
   # Insight Maker doesn't require users to specify an Else-statement in If ... Else If ... End If -> if no condition evaluates to TRUE, the output is zero. Add "Else\n0\n" in these lines.
   # Find all if end if
   formula_split <- stringr::str_split(eqn, "\n")[[1]]
@@ -736,16 +739,18 @@ convert_all_statements <- function(eqn, var_names) {
 
   # For each end if, check whether first preceding line with "Then" or "Else" or "If"
   for (i in idx_end_if) {
-    last_idx <- sapply(
+    last_idx <- vapply(
       c("else", "else if", "if"),
       function(x) {
-        idx <- which(stringr::str_detect(formula_split[1:(i - 1)], stringr::regex(sprintf("\\b%s\\b", x), ignore_case = TRUE)))
+        idx <- which(stringr::str_detect(formula_split[seq_len(i - 1)],
+                                         stringr::regex(sprintf("\\b%s\\b", x),
+                                                        ignore_case = TRUE)))
         if (length(idx) > 0) {
           return(max(idx))
         } else {
           return(0)
         }
-      }
+      }, numeric(1)
     )
     last_idx
 
@@ -1053,7 +1058,7 @@ get_seq_exclude <- function(eqn,
 
   # Create sequence
   if (nrow(comb) > 0) {
-    paired_seq <- lapply(1:nrow(comb), function(i) {
+    paired_seq <- lapply(seq_len(nrow(comb)), function(i) {
       seq(comb[i, ][["start"]], comb[i, ][["end"]])
     }) |>
       unlist() |>
@@ -1098,7 +1103,7 @@ get_range_names <- function(eqn, var_names, names_with_brackets = FALSE) {
     if (length(unlist(idxs_names)) > 0) {
       # Create indices dataframe with detected variable names
       idxs_df <- as.data.frame(do.call(rbind, idxs_names))
-      idxs_df[["name"]] <- rep(original_names, sapply(idxs_names, nrow))
+      idxs_df[["name"]] <- rep(original_names, vapply(idxs_names, nrow, numeric(1)))
 
       # Remove matches in characters
       idxs_exclude <- get_seq_exclude(eqn, type = "quot", names_with_brackets = names_with_brackets)
@@ -1160,11 +1165,6 @@ get_syntax_IM <- function() {
       "RandDist", "rdist", "syntax1", FALSE, FALSE, "1",
       "setRandSeed", "set.seed", "syntax1", FALSE, TRUE, "",
 
-      # **to do: custom julia functions
-      # e.g. qnorm
-      # Distributions.quantile.(Normal(0, 1), range(1/n, 1-1/n, length = n))
-
-
       # Statistical Distributions (20)
       "CDFNormal", "pnorm", "syntax1", FALSE, TRUE, "",
       "PDFNormal", "dnorm", "syntax1", FALSE, TRUE, "",
@@ -1216,17 +1216,15 @@ get_syntax_IM <- function() {
       "Contains", "contains_IM", "syntax2", FALSE, TRUE, "",
       "Keys", "names", "syntax2", FALSE, TRUE, "",
       "Values", "unname", "syntax2", FALSE, TRUE, "",
-      # Map() and Filter() have syntax 2 ({}.Map(), but need an additional edit. First apply syntax 2 and then syntax 3
-      "Map", "IMMAP", "syntax2", FALSE, TRUE, "",
-      "Filter", "IMFILTER", "syntax2", FALSE, TRUE, "",
-      "IMMAP", "conv_IMMAP", "syntax3", FALSE, TRUE, "",
-      "IMFILTER", "conv_IMFILTER", "syntax3", FALSE, TRUE, "",
+      "Map", "", "syntax5", FALSE, TRUE, "",
+      "Filter", "", "syntax5", FALSE, TRUE, "",
+      # "IMMAP", "conv_IMMAP", "syntax3", FALSE, TRUE, "",
+      # "IMFILTER", "conv_IMFILTER", "syntax3", FALSE, TRUE, "",
       # General Functions (6)
       "IfThenElse", "ifelse", "syntax1", FALSE, TRUE, "",
-      # "Pause", "", , ), # no R equivalent
+      "Pause", "", "syntax5", FALSE, TRUE, "", # no R equivalent
       "Stop", "stop", "syntax1", FALSE, TRUE, "",
       # Syntax 3
-      # "Unitless", "convert_unitless", "syntax3", FALSE, TRUE, "",
       "Unitless", "drop_u", "syntax1", FALSE, TRUE, "",
       "PastValues", "conv_past_values", "syntax3", FALSE, TRUE, "",
       "PastMax", "conv_past_values", "syntax3", FALSE, TRUE, "",
@@ -1248,7 +1246,7 @@ get_syntax_IM <- function() {
       "Ramp", "conv_ramp", "syntax3", FALSE, TRUE, "",
       "Seasonal", "conv_seasonal", "syntax3", FALSE, TRUE, "",
       "Lookup", "conv_lookup", "syntax3", FALSE, TRUE, "",
-      "Repeat", "conv_repeat", "syntax3", FALSE, TRUE, "",
+      "Repeat", "", "syntax5", FALSE, TRUE, "",
       "Seconds", sprintf("drop_u(convert_u(%s, u(\"s\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", FALSE, FALSE, "",
       "Minutes", sprintf("drop_u(convert_u(%s, u(\"minute\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", FALSE, FALSE, "",
       "Hours", sprintf("drop_u(convert_u(%s, u(\"hr\")))", .sdbuildR_env[["P"]][["time_name"]]), "syntax0", FALSE, FALSE, "",
@@ -1290,14 +1288,17 @@ get_syntax_IM <- function() {
       "Width(", "", "syntax4", FALSE, TRUE, "",
       "Height(", "", "syntax4", FALSE, TRUE, ""
     ),
-    ncol = 6, byrow = TRUE, dimnames = list(NULL, c("insightmaker", "R", "syntax", "add_c()", "needs_brackets", "add_first_arg"))
+    ncol = 6, byrow = TRUE,
+    dimnames = list(NULL, c("insightmaker", "R", "syntax",
+                            "add_c()", "needs_brackets", "add_first_arg"))
   )
 
   # Convert to dataframe
   conv_df <- as.data.frame(conv_df, stringsAsFactors = FALSE)
 
-  # Filter out syntax4
-  df <- conv_df[conv_df[["syntax"]] != "syntax4", ]
+  # Filter out syntax4 and syntax5
+  df <- conv_df[conv_df[["syntax"]] %in%
+                  c("syntax0", "syntax1", "syntax2", "syntax3"), , drop = FALSE]
 
   # Initialize new columns
   df[["insightmaker_first_iter"]] <- df[["insightmaker"]]
@@ -1314,7 +1315,8 @@ get_syntax_IM <- function() {
   )
 
   # Create additional rows for syntax0b and syntax1b
-  additional_rows <- conv_df[conv_df[["syntax"]] %in% c("syntax0", "syntax1") & !as.logical(conv_df[["needs_brackets"]]), ]
+  additional_rows <- conv_df[conv_df[["syntax"]] %in% c("syntax0", "syntax1") &
+                               !as.logical(conv_df[["needs_brackets"]]), ]
   if (nrow(additional_rows) > 0) {
     additional_rows[["insightmaker_first_iter"]] <- additional_rows[["insightmaker"]]
     additional_rows[["insightmaker_regex_first_iter"]] <- paste0("\\b", additional_rows[["insightmaker"]], "\\b")
@@ -1352,7 +1354,13 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
     # Dataframe with regular expressions for each built-in Insight Maker function
     out <- get_syntax_IM()
     syntax_df <- out[["syntax_df"]]
+
+    # Separate unsupported functions from supported functions
     conv_df <- out[["conv_df"]]
+    conv_df_unsupp <- conv_df[conv_df[["syntax"]] %in% c("syntax4", "syntax5"),
+                              , drop = FALSE]
+    conv_df <- conv_df[!conv_df[["syntax"]] %in% c("syntax4", "syntax5"),
+                              , drop = FALSE]
 
     done <- FALSE
     i <- 1
@@ -1377,7 +1385,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
       })
 
       # Remove NULL entries
-      idx_df <- idx_df[!sapply(idx_df, is.null)]
+      idx_df <- idx_df[!vapply(idx_df, is.null, logical(1))]
 
       if (length(idx_df) == 0) {
         done <- TRUE
@@ -1404,13 +1412,12 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
           stringr::fixed(c("\\b" = "", "\\(" = "(", "\\)" = ")"))
         )
 
-        for (j in rev(1:nrow(idx_df))) {
+        for (j in rev(seq_len(nrow(idx_df)))) {
           stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) <- idx_df[j, ][["insightmaker_regex"]]
         }
       }
 
       if (i == 1) {
-        # print(eqn)
         ignore_case_arg <- FALSE
         IM_regex <- syntax_df[["insightmaker_regex"]]
         i <- i + 1
@@ -1562,14 +1569,14 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
           add_Rcode_list <- append(add_Rcode_list, add_Rcode)
 
           # Add newly created variables to names_df so that they are safe from replacement, e.g. if a variable contains the word "Time"
-          add_names <- unname(sapply(add_Rcode, names))
+          add_names <- vapply(add_Rcode, names, character(1), USE.NAMES = FALSE)
           var_names <- c(var_names, add_names)
         }
 
         if (.sdbuildR_env[["P"]][["debug"]]) {
-          print(stringr::str_sub(eqn, start_idx, end_idx))
-          print(replacement)
-          print("")
+          message(stringr::str_sub(eqn, start_idx, end_idx))
+          message(replacement)
+          message("")
         }
 
         # Replace eqn
@@ -1581,12 +1588,25 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
     add_Rcode <- add_Rcode_list
 
     # Syntax 4: Agent-based functions, which are not translated but flagged
-    syntax4 <- conv_df[conv_df[["syntax"]] == "syntax4", "insightmaker"]
+    syntax4 <- conv_df_unsupp[conv_df_unsupp[["syntax"]] == "syntax4",
+                              "insightmaker"]
     idx_ABM <- stringr::str_detect(eqn, stringr::fixed(syntax4))
 
     if (any(idx_ABM)) {
-      message("Agent-Based Modelling functions were found, and won't be translated: ")
+      message("Agent-Based Modelling functions were detected in equation of ",
+              name, ", and won't be translated: ")
       message(paste0(syntax4[idx_ABM], ")"))
+    }
+
+    # Syntax 5: Unsupported Insight Maker functions
+    syntax5 <- conv_df_unsupp[conv_df_unsupp[["syntax"]] == "syntax5",
+                              "insightmaker"]
+    idx5 <- stringr::str_detect(eqn, stringr::fixed(syntax5))
+
+    if (any(idx5)) {
+      message("Unsupported Insight Maker functions were detected in equation of ",
+              name, ", and won't be translated: ")
+      message(paste0(syntax5[idx5], ")"))
     }
   }
 
@@ -1679,102 +1699,6 @@ extract_prefunc_args <- function(eqn, var_names, start_func, names_with_brackets
 }
 
 
-
-
-#' Convert Insight Maker Filter() function to R
-#'
-#' @inheritParams conv_delayN
-#' @return Transformed eqn
-#' @noRd
-#'
-conv_IMFILTER <- function(func, arg) {
-  x_in_function <- stringr::str_detect(arg[2], "\\bx\\b")
-  key_in_function <- stringr::str_detect(arg[2], "\\bkey\\b")
-
-  # The filter function contains a logical statement, but Insightmaker accepts both x = y and x == y to test whether x is the same as y
-  arg[2] <- stringr::str_replace_all(arg[2], "[\\b\\s]*=[\\b\\s]", " == ")
-
-  if (!key_in_function) {
-    replacement <- sprintf("Filter(%s, function(x) %s)", arg[1], arg[2])
-  } else {
-    # In case "key" is a part of the filter statement, use custom function, as Filter does not accept two arguments
-    replacement <- sprintf("filter_IM(%s, function(x,key) %s)", arg[1], arg[2])
-  }
-
-  return(list(replacement = replacement))
-}
-
-
-#' Convert Insight Maker Map() function to R
-#'
-#' @inheritParams conv_delayN
-#' @return Transformed eqn
-#' @noRd
-#'
-conv_IMMAP <- function(func, arg) {
-  x_in_function <- stringr::str_detect(arg[2], "\\bx\\b")
-  key_in_function <- stringr::str_detect(arg[2], "\\bkey\\b")
-  function_in_function <- stringr::str_detect(arg[2], "\\bfunction\\b")
-
-  # ** to do: reverse order of function and argument, e.g.
-  # {Min, Median, Max}.Map(x(7, 5, 8, 1, 6)) # = {1, 6, 8}
-
-
-  if (function_in_function) {
-    replacement <- sprintf("sapply(%s, %s)", arg[1], arg[2])
-  } else if (!key_in_function) {
-    replacement <- sprintf("sapply(%s, function(x) %s)", arg[1], arg[2])
-  } else {
-    # To return a named vector, we cannot pass only indices, even if the function only uses x and not key
-    replacement <- sprintf(
-      "mapply(function(x, key){%s}, %s, names(%s))",
-      arg[2], arg[1], arg[1]
-    )
-  }
-
-  return(list(replacement = replacement))
-}
-
-
-
-
-#' Convert Insight Maker's Repeat() function to R
-#'
-#' @inheritParams conv_delayN
-#' @noRd
-#' @return Transformed eqn
-#'
-conv_repeat <- function(func, arg) {
-  x_in_function <- stringr::str_detect(arg[1], "\\bx\\b")
-  key_in_function <- stringr::str_detect(arg[1], "\\bkey\\b")
-  names_second_arg <- try(eval(parse(text = sprintf("names(%s)", arg[2]))),
-    silent = TRUE
-  )
-  named_second_arg <- !(is.null(names_second_arg) |
-    "try-error" %in% class(names_second_arg))
-
-  # Insight Maker's Repeats performs two different actions:
-  # 1. Apply the function in the first argument using the index of the second argument as x
-
-  if (!x_in_function & !key_in_function) {
-    replacement <- sprintf("rep(%s, %s)", arg[1], arg[2])
-  } else if (!named_second_arg) {
-    replacement <- sprintf("sapply(seq.int(%s), function(x) %s)", arg[2], arg[1])
-  } else if (named_second_arg) {
-    # 2. Create a named vector
-
-    if (key_in_function & !x_in_function) {
-      replacement <- sprintf("sapply(%s, function(key) %s)", arg[2], arg[1])
-    } else {
-      # To return a named vector, we cannot pass only indices, even if the function only uses x and not key
-      replacement <- sprintf(
-        "stats::setNames(mapply(function(x, key) %s, seq_along(%s), %s), %s)",
-        arg[1], arg[2], arg[2], arg[2]
-      )
-    }
-  }
-  return(list(replacement = replacement))
-}
 
 
 #' Convert Insight Maker's Lookup() to R
@@ -1871,18 +1795,13 @@ convert_addition_of_strings <- function(eqn, var_names) {
     }
   }
 
-  # # **removed scientific notation, so remove
-  # # Add spaces back unless it is preceded by an e
-  # eqn = gsub("(?<![E|e])\\+", " + ", eqn, perl = TRUE)
   eqn <- stringr::str_replace_all(eqn, "\\+", " + ")
-
-
 
   return(eqn)
 }
 
 
-#' Check whether a eqn consists of only a primitive between brackets
+#' Check whether an eqn consists of only a primitive between brackets
 #'
 #' @inheritParams convert_equations_IM
 #' @return Boolean
@@ -2022,66 +1941,6 @@ conv_delayN <- function(func, arg) {
 }
 
 
-#' Convert Insight Maker's Fix() to R
-#'
-#' @return List with transformed eqn and additional R code needed to make the eqn function
-#' @inheritParams convert_equations_IM
-#' @noRd
-#' @inheritParams conv_delayN
-#'
-conv_fix <- function(func, arg, name, type) {
-  # ** to do
-  add_Rcode <- list()
-
-  if (length(arg) == 1) {
-    # In case no period is specified, never update variable
-    fix_length <- "Inf"
-  } else {
-    fix_length <- arg[2]
-  }
-  # Strip the primitive (arg[1]) of brackets, as we don't want to add any units later, and removing brackets ensures it won't be replaced
-  arg[1] <- stringr::str_replace_all(arg[1], c("^\\[" = "", "\\]$" = ""))
-  archive_var <- arg[1]
-
-  # Add "past" as a list element to keep track of obligatory variables
-  add_Rcode <- append(
-    add_Rcode,
-    list(list(list(past = archive_var)) |> stats::setNames(name)) |>
-      stats::setNames(type)
-  )
-
-  # If the fix_length is a primitive, no need to add a parameter
-  if (check_only_primitive(fix_length)) {
-    fix_length_name <- fix_length
-  } else {
-    fix_length_name <- sprintf("%s_fix_length", name)
-    add_Rcode <- list(constant = list(list(eqn = fix_length)) |> stats::setNames(fix_length_name))
-    fix_length_name <- paste0("[", fix_length_name, "]")
-  }
-
-  replacement <- sprintf(
-    "ifelse(%s %%%% %s == 0, %s, get_past(environment(), '[%s]', %s, %s, '%s', '%s', 'fixed'))",
-    .sdbuildR_env[["P"]][["time_name"]],
-    fix_length_name,
-    arg[1],
-    name,
-    .sdbuildR_env[["P"]][["timestep_name"]], .sdbuildR_env[["P"]][["time_units_name"]],
-    .sdbuildR_env[["P"]][["time_name"]], .sdbuildR_env[["P"]][["times_name"]]
-  )
-
-  return(
-    list(
-      replacement = replacement,
-      add_Rcode = add_Rcode
-    )
-  )
-}
-
-
-# Ramp, pulse, step functions
-# These are functions that translate to forcings in deSolve::ode (not events, as these functions may also be used to change variables other than state variables/stocks). These functions need to be defined with an interpolation function at the beginning of the script, and are used in the ODE as func(t).
-
-
 
 #' Convert Insight Maker's Step() function to R
 #'
@@ -2112,10 +1971,8 @@ conv_step <- function(func, arg, match_idx, name, # Default settings of Insight 
   # Function definition to put at beginning of script
   func_def_str <- sprintf(
     "step(start = %s, height = %s)",
-    # .sdbuildR_env[["P"]][["times_name"]],
     start_t_step,
     h_step
-    # .sdbuildR_env[["P"]][["time_units_name"]], .sdbuildR_env[["P"]][["time_units_name"]]
   )
   add_Rcode <- list(aux = list(list(eqn = func_def_str)) |> stats::setNames(func_name_str))
 
@@ -2217,17 +2074,14 @@ conv_ramp <- function(func, arg, match_idx, name, # Default settings of Insight 
   # Function definition to put at beginning of script
   func_def_str <- sprintf(
     "ramp(start = %s(%s, %s), finish = %s(%s, %s), height = %s)",
-    # .sdbuildR_env[["P"]][["times_name"]],
     .sdbuildR_env[["P"]][["convert_u_func"]],
     start_t_ramp, .sdbuildR_env[["P"]][["time_units_name"]],
     .sdbuildR_env[["P"]][["convert_u_func"]],
     end_t_ramp, .sdbuildR_env[["P"]][["time_units_name"]],
     h_ramp
-    # .sdbuildR_env[["P"]][["time_units_name"]], .sdbuildR_env[["P"]][["time_units_name"]]
   )
   add_Rcode <- list(aux = list(list(
     eqn = func_def_str
-    # , source = .sdbuildR_env[["P"]][["time_name"]]
   )) |> stats::setNames(func_name_str))
 
   return(list(
@@ -2250,24 +2104,6 @@ conv_ramp <- function(func, arg, match_idx, name, # Default settings of Insight 
 #'
 conv_seasonal <- function(func, arg, match_idx, name,
                           period = "u(\"1common_yr\")", shift = "u(\"0common_yr\")") {
-  # # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
-  # func_name_str = sprintf("%s_%s%s", name, func, # If there is only one match, don't number function
-  #                         as.character(match_idx))
-  # replacement = sprintf("[%s](%s)", func_name_str, .sdbuildR_env[["P"]][["time_name"]])
-
-  # Seasonal(Peak=0)
-
-  # # If an argument is specified, it's the peak time
-  # if (nzchar(arg)) {
-  #   # If there are only numbers and a period in there, add unit
-  #   if (grepl("^[0-9]+\\.?[0-9]*$", arg[1]) | grepl("^[\\.?[0-9]*$", arg[1])){
-  #     shift = paste0("u(\"", arg[1], "common_yr\")")
-  #   } else {
-  #     shift = arg[1]
-  #   }
-  # }
-  # replacement = paste0("seasonal(", .sdbuildR_env[["P"]][["time_name"]], ", period = ", period, ", shift = ", shift, ")")
-  # add_Rcode = list()
 
   # Name of function is the type (step, pulse, ramp), the number, and which model element it belongs to
   func_name_str <- sprintf(
@@ -2293,7 +2129,6 @@ conv_seasonal <- function(func, arg, match_idx, name,
   )
   add_Rcode <- list(aux = list(list(
     eqn = func_def_str
-    # , source = .sdbuildR_env[["P"]][["time_name"]]
   )) |> stats::setNames(func_name_str))
 
 

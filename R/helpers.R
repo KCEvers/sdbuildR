@@ -125,9 +125,9 @@ get_map <- function(x, element_name, change_null_to = "") {
 
   x_list <- lapply(x, `[[`, element_name)
   # Unlist preserving NULL
-  x_list[sapply(x_list, function(x) {
+  x_list[vapply(x_list, function(x) {
     is.null(x) | length(x) == 0
-  })] <- change_null_to
+  }, logical(1))] <- change_null_to
   return(unlist(x_list))
 }
 
@@ -172,10 +172,110 @@ get_exported_functions <- function(package) {
   exports <- getNamespaceExports(package)
 
   # Filter for functions
-  functions <- exports[sapply(exports, function(x) {
+  functions <- exports[vapply(exports, function(x) {
     is.function(get(x, envir = ns))
-  })]
+  }, logical(1))]
 
   # Return sorted for consistency
   sort(functions)
 }
+
+
+
+#' Helper function to clean coding language
+#'
+#' @param langauge Language
+#'
+#' @returns Cleaned language
+#' @noRd
+#'
+clean_language = function(language){
+  language <- trimws(tolower(language))
+  if (!language %in% c("r", "julia", "jl")) {
+    stop(sprintf("The language %s is not one of the languages available in sdbuildR. The available languages are 'Julia' or 'R'.", language))
+  } else {
+    language <- stringr::str_to_title(language)
+    language <- ifelse(language == "Jl", "Julia", language)
+  }
+  return(language)
+}
+
+
+
+#' Quickly get names of model variables
+#'
+#' @inheritParams build
+#'
+#' @noRd
+#' @returns Vector with names of model variables
+get_model_var <- function(sfm) {
+  c(unname(unlist(lapply(sfm[["model"]][["variables"]], names))), names(sfm[["macro"]]))
+}
+
+
+
+#' Create dataframe with stock-and-flow model variables, types, labels, and units
+#'
+#' @inheritParams build
+#'
+#' @return Dataframe
+#' @noRd
+#'
+get_names <- function(sfm) {
+  # Return empty dataframe if no variables
+  nr_var <- sum(lengths(sfm[["model"]][["variables"]]))
+  if (nr_var == 0) {
+    names_df <- data.frame(
+      type = character(0),
+      name = character(0),
+      label = character(0),
+      units = character(0)
+    )
+    return(names_df)
+  }
+
+  # Building blocks to check
+  blocks <- c("stock", "aux", "constant", "flow", "gf")
+  entries <- list()
+
+  # Collect variable information
+  for (block in blocks) {
+    if (!is.null(sfm[["model"]][["variables"]][[block]])) {
+      for (var in sfm[["model"]][["variables"]][[block]]) {
+        if (!is.null(var[["name"]])) {
+          entries[[length(entries) + 1]] <- list(
+            type = block,
+            name = var[["name"]],
+            label = var[["label"]],
+            units = var[["units"]]
+          )
+        }
+      }
+    }
+  }
+
+  # Convert to dataframe
+  if (length(entries) > 0) {
+    names_df <- do.call(rbind, lapply(entries, as.data.frame, stringsAsFactors = FALSE))
+  } else {
+    column_names <- c("type", "name", "label", "units")
+    names_df <- as.data.frame(matrix(NA, nrow = 1, ncol = length(column_names)))
+    colnames(names_df) <- column_names
+  }
+
+  # Add macros if any
+  if (!is.null(sfm[["macro"]]) && length(names(sfm[["macro"]])) > 0) {
+    macro_df <- data.frame(
+      type = "macro",
+      name = names(sfm[["macro"]]),
+      label = names(sfm[["macro"]]),
+      units = "",
+      stringsAsFactors = FALSE
+    )
+    names_df <- rbind(names_df, macro_df)
+  }
+
+  rownames(names_df) <- NULL
+  return(names_df)
+}
+

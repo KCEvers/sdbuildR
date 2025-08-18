@@ -32,6 +32,7 @@ Other build:
 \code{\link{header}()},
 \code{\link{macro}()},
 \code{\link{plot.sdbuildR_xmile}()},
+\code{\link{print.summary.sdbuildR_xmile}()},
 \code{\link{xmile}()}
 }
 \concept{build}

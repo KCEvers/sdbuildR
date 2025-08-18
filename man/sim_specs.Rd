@@ -42,7 +42,7 @@ sim_specs(
 Updated stock-and-flow model with new simulation specifications
 }
 \description{
-Simulation specifications are the settings that determine how the model is simulated, such as the integration method, start and stop time, and timestep. Modify these specifications for an existing stock-and-flow model.
+Simulation specifications are the settings that determine how the model is simulated, such as the integration method (i.e. solver), start and stop time, and timestep. Modify these specifications for an existing stock-and-flow model.
 }
 \examples{
 sfm <- xmile("predator-prey") |>
@@ -74,12 +74,16 @@ sfm <- sim_specs(sfm, language = "Julia")
 
 }
 \seealso{
+\code{\link[=solvers]{solvers()}}
+
 Other simulate: 
 \code{\link{ensemble}()},
+\code{\link{export_plot}()},
 \code{\link{julia_setup_ok}()},
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{simulate}()},
+\code{\link{solvers}()},
 \code{\link{use_julia}()},
 \code{\link{use_threads}()}
 }

@@ -178,7 +178,6 @@ install_julia_sdbuildR <- function(version, dir) {
 
   message(sprintf("Installed Julia to %s", dest))
 
-  # invisible(TRUE)
   return(dest)
 }
 

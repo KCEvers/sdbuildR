@@ -47,6 +47,8 @@ simulate <- function(sfm,
                      only_stocks = TRUE,
                      verbose = FALSE,
                      ...) {
+  check_xmile(sfm)
+
   # First assess whether the model is valid
   problems <- debugger(sfm, quietly = TRUE)
   if (nzchar(problems[["problems"]])) {
@@ -54,9 +56,6 @@ simulate <- function(sfm,
   }
 
   if (tolower(sfm[["sim_specs"]][["language"]]) == "julia") {
-    # if (!julia_setup_ok()){
-    #   stop("The Julia environment has not been set up yet! Run use_julia().")
-    # }
 
     return(simulate_julia(sfm,
       keep_nonnegative_flow = keep_nonnegative_flow,
@@ -112,25 +111,16 @@ detect_undefined_var <- function(sfm) {
   missing_ref <- unlist(sfm[["model"]][["variables"]], recursive = FALSE, use.names = FALSE) |>
     lapply(function(x) {
       y <- x[names(x) %in% c("eqn", "to", "from")]
-      y <- y[sapply(y, is_defined)]
+      y <- y[vapply(y, is_defined, logical(1))]
 
-      A <- sapply(y, function(z) {
+      A <- lapply(y, function(z) {
         dependencies <- find_dependencies_(sfm, z, only_var = TRUE, only_model_var = FALSE)
-
-        # # Check whether the function exists
-        # set only_var = FALSE
-        # is_existing_function = sapply(dependencies,
-        #        function(name){
-        #          exists(name, mode = "function", inherits = TRUE) &&
-        #            is.function(get(name, mode = "function", inherits = TRUE))
-        #        })
-        #
-        # dependencies = dependencies[!is_existing_function]
 
         # Find all undefined variables and functions
         setdiff(
           unlist(dependencies),
-          c(possible_func, var_names)
+          # Cannot depend on itself
+          c(possible_func, setdiff(var_names, x[["name"]]))
         )
       })
       A <- A[lengths(A) > 0]
@@ -203,7 +193,7 @@ topological_sort <- function(dependencies_dict) {
   })
 
   # Order parameters according to dependencies
-  edges <- lapply(1:length(dependencies), function(i) {
+  edges <- lapply(seq_along(dependencies), function(i) {
     # If no dependencies, repeat own name
     if (all(dependencies[[i]] == "")) {
       edge <- rep(eq_names[i], 2)
@@ -232,7 +222,7 @@ topological_sort <- function(dependencies_dict) {
       list(order = igraph::topo_sort(g, mode = "out") |> names(), issue = FALSE, msg = "")
     },
     error = function(msg) {
-      # print("Something went wrong when attempting to order the equations in your ODE, which may be because of circular definition (e.g. x = y, y = x). The correct order is important as e.g. for x = 1/a, a needs to be defined before x. Please check the order manually.")
+      # message("Something went wrong when attempting to order the equations in your ODE, which may be because of circular definition (e.g. x = y, y = x). The correct order is important as e.g. for x = 1/a, a needs to be defined before x. Please check the order manually.")
       out <- circularity(g)
 
       list(order = eq_names, issue = out[["issue"]], msg = out[["msg"]])
@@ -296,13 +286,13 @@ find_newly_defined_var <- function(eqn) {
   new_var <- c()
   if (nrow(assignment) > 0 & length(newlines) > 0) {
     # Find preceding newline before assignment
-    start_idxs <- sapply(assignment[, "start"], function(idx) {
+    start_idxs <- vapply(assignment[, "start"], function(idx) {
       idxs_newline <- which(newlines <= idx)
       newlines[idxs_newline[length(idxs_newline)]] # select last newline before assignment
-    })
+    }, numeric(1))
 
     # Isolate defined variables
-    new_var <- lapply(1:nrow(assignment), function(i) {
+    new_var <- lapply(seq_len(nrow(assignment)), function(i) {
       # Extract equation indices
       trimws(stringr::str_sub(eqn, start_idxs[i], assignment[i, "start"] - 1))
     })
@@ -605,8 +595,8 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 #'  \item{n_total}{Total number of simulations run in the ensemble (across all conditions if range is specified).}
 #'  \item{n_conditions}{Total number of conditions.}
 #'  \item{conditions}{Dataframe with the conditions used in the ensemble, if range is specified.}
-#'  \item{init}{Dataframe with the initial values of the stocks used in the ensemble. The first two columns are "j" (iteration number) and "i" (parameter index), followed by the stock names.}
-#'  \item{constants}{Dataframe with the constant parameters used in the ensemble. The first two columns are "j" (iteration number) and "i" (parameter index), followed by the parameter names.}
+#'  \item{init}{List with df (if return_sims = TRUE) and summary, containing dataframe with the initial values of the stocks used in the ensemble.}
+#'  \item{constants}{List with df (if return_sims = TRUE) and summary, containing dataframe with the constant parameters used in the ensemble.}
 #'  \item{script}{Julia script used for the ensemble simulation.}
 #'  \item{duration}{Duration of the simulation in seconds.}
 #'  \item{...}{Other parameters passed to ensemble}
@@ -747,7 +737,7 @@ ensemble <- function(sfm,
     }
 
     # All must be numerical values
-    if (!all(sapply(range, is.numeric))) {
+    if (!all(vapply(range, is.numeric, logical(1)))) {
       stop("All elements in range must be numeric vectors!")
     }
 
@@ -777,7 +767,7 @@ ensemble <- function(sfm,
     }
 
     # All ranges must be of the same length if not a crossed design
-    range_lengths <- sapply(range, length)
+    range_lengths <- vapply(range, length, numeric(1))
     if (!cross) {
       if (length(unique(range_lengths)) != 1) {
         stop("All ranges must be of the same length when cross = FALSE! Please check the lengths of the ranges in range.")
@@ -842,8 +832,12 @@ ensemble <- function(sfm,
 
 
   # Get output filepaths
-  ensemble_pars[["filepath_df"]] <- get_tempfile(fileext = ".csv")
-  ensemble_pars[["filepath_summ"]] <- get_tempfile(fileext = ".csv")
+  ensemble_pars[["filepath_df"]] <- c("df" = get_tempfile(fileext = ".csv"),
+                                      "constants" = get_tempfile(fileext = ".csv"),
+                                      "init" = get_tempfile(fileext = ".csv"))
+  ensemble_pars[["filepath_summary"]] <- c("df" = get_tempfile(fileext = ".csv"),
+                                      "constants" = get_tempfile(fileext = ".csv"),
+                                      "init" = get_tempfile(fileext = ".csv"))
   filepath <- get_tempfile(fileext = ".jl")
 
   # Compile script
@@ -863,6 +857,18 @@ ensemble <- function(sfm,
   sim <- tryCatch(
     {
       use_julia()
+
+      # Set Julia BINDIR
+      old_option = Sys.getenv("JULIA_BINDIR", unset = NA)
+      Sys.setenv("JULIA_BINDIR" = .sdbuildR_env[["JULIA_BINDIR"]])
+
+      on.exit({
+        if (is.na(old_option)){
+          Sys.unsetenv("JULIA_BINDIR")
+        } else {
+          Sys.setenv("JULIA_BINDIR" = old_option)
+        }
+      })
 
       # Evaluate script
       start_t <- Sys.time()
@@ -889,34 +895,45 @@ ensemble <- function(sfm,
       if (!is.null(ensemble_pars[["range"]])) {
         conditions <- JuliaConnectoR::juliaEval(paste0("Matrix(hcat(", .sdbuildR_env[["P"]][["ensemble_pars"]], "...)')"))
         colnames(conditions) <- names(ensemble_pars[["range"]])
-        conditions <- cbind(j = 1:nrow(conditions), conditions)
+        conditions <- cbind(j = seq_len(nrow(conditions)), conditions)
       } else {
         conditions <- NULL
       }
 
-      # Read the constants
-      constants <- JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_name"]])
-      colnames(constants) <- c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_names"]]))
+      # # Read the constants
+      # constants <- JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_name"]])
+      # colnames(constants) <- c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_names"]]))
+      #
+      # # Read the initial values of stocks
+      # init <- JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_name"]])
+      # colnames(init) <- c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_names"]]))
 
-      # Read the initial values of stocks
-      init <- JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_name"]])
-      colnames(init) <- c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_names"]]))
+      constants = list()
+      init = list()
 
       # Read the simulation results
       if (return_sims) {
-        df <- as.data.frame(data.table::fread(ensemble_pars[["filepath_df"]], na.strings = c("", "NA")))
+        df <- as.data.frame(data.table::fread(ensemble_pars[["filepath_df"]][["df"]], na.strings = c("", "NA")))
+        constants[["df"]] <- as.data.frame(data.table::fread(ensemble_pars[["filepath_df"]][["constants"]], na.strings = c("", "NA")))
+        init[["df"]] <- as.data.frame(data.table::fread(ensemble_pars[["filepath_df"]][["init"]], na.strings = c("", "NA")))
 
         # Delete files
-        file.remove(ensemble_pars[["filepath_df"]])
+        file.remove(ensemble_pars[["filepath_df"]][["df"]])
+        file.remove(ensemble_pars[["filepath_df"]][["constants"]])
+        file.remove(ensemble_pars[["filepath_df"]][["init"]])
       } else {
         df <- NULL
       }
 
       # Read the summary file
-      summary <- as.data.frame(data.table::fread(ensemble_pars[["filepath_summ"]], na.strings = c("", "NA")))
+      summary <- as.data.frame(data.table::fread(ensemble_pars[["filepath_summary"]][["df"]], na.strings = c("", "NA")))
+      constants[["summary"]] <- as.data.frame(data.table::fread(ensemble_pars[["filepath_summary"]][["constants"]], na.strings = c("", "NA")))
+      init[["summary"]] <- as.data.frame(data.table::fread(ensemble_pars[["filepath_summary"]][["init"]], na.strings = c("", "NA")))
 
       # Delete files
-      file.remove(ensemble_pars[["filepath_summ"]])
+      file.remove(ensemble_pars[["filepath_summary"]][["df"]])
+      file.remove(ensemble_pars[["filepath_summary"]][["constants"]])
+      file.remove(ensemble_pars[["filepath_summary"]][["init"]])
 
       list(
         success = TRUE,

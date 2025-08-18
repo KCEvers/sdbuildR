@@ -42,12 +42,12 @@ url_to_IM <- function(URL, filepath_IM) {
 
   # Extract meta-data - this is embedded in the webpage, but not saved in the .InsightMaker file. Add to .InsightMaker file to preserve the original author of the model.
   header_names <- c("model_id", "model_title", "model_author_id", "model_author_name")
-  header_info <- sapply(header_names, function(x) {
+  header_info <- vapply(header_names, function(x) {
     stringr::str_match(
       script_model,
       sprintf("\"%s\":\"(.*?)\"", x)
     )[, 2]
-  }) |> as.list()
+  }, character(1)) |> as.list()
   # header_info$URL = URL
   header_str <- sprintf("<header> %s </header>", paste0(names(header_info), "=\"", unname(textutils::HTMLencode(header_info, encode.only = c("&", "<", ">"))), "\"", collapse = ", "))
 
@@ -94,7 +94,7 @@ IM_to_xmile <- function(xml_file) {
   }
 
   # Get attributes, also of children
-  tags <- c("Setting", "Display", "Variable", "Converter", "Stock", "Flow", "Link", "Ghost")
+  tags <- c("Setting", "Variable", "Converter", "Stock", "Flow", "Link", "Ghost")
   node_names <- xml2::xml_name(children)
 
   # Check whether the model has any components
@@ -109,17 +109,16 @@ IM_to_xmile <- function(xml_file) {
     pairs <- strsplit(header_str, ",\\s*")[[1]]
 
     # Step 2: Split each pair into name and value, then clean up extra quotes
-    header_list <- sapply(pairs, function(pair) {
+    header_list <- vapply(pairs, function(pair) {
       key_value <- strsplit(pair, "=\\s*")[[1]]
       key <- key_value[1]
-      value <- gsub('\"', "", key_value[2]) # Remove extra quotes
-      return(value)
-    })
+      return(gsub('\"', "", key_value[2])) # Remove extra quotes
+    }, character(1))
 
     # Convert to named list
-    names(header_list) <- sapply(pairs, function(pair) {
+    names(header_list) <- vapply(pairs, function(pair) {
       strsplit(pair, "=\\s*")[[1]][1]
-    })
+    }, character(1))
     header_list <- as.list(header_list)
   } else {
     header_list <- list()
@@ -272,7 +271,8 @@ IM_to_xmile <- function(xml_file) {
 
   # Replace old names with new names
   model_elements <- lapply(model_elements, function(x) {
-    x[["eqn_insightmaker"]] <- stringr::str_replace_all(x[["eqn_insightmaker"]], stringr::fixed(c("\\n" = "\n")))
+    x[["eqn_insightmaker"]] <- stringr::str_replace_all(x[["eqn_insightmaker"]],
+                                                        stringr::fixed(c("\\n" = "\n")))
     x[["eqn_insightmaker"]] <- replace_names_IM(x[["eqn_insightmaker"]],
       original = old_names[ids %in% x[["access_ids"]]],
       replacement = new_names[ids %in% x[["access_ids"]]]
@@ -298,7 +298,8 @@ IM_to_xmile <- function(xml_file) {
 
   # Converters
   converter_prop <- c(
-    "doc", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "xpts", "ypts", "interpolation", "source", "extrapolation",
+    "doc", "units_insightmaker", "name_insightmaker", "type", "name",
+    "min", "max", "xpts", "ypts", "interpolation", "source", "extrapolation",
     # "access", "access_ids",
     "id_insightmaker"
   )
@@ -328,7 +329,8 @@ IM_to_xmile <- function(xml_file) {
 
   # Variables -> Auxiliaries
   variable_prop <- c(
-    "doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max",
+    "doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker",
+    "type", "name", "min", "max",
     # "access", "access_ids",
     "id_insightmaker"
   )
@@ -346,19 +348,17 @@ IM_to_xmile <- function(xml_file) {
 
   # Stocks
   stock_prop <- c(
-    "doc", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max",
-    # "delayn",
-    "eqn_insightmaker",
+    "doc", "units_insightmaker", "name_insightmaker", "type", "name",
+    "min", "max", "eqn_insightmaker",
     # "StockMode", "Delay",
-    "conveyor", "len",
-    "non_negative",
+    "conveyor", "len", "non_negative",
     # "access", "access_ids",
     "id_insightmaker"
   )
   flows <- model_elements["Flow" == model_element_names]
-  flow_ids <- flows |> get_map("id")
-  flow_sources <- flows |> get_map("source")
-  flow_targets <- flows |> get_map("target")
+  flow_ids <- get_map(flows, "id")
+  flow_sources <- get_map(flows, "source")
+  flow_targets <- get_map(flows, "target")
 
   # Only keep selected properties and rename
   model_elements["Stock" == model_element_names] <-
@@ -382,7 +382,8 @@ IM_to_xmile <- function(xml_file) {
 
   # Flows
   flow_prop <- c(
-    "doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker", "type", "name", "min", "max", "from", "to", "non_negative",
+    "doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker",
+    "type", "name", "min", "max", "from", "to", "non_negative",
     # "access", "access_ids",
     "id_insightmaker"
   )
@@ -419,27 +420,6 @@ IM_to_xmile <- function(xml_file) {
   # Name elements
   model_elements <- stats::setNames(model_elements, get_map(model_elements, "name"))
 
-
-  # Find which primitives to plot
-  displays <- children_attrs[match("Display", node_names)]
-  display_types <- displays |> get_map("Type")
-  # Get the first time series display
-  display <- displays[[which(display_types == "Time Series")[1]]]
-  # Get all ids which are plotted; sometimes, the primitives are listed as "Primitives", "Primitives2"
-  display_ids <- display[grepl("^Primitives", names(display))] |>
-    unlist() |>
-    unname() |>
-    Filter(nzchar, x = _) |>
-    paste0(collapse = ",")
-  display_ids_split <- trimws(strsplit(display_ids, ",")[[1]])
-  # If display ids is empty, use Stocks
-  if (length(display_ids_split) > 0) {
-    display_var <- new_names[match(display_ids_split, ids)]
-  } else {
-    display_var <- names(model_elements["Stock" == model_element_names])
-  }
-
-
   # Ensure year and month match Insight Maker's unit definition - a year in Insight Maker is 365 days, not 365.25 days
   time_units <- settings[["TimeUnits"]] |>
     stringr::str_replace_all(stringr::regex(c(
@@ -449,7 +429,7 @@ IM_to_xmile <- function(xml_file) {
     ), ignore_case = TRUE))
 
   # Set-up basic structure
-  sfm <- xmile() |>
+  sfm <- new_sdbuildR_xmile() |>
     sim_specs(
       method = settings[["method"]],
       time_units = time_units,
@@ -488,10 +468,8 @@ IM_to_xmile <- function(xml_file) {
     doc = out_global[["doc"]]
   )
 
-  sfm[["display"]] <- list(variables = display_var)
-
   if (.sdbuildR_env[["P"]][["debug"]]) {
-    print(sprintf(
+    message(sprintf(
       "Detected %d Stock%s, %d Flow%s, %d Auxiliar%s, and %d Graphical Function%s",
       length(sfm[["model"]][["variables"]][["stock"]]),
       ifelse(length(sfm[["model"]][["variables"]][["stock"]]) == 1, "", "s"),
@@ -504,9 +482,9 @@ IM_to_xmile <- function(xml_file) {
     ))
 
     if (nzchar(out_global[["eqn"]])) {
-      print("User-defined macros and globals detected")
+      message("User-defined macros and globals detected")
     } else {
-      print("No user-defined macros and globals detected")
+      message("No user-defined macros and globals detected")
     }
   }
 
@@ -556,9 +534,9 @@ IM_to_xmile <- function(xml_file) {
     dict <- stats::setNames(stringr::str_replace_all(unname(dict), dict_extra), names(dict))
 
     # Temporary placeholder
-    placeholders <- sapply(1:length(dict), function(x) {
+    placeholders <- vapply(seq_along(dict), function(x) {
       paste0(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = "")
-    })
+    }, character(1))
 
     dict_temp <- stats::setNames(placeholders, names(dict))
 
@@ -744,7 +722,7 @@ clean_units_IM <- function(sfm, regex_units) {
       )
 
       # Create list with custom unit definitions
-      custom_units_list <- lapply(1:nrow(custom_units_df), function(i) {
+      custom_units_list <- lapply(seq_len(nrow(custom_units_df)), function(i) {
         custom_unit <- custom_units_df[i, ][["new_name"]]
 
         list(name = custom_unit, eqn = custom_units_df[i, ][["new_eqn"]], prefix = FALSE)
@@ -869,7 +847,7 @@ check_nonnegativity <- function(sfm, keep_nonnegative_flow, keep_nonnegative_sto
 
   if (keep_nonnegative_stock & length(nonneg_stock) > 0) {
     if (!keep_solver & sfm[["sim_specs"]][["method"]] == "rk4") {
-      print("Non-negative Stocks detected! Switching the ODE solver to Euler to ensure Insight Maker and sdbuildR produce the same output. Turn off by setting keep_solver = TRUE.")
+      message("Non-negative Stocks detected! Switching the ODE solver to Euler to ensure Insight Maker and sdbuildR produce the same output. Turn off by setting keep_solver = TRUE.")
       sfm[["sim_specs"]][["method_insightmaker"]] <- sfm[["sim_specs"]][["method"]]
       sfm[["sim_specs"]][["method"]] <- "euler"
     }
@@ -904,7 +882,7 @@ convert_macros_IM_wrapper <- function(sfm, regex_units) {
     )
 
     if (.sdbuildR_env[["P"]][["debug"]]) {
-      print(out)
+      message(out)
     }
 
     sfm[["global"]][["eqn"]] <- unname(unlist(out[["global"]][["global"]][["eqn"]]))
@@ -955,13 +933,13 @@ replace_macro_names_IM <- function(sfm) {
 
   if (nrow(assignment) > 0 & length(newlines) > 0) {
     # Find preceding newline before assignment
-    start_idxs <- sapply(assignment[, "start"], function(idx) {
+    start_idxs <- vapply(assignment[, "start"], function(idx) {
       idxs_newline <- which(newlines <= idx)
       newlines[idxs_newline[length(idxs_newline)]] # select last newline before assignment
-    })
+    }, numeric(1))
 
     # Split macros by assignment
-    split_macros <- lapply(1:nrow(assignment), function(i) {
+    split_macros <- lapply(seq_len(nrow(assignment)), function(i) {
       # Extract equation indices
       start_eqn <- start_idxs[i]
       end_eqn <- ifelse(i == nrow(assignment), nchar(eqn), start_idxs[i + 1] - 1)
@@ -1057,7 +1035,7 @@ replace_macro_names_IM <- function(sfm) {
 
     # Replace argument names only in those parts that are functions. This needs to be done after split_macros to preserve indices.
     # Reverse order indices
-    for (i in rev(1:nrow(assignment))) {
+    for (i in rev(seq_len(nrow(assignment)))) {
       if (length(split_macros[[i]][["names_arg"]]) > 0) {
         # Construct replacement dictionary for replacing argument names in this equation
         dict <- stats::setNames(split_macros[[i]][["names_arg"]], paste0("\\b", stringr::str_escape(split_macros[[i]][["names_arg_insightmaker"]]), "\\b"))
@@ -1075,8 +1053,8 @@ replace_macro_names_IM <- function(sfm) {
 
     # Construct replacement dictionary for replacing names in macros and other equations
     # Important: even if the name did not need to be changed, still apply dict because of differences in case
-    old_names <- sapply(split_macros, `[[`, "name_insightmaker")
-    new_names <- sapply(split_macros, `[[`, "name")
+    old_names <- vapply(split_macros, `[[`, character(1), "name_insightmaker")
+    new_names <- vapply(split_macros, `[[`, character(1), "name")
     dict <- stats::setNames(new_names, paste0("\\b", stringr::str_escape(old_names), "\\b"))
 
     # Insight Maker is not case-sensitive!
@@ -1121,7 +1099,7 @@ replace_safely <- function(eqn, dict, var_names, ignore_case = TRUE) {
   # Remove those matches that are in quotation marks or names
   idxs_exclude <- get_seq_exclude(eqn, var_names)
 
-  idx_df <- lapply(1:length(dict), function(i) {
+  idx_df <- lapply(seq_along(dict), function(i) {
     matches <- gregexpr(names(dict)[i], eqn, perl = TRUE, ignore.case = ignore_case)[[1]]
 
     if (matches[1] == -1) {
@@ -1179,13 +1157,13 @@ split_macros_IM <- function(sfm) {
     }
 
     # Find preceding newline before assignment
-    start_idxs <- sapply(assignment[, "start"], function(idx) {
+    start_idxs <- vapply(assignment[, "start"], function(idx) {
       idxs_newline <- which(newlines <= idx)
       newlines[idxs_newline[length(idxs_newline)]] # select last newline before assignment
-    })
+    }, numeric(1))
 
     # Split macros by assignment
-    split_macros <- lapply(1:nrow(assignment), function(i) {
+    split_macros <- lapply(seq_len(nrow(assignment)), function(i) {
       # Extract equation indices
       start_eqn <- start_idxs[i]
       end_eqn <- ifelse(i == nrow(assignment), nchar(eqn), start_idxs[i + 1] - 1)
@@ -1196,7 +1174,7 @@ split_macros_IM <- function(sfm) {
       return(list(name = name, eqn = sub_eqn))
     })
 
-    new_macros <- stats::setNames(split_macros, sapply(split_macros, `[[`, "name"))
+    new_macros <- stats::setNames(split_macros, vapply(split_macros, `[[`, character(1), "name"))
 
     # Add original equation and documentation to first macro - it will be deleted afer
     new_macros[[1]][["eqn_insightmaker"]] <- sfm[["global"]][["eqn_insightmaker"]]
@@ -1224,8 +1202,8 @@ convert_equations_IM_wrapper <- function(sfm, regex_units) {
   add_model_elements <- unlist(unname(sfm[["model"]][["variables"]][c("stock", "aux", "flow")]), recursive = FALSE) |>
     lapply(function(x) {
       if (.sdbuildR_env[["P"]][["debug"]]) {
-        print(x[["name"]])
-        print(x[["eqn"]])
+        message(x[["name"]])
+        message(x[["eqn"]])
       }
 
       # Convert equation
@@ -1238,7 +1216,7 @@ convert_equations_IM_wrapper <- function(sfm, regex_units) {
       )
 
       if (.sdbuildR_env[["P"]][["debug"]]) {
-        print(out)
+        message(out)
       }
 
 
@@ -1249,7 +1227,7 @@ convert_equations_IM_wrapper <- function(sfm, regex_units) {
 
   add_model_elements <- lapply(add_model_elements, function(x) {
     z <- names(x)
-    lapply(1:length(x), function(i) {
+    lapply(seq_along(x), function(i) {
       y <- x[[i]]
       name <- names(x)[i]
       y[["name"]] <- name
@@ -1259,7 +1237,7 @@ convert_equations_IM_wrapper <- function(sfm, regex_units) {
 
 
   # Add to sfm
-  for (i in 1:length(add_model_elements)) {
+  for (i in seq_along(add_model_elements)) {
     sfm[["model"]][["variables"]] <- sfm[["model"]][["variables"]] |>
       utils::modifyList(add_model_elements[i])
   }
@@ -1318,9 +1296,9 @@ split_aux_wrapper <- function(sfm) {
 
   # Constants are not dependent on time, have no dependencies in names, or are only dependent on constants
   temp <- dependencies
-  temp <- temp[sapply(temp, function(x) {
+  temp <- temp[vapply(temp, function(x) {
     (!.sdbuildR_env[["P"]][["time_name"]] %in% x) & (length(intersect(x, var_names)) == 0)
-  })]
+  }, logical(1))]
   constants <- names(temp)
   rm(temp)
 

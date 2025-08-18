@@ -6,30 +6,9 @@
 #' @examples
 #' julia_setup_ok()
 julia_setup_ok <- function() {
-  isTRUE(.sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]])
-
-  # # Suppress talkative check
-  # result = invisible(capture.output(
-  #   capture.output({
-  #     result <- JuliaConnectoR::juliaSetupOk()
-  #   }, type = "message"),
-  #   type = "output"
-  # ))
-  # result = TRUE
-  #
-  # if (isTRUE(result)){
-
-  # # Check whether initialization variable of sdbuildR evaluates to TRUE in Julia
-  # tryCatch({
-  #   isTRUE(JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["init_sdbuildR"]]))
-  # }, error = function(e){
-  #   return(FALSE)
-  # })
-  # return(check)
-  # } else {
-  #   return(FALSE)
-  # }
+  isTRUE(.sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]]) && !is.null(.sdbuildR_env[["JULIA_BINDIR"]])
 }
+
 
 #' Set up Julia environment
 #'
@@ -65,6 +44,7 @@ use_julia <- function(
     dir = NULL,
     force = FALSE,
     force_install = FALSE, ...) {
+
   if (stop) {
     .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] <- NULL
     JuliaConnectoR::stopJulia()
@@ -77,7 +57,7 @@ use_julia <- function(
   }
 
   # Required Julia version for sdbuildR
-  required_version <- "1.11"
+  required_version <- .sdbuildR_env[["P"]][["jl_required_version"]]
 
   # If Julia location was specified, check presence of Julia
   if (!is.null(JULIA_HOME)) {
@@ -95,8 +75,13 @@ use_julia <- function(
       stop("Multiple Julia installations found in ", JULIA_HOME0, ". Please specify a more specific location.")
     }
   } else {
-    # Try to find Julia installation if JULIA_HOME is not specified
-    JULIA_HOME <- julia_locate(JULIA_HOME)
+
+    if (!is.null(.sdbuildR_env[["JULIA_BINDIR"]])){
+      JULIA_HOME <- .sdbuildR_env[["JULIA_BINDIR"]]
+    } else {
+      # Try to find Julia installation if JULIA_HOME is not specified
+      JULIA_HOME <- julia_locate(JULIA_HOME)
+    }
 
     if (is.null(JULIA_HOME)) {
       message("No Julia installation found.")
@@ -144,19 +129,31 @@ use_julia <- function(
     }
   }
 
-  # Set path to Julia executable
-  # old_path = Sys.getenv("JULIA_BINDIR")
-  Sys.setenv(JULIA_BINDIR = JULIA_HOME)
-  # on.exit({
-  #   if (is.na(old_path)){
-  #     Sys.unsetenv("JULIA_BINDIR")
-  #   } else {
-  #     Sys.setenv("JULIA_BINDIR" = old_path)
-  #   }
-  # })
+  old_option = Sys.getenv("JULIA_BINDIR", unset = NA)
+  Sys.setenv("JULIA_BINDIR" = JULIA_HOME)
+  .sdbuildR_env[["JULIA_BINDIR"]] = JULIA_HOME
 
-  JuliaConnectoR::startJuliaServer()
-  JuliaConnectoR::juliaSetupOk()
+  on.exit({
+    if (is.na(old_option)){
+      Sys.unsetenv("JULIA_BINDIR")
+    } else {
+      Sys.setenv("JULIA_BINDIR" = old_option)
+    }
+  })
+
+  tryCatch({
+    JuliaConnectoR::startJuliaServer()
+  }, warning = function(w) {
+    if (grepl("There is already a connection to Julia established",
+              conditionMessage(w))){
+      use_julia(stop = TRUE)
+      use_julia()
+    }
+  })
+
+  if (!JuliaConnectoR::juliaSetupOk()){
+    stop("Set-up of Julia environment FAILED!")
+  }
 
   # Find set-up location for sdbuildR in Julia
   env_path <- system.file(package = "sdbuildR")
@@ -164,19 +161,32 @@ use_julia <- function(
 
   # Check if the package is already developed to avoid redundant operations
   pkg_already_developed <- JuliaConnectoR::juliaEval(
-    paste0('using Pkg; "', .sdbuildR_env[["P"]][["jl_pkg_name"]], '" in [pkg.name for pkg in values(Pkg.dependencies())]')
+    paste0('using Pkg; "', .sdbuildR_env[["P"]][["jl_pkg_name"]],
+           '" in [pkg.name for pkg in values(Pkg.dependencies())]')
   )
 
   # Make sdbuildRUtils available to sdbuildR package environment
   if (!pkg_already_developed) {
-    # Navigate to Julia package directory
-    JuliaConnectoR::juliaEval(paste0('cd("', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
 
-    # Activate the sdbuildR package environment
-    JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, '")'))
+    # message("The following Julia packages may need to be installed: ",
+    #         paste0(names(.sdbuildR_env[["jl_pkg_pkg"]]), collapse = ", "))
+    # ans <- readline(paste0("Proceed? (y/n) "))
+    # if (trimws(tolower(ans)) %in% c("y", "yes")) {
 
-    # Develop the package in the current environment
-    JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
+
+      # Navigate to Julia package directory
+      JuliaConnectoR::juliaEval(paste0('cd("', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
+
+      # Activate the sdbuildR package environment
+      JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, '")'))
+
+      # Develop the package in the current environment
+      JuliaConnectoR::juliaEval(paste0('Pkg.develop(path = "', file.path(env_path, .sdbuildR_env[["P"]][["jl_pkg_name"]]), '")'))
+
+    # } else {
+    #   stop("sdbuildR set-up could not be completed.")
+    # }
+
   }
 
   # Run initialization
@@ -184,7 +194,7 @@ use_julia <- function(
 
   # Set global option of initialization
   if (isFALSE(JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["init_sdbuildR"]]))) {
-    stop("Set up of Julia environment FAILED!")
+    stop("Set-up of Julia environment FAILED!")
   } else {
     .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] <- TRUE
     return(invisible())
@@ -208,7 +218,8 @@ run_init <- function() {
 
   # Source the init.jl script
   JuliaConnectoR::juliaEval(julia_cmd)
-  JuliaConnectoR::juliaEval(paste0('include("', normalizePath(file.path(env_path, "init.jl"),
+  JuliaConnectoR::juliaEval(paste0('include("',
+                                   normalizePath(file.path(env_path, "init.jl"),
     winslash = "/", mustWork = FALSE
   ), '")'))
 
@@ -224,6 +235,7 @@ run_init <- function() {
 #' @noRd
 #'
 create_julia_env <- function() {
+
   # Initialize Julia
   use_julia()
 
@@ -314,24 +326,13 @@ Base.trunc(x::Unitful.Quantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)\n"
   write_script(script, filepath)
 
   # Add dependencies
-  pkgs <- c(
-    "OrdinaryDiffEq" = "6.98",
-    "DiffEqCallbacks" = "4.8",
-    "DataFrames" = "1.7",
-    "Distributions" = "0.25",
-    "Statistics" = "1.11",
-    "StatsBase" = "0.34",
-    "Unitful" = "1.23",
-    "DataInterpolations" = "8.1",
-    "Random" = "1.11",
-    "CSV" = "0.10",
-    "SciMLBase" = "2.102"
-  )
+  pkgs <- .sdbuildR_env[["jl_env_pkg"]]
 
   for (pkg in names(pkgs)) {
     JuliaConnectoR::juliaEval(paste0("Pkg.add(\"", pkg, "\")"))
     JuliaConnectoR::juliaEval(paste0("Pkg.status(\"", pkg, "\")"))
-    JuliaConnectoR::juliaEval(paste0("Pkg.compat(\"", pkg, "\", \"", pkgs[[pkg]], "\")"))
+    JuliaConnectoR::juliaEval(paste0("Pkg.compat(\"", pkg, "\", \"",
+                                     pkgs[[pkg]], "\")"))
   }
 
   # JuliaConnectoR::juliaEval(paste0("Pkg.update()"))
@@ -353,6 +354,7 @@ Base.trunc(x::Unitful.Quantity) = trunc(Unitful.ustrip.(x)) * Unitful.unit(x)\n"
 #' @noRd
 #'
 create_julia_pkg <- function() {
+
   # Initialize Julia
   use_julia()
 
@@ -453,14 +455,7 @@ create_julia_pkg <- function() {
   JuliaConnectoR::juliaEval(paste0('Pkg.activate("', env_path, "\\\\", .sdbuildR_env[["P"]][["jl_pkg_name"]], '")'))
 
   # Add dependencies
-  pkgs <- c(
-    "DataFrames" = "1.7",
-    "Distributions" = "0.25",
-    "Statistics" = "1.11",
-    "Unitful" = "1.23",
-    "DataInterpolations" = "8.1",
-    "Random" = "1.11"
-  )
+  pkgs <- .sdbuildR_env[["jl_pkg_pkg"]]
 
   for (pkg in names(pkgs)) {
     JuliaConnectoR::juliaEval(paste0("Pkg.add(\"", pkg, "\")"))

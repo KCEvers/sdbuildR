@@ -136,7 +136,7 @@ split_units <- function(x) {
     }
 
     # Split string
-    x_split <- lapply(1:nrow(split_df), function(i) {
+    x_split <- lapply(seq_len(nrow(split_df)), function(i) {
       stringr::str_sub(x, split_df[i, "start"], split_df[i, "end"])
     })
   }
@@ -173,14 +173,14 @@ replace_written_powers <- function(x) {
     # Find indices of powers
     idxs_power <- stringr::str_locate_all(x, regex_written_powers)
     df_power <- as.data.frame(do.call(rbind, idxs_power))
-    df_power[["power"]] <- rep(powers, sapply(idxs_power, nrow))
+    df_power[["power"]] <- rep(powers, vapply(idxs_power, nrow, numeric(1)))
     df_power <- df_power[order(df_power[, "start"]), ]
 
     if (nrow(idxs_words) == nrow(df_power)) {
       return(x)
     }
 
-    for (i in rev(1:nrow(df_power))) {
+    for (i in rev(seq_len(nrow(df_power)))) {
       pre <- which(idxs_words[, "end"] < df_power[i, "start"] & nzchar(idxs_words[, "word"]))
       pre <- ifelse(length(pre) > 0, pre[length(pre)], NA) # select last
       post <- which(idxs_words[, "start"] > df_power[i, "end"] & nzchar(idxs_words[, "word"]))[1] # select first
@@ -237,9 +237,9 @@ clean_unit_in_u <- function(x, regex_units) {
   }
 
   # Remove surrounding u('')
-  matches_no_u <- sapply(matches, function(y) {
+  matches_no_u <- vapply(matches, function(y) {
     stringr::str_sub(y, 4, nchar(y) - 2)
-  }, USE.NAMES = FALSE)
+  }, character(1), USE.NAMES = FALSE)
 
   # Throw error if a match includes u(''): units cannot be nested
   if (any(stringr::str_detect(matches_no_u, "u\\([\"|']"))) {
@@ -248,7 +248,9 @@ clean_unit_in_u <- function(x, regex_units) {
 
 
   # Clean all matches at once
-  cleaned <- paste0("u(\"", sapply(matches_no_u, clean_unit, regex_units = regex_units, USE.NAMES = FALSE), "\")")
+  cleaned <- paste0("u(\"", vapply(matches_no_u, clean_unit, character(1),
+                                   regex_units = regex_units, USE.NAMES = FALSE),
+                    "\")")
 
   # Replace back
   result <- x
@@ -308,17 +310,17 @@ clean_unit <- function(x, regex_units, ignore_case = FALSE, include_translation 
     # Concatenate parts
     x_parts <- ifelse(!is.na(idx), unname(regex_units[idx]), unlist(x_split_clean)) |>
       # Replace punctuation with underscore
-      sapply(function(y) {
+      vapply(function(y) {
         gsub("@|#|&|\\$|!|%|~|\\{|\\}|\\||:|;|\\?|`|\\\\", "_", y)
-      }) |>
+      }, character(1)) |>
       # Replace space between numbers with "*"
-      sapply(function(y) {
+      vapply(function(y) {
         gsub("([0-9]) ([0-9])", "\\1*\\2", y)
-      }) |>
+      }, character(1)) |>
       # Remove all spaces
-      sapply(function(y) {
+      vapply(function(y) {
         gsub("[[:space:]]", "", y)
-      }) |>
+      }, character(1)) |>
       stats::setNames(unlist(x_split_clean))
     x_new <- paste0(x_parts, collapse = "")
 
@@ -600,15 +602,14 @@ get_regex_time_units <- function() {
 
 
   # Create regular expressions
-  regex_time_units_julia <- sapply(
+  regex_time_units_julia <- vapply(
     units_df[, "full_name"],
     function(x) {
       paste0(
         "^[", toupper(stringr::str_sub(x, 1, 1)), "|", tolower(stringr::str_sub(x, 1, 1)), "]",
         stringr::str_sub(x, 2, nchar(x)), "[s]?$"
       )
-    }
-  )
+    }, character(1))
 
   # Get named list with regular expressions
   regex_time_units_julia <- stats::setNames(units_df[, "name"], unname(regex_time_units_julia))
@@ -718,15 +719,14 @@ get_regex_units <- function(sfm = NULL) {
     "AngHertz", "SpeedOfLight", "magnetic constant", "electric constant", "impedance of free space", "gravitational constant", "standard acceleration of gravity", "Planck constant", "Superconducting magnetic flux quantum", "electron rest mass", "neutron rest mass", "proton rest mass", "Bohr magneton", "Avogadro constant", "Boltzmann constant", "molar gas constant", "Stefan-Boltzmann constant", "Rydberg constant", "UnifiedAtomicMassUnit", "EarthGravity", "Stokes", "Gauss", "Inch", "Mil", "Foot", "Fahrenheit", "PoundsPerSquareInch"
   )
 
-  regex_units <- sapply(
+  regex_units <- vapply(
     units_df[, "full_name"],
     function(x) {
       paste0(
         "^[", toupper(stringr::str_sub(x, 1, 1)), "|", tolower(stringr::str_sub(x, 1, 1)), "]",
         stringr::str_sub(x, 2, nchar(x)), ifelse(x %in% no_s_suffix, "$", "[s]?$")
       )
-    }
-  )
+    }, character(1))
 
   # Get named list with regular expressions
   regex_units <- stats::setNames(units_df[, "name"], unname(regex_units))

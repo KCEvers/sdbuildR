@@ -8,6 +8,7 @@ if (!exists(".sdbuildR_env")) {
   .sdbuildR_env[["P"]] <- list(
     debug = FALSE,
     insightmaker_version = 38,
+    jl_required_version = "1.11",
     jl_pkg_name = "sdbuildRUtils",
     model_setup_name = "model_setup",
     macro_name = "macro",
@@ -44,6 +45,8 @@ if (!exists(".sdbuildR_env")) {
     ensemble_total_n = "ensemble_total_n",
     ensemble_func_name = "prob_func",
     summary_df_name = "summary_df",
+    summary_df_constants_name = "summary_df_constants",
+    summary_df_init_name = "summary_df_init",
     sim_df_name = "df",
     prob_name = "prob",
     solution_name = "solve_out",
@@ -62,4 +65,29 @@ if (!exists(".sdbuildR_env")) {
     saveat_func = "saveat_func",
     init_sdbuildR = "init_sdbuildR"
   )
+
+  .sdbuildR_env[["jl_pkg_pkg"]] <- c(
+    "DataFrames" = "1.7",
+    "Distributions" = "0.25",
+    "Statistics" = "1.11",
+    "Unitful" = "1.23",
+    "DataInterpolations" = "8.1",
+    "Random" = "1.11"
+  )
+
+  .sdbuildR_env[["jl_env_pkg"]] <- c(
+    "OrdinaryDiffEq" = "6.98",
+    "DiffEqCallbacks" = "4.8",
+    "DataFrames" = "1.7",
+    "Distributions" = "0.25",
+    "Statistics" = "1.11",
+    "StatsBase" = "0.34",
+    "Unitful" = "1.23",
+    "DataInterpolations" = "8.1",
+    "Random" = "1.11",
+    "CSV" = "0.10",
+    "SciMLBase" = "2.102"
+  )
+
+
 }
