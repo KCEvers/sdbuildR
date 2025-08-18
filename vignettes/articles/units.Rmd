@@ -14,6 +14,10 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r libraries, echo=TRUE, message=FALSE}
+library(sdbuildR)
+```
+
 Units, such as seconds, kilograms, or BMI, refer to the measurement units assigned to variables to quantify their magnitudes and ensure consistency in the model. Specifying units may seem like an unnecessary burden, because as we've seen in `vignette("build")`, stock-and-flow models can run without units. We'll first motivate the need and use of units for model verification and interpretation, after which we'll show how to use units in sdbuildR.
 
 ## Why units?
@@ -92,8 +96,7 @@ Moreover, units help identify and differentiate between time scales in the syste
 
 Units thus help to verify and interpret our models. Next, we'll use the simple example of a coffee cup to explore how to specify the simulation time unit, units of variables, and units in equations. We will finish with how to define and use your own custom units. Note that using units is only supported for running models with `sim_specs(language = 'Julia')`, not in R (see *Why are units not supported in R?* below). Set up the Julia environment first:
 
-```{r libraries, echo=FALSE}
-library(sdbuildR)
+```{r libraries, echo=TRUE}
 use_julia()
 ```
 
