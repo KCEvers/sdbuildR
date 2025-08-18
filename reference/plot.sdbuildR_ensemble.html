@@ -23,6 +23,7 @@
     <li><a class="dropdown-item" href="../articles/ensemble.html">Ensemble simulations</a></li>
     <li><a class="dropdown-item" href="../articles/units.html">Using (custom) units</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
       </ul></div>
@@ -50,6 +51,8 @@
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"summary"</span>, <span class="st">"sims"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span>
 <span>  i <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">x</span><span class="op">[[</span><span class="st">"n"</span><span class="op">]</span><span class="op">]</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  j <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">x</span><span class="op">[[</span><span class="st">"n_conditions"</span><span class="op">]</span><span class="op">]</span>, <span class="fl">9</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  vars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  add_constants <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  nrows <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">ceiling</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">j</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  shareX <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  shareY <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -58,6 +61,8 @@
 <span>  font_family <span class="op">=</span> <span class="st">"Times New Roman"</span>,</span>
 <span>  font_size <span class="op">=</span> <span class="fl">16</span>,</span>
 <span>  wrap_width <span class="op">=</span> <span class="fl">25</span>,</span>
+<span>  showlegend <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  j_labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  central_tendency <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"median"</span>, <span class="cn">FALSE</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span>
 <span>  central_tendency_width <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -82,6 +87,14 @@
 
 <dt id="arg-j">j<a class="anchor" aria-label="anchor" href="#arg-j"></a></dt>
 <dd><p>Indices of the condition to plot. Defaults to 1:9. If only one condition is specified, the plot will not be a grid of subplots.</p></dd>
+
+
+<dt id="arg-vars">vars<a class="anchor" aria-label="anchor" href="#arg-vars"></a></dt>
+<dd><p>Variables to plot. Defaults to NULL to plot all variables.</p></dd>
+
+
+<dt id="arg-add-constants">add_constants<a class="anchor" aria-label="anchor" href="#arg-add-constants"></a></dt>
+<dd><p>If TRUE, include constants in plot. Defaults to FALSE.</p></dd>
 
 
 <dt id="arg-nrows">nrows<a class="anchor" aria-label="anchor" href="#arg-nrows"></a></dt>
@@ -116,6 +129,14 @@
 <dd><p>Width of text wrapping for labels. Must be an integer. Defaults to 25.</p></dd>
 
 
+<dt id="arg-showlegend">showlegend<a class="anchor" aria-label="anchor" href="#arg-showlegend"></a></dt>
+<dd><p>Whether to show legend. Must be TRUE or FALSE. Defaults to TRUE.</p></dd>
+
+
+<dt id="arg-j-labels">j_labels<a class="anchor" aria-label="anchor" href="#arg-j-labels"></a></dt>
+<dd><p>Whether to plot labels indicating the condition of the subplot.</p></dd>
+
+
 <dt id="arg-central-tendency">central_tendency<a class="anchor" aria-label="anchor" href="#arg-central-tendency"></a></dt>
 <dd><p>Central tendency to use for the mean line. Either "mean", "median", or FALSE to not plot the central tendency. Defaults to "mean".</p></dd>
 
@@ -137,10 +158,12 @@
     <div class="dont-index"><p><code><a href="ensemble.html">ensemble()</a></code></p>
 <p>Other simulate:
 <code><a href="ensemble.html">ensemble</a>()</code>,
+<code><a href="export_plot.html">export_plot</a>()</code>,
 <code><a href="julia_setup_ok.html">julia_setup_ok</a>()</code>,
 <code><a href="plot.sdbuildR_sim.html">plot.sdbuildR_sim</a>()</code>,
 <code><a href="sim_specs.html">sim_specs</a>()</code>,
 <code><a href="simulate.html">simulate</a>()</code>,
+<code><a href="solvers.html">solvers</a>()</code>,
 <code><a href="use_julia.html">use_julia</a>()</code>,
 <code><a href="use_threads.html">use_threads</a>()</code></p></div>
     </div>

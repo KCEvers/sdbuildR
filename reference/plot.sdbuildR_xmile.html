@@ -23,6 +23,7 @@
     <li><a class="dropdown-item" href="../articles/ensemble.html">Ensemble simulations</a></li>
     <li><a class="dropdown-item" href="../articles/units.html">Using (custom) units</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
       </ul></div>
@@ -68,7 +69,7 @@
 
 
 <dt id="arg-format-label">format_label<a class="anchor" aria-label="anchor" href="#arg-format-label"></a></dt>
-<dd><p>If TRUE, apply default formatting to labels if labels are the same as variable names.</p></dd>
+<dd><p>If TRUE, apply default formatting (removing periods and underscores) to labels if labels are the same as variable names.</p></dd>
 
 
 <dt id="arg-wrap-width">wrap_width<a class="anchor" aria-label="anchor" href="#arg-wrap-width"></a></dt>
@@ -119,6 +120,7 @@
 <code><a href="get_build_code.html">get_build_code</a>()</code>,
 <code><a href="header.html">header</a>()</code>,
 <code><a href="macro.html">macro</a>()</code>,
+<code><a href="print.summary.sdbuildR_xmile.html">print.summary.sdbuildR_xmile</a>()</code>,
 <code><a href="summary.sdbuildR_xmile.html">summary.sdbuildR_xmile</a>()</code>,
 <code><a href="xmile.html">xmile</a>()</code></p></div>
     </div>
@@ -127,8 +129,8 @@
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">sfm</span> <span class="op">&lt;-</span> <span class="fu"><a href="xmile.html">xmile</a></span><span class="op">(</span><span class="st">"SIR"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span></span></span>
-<div id="htmlwidget-0caf26d4e3c00206b0c5" style="width:700px;height:432.632880098888px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-0caf26d4e3c00206b0c5">{"x":{"diagram":"\n    digraph stock_and_flow {\n\n      graph [layout = dot, rankdir = LR, center=true]\n      margin=0 # in inches\n\n      # Define stock nodes\n      \"Recovered\" [label=\"Recovered\",tooltip = \"eqn = 0.0\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"Georgia\"]\n\t\t\"Infected\" [label=\"Infected\",tooltip = \"eqn = 1\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"Georgia\"]\n\t\t\"Susceptible\" [label=\"Susceptible\",tooltip = \"eqn = 99999\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"Georgia\"]\n\n      # Define external cloud nodes\n      \n\n      # Define edges between clouds and flows and between flows and stocks\n      \"Susceptible\" -> \"Infected\" [arrowhead=\"normal\", label=\"Infection Rate\", tooltip = \"eqn = Susceptible * Lambda\", fontsize=18,fontname=\"Georgia\", color=\"black:#f48153:black\",arrowsize = 1.2,penwidth=1.1,minlen=2]\n\t\t\"Infected\" -> \"Recovered\" [arrowhead=\"normal\", label=\"Recovery Rate\", tooltip = \"eqn = Infected / Delay\", fontsize=18,fontname=\"Georgia\", color=\"black:#f48153:black\",arrowsize = 1.2,penwidth=1.1,minlen=2]\n\n      \n    }\n          ","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script><span class="r-in"><span></span></span>
+<div id="htmlwidget-28515d92cb327f90c9eb" style="width:700px;height:432.632880098888px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-28515d92cb327f90c9eb">{"x":{"diagram":"\n    digraph sfm {\n\n      graph [layout = dot, rankdir = LR, center=true]\n      margin=0 # in inches\n\n      # Define stock nodes\n      \"Recovered\" [label=\"Recovered\",tooltip = \"eqn = 0.0\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"Georgia\"]\n\t\t\"Infected\" [label=\"Infected\",tooltip = \"eqn = 1\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"Georgia\"]\n\t\t\"Susceptible\" [label=\"Susceptible\",tooltip = \"eqn = 99999\",shape=box,style=filled,fillcolor=\"#83d3d4\",fontsize=18,fontname=\"Georgia\"]\n\n      # Define external cloud nodes\n      \n\n      # Define edges between clouds and flows and between flows and stocks\n      \"Susceptible\" -> \"Infected\" [arrowhead=\"normal\", label=\"Infection Rate\", tooltip = \"eqn = Susceptible * Lambda\", labeltooltip = \"eqn = Susceptible * Lambda\", fontsize=18,fontname=\"Georgia\", color=\"black:#f48153:#f48153:black\",arrowsize = 1.5,penwidth=1.1,minlen=2]\n\t\t\"Infected\" -> \"Recovered\" [arrowhead=\"normal\", label=\"Recovery Rate\", tooltip = \"eqn = Infected / Delay\", labeltooltip = \"eqn = Infected / Delay\", fontsize=18,fontname=\"Georgia\", color=\"black:#f48153:#f48153:black\",arrowsize = 1.5,penwidth=1.1,minlen=2]\n\n      \n    }\n          ","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script><span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
