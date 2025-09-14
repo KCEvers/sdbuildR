@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Easily Build and Simulate Stock-and-Flow Models in R • sdbuildR</title>
+<title>Easily Build and Simulate Stock-and-Flow Models • sdbuildR</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Easily Build and Simulate Stock-and-Flow Models in R">
-<meta name="description" content="Easily build and simulate stock-and-flow models with sdbuildR in R. With Julia as a backend, sdbuildR combines fast performance with flexibility in a user-friendly R environment.">
-<meta property="og:description" content="Easily build and simulate stock-and-flow models with sdbuildR in R. With Julia as a backend, sdbuildR combines fast performance with flexibility in a user-friendly R environment.">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Easily Build and Simulate Stock-and-Flow Models">
+<meta name="description" content="Easily build and simulate stock-and-flow models. Stock-and-flow models are a computational method from the field of system dynamics, and model how systems change over time. They are mathematically equivalent to differential equation models. sdbuildR (system dynamics buildeR) is designed to make stock-and-flow modelling more accessible and fit for iterative model development. Models can be simulated using either R or Julia. Additionally, stock-and-flow models from Insight Maker (&lt;https://insightmaker.com/&gt;) can be imported.">
+<meta property="og:description" content="Easily build and simulate stock-and-flow models. Stock-and-flow models are a computational method from the field of system dynamics, and model how systems change over time. They are mathematically equivalent to differential equation models. sdbuildR (system dynamics buildeR) is designed to make stock-and-flow modelling more accessible and fit for iterative model development. Models can be simulated using either R or Julia. Additionally, stock-and-flow models from Insight Maker (&lt;https://insightmaker.com/&gt;) can be imported.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -47,6 +47,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/KCEvers/sdbuildR/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -105,8 +106,8 @@
 </h2>
 <ul>
 <li><p>Unlike in other System Dynamics software, sdbuildR minimally supports non-negative stocks and flows. Setting stocks to non-negative will not adjust flows. In any case, enforcing either stocks or flows to be non-negative is not recommended, as it may mask model misspecification. Stocks and flows that logically cannot be negative (e.g., animals or deaths) should ideally remain non-negative as a result of the model’s equations and parameters, rather than by forcing them to be non-negative.</p></li>
-<li><p>sdbuildR does not support vectorized operations, destructuring assignment, or variable constraints.</p></li>
-<li><p>sdbuildR does not support the Insight Maker functions Pause(), Fix(), Map(), Filter(), and Repeat(). A message is issued if any of these are detected.</p></li>
+<li><p>sdbuildR does not support vectorized operations, destructuring assignment, or minimum and maximum constraints for variables.</p></li>
+<li><p>sdbuildR does not support the Insight Maker functions Stop(), Prompt(), Confirm(), Pause(), Fix(), Map(), Filter(), and Repeat(), nor the delay and past functions. A message is issued if any of these are detected.</p></li>
 </ul>
 </div>
 <div class="section level2">
@@ -120,7 +121,15 @@
 <p>sdbuildR is under active development. While thoroughly tested, the package may have bugs, particularly in complex model translations. We encourage users to report issues on GitHub (<a href="https://github.com/KCEvers/sdbuildR/issues" class="external-link uri">https://github.com/KCEvers/sdbuildR/issues</a>) - your input helps the package improve! Use <code><a href="reference/debugger.html">debugger()</a></code> to diagnose model errors, and use the vignettes for guidance.</p>
 </div>
 </div>
-  </main><aside class="col-md-3"><div class="license">
+  </main><aside class="col-md-3"><div class="links">
+<h2 data-toc-skip>Links</h2>
+<ul class="list-unstyled">
+<li><a href="https://github.com/KCEvers/sdbuildR/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/KCEvers/sdbuildR/issues" class="external-link">Report a bug</a></li>
+</ul>
+</div>
+
+<div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li><a href="LICENSE.html">Full license</a></li>
