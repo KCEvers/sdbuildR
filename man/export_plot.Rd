@@ -23,15 +23,15 @@ export_plot(pl, filepath, width = 3, height = 4, units = "cm", dpi = 300)
 Save a plot of a stock-and-flow diagram or a simulation to a specified filepath.
 }
 \examples{
-sfm = xmile("SIR")
-filepath = tempfile(fileext  = ".png")
+sfm <- xmile("SIR")
+filepath <- tempfile(fileext = ".png")
 export_plot(plot(sfm), filepath)
 
 # Remove plot
 file.remove(filepath)
 
 \dontshow{if (not_on_cran() & interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-sim = simulate(sfm)
+sim <- simulate(sfm)
 export_plot(plot(sim), filepath)
 
 # Remove plot

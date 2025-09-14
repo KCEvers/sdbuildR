@@ -189,7 +189,7 @@ get_exported_functions <- function(package) {
 #' @returns Cleaned language
 #' @noRd
 #'
-clean_language = function(language){
+clean_language <- function(language) {
   language <- trimws(tolower(language))
   if (!language %in% c("r", "julia", "jl")) {
     stop(sprintf("The language %s is not one of the languages available in sdbuildR. The available languages are 'Julia' or 'R'.", language))
@@ -200,6 +200,23 @@ clean_language = function(language){
   return(language)
 }
 
+
+#' Clean type
+#'
+#' @inheritParams build
+#'
+#' @returns Cleaned type string
+#' @noRd
+clean_type <- function(type) {
+  trimws(tolower(type))
+
+  # Allow for use of auxiliary instead of aux
+  type[type == "auxiliary"] <- "aux"
+
+  # Remove trailing s if present
+  type <- gsub("s$", "", type)
+  return(type)
+}
 
 
 #' Quickly get names of model variables
@@ -278,4 +295,3 @@ get_names <- function(sfm) {
   rownames(names_df) <- NULL
   return(names_df)
 }
-

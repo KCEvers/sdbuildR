@@ -79,7 +79,8 @@ Ensemble simulations create multiple runs of the model, which only makes sense i
 
 ```{r}
 sfm <- build(sfm, c("Food_intake", "Hunger", "Compensatory_behaviour"),
-  eqn = "runif(1)")
+  eqn = "runif(1)"
+)
 ```
 
 With random initial conditions, multiple runs of the same model will be different. As running ensemble simulations can be quite memory intensive, it is highly recommended to reduce the size of the returned timeseries. This will save memory and speed up the simulation. For example, we can only save the timeseries every 1 time units, and only save from time 10:

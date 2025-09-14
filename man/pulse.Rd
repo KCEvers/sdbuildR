@@ -33,6 +33,10 @@ sfm <- xmile() |>
   build("input", "constant", eqn = "pulse(5, 2, 1)") |>
   build("inflow", "flow", eqn = "input(t)", to = "a")
 
+\dontshow{
+sfm <- sim_specs(sfm, dt = .1)
+}
+
 sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim)
 

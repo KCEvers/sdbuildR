@@ -11,7 +11,6 @@ simulate_julia <- function(sfm,
                            keep_unit,
                            only_stocks,
                            verbose) {
-
   # Collect arguments
   argg <- c(as.list(environment()))
   # Remove NULL arguments
@@ -39,11 +38,11 @@ simulate_julia <- function(sfm,
       use_julia()
 
       # Set Julia BINDIR
-      old_option = Sys.getenv("JULIA_BINDIR", unset = NA)
+      old_option <- Sys.getenv("JULIA_BINDIR", unset = NA)
       Sys.setenv("JULIA_BINDIR" = .sdbuildR_env[["JULIA_BINDIR"]])
 
       on.exit({
-        if (is.na(old_option)){
+        if (is.na(old_option)) {
           Sys.unsetenv("JULIA_BINDIR")
         } else {
           Sys.setenv("JULIA_BINDIR" = old_option)
@@ -54,11 +53,11 @@ simulate_julia <- function(sfm,
       start_t <- Sys.time()
 
       # Wrap in invisible and capture.output to not show message of units module being overwritten
-      out = invisible({
+      out <- invisible({
         utils::capture.output({
           JuliaConnectoR::juliaEval(paste0('include("', filepath, '")'))
-          })
         })
+      })
 
       end_t <- Sys.time()
 
@@ -120,7 +119,6 @@ compile_julia <- function(sfm, filepath_sim,
                           keep_nonnegative_flow,
                           keep_nonnegative_stock,
                           keep_unit, only_stocks) {
-
   # Add "inflow" and "outflow" entries to stocks to match flow "to" and "from" entries
   flow_df <- get_flow_df(sfm)
 
@@ -486,19 +484,16 @@ prep_delayN_smoothN <- function(sfm, delayN_smoothN) {
 #'
 #' @noRd
 compile_units_julia <- function(sfm, keep_unit) {
-
-#   script <- sprintf("\n# Clear any existing definitions to avoid conflicts
-# if @isdefined(%s)
-#     # Force garbage collection to clean up old module
-#     %s = nothing
-#     GC.gc()
-# end\n", .sdbuildR_env[["P"]][["MyCustomUnits"]], .sdbuildR_env[["P"]][["MyCustomUnits"]])
-  script = ""
+  #   script <- sprintf("\n# Clear any existing definitions to avoid conflicts
+  # if @isdefined(%s)
+  #     # Force garbage collection to clean up old module
+  #     %s = nothing
+  #     GC.gc()
+  # end\n", .sdbuildR_env[["P"]][["MyCustomUnits"]], .sdbuildR_env[["P"]][["MyCustomUnits"]])
+  script <- ""
 
   if (length(sfm[["model_units"]]) > 0) {
-
     if (length(sfm[["model_units"]]) > 1) {
-
       # Topological sort of units
       eq_names <- names(sfm[["model_units"]])
       dependencies <- lapply(
@@ -530,7 +525,8 @@ compile_units_julia <- function(sfm, keep_unit) {
       )
     }) |> paste0(collapse = sprintf("\n\tUnitful.register(%s)\n\t", .sdbuildR_env[["P"]][["MyCustomUnits"]]))
 
-    script <- paste0(script,
+    script <- paste0(
+      script,
       "\n# Define custom units; register after each unit as some units may be defined by other units\nmodule ", .sdbuildR_env[["P"]][["MyCustomUnits"]], "\n\tusing Unitful\n\tusing ", .sdbuildR_env[["P"]][["jl_pkg_name"]], ".", .sdbuildR_env[["P"]][["sdbuildR_units"]], "\n\t",
       unit_str,
       "\n\tUnitful.register(", .sdbuildR_env[["P"]][["MyCustomUnits"]], ")\nend\n\n",
@@ -1077,8 +1073,7 @@ compile_static_eqn_julia <- function(sfm, ensemble_pars, ordering, intermediarie
 #' @noRd
 #'
 prep_stock_change_julia <- function(sfm, keep_unit) {
-
- # Add temporary property to sum change in Stocks
+  # Add temporary property to sum change in Stocks
   stock_names <- names(sfm[["model"]][["variables"]][["stock"]])
   sfm[["model"]][["variables"]][["stock"]] <- lapply(
     sfm[["model"]][["variables"]][["stock"]],
@@ -1100,7 +1095,7 @@ prep_stock_change_julia <- function(sfm, keep_unit) {
         #   # Safer: in case x evaluates to a unit but no units were set
         #   x[["sum_eqn"]] <- paste0(.sdbuildR_env[["P"]][["convert_u_func"]], "(0.0, Unitful.unit.(", x[["name"]], ")/", .sdbuildR_env[["P"]][["time_units_name"]], ")")
         # } else {
-          x[["sum_eqn"]] <- "0.0"
+        x[["sum_eqn"]] <- "0.0"
         # }
       } else {
         if (is_defined(x[["inflow"]])) {
@@ -1374,8 +1369,10 @@ compile_run_ode_julia <- function(sfm,
         ", adaptive = false"
       ),
       ifelse(!only_stocks,
-        paste0(", ", .sdbuildR_env[["P"]][["callback_name"]], " = ",
-               .sdbuildR_env[["P"]][["callback_name"]]), ""
+        paste0(
+          ", ", .sdbuildR_env[["P"]][["callback_name"]], " = ",
+          .sdbuildR_env[["P"]][["callback_name"]]
+        ), ""
       ),
       ")\n",
       .sdbuildR_env[["P"]][["sim_df_name"]],
@@ -1487,14 +1484,11 @@ compile_run_ode_julia <- function(sfm,
     # Compute summary statisics
     script <- paste0(
       script, "\n# Compute summary statisics\n",
-
-
       .sdbuildR_env[["P"]][["summary_df_name"]],
       ifelse(ensemble_pars[["threaded"]], " = ensemble_summ_threaded(", " = ensemble_summ("),
       .sdbuildR_env[["P"]][["sim_df_name"]], ", ",
       "[", paste0(ensemble_pars[["quantiles"]], collapse = ", "),
       "])\n\n",
-
       .sdbuildR_env[["P"]][["parameter_name"]], "[!, :time] .= 0.0\n",
       .sdbuildR_env[["P"]][["summary_df_constants_name"]],
       ifelse(ensemble_pars[["threaded"]], " = ensemble_summ_threaded(", " = ensemble_summ("),
@@ -1502,7 +1496,6 @@ compile_run_ode_julia <- function(sfm,
       "[", paste0(ensemble_pars[["quantiles"]], collapse = ", "),
       "])\n",
       "select!(", .sdbuildR_env[["P"]][["summary_df_constants_name"]], ", Not(:time))\n\n",
-
       .sdbuildR_env[["P"]][["initial_value_name"]], "[!, :time] .= 0.0\n",
       .sdbuildR_env[["P"]][["summary_df_init_name"]],
       ifelse(ensemble_pars[["threaded"]], " = ensemble_summ_threaded(", " = ensemble_summ("),
@@ -1510,10 +1503,9 @@ compile_run_ode_julia <- function(sfm,
       "[", paste0(ensemble_pars[["quantiles"]], collapse = ", "),
       "])\n",
       "select!(", .sdbuildR_env[["P"]][["summary_df_init_name"]], ", Not(:time))\n\n",
-
       "\n# Save to CSV\n",
       "CSV.write(\"", ensemble_pars[["filepath_summary"]][["df"]], "\", ", .sdbuildR_env[["P"]][["summary_df_name"]], ")\n\n",
-      "CSV.write(\"", ensemble_pars[["filepath_summary"]][["constants"]], "\", ", .sdbuildR_env[["P"]][["summary_df_constants_name"]],  ")\n\n",
+      "CSV.write(\"", ensemble_pars[["filepath_summary"]][["constants"]], "\", ", .sdbuildR_env[["P"]][["summary_df_constants_name"]], ")\n\n",
       "CSV.write(\"", ensemble_pars[["filepath_summary"]][["init"]], "\", ", .sdbuildR_env[["P"]][["summary_df_init_name"]], ")\n\n# Delete variables\n",
       .sdbuildR_env[["P"]][["sim_df_name"]], " = Nothing\n",
       .sdbuildR_env[["P"]][["parameter_name"]], " = Nothing\n",

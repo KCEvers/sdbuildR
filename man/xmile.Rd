@@ -7,13 +7,32 @@
 xmile(name = NULL)
 }
 \arguments{
-\item{name}{Name of the template to load. If NULL, an empty stock-and-flow model will be created with default simulation parameters and a default header. If specified, the name should be one of "logistic_model", "SIR", "predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua", "spruce_budworm".}
+\item{name}{Name of the template to load. If NULL, an empty stock-and-flow
+model will be created with default simulation parameters and a default header.
+If specified, the name should be one of "logistic_model", "SIR",
+"predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz",
+"Rossler", "vanderPol", "Duffing", "Chua", "spruce_budworm".}
 }
 \value{
-Stock-and-flow model of class sdbuildR_xmile.
+Stock-and-flow model of class sdbuildR_xmile. Its structure is based
+on \href{https://docs.oasis-open.org/xmile/xmile/v1.0/os/xmile-v1.0-os.html}{XML Interchange Language for System Dynamics (XMILE)}. It is a nested list, containing:
+\describe{
+\item{header}{Meta-information about model. A list containing arguments listed in \code{\link[=header]{header()}}.}
+\item{sim_specs}{Simulation specifications. A list containing arguments listed in \code{\link[=sim_specs]{sim_specs()}}.}
+\item{model}{Model variables. A nested list containing arguments listed in \code{\link[=build]{build()}}.}
+\item{macro}{Global variable or functions. A list containing arguments listed in \code{\link[=macro]{macro()}}.}
+\item{model_units}{Custom model units. A list containing arguments listed in \code{\link[=model_units]{model_units()}}.}
+}
 }
 \description{
-Initialize an empty stock-and-flow model of class sdbuildR_xmile. You can either create an empty stock-and-flow model or load a template from the model library.
+Initialize an empty stock-and-flow model of class sdbuildR_xmile. You can
+either create an empty stock-and-flow model or load a template from the model
+library.
+}
+\details{
+Do not edit the object manually; this will likely lead to errors downstream.
+Rather, use \code{\link[=header]{header()}}, \code{\link[=sim_specs]{sim_specs()}}, \code{\link[=build]{build()}}, \code{\link[=macro]{macro()}}, and
+\code{\link[=model_units]{model_units()}} for safe manipulation.
 }
 \examples{
 sfm <- xmile()

@@ -8,11 +8,14 @@
   x,
   format_label = TRUE,
   wrap_width = 20,
-  center_stocks = FALSE,
   font_size = 18,
-  font_family = "Georgia",
+  font_family = "Times New Roman",
   stock_col = "#83d3d4",
   flow_col = "#f48153",
+  dependency_col = "#999999",
+  show_dependencies = TRUE,
+  show_constants = FALSE,
+  show_aux = TRUE,
   minlen = 2,
   ...
 )
@@ -24,8 +27,6 @@
 
 \item{wrap_width}{Width of text wrapping for labels. Must be an integer. Defaults to 20.}
 
-\item{center_stocks}{If TRUE, stocks are vertically aligned in the middle of the diagram. Defaults to FALSE.}
-
 \item{font_size}{Font size. Defaults to 18.}
 
 \item{font_family}{Font name. Defaults to "Georgia".}
@@ -33,6 +34,14 @@
 \item{stock_col}{Colour of stocks. Defaults to "#83d3d4".}
 
 \item{flow_col}{Colour of flows. Defaults to "#f48153".}
+
+\item{dependency_col}{Colour of dependency arrows. Defaults to "#999999".}
+
+\item{show_dependencies}{If TRUE, show dependencies between variables. Defaults to TRUE.}
+
+\item{show_constants}{If TRUE, show constants. Defaults to FALSE.}
+
+\item{show_aux}{If TRUE, show auxiliary variables. Defaults to TRUE.}
 
 \item{minlen}{Minimum length of edges; must be an integer. Defaults to 2.}
 
@@ -42,7 +51,7 @@
 Stock-and-flow diagram plotted with DiagrammeR()
 }
 \description{
-Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Hover over the stocks and flows to see their equations.
+Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Thin grey edges indicate dependencies between variables. By default, constants (indicated by italic labels) are not shown. Hover over the variables to see their equations.
 }
 \examples{
 sfm <- xmile("SIR")

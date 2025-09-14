@@ -59,9 +59,9 @@ sdbuildR::use_julia()
 
 * Unlike in other System Dynamics software, sdbuildR minimally supports non-negative stocks and flows. Setting stocks to non-negative will not adjust flows. In any case, enforcing either stocks or flows to be non-negative is not recommended, as it may mask model misspecification. Stocks and flows that logically cannot be negative (e.g., animals or deaths) should ideally remain non-negative as a result of the model's equations and parameters, rather than by forcing them to be non-negative. 
 
-* sdbuildR does not support vectorized operations, destructuring assignment, or variable constraints. 
+* sdbuildR does not support vectorized operations, destructuring assignment, or minimum and maximum constraints for variables. 
 
-* sdbuildR does not support the Insight Maker functions Pause(), Fix(), Map(), Filter(), and Repeat(). A message is issued if any of these are detected.
+* sdbuildR does not support the Insight Maker functions Stop(), Prompt(), Confirm(), Pause(), Fix(), Map(), Filter(), and Repeat(), nor the delay and past functions. A message is issued if any of these are detected.
 
 ## Other System Dynamics software
 

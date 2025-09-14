@@ -1,13 +1,12 @@
-
 test_that("ensemble works", {
   testthat::skip_on_cran()
 
   # If you already have random elements in the model, no need to specify what to vary
   sfm <- xmile("Crielaard2022") |> sim_specs(
     language = "Julia",
-    start = 0, stop = 500,
+    start = 0, stop = 10,
     dt = .1,
-    save_from = 400, save_at = 1
+    save_from = 5, save_at = 1
   )
   df <- as.data.frame(sfm, properties = "eqn")
 
@@ -49,7 +48,10 @@ test_that("ensemble works", {
   ))
   expect_equal(!is.null(sims[["summary"]]), TRUE)
   expect_equal(!is.null(sims[["df"]]), TRUE)
-  expect_equal(length(unique(sims$summ$variable)), nrow(df[df[["type"]] %in% c("stock", "flow", "aux"), ])) # 3 stocks
+  expect_equal(
+    length(unique(sims$summ$variable)),
+    nrow(df[df[["type"]] %in% c("stock", "flow", "aux"), ])
+  ) # 3 stocks
 
   # Check whether all variables have the same timeseries length
   table_lengths <- with(sims$summ, table(variable))
@@ -130,31 +132,25 @@ test_that("plotting ensemble also works with singular time point", {
   sfm <- xmile("predator-prey") |>
     sim_specs(
       language = "Julia",
-      start = 0, stop = 50,
+      start = 0, stop = 5,
       dt = .1,
-      save_from = 50
+      save_from = 5
     ) |>
     build(c("predator", "prey"), eqn = "runif(1)")
   sims <- ensemble(sfm)
 
   expect_equal(length(unique(sims$summary$time)), 1)
 
-  expect_no_error(plot(sims))
-  expect_no_warning(plot(sims))
-  expect_no_message(plot(sims))
+  expect_no_error(expect_no_warning(expect_no_message(plot(sims))))
 
   # with sims
   sims <- ensemble(sfm, return_sims = T)
 
   expect_equal(length(unique(sims$summary$time)), 1)
 
-  expect_no_error(plot(sims))
-  expect_no_warning(plot(sims))
-  expect_no_message(plot(sims))
+  expect_no_error(expect_no_warning(expect_no_message(plot(sims))))
 
-  expect_no_error(plot(sims, type = "sims"))
-  expect_no_warning(plot(sims, type = "sims"))
-  expect_no_message(plot(sims, type = "sims"))
+  expect_no_error(expect_no_warning(expect_no_message(plot(sims, type = "sims"))))
 })
 
 
@@ -162,9 +158,9 @@ test_that("ensemble works with specified range", {
   # If you already have random elements in the model, no need to specify what to vary
   sfm <- xmile("Crielaard2022") |> sim_specs(
     language = "Julia",
-    start = 0, stop = 500,
+    start = 0, stop = 10,
     dt = .1,
-    save_from = 400, save_at = 1
+    save_from = 5, save_at = 1
   )
 
   # Run ensemble with specified range
@@ -231,8 +227,7 @@ test_that("ensemble works with specified range", {
   expect_equal(sims[["n"]], 3)
   expect_equal(sims[["n_total"]], 27)
   expect_equal(sort(unique(sims[["summary"]][["j"]])), 1:9)
-  expect_no_error(plot(sims))
-  expect_no_message(plot(sims))
+  expect_no_error(expect_no_message(plot(sims)))
   expect_no_error(plot(sims, j = 2))
   expect_no_error(plot(sims, j = c(3, 5, 8), nrows = 4))
   expect_error(
@@ -258,11 +253,9 @@ test_that("ensemble works with specified range", {
   expect_equal(sort(unique(sims[["df"]][["i"]])), 1:nr_sims)
   expect_equal(sort(unique(sims[["df"]][["j"]])), 1:nr_cond)
   expect_equal(sort(unique(sims[["summary"]][["j"]])), 1:nr_cond)
-  expect_no_error(plot(sims))
-  expect_no_message(plot(sims))
+  expect_no_error(expect_no_message(plot(sims)))
   expect_error(plot(sims, j = nr_cond + 1), "j must be a vector with integers between 1 and 3")
-  expect_no_error(plot(sims, i = (nr_sims - 1):nr_sims, type = "sims"))
-  expect_no_message(plot(sims, i = (nr_sims - 1):nr_sims, type = "sims"))
+  expect_no_error(expect_no_message(plot(sims, i = (nr_sims - 1):nr_sims, type = "sims")))
   expect_no_error(plot(sims, j = nr_cond - 1, type = "sims"))
   expect_no_error(plot(sims, j = 1:nr_cond, type = "sims"))
 })
@@ -272,7 +265,7 @@ test_that("ensemble works with specified range", {
 test_that("ensemble works with units", {
   # Test ensemble with model with units
   sfm <- xmile("coffee_cup") |>
-    sim_specs(language = "Julia") |>
+    sim_specs(language = "Julia", stop = 10, dt = 0.1) |>
     build("coffee_temperature", eqn = "runif(1, 20, 150)")
   sims <- expect_no_error(ensemble(sfm))
 
@@ -285,11 +278,9 @@ test_that("ensemble works with units", {
   expect_equal(sort(unique(sims[["df"]][["i"]])), 1:nr_sims)
   expect_equal(sort(unique(sims[["df"]][["j"]])), 1)
   expect_equal(sort(unique(sims[["summary"]][["j"]])), 1)
-  expect_no_error(plot(sims))
-  expect_no_message(plot(sims))
+  expect_no_error(expect_no_message(plot(sims)))
   expect_no_error(plot(sims, j = 1))
-  expect_no_error(plot(sims, type = "sims"))
-  expect_no_message(plot(sims, type = "sims"))
+  expect_no_error(expect_no_message(plot(sims, type = "sims")))
 })
 
 
@@ -301,7 +292,7 @@ test_that("ensemble works with NA", {
     sim_specs(
       language = "Julia",
       dt = 0.1,
-      save_at = 1, save_from = 150,
+      save_at = 10, save_from = 150,
       start = 0, stop = 200
     )
   nr_sims <- 5
@@ -322,12 +313,10 @@ test_that("ensemble works with NA", {
   expect_equal(sort(unique(sims[["df"]][["i"]])), 1:nr_sims)
   expect_equal(sort(unique(sims[["df"]][["j"]])), 1:nr_cond)
   expect_equal(sort(unique(sims[["summary"]][["j"]])), 1:nr_cond)
-  expect_no_error(plot(sims))
-  expect_no_message(plot(sims))
+  expect_no_error(expect_no_message(plot(sims)))
   expect_no_error(plot(sims, j = 1))
   expect_no_error(plot(sims, j = 1:5))
-  expect_no_error(plot(sims, type = "sims"))
-  expect_no_message(plot(sims, type = "sims"))
+  expect_no_error(expect_no_message(plot(sims, type = "sims")))
   expect_no_error(plot(sims, i = nr_sims - 1, type = "sims"))
 })
 
@@ -336,7 +325,7 @@ test_that("ensemble: order of range parameters", {
   # In an earlier version, the order of the range parameters was not preserved
   sfm <- xmile() |>
     sim_specs(language = "Julia") |>
-    sim_specs(stop = 12, time_units = "month") |>
+    sim_specs(stop = 12, dt = 0.1, save_at = 1, time_units = "month") |>
     header(name = "Maya's Burnout") |>
     build("workload", "stock",
       eqn = 4

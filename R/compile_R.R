@@ -80,7 +80,6 @@ compile_r <- function(sfm,
                       keep_nonnegative_flow,
                       keep_nonnegative_stock,
                       only_stocks) {
-
   # Get flows and connections
   flow_df <- get_flow_df(sfm)
 
@@ -160,12 +159,14 @@ set.seed(%s)", as.character(sfm[["sim_specs"]][["seed"]]))
   )
 
 
-  prep_script <- paste0("# Load packages\nlibrary(sdbuildR)\n",
-                        # Sys.time(),
-                         # zeallot_def[["script"]],
-                         seed_str, "\n", times[["script"]],
-                        "\n", macros[["script"]],
-                        "\n", nonneg_stocks[["func_def"]])
+  prep_script <- paste0(
+    "# Load packages\nlibrary(sdbuildR)\n",
+    # Sys.time(),
+    # zeallot_def[["script"]],
+    seed_str, "\n", times[["script"]],
+    "\n", macros[["script"]],
+    "\n", nonneg_stocks[["func_def"]]
+  )
 
 
   ode <- compile_ode(
@@ -185,7 +186,6 @@ set.seed(%s)", as.character(sfm[["sim_specs"]][["seed"]]))
 
   # Format code
   if (requireNamespace("styler", quietly = TRUE)) {
-
     # Temporarily set option
     old_option <- getOption("styler.colored_print.vertical")
     options(styler.colored_print.vertical = FALSE)
@@ -433,37 +433,39 @@ compile_static_eqn <- function(sfm, ordering) {
 #' @noRd
 prep_equations_variables <- function(sfm, keep_nonnegative_flow) {
   # Graphical functions
-  sfm[["model"]][["variables"]][["gf"]] <- lapply(sfm[["model"]][["variables"]][["gf"]],
-                                                  function(x) {
-    if (is_defined(x[["xpts"]])) {
-      if (inherits(x[["xpts"]], "numeric")) {
-        xpts_str <- paste0("c(", paste0(as.character(x[["xpts"]]), collapse = ", "), ")")
-      } else {
-        xpts_str <- x[["xpts"]]
-      }
-
-      # ypts is not obligatory
-      if (!is_defined(x[["ypts"]])) {
-        ypts_str <- ""
-      } else {
-        if (inherits(x[["ypts"]], "numeric")) {
-          x[["ypts"]] <- paste0("c(", paste0(as.character(x[["ypts"]]), collapse = ", "), ")")
+  sfm[["model"]][["variables"]][["gf"]] <- lapply(
+    sfm[["model"]][["variables"]][["gf"]],
+    function(x) {
+      if (is_defined(x[["xpts"]])) {
+        if (inherits(x[["xpts"]], "numeric")) {
+          xpts_str <- paste0("c(", paste0(as.character(x[["xpts"]]), collapse = ", "), ")")
+        } else {
+          xpts_str <- x[["xpts"]]
         }
-        ypts_str <- sprintf("\n\t\ty = %s,", x[["ypts"]])
+
+        # ypts is not obligatory
+        if (!is_defined(x[["ypts"]])) {
+          ypts_str <- ""
+        } else {
+          if (inherits(x[["ypts"]], "numeric")) {
+            x[["ypts"]] <- paste0("c(", paste0(as.character(x[["ypts"]]), collapse = ", "), ")")
+          }
+          ypts_str <- sprintf("\n\t\ty = %s,", x[["ypts"]])
+        }
+
+        x[["eqn_str"]] <- sprintf(
+          "%s = stats::approxfun(x = %s,%s\n\t\tmethod = '%s', rule = %s)",
+          x[["name"]], xpts_str,
+          ypts_str,
+          x[["interpolation"]], ifelse(x[["extrapolation"]] == "nearest", 2,
+            ifelse(x[["extrapolation"]] == "NA", 1, x[["extrapolation"]])
+          )
+        )
       }
 
-      x[["eqn_str"]] <- sprintf(
-        "%s = stats::approxfun(x = %s,%s\n\t\tmethod = '%s', rule = %s)",
-        x[["name"]], xpts_str,
-        ypts_str,
-        x[["interpolation"]], ifelse(x[["extrapolation"]] == "nearest", 2,
-          ifelse(x[["extrapolation"]] == "NA", 1, x[["extrapolation"]])
-        )
-      )
+      return(x)
     }
-
-    return(x)
-  })
+  )
 
   # Constant equations
   sfm[["model"]][["variables"]][["constant"]] <- lapply(sfm[["model"]][["variables"]][["constant"]], function(x) {
@@ -472,23 +474,27 @@ prep_equations_variables <- function(sfm, keep_nonnegative_flow) {
   })
 
   # Initial states of Stocks
-  sfm[["model"]][["variables"]][["stock"]] <- lapply(sfm[["model"]][["variables"]][["stock"]],
-                                                     function(x) {
-    x[["eqn_str"]] <- paste0(x[["name"]], " = ", x[["eqn"]])
+  sfm[["model"]][["variables"]][["stock"]] <- lapply(
+    sfm[["model"]][["variables"]][["stock"]],
+    function(x) {
+      x[["eqn_str"]] <- paste0(x[["name"]], " = ", x[["eqn"]])
 
-    return(x)
-  })
+      return(x)
+    }
+  )
 
   # Auxiliary equations (dynamic auxiliaries)
-  sfm[["model"]][["variables"]][["aux"]] <- lapply(sfm[["model"]][["variables"]][["aux"]],
-                                                   function(x) {
-    x[["eqn_str"]] <- sprintf("%s <- %s", x[["name"]], x[["eqn"]])
+  sfm[["model"]][["variables"]][["aux"]] <- lapply(
+    sfm[["model"]][["variables"]][["aux"]],
+    function(x) {
+      x[["eqn_str"]] <- sprintf("%s <- %s", x[["name"]], x[["eqn"]])
 
-    if (!is.null(x[["preceding_eqn"]])) {
-      x[["eqn_str"]] <- c(x[["preceding_eqn"]], x[["eqn_str"]])
+      if (!is.null(x[["preceding_eqn"]])) {
+        x[["eqn_str"]] <- c(x[["preceding_eqn"]], x[["eqn_str"]])
+      }
+      return(x)
     }
-    return(x)
-  })
+  )
 
   # Flow equations
   sfm[["model"]][["variables"]][["flow"]] <- lapply(sfm[["model"]][["variables"]][["flow"]], function(x) {
@@ -642,7 +648,6 @@ attributes(%s)$valroot
 compile_ode <- function(sfm, ordering, prep_script, static_eqn,
                         keep_nonnegative_flow, keep_nonnegative_stock,
                         only_stocks) {
-
   # Auxiliary equations (dynamic auxiliaries)
   aux_eqn <- lapply(sfm[["model"]][["variables"]][["aux"]], `[[`, "eqn_str")
 
@@ -808,5 +813,3 @@ compile_run_ode <- function(sfm, nonneg_stocks) {
 
   return(list(script = script))
 }
-
-

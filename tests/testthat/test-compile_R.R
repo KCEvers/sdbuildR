@@ -1,6 +1,6 @@
 test_that("simulate R for templates", {
   for (s in c("SIR", "predator-prey", "logistic_model", "Crielaard2022", "Duffing", "Chua")) {
-    sfm <- xmile(s)
+    sfm <- xmile(s) |> sim_specs(save_at = 1)
 
     if (s == "Crielaard2022") {
       sfm <- sfm |>
@@ -92,7 +92,7 @@ test_that("simulate with different components works", {
 
 
   # Only keep stocks
-  sfm <- xmile("SIR") |> sim_specs(language = "R")
+  sfm <- xmile("SIR") |> sim_specs(language = "R", stop = 10, dt = 0.1)
   sim <- simulate(sfm, only_stocks = TRUE)
   expect_equal(
     length(unique(as.data.frame(sim)$variable)),
@@ -100,7 +100,7 @@ test_that("simulate with different components works", {
   )
 
   # All variables should be kept if only_stocks = FALSE
-  sfm <- xmile("SIR") |> sim_specs(language = "R")
+  sfm <- xmile("SIR") |> sim_specs(language = "R", stop = 10, dt = 0.1)
   sim <- simulate(sfm, only_stocks = FALSE)
   df <- as.data.frame(sfm)
   df <- df[df$type != "constant", ]
@@ -109,25 +109,24 @@ test_that("simulate with different components works", {
 
 
 test_that("equations that refer to the variable itself throw error", {
-
-  sfm = xmile() %>%
+  sfm <- xmile() %>%
     build("E", "stock", eqn = "E")
-  expect_error(simulate(sfm), "The properties below contain references to undefined variables")
-
+  expect_error(simulate(sfm), "Please define these missing variables or correct any spelling mistakes")
 })
 
 
 test_that("output of simulate in R", {
   sfm <- xmile("SIR") |> sim_specs(language = "R", start = 0, stop = 10, dt = .1)
   sim <- expect_no_error(simulate(sfm))
-  expect_equal(all(c("df", "init", "constants", "sfm", "script", "duration") %in% names(sim)), TRUE)
+  expect_equal(all(c("df", "init", "constants", "sfm", "script", "duration")
+  %in% names(sim)), TRUE)
 
   # Check that init and constants are not Julia objects
   expect_equal(class(sim$constants), "numeric")
   expect_equal(class(sim$init), "numeric")
   expect_equal(
     sort(names(sim$constants)),
-    c("Delay", "Effective_Contact_Rate", "Total_Population")
+    c("Beta", "Delay", "Effective_Contact_Rate", "Total_Population")
   )
   expect_equal(
     sort(names(sim$init)),
@@ -141,7 +140,7 @@ test_that("save_at works", {
 
   # Check whether dataframe is returned at save_at times
   sfm <- sfm |>
-    sim_specs(save_at = 0.1, dt = 0.001, start = 100, stop = 200)
+    sim_specs(save_at = 1, dt = 0.1, start = 10, stop = 20)
 
   sim <- simulate(sfm |> sim_specs(language = "R"))
   expect_equal(
@@ -152,7 +151,8 @@ test_that("save_at works", {
 
 
 test_that("negative times are possible", {
-  sfm <- xmile("logistic_model") |> sim_specs(start = -100, language = "R")
+  sfm <- xmile("logistic_model") |>
+    sim_specs(start = -1, language = "R", stop = 10, dt = 0.1)
   expect_no_error({
     sim <- simulate(sfm)
   })
@@ -161,12 +161,12 @@ test_that("negative times are possible", {
 
 test_that("save_from works", {
   sfm <- xmile("SIR") |> sim_specs(
-    start = 0, stop = 100,
+    start = 0, stop = 20, save_at = .1,
     save_from = 10, language = "R"
   )
   sim <- expect_no_error(simulate(sfm))
   expect_equal(min(sim$df$time), 10)
-  expect_equal(max(sim$df$time), 100)
+  expect_equal(max(sim$df$time), 20)
   expect_no_error(plot(sim))
   expect_no_error(summary(sfm))
 })
@@ -198,8 +198,7 @@ test_that("function in aux still works", {
     sim_specs(language = "R", start = 0, stop = 10, dt = .1) |>
     build("A", "stock") |>
     build("input", "aux", eqn = "ramp(5, 10, -1)")
-  sim <- expect_no_error(simulate(sfm, only_stocks = FALSE))
-  sim <- expect_no_message(simulate(sfm, only_stocks = FALSE))
+  sim <- expect_no_error(expect_no_message(simulate(sfm, only_stocks = FALSE)))
 
   # Check that input is not returned as a variable
   expect_equal(sort(unique(sim$df$variable)), c("A"))
@@ -207,8 +206,7 @@ test_that("function in aux still works", {
   # Check with two intermediary variables
   sfm <- sfm |>
     build("a2", "aux", eqn = " 0.38 + input(t)")
-  sim <- expect_no_error(simulate(sfm, only_stocks = FALSE))
-  sim <- expect_no_message(simulate(sfm, only_stocks = FALSE))
+  sim <- expect_no_error(expect_no_message(simulate(sfm, only_stocks = FALSE)))
 
   # Check that input is not returned as a variable
   expect_equal(sort(unique(sim$df$variable)), c("A", "a2"))

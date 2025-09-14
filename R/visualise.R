@@ -1,5 +1,3 @@
-
-
 #' Save plot to a file
 #'
 #' Save a plot of a stock-and-flow diagram or a simulation to a specified filepath.
@@ -16,8 +14,8 @@
 #' @family simulate
 #'
 #' @examples
-#' sfm = xmile("SIR")
-#' filepath = tempfile(fileext  = ".png")
+#' sfm <- xmile("SIR")
+#' filepath <- tempfile(fileext = ".png")
 #' export_plot(plot(sfm), filepath)
 #'
 #' # Remove plot
@@ -25,14 +23,13 @@
 #'
 #' @examplesIf not_on_cran() & interactive()
 # # Requires Chrome to save plotly plot:
-#'sim = simulate(sfm)
-#'export_plot(plot(sim), filepath)
+#' sim <- simulate(sfm)
+#' export_plot(plot(sim), filepath)
 #'
 #' # Remove plot
 #' file.remove(filepath)
 #'
-export_plot = function(pl, filepath, width = 3, height = 4, units = "cm", dpi = 300){
-
+export_plot <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi = 300) {
   # Auto-detect format
   format <- tolower(tools::file_ext(filepath))
 
@@ -45,16 +42,18 @@ export_plot = function(pl, filepath, width = 3, height = 4, units = "cm", dpi = 
     height <- height * dpi / 2.54
   }
 
-  if ("grViz" %in% class(pl)){
+  if ("grViz" %in% class(pl)) {
     export_diagram(pl, filepath, format,
-                   width = width, height = height)
-  } else if ("plotly" %in% class(pl)){
-    export_plotly(pl, filepath, format = format,
-                  width = width, height = height)
+      width = width, height = height
+    )
+  } else if ("plotly" %in% class(pl)) {
+    export_plotly(pl, filepath,
+      format = format,
+      width = width, height = height
+    )
   } else {
     stop("export_plot does not support pl of class ", class(pl))
   }
-
 }
 
 
@@ -66,29 +65,28 @@ export_plot = function(pl, filepath, width = 3, height = 4, units = "cm", dpi = 
 #' @returns NULL
 #' @noRd
 #'
-export_diagram = function(pl, filepath, format, width, height){
-
-  if (!requireNamespace("rsvg", quietly = TRUE)){
+export_diagram <- function(pl, filepath, format, width, height) {
+  if (!requireNamespace("rsvg", quietly = TRUE)) {
     stop("rsvg needs to be installed!")
   }
 
-  if (!requireNamespace("DiagrammeRsvg", quietly = TRUE)){
+  if (!requireNamespace("DiagrammeRsvg", quietly = TRUE)) {
     stop("DiagrammeRsvg needs to be installed!")
   }
 
-  temp = charToRaw(DiagrammeRsvg::export_svg(pl))
+  temp <- charToRaw(DiagrammeRsvg::export_svg(pl))
 
-  if (format == "webp"){
+  if (format == "webp") {
     rsvg::rsvg_webp(temp, filepath, width = width, height = height)
-  } else if (format == "png"){
+  } else if (format == "png") {
     rsvg::rsvg_png(temp, filepath, width = width, height = height)
-  } else if (format == "pdf"){
+  } else if (format == "pdf") {
     rsvg::rsvg_pdf(temp, filepath, width = width, height = height)
-  } else if (format == "svg"){
+  } else if (format == "svg") {
     rsvg::rsvg_svg(temp, filepath, width = width, height = height)
-  } else if (format == "ps"){
+  } else if (format == "ps") {
     rsvg::rsvg_ps(temp, filepath, width = width, height = height)
-  } else if (format == "eps"){
+  } else if (format == "eps") {
     rsvg::rsvg_eps(temp, filepath, width = width, height = height)
   } else {
     stop("format ", format, " not supported")
@@ -107,12 +105,11 @@ export_diagram = function(pl, filepath, format, width, height){
 #' @noRd
 #'
 export_plotly <- function(pl, filepath, format, width, height) {
-
-  if (!requireNamespace("htmlwidgets", quietly = TRUE)){
+  if (!requireNamespace("htmlwidgets", quietly = TRUE)) {
     stop("htmlwidgets needs to be installed!")
   }
 
-  if (!requireNamespace("webshot2", quietly = TRUE)){
+  if (!requireNamespace("webshot2", quietly = TRUE)) {
     stop("webshot2 needs to be installed!")
   }
 
@@ -136,10 +133,10 @@ export_plotly <- function(pl, filepath, format, width, height) {
   }
 
   # Overwrite quiet option temporarily
-  old_option = getOption("webshot.quiet")
+  old_option <- getOption("webshot.quiet")
   options("webshot.quiet" = TRUE)
   on.exit({
-    if (is.null(old_option)){
+    if (is.null(old_option)) {
       options("webshot.quiet" = NULL)
     } else {
       options("webshot.quiet" = old_option)
@@ -161,18 +158,22 @@ export_plotly <- function(pl, filepath, format, width, height) {
 
 
 
+
 #' Plot stock-and-flow diagram
 #'
-#' Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Hover over the stocks and flows to see their equations.
+#' Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Thin grey edges indicate dependencies between variables. By default, constants (indicated by italic labels) are not shown. Hover over the variables to see their equations.
 #'
 #' @param x Stock-and-flow model of class sdbuildR_xmile
 #' @param format_label If TRUE, apply default formatting (removing periods and underscores) to labels if labels are the same as variable names.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 20.
-#' @param center_stocks If TRUE, stocks are vertically aligned in the middle of the diagram. Defaults to FALSE.
 #' @param font_size Font size. Defaults to 18.
 #' @param font_family Font name. Defaults to "Georgia".
 #' @param stock_col Colour of stocks. Defaults to "#83d3d4".
 #' @param flow_col Colour of flows. Defaults to "#f48153".
+#' @param dependency_col Colour of dependency arrows. Defaults to "#999999".
+#' @param show_dependencies If TRUE, show dependencies between variables. Defaults to TRUE.
+#' @param show_constants If TRUE, show constants. Defaults to FALSE.
+#' @param show_aux If TRUE, show auxiliary variables. Defaults to TRUE.
 #' @param minlen Minimum length of edges; must be an integer. Defaults to 2.
 #' @param ... Optional arguments
 #'
@@ -189,22 +190,18 @@ export_plotly <- function(pl, filepath, format, width, height) {
 plot.sdbuildR_xmile <- function(x,
                                 format_label = TRUE,
                                 wrap_width = 20,
-                                center_stocks = FALSE,
                                 font_size = 18,
-                                font_family = "Georgia",
+                                font_family = "Times New Roman",
                                 stock_col = "#83d3d4",
                                 flow_col = "#f48153",
+                                dependency_col = "#999999",
+                                show_dependencies = TRUE,
+                                show_constants = FALSE,
+                                show_aux = TRUE,
                                 minlen = 2,
                                 ...) {
-
   sfm <- x
   check_xmile(x)
-
-  ## Check whether there are any variables
-  # nr_var <- sum(lengths(sfm[["model"]][["variables"]]))
-  # if (nr_var == 0) {
-  #   stop("Your model contains no variables!")
-  # }
 
   # Check whether there are any stocks or flows
   temp <- length(sfm[["model"]][["variables"]][["stock"]]) == 0 & length(sfm[["model"]][["variables"]][["flow"]]) == 0
@@ -217,10 +214,10 @@ plot.sdbuildR_xmile <- function(x,
 
   if (format_label) {
     df[["label"]] <- ifelse(df[["name"]] == df[["label"]],
-                            stringr::str_replace_all(
-                              df[["label"]],
-                              c("_" = " ", "\\." = " ", "  " = " ")
-                            ), df[["label"]]
+      stringr::str_replace_all(
+        df[["label"]],
+        c("_" = " ", "\\." = " ", "  " = " ")
+      ), df[["label"]]
     )
   }
 
@@ -229,52 +226,240 @@ plot.sdbuildR_xmile <- function(x,
   dict <- stats::setNames(df[["label"]], df[["name"]])
 
   # Get equations and remove quotation marks from unit strings
-  dict_eqn <- stats::setNames(stringr::str_replace_all(df[["eqn"]],
-                                                       c("'" = "", "\"" = "")), df[["name"]])
+  dict_eqn <- stats::setNames(stringr::str_replace_all(
+    df[["eqn"]],
+    c("'" = "", "\"" = "")
+  ), df[["name"]])
 
-  highlight_names <- df[df[["type"]] == "stock", "name"]
+  # Categorize variables by type
+  stock_names <- df[df[["type"]] == "stock", "name"]
   flow_names <- df[df[["type"]] == "flow", "name"]
+  aux_names <- df[df[["type"]] == "aux", "name"]
+  const_names <- df[df[["type"]] == "constant", "name"]
 
-  # Prepare all nodes
-  if (length(highlight_names) > 0) {
-    stock_nodes <- sprintf("%s [label='%s',tooltip = 'eqn = %s',shape=box,style=filled,fillcolor='%s',fontsize=%s,fontname='%s']", paste0("'", highlight_names, "'"), dict[highlight_names], dict_eqn[highlight_names], stock_col, font_size, font_family)
+  # Filter based on show parameters
+  if (!show_constants) const_names <- character(0)
+  if (!show_aux) aux_names <- character(0)
+
+  plot_var <- c(stock_names, flow_names)
+  if (show_constants) {
+    plot_var <- c(plot_var, const_names)
+  }
+  if (show_aux) {
+    plot_var <- c(plot_var, aux_names)
+  }
+
+  format_flow <- function(var) {
+    ifelse(var %in% flow_names,
+      paste0("flow_", var),
+      var
+    )
+  }
+
+  # Get dependencies
+  dep <- find_dependencies(x)
+
+  # Prepare stock nodes
+  if (length(stock_names) > 0) {
+    stock_nodes <- sprintf(
+      "%s [label='%s',tooltip = 'eqn = %s',shape=box,style=filled,fillcolor='%s',fontsize=%s,fontname='%s']",
+      paste0("'", stock_names, "'"),
+      dict[stock_names],
+      dict_eqn[stock_names],
+      stock_col, font_size, font_family
+    )
   } else {
     stock_nodes <- ""
   }
 
-  cloud_nodes <- flow_edges <- ""
-  if (length(flow_names) > 0) {
+  # Prepare auxiliary nodes
+  if (length(aux_names) > 0) {
+    aux_nodes <- sprintf(
+      "%s [label='%s',tooltip = 'eqn = %s',shape=plaintext,fontsize=%s,fontname='%s', width=0.6, height=0.3]",
+      paste0("'", aux_names, "'"),
+      dict[aux_names],
+      dict_eqn[aux_names],
+      font_size - 2, font_family
+    )
+  } else {
+    aux_nodes <- ""
+  }
 
+  # Prepare constant nodes (italic font)
+  if (length(const_names) > 0) {
+    # Format labels: convert \n to <BR/> and add italics
+    formatted_labels <- vapply(dict[const_names], function(label) {
+      label_with_html_breaks <- gsub("\n", "<BR/>", label, fixed = TRUE)
+      paste0("<I>", label_with_html_breaks, "</I>")
+    }, character(1), USE.NAMES = FALSE)
+
+    const_nodes <- sprintf(
+      "%s [label=<%s>, tooltip = 'eqn = %s',
+                         shape=plaintext,fontsize=%s,fontname='%s',
+                         width=0.6, height=0.3]",
+      paste0("'", const_names, "'"),
+      formatted_labels,
+      dict_eqn[const_names],
+      font_size - 2, font_family
+    )
+  } else {
+    const_nodes <- ""
+  }
+
+
+  # Create rank groupings based on dependencies
+  rank_groups <- list()
+
+  # Reverse dependencies, because we want to couple constants/aux with the first variable that depends on them
+  dep_rev <- reverse_dep(dep)
+
+  # Helper function
+  get_first_dep <- function(var_names, dep_rev, plot_var) {
+    if (length(var_names) == 0) {
+      return(list())
+    }
+
+    dep_var <- dep_rev[var_names]
+
+    # Only keep those in plot_var
+    dep_var <- lapply(dep_var, function(x) {
+      intersect(x, plot_var)
+    })
+
+    dep_var <- dep_var[lengths(dep_var) != 0]
+
+    if (length(dep_var) > 0) {
+      lapply(dep_var, `[[`, 1)
+    } else {
+      list()
+    }
+  }
+
+  if (length(const_names) > 0) {
+    dep_var <- get_first_dep(const_names, dep_rev, plot_var)
+    rank_groups <- append(rank_groups, dep_var)
+  }
+
+  if (length(aux_names) > 0) {
+    dep_var <- get_first_dep(aux_names, dep_rev, plot_var)
+    rank_groups <- append(rank_groups, dep_var)
+  }
+
+
+  # Create rank statements
+  rank_statements <- ""
+  if (length(rank_groups) > 0) {
+    rank_statements <- vapply(names(rank_groups), function(rank_node) {
+      vars_in_rank <- format_flow(rank_groups[[rank_node]])
+      sprintf(
+        "      {rank=same; %s }",
+        paste0("'", c(rank_node, vars_in_rank), "'", collapse = "; ")
+      )
+    }, character(1), USE.NAMES = FALSE)
+    rank_statements <- paste(rank_statements, collapse = "\n")
+  }
+
+  cloud_nodes <- flow_edges <- flow_nodes <- dependency_edges <- legend_nodes <- legend_edges <- ""
+
+  if (length(flow_names) > 0) {
     # Create dataframe with direction of flows
     flow_df <- get_flow_df(sfm)
     # If the flow is to a stock that doesn't exist, remove
-    flow_df[["from"]] <- ifelse(flow_df[["from"]] %in% highlight_names, flow_df[["from"]], "")
-    flow_df[["to"]] <- ifelse(flow_df[["to"]] %in% highlight_names, flow_df[["to"]], "")
+    flow_df[["from"]] <- ifelse(flow_df[["from"]] %in% stock_names,
+      flow_df[["from"]], ""
+    )
+    flow_df[["to"]] <- ifelse(flow_df[["to"]] %in% stock_names,
+      flow_df[["to"]], ""
+    )
     flow_df <- as.matrix(flow_df)
 
-    # Fill in NA in flow_df with numbered clouds; these are flows that are flowing from the external environment, not another stock
+    # Fill in NA in flow_df with numbered clouds
     idxs <- which(flow_df == "")
+    cloud_names <- character(0)
     if (length(idxs) > 0) {
       cloud_names <- paste0("Cloud", seq_along(idxs))
       flow_df[idxs] <- cloud_names
+
+      # Find whether cloud is a source or a sink
+      # flow_df has three columns; idxs are row-based
+      labels <- cloud_names
+      labels[idxs <= (nrow(flow_df) * 2)] <- "Unspecified source"
+      labels[idxs > (nrow(flow_df) * 2)] <- "Unspecified sink"
+
       # External environment is represented as a cloud
       cloud_nodes <- sprintf(
-        "%s [label='', tooltip = ' ',shape=doublecircle, fixedsize=true, width = .25, height = .25, orientation=15]",
-        paste0("'", cloud_names, "'")
+        "%s [label='', tooltip = %s,shape=doublecircle, fixedsize=true, width = .25, height = .25, orientation=15]",
+        paste0("'", cloud_names, "'"),
+        paste0("'", labels, "'")
       )
     }
 
-    # Define edges
-    flow_edges <- paste0(
-      paste0("'", flow_df[, "from"], "'"),
-      " -> ",
-      paste0("'", flow_df[, "to"], "'"),
-      " [arrowhead='normal', label='", dict[flow_df[, "name"]],
-      # Add a tooltip, which also appears when hovering over the label
-      "', tooltip = 'eqn = ",
-      dict_eqn[flow_df[, "name"]], "', labeltooltip = 'eqn = ",
-      dict_eqn[flow_df[, "name"]], "', fontsize=", font_size, ",fontname='", font_family, "', color='black:", flow_col,":", flow_col,  ":black',arrowsize = 1.5,penwidth=1.1,minlen=", minlen, "]"
+    # Create intermediate flow nodes (small nodes that flows pass through)
+    flow_node_names <- paste0("flow_", flow_names)
+    flow_nodes <- sprintf(
+      "%s [label='%s', tooltip = 'eqn = %s', shape = plaintext, fontsize=%s, fontname='%s', width=0.6, height=0.3]",
+      paste0("'", flow_node_names, "'"),
+      dict[flow_names],
+      dict_eqn[flow_names],
+      font_size - 2,
+      font_family
     )
+
+    # Create edges: from -> flow_node -> to
+    flow_edges <- c()
+    for (i in seq_len(nrow(flow_df))) {
+      flow_name <- flow_df[i, "name"]
+      flow_node <- paste0("flow_", flow_name)
+      from_node <- flow_df[i, "from"]
+      to_node <- flow_df[i, "to"]
+
+      # Edge from source to flow node
+      flow_edges <- c(flow_edges, sprintf(
+        "%s -> %s [arrowhead='none', color='%s', penwidth=1.1, minlen=%s, splines=false]",
+        paste0("'", from_node, "'"),
+        paste0("'", flow_node, "'"),
+        paste0(
+          "black:",
+          # flow_col,":",
+          flow_col, ":black"
+        ),
+        minlen
+      ))
+
+      # Edge from flow node to destination
+      flow_edges <- c(flow_edges, sprintf(
+        "%s -> %s [arrowhead='normal', color='%s', arrowsize=1.5, penwidth=1.1, minlen=%s, splines=ortho]",
+        paste0("'", flow_node, "'"),
+        paste0("'", to_node, "'"),
+        paste0(
+          "black:",
+          # flow_col,":",
+          flow_col, ":black"
+        ),
+        minlen
+      ))
+    }
+  }
+
+  # Add dependency arrows if requested
+  if (show_dependencies) {
+    # Only keep dependencies in plot_var
+    dep <- lapply(dep, function(x) {
+      intersect(x, plot_var)
+    })
+
+    dependency_edges <- unlist(lapply(names(dep), function(x) {
+      if (length(dep[[x]]) > 0) {
+        vapply(dep[[x]], function(y) {
+          sprintf(
+            "%s -> %s [color='%s', arrowsize=0.8, penwidth=1, splines=true, constraint=false, tailport='_']",
+            paste0("'", format_flow(y), "'"),
+            paste0("'", format_flow(x), "'"),
+            dependency_col
+          )
+        }, character(1), USE.NAMES = FALSE)
+      }
+    }))
   }
 
   # Compile string for diagram
@@ -282,34 +467,45 @@ plot.sdbuildR_xmile <- function(x,
     "
     digraph sfm {
 
-      graph [layout = dot, rankdir = LR, center=true]
-      margin=0 # in inches
+      graph [layout = dot, rankdir = LR, center=true, outputorder='edgesfirst', pad=.1, nodesep= .3]
+
+      # Rank groupings
+      %s
 
       # Define stock nodes
+      %s
+
+      # Define flow nodes (intermediate nodes for flows)
       %s
 
       # Define external cloud nodes
       %s
 
-      # Define edges between clouds and flows and between flows and stocks
+      # Define flow edges (stock -> flow_node -> stock)
       %s
 
+      # Define dependency edges
+      %s
+
+      # Define auxiliary nodes
+      %s
+
+      # Define constant nodes
       %s
     }
           ",
-
+    rank_statements,
     stock_nodes |> rev() |> paste0(collapse = "\n\t\t"),
+    flow_nodes |> paste0(collapse = "\n\t\t"),
     cloud_nodes |> paste0(collapse = "\n\t\t"),
     flow_edges |> paste0(collapse = "\n\t\t"),
-    ifelse(center_stocks, paste0("{rank = same; ", paste0(highlight_names, collapse = ", "), "}"), "")
+    dependency_edges |> paste0(collapse = "\n\t\t"),
+    aux_nodes |> paste0(collapse = "\n\t\t"),
+    const_nodes |> paste0(collapse = "\n\t\t")
   )
 
-  # Assign levels (ranks)
-  # { rank = min; %s }      # Top level
-  # { rank = same; %s }   # Middle level
-  # { rank = max; %s }      # Bottom level
-
   pl <- DiagrammeR::grViz(viz_str)
+  pl
 
   return(pl)
 }
@@ -327,48 +523,42 @@ plot.sdbuildR_xmile <- function(x,
 #' @returns List
 #' @noRd
 #'
-prep_plot = function(sfm, type_sim, df, constants, add_constants, vars, palette, colors, wrap_width){
-
+prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette, colors, wrap_width) {
   # Get names of stocks and non-stock variables
   names_df <- get_names(sfm)
 
-  if (!is.null(vars)){
-
-    if (!is.character(vars)){
+  if (!is.null(vars)) {
+    if (!is.character(vars)) {
       stop("vars must be a character vector!")
     }
 
-    vars = unique(vars)
+    vars <- unique(vars)
 
-    if (length(vars) == 0){
+    if (length(vars) == 0) {
       stop("vars cannot be of length zero!")
     }
-
   }
   # If vars is specified and it contains a constant, set add_constants = TRUE
-  if (!is.null(vars)){
-    constant_names = names_df[names_df[["type"]] %in% c("constant", "gf"), "name"]
-    vars_constants = intersect(constant_names, vars)
-    constants_not_in_vars = setdiff(constant_names, vars_constants)
+  if (!is.null(vars)) {
+    constant_names <- names_df[names_df[["type"]] %in% c("constant", "gf"), "name"]
+    vars_constants <- intersect(constant_names, vars)
+    constants_not_in_vars <- setdiff(constant_names, vars_constants)
 
     # Overwrite
-    add_constants = length(vars_constants) > 0
+    add_constants <- length(vars_constants) > 0
 
 
     # If not all constants shouls be added, only select those in vars
-    if (add_constants){
-
+    if (add_constants) {
       # Remove constants not in vars
       names_df <- names_df[!(names_df[["name"]] %in% constants_not_in_vars), , drop = FALSE]
 
-      if (type_sim == "sim"){
-        constants = constants[vars_constants]
-      } else if (type_sim == "ensemble"){
-        constants = constants[!(constants[["variable"]] %in% constants_not_in_vars), , drop = FALSE]
+      if (type_sim == "sim") {
+        constants <- constants[vars_constants]
+      } else if (type_sim == "ensemble") {
+        constants <- constants[!(constants[["variable"]] %in% constants_not_in_vars), , drop = FALSE]
       }
-
     }
-
   } # else {
   #   constants_in_vars = FALSE
   # }
@@ -377,10 +567,7 @@ prep_plot = function(sfm, type_sim, df, constants, add_constants, vars, palette,
   # Add constants
   if (add_constants) {
     if (length(constants) > 0) {
-
-
-      if (type_sim == "sim"){
-
+      if (type_sim == "sim") {
         # Ensure functions are not added
         idx_func <- vapply(constants, is.function, logical(1), USE.NAMES = FALSE)
         constants <- constants[!idx_func]
@@ -403,15 +590,12 @@ prep_plot = function(sfm, type_sim, df, constants, add_constants, vars, palette,
           df <- dplyr::bind_rows(df, temp)
           rm(temp)
         }
-
-
-      } else if (type_sim == "ensemble"){
-
+      } else if (type_sim == "ensemble") {
         # Find time vector from first variable
         times <- df[df[["variable"]] == df[["variable"]][1], "time"]
 
         # Duplicate each row length(times) times
-        temp <- constants[rep(1:nrow(constants), each = length(times)), ]
+        temp <- constants[rep(seq_len(nrow(constants)), each = length(times)), ]
 
         # Add the times column
         temp$time <- rep(times, nrow(constants))
@@ -421,69 +605,59 @@ prep_plot = function(sfm, type_sim, df, constants, add_constants, vars, palette,
 
         df <- dplyr::bind_rows(df, temp)
         rm(temp)
-
       }
-
     }
   }
 
 
   # Keep only specified variables
-  if (!is.null(vars)){
-
+  if (!is.null(vars)) {
     # Check whether specified variables are in the model
-    idx = !(vars %in% names_df[["name"]])
-    if (any(idx)){
-      stop(paste0(paste0(vars[idx], collapse = ", "),
-                  ifelse(sum(idx) == 1, " is not a variable", " are not variables"),
-                  " in the model! Model variables: ",
-                  paste0(names_df[["name"]], collapse = ", ")))
+    idx <- !(vars %in% names_df[["name"]])
+    if (any(idx)) {
+      stop(paste0(
+        paste0(vars[idx], collapse = ", "),
+        ifelse(sum(idx) == 1, " is not a variable", " are not variables"),
+        " in the model! Model variables: ",
+        paste0(names_df[["name"]], collapse = ", ")
+      ))
     }
 
     # Check if variables are in the model but not in the dataframe
-    idx = !(vars %in% df[["variable"]])
-    if (any(idx)){
-      stop(paste0(paste0(vars[idx], collapse = ", "),
-                  ifelse(sum(idx) == 1, " is", " are"),
-                  " in the model, but not in the simulated dataframe. Run simulate() with only_stocks = FALSE."))
+    idx <- !(vars %in% df[["variable"]])
+    if (any(idx)) {
+      stop(paste0(
+        paste0(vars[idx], collapse = ", "),
+        ifelse(sum(idx) == 1, " is", " are"),
+        " in the model, but not in the simulated dataframe. Run simulate() with only_stocks = FALSE."
+      ))
     }
 
-    names_df = names_df[match(vars, names_df[["name"]]), , drop = FALSE]
-    df = df[df[["variable"]] %in% vars, , drop = FALSE]
-    highlight_these_names = vars
-
-
+    names_df <- names_df[match(vars, names_df[["name"]]), , drop = FALSE]
+    df <- df[df[["variable"]] %in% vars, , drop = FALSE]
+    highlight_these_names <- vars
   } else {
-
     # If no vars were specified, highlight stocks
-    highlight_these_names = names_df[names_df[["type"]] == "stock", "name"]
+    highlight_these_names <- names_df[names_df[["type"]] == "stock", "name"]
   }
 
   # Check labels are unique
   if (nrow(names_df) != length(unique(names_df[["label"]]))) {
     labels <- names_df[["label"]]
-    dup_indices <- which(labels %in% labels[duplicated(labels) | duplicated(labels, fromLast = TRUE)])
+    dup_indices <- which(labels %in% labels[duplicated(labels) |
+                                              duplicated(labels, fromLast = TRUE)])
 
     # Relabel, otherwise plotting will go wrong with recoded variables
-    names_df[dup_indices, "label"] <- paste0(names_df[dup_indices, "label"], "(", names_df[dup_indices, "name"], ")")
+    names_df[dup_indices, "label"] <- paste0(names_df[dup_indices, "label"], "(",
+                                             names_df[dup_indices, "name"], ")")
   }
 
 
   # Ensure only variables which are in the dataframe are included
-  names_df <- names_df[names_df[["name"]] %in% unique(df[["variable"]]), , drop = FALSE]
-
-
+  names_df <- names_df[names_df[["name"]] %in% unique(df[["variable"]]), ,
+                       drop = FALSE]
 
   # Create dictionary with stock and non-stock names and labels
-  # highlight_names <- names_df[names_df[["type"]] == "stock", ]
-  # highlight_names <- stats::setNames(highlight_names[["name"]], highlight_names[["label"]])
-  # nonhighlight_names <- names_df[names_df[["type"]] != "stock", ]
-  # nonhighlight_names <- stats::setNames(nonhighlight_names[["name"]], nonhighlight_names[["label"]])
-  #
-  # # Wrap names to prevent long names from squishing the plot
-  # names(highlight_names) <- stringr::str_wrap(names(highlight_names), width = wrap_width)
-  # names(nonhighlight_names) <- stringr::str_wrap(names(nonhighlight_names), width = wrap_width)
-
   highlight_names <- names_df[match(highlight_these_names, names_df[["name"]]), , drop = FALSE]
   highlight_names <- stats::setNames(highlight_names[["name"]], highlight_names[["label"]])
   nonhighlight_names <- names_df[!names_df[["name"]] %in% highlight_these_names, , drop = FALSE]
@@ -510,7 +684,6 @@ prep_plot = function(sfm, type_sim, df, constants, add_constants, vars, palette,
   )
 
   # Create colours
-  # nr_var <- length(c(highlight_names, nonhighlight_names))
   nr_var <- length(unique(df[["variable"]]))
 
   gen_colors <- FALSE
@@ -534,19 +707,16 @@ prep_plot = function(sfm, type_sim, df, constants, add_constants, vars, palette,
     colors <- grDevices::hcl.colors(n = nr_var_c, palette = palette)
   }
 
-  # # The colors are unintuitively plotted from back to front
-  # colors <- rev(colors)
-
   # Cut number of colors to number of variables
   colors <- colors[seq_len(nr_var)]
-
 
   return(list(
     highlight_names = highlight_names,
     nonhighlight_names = nonhighlight_names,
     df_highlight = df_highlight,
     df_nonhighlight = df_nonhighlight,
-    colors = colors))
+    colors = colors
+  ))
 }
 
 
@@ -597,7 +767,6 @@ plot.sdbuildR_sim <- function(x,
                               wrap_width = 25,
                               showlegend = TRUE,
                               ...) {
-
   if (missing(x)) {
     stop("No simulation data provided! Use simulate() to run a simulation.")
   }
@@ -615,7 +784,7 @@ plot.sdbuildR_sim <- function(x,
     stop("Dataframe has no rows!")
   }
 
-  if (!is.logical(showlegend)){
+  if (!is.logical(showlegend)) {
     stop("showlegend must be TRUE or FALSE!")
   }
 
@@ -639,16 +808,17 @@ plot.sdbuildR_sim <- function(x,
     dots[["ylab"]]
   }
 
-  out = prep_plot(x[["sfm"]], "sim", x[["df"]], x[["constants"]], add_constants,
-                  vars, palette, colors, wrap_width)
-  highlight_names = out[["highlight_names"]]
-  nonhighlight_names = out[["nonhighlight_names"]]
-  df_highlight = out[["df_highlight"]]
-  df_nonhighlight = out[["df_nonhighlight"]]
-  colors = out[["colors"]]
+  out <- prep_plot(
+    x[["sfm"]], "sim", x[["df"]], x[["constants"]], add_constants,
+    vars, palette, colors, wrap_width
+  )
+  highlight_names <- out[["highlight_names"]]
+  nonhighlight_names <- out[["nonhighlight_names"]]
+  df_highlight <- out[["df_highlight"]]
+  df_nonhighlight <- out[["df_nonhighlight"]]
+  colors <- out[["colors"]]
 
   if (requireNamespace("plotly", quietly = TRUE)) {
-
     x_col <- "time"
 
     # Initialize plotly object
@@ -657,59 +827,64 @@ plot.sdbuildR_sim <- function(x,
     # Add traces for non-stock variables (visible = "legendonly")
     if (length(nonhighlight_names) > 0) {
       pl <- plotly::add_trace(pl,
-                              data = df_nonhighlight,
-                              x = ~ get(x_col),
-                              y = ~value,
-                              color = ~variable,
-                              legendgroup = ~variable,
-                              showlegend = showlegend,
-                              colors = colors,
-                              type = "scatter",
-                              mode = "lines",
-                              visible = "legendonly"
+        data = df_nonhighlight,
+        x = ~ get(x_col),
+        y = ~value,
+        color = ~variable,
+        legendgroup = ~variable,
+        showlegend = showlegend,
+        colors = colors,
+        type = "scatter",
+        mode = "lines",
+        visible = "legendonly"
       )
     }
 
     # Add traces for stock variables (visible = TRUE)
     if (length(highlight_names) > 0) {
       pl <- plotly::add_trace(pl,
-                              data = df_highlight,
-                              x = ~ get(x_col),
-                              y = ~value,
-                              color = ~variable,
-                              legendgroup = ~variable,
-                              showlegend = showlegend,
-                              type = "scatter",
-                              mode = "lines",
-                              colors = colors,
-                              visible = TRUE
+        data = df_highlight,
+        x = ~ get(x_col),
+        y = ~value,
+        color = ~variable,
+        legendgroup = ~variable,
+        showlegend = showlegend,
+        type = "scatter",
+        mode = "lines",
+        colors = colors,
+        visible = TRUE
       )
     }
 
     # Customize layout
     pl <- plotly::layout(pl,
-                         # As the most important things are at the top, reverse the trace order
-                         legend = list(
-                           traceorder = "reversed",
-                           font = list(size = ceiling(font_size * .85))
-                         ),
-                         title = main,
-                         xaxis = list(title = xlab, font = list(size = font_size)),
-                         yaxis = list(title = ylab, font = list(size = font_size)),
-                         font = list(family = font_family, size = font_size),
-                         margin = list(t = 50, b = 50, l = 50, r = 50) # Increase top margin to 100 pixels
+      # As the most important things are at the top, reverse the trace order
+      legend = list(
+        traceorder = "reversed",
+        font = list(size = ceiling(font_size * .85))
+      ),
+      title = main,
+      xaxis = list(title = xlab, font = list(size = font_size)),
+      yaxis = list(title = ylab, font = list(size = font_size)),
+      font = list(family = font_family, size = font_size),
+      margin = list(t = 50, b = 50, l = 50, r = 50) # Increase top margin to 100 pixels
     )
+
+    # If there is only one trace, legend doesn't show
+    if (showlegend & (length(highlight_names) + length(nonhighlight_names)) == 1) {
+      pl <- plotly::layout(pl, showlegend = TRUE)
+    }
 
     # Set x-axis limits if specified
     if ("xlim" %in% names(dots)) {
       pl <- plotly::layout(pl,
-                           xaxis = list(range = dots[["xlim"]])
+        xaxis = list(range = dots[["xlim"]])
       )
     }
 
     if ("ylim" %in% names(dots)) {
       pl <- plotly::layout(pl,
-                           yaxis = list(range = dots[["ylim"]])
+        yaxis = list(range = dots[["ylim"]])
       )
     }
   } else {
@@ -717,9 +892,9 @@ plot.sdbuildR_sim <- function(x,
 
     # Fallback to base R plotting
     plot(x[["df"]][["time"]], x[["df"]][[highlight_names[1]]],
-         type = "l", col = "blue", lwd = 2,
-         xlab = xlab, ylab = ylab,
-         main = main
+      type = "l", col = "blue", lwd = 2,
+      xlab = xlab, ylab = ylab,
+      main = main
     )
 
     for (var in highlight_names[-1]) {
@@ -801,11 +976,11 @@ plot.sdbuildR_ensemble <- function(x,
     stop("Ensemble simulation failed!")
   }
 
-  if (!is.logical(showlegend)){
+  if (!is.logical(showlegend)) {
     stop("showlegend must be TRUE or FALSE!")
   }
 
-  if (!is.logical(j_labels)){
+  if (!is.logical(j_labels)) {
     stop("j_labels must be TRUE or FALSE!")
   }
 
@@ -837,7 +1012,7 @@ plot.sdbuildR_ensemble <- function(x,
     if (type == "summary") {
       sub <- paste0(
         ifelse(isFALSE(central_tendency), "",
-               stringr::str_to_title(central_tendency)
+          stringr::str_to_title(central_tendency)
         ), " with [",
         min(x[["quantiles"]]), ", ", max(x[["quantiles"]]),
         "] confidence interval of ", x[["n"]], " simulation",
@@ -846,7 +1021,7 @@ plot.sdbuildR_ensemble <- function(x,
     } else if (type == "sims") {
       sub <- paste0(
         ifelse(isFALSE(central_tendency), "",
-               stringr::str_to_title(central_tendency)
+          stringr::str_to_title(central_tendency)
         ),
         " with ", length(i), "/", x[["n"]], " simulation",
         ifelse(x[["n"]] == 1, "", "s")
@@ -951,21 +1126,25 @@ plot.sdbuildR_ensemble <- function(x,
   }
 
   # Prepare for plotting
-  out = prep_plot(x[["sfm"]], "ensemble", summary_df, constants = x[["constants"]][["summary"]], add_constants = add_constants,
-                  vars = vars, palette = palette, colors = colors, wrap_width = wrap_width)
-  highlight_names = out[["highlight_names"]]
-  nonhighlight_names = out[["nonhighlight_names"]]
-  summary_df_highlight = out[["df_highlight"]]
-  summary_df_nonhighlight = out[["df_nonhighlight"]]
-  colors = out[["colors"]]
+  out <- prep_plot(x[["sfm"]], "ensemble", summary_df,
+    constants = x[["constants"]][["summary"]], add_constants = add_constants,
+    vars = vars, palette = palette, colors = colors, wrap_width = wrap_width
+  )
+  highlight_names <- out[["highlight_names"]]
+  nonhighlight_names <- out[["nonhighlight_names"]]
+  summary_df_highlight <- out[["df_highlight"]]
+  summary_df_nonhighlight <- out[["df_nonhighlight"]]
+  colors <- out[["colors"]]
 
   if (type == "sims") {
-    out = prep_plot(x[["sfm"]], "ensemble", df, constants = x[["constants"]][["df"]], add_constants = add_constants,
-                    vars = vars, palette = palette, colors = colors, wrap_width = wrap_width)
-    df_highlight = out[["df_highlight"]]
-    df_nonhighlight = out[["df_nonhighlight"]]
+    out <- prep_plot(x[["sfm"]], "ensemble", df,
+      constants = x[["constants"]][["df"]], add_constants = add_constants,
+      vars = vars, palette = palette, colors = colors, wrap_width = wrap_width
+    )
+    df_highlight <- out[["df_highlight"]]
+    df_nonhighlight <- out[["df_nonhighlight"]]
   } else {
-    df_highlight = df_nonhighlight = NULL
+    df_highlight <- df_nonhighlight <- NULL
   }
 
   # Find qlow and qhigh
@@ -1037,13 +1216,13 @@ plot.sdbuildR_ensemble <- function(x,
     }
 
     pl <- plotly::subplot(pl_list,
-                          nrows = nrows,
-                          shareX = shareX,
-                          shareY = shareY,
-                          titleY = FALSE,
-                          titleX = FALSE
-                          # margin sets vertical spacing between subplots
-                          # margin = 0.05
+      nrows = nrows,
+      shareX = shareX,
+      shareY = shareY,
+      titleY = FALSE,
+      titleX = FALSE
+      # margin sets vertical spacing between subplots
+      # margin = 0.05
     ) |>
       plotly::layout(
         title = list(text = main), # , font = list(size = font_size)),
@@ -1060,8 +1239,8 @@ plot.sdbuildR_ensemble <- function(x,
         )
       )
 
-    if (nzchar(xlab)){
-      pl = pl |>
+    if (nzchar(xlab)) {
+      pl <- pl |>
         plotly::layout(
           annotations = list(
             list(
@@ -1123,13 +1302,13 @@ plot_ensemble_helper <- function(j_idx, j_name, j, j_labels,
                                  colors, showlegend, dots,
                                  main, xlab, ylab,
                                  font_family, font_size, alpha) {
-
   # Only show legend if it's the last subplot
   showlegend <- ifelse(j_name != max(j), FALSE, showlegend)
   x_col <- "time"
 
-  plot_highlight = nrow(summary_df_highlight) > 0
-  plot_nonhighlight = nrow(summary_df_nonhighlight) > 0
+  plot_highlight <- nrow(summary_df_highlight) > 0
+  plot_nonhighlight <- nrow(summary_df_nonhighlight) > 0
+  nr_var <- length(colors)
 
   # Initialize plotly object
   pl <- plotly::plot_ly()
@@ -1138,40 +1317,40 @@ plot_ensemble_helper <- function(j_idx, j_name, j, j_labels,
     if (mode == "lines") {
       if (plot_nonhighlight) {
         pl <- plotly::add_ribbons(pl,
-                                  data = summary_df_nonhighlight,
-                                  x = ~ get(x_col),
-                                  ymin = ~ get(q_low),
-                                  ymax = ~ get(q_low),
-                                  color = ~variable,
-                                  legendgroup = ~variable,
-                                  fillcolor = ~variable,
-                                  opacity = alpha,
-                                  type = "scatter",
-                                  mode = mode,
-                                  colors = colors,
-                                  # Add traces for non-stock variables (visible = "legendonly")
-                                  showlegend = showlegend,
-                                  visible = "legendonly"
+          data = summary_df_nonhighlight,
+          x = ~ get(x_col),
+          ymin = ~ get(q_low),
+          ymax = ~ get(q_low),
+          color = ~variable,
+          legendgroup = ~variable,
+          fillcolor = ~variable,
+          opacity = alpha,
+          type = "scatter",
+          mode = mode,
+          colors = colors,
+          # Add traces for non-stock variables (visible = "legendonly")
+          showlegend = showlegend,
+          visible = "legendonly"
         )
       }
 
       # First plot confidence bands
       if (plot_highlight) {
         pl <- plotly::add_ribbons(pl,
-                                  data = summary_df_highlight,
-                                  x = ~ get(x_col),
-                                  ymin = ~ get(q_low),
-                                  ymax = ~ get(q_high),
-                                  color = ~variable,
-                                  legendgroup = ~variable,
-                                  fillcolor = ~variable,
-                                  opacity = alpha,
-                                  type = "scatter",
-                                  mode = mode,
-                                  colors = colors,
-                                  showlegend = showlegend,
-                                  # Add traces for stock variables (visible = TRUE)
-                                  visible = TRUE
+          data = summary_df_highlight,
+          x = ~ get(x_col),
+          ymin = ~ get(q_low),
+          ymax = ~ get(q_high),
+          color = ~variable,
+          legendgroup = ~variable,
+          fillcolor = ~variable,
+          opacity = alpha,
+          type = "scatter",
+          mode = mode,
+          colors = colors,
+          showlegend = showlegend,
+          # Add traces for stock variables (visible = TRUE)
+          visible = TRUE
         )
       }
     }
@@ -1179,36 +1358,36 @@ plot_ensemble_helper <- function(j_idx, j_name, j, j_labels,
     # Add traces for non-stock variables (visible = "legendonly")
     if (plot_nonhighlight) {
       pl <- plotly::add_trace(pl,
-                              data = df_nonhighlight,
-                              x = ~ get(x_col),
-                              y = ~value,
-                              color = ~variable,
-                              legendgroup = ~variable,
-                              type = "scatter",
-                              mode = mode,
-                              opacity = alpha,
-                              colors = colors,
-                              split = ~ interaction(variable, i), # ensures each line is treated separately
-                              showlegend = FALSE,
-                              visible = "legendonly"
+        data = df_nonhighlight,
+        x = ~ get(x_col),
+        y = ~value,
+        color = ~variable,
+        legendgroup = ~variable,
+        type = "scatter",
+        mode = mode,
+        opacity = alpha,
+        colors = colors,
+        split = ~ interaction(variable, i), # ensures each line is treated separately
+        showlegend = FALSE,
+        visible = "legendonly"
       )
     }
 
     if (plot_highlight) {
       pl <- plotly::add_trace(pl,
-                              data = df_highlight,
-                              x = ~ get(x_col),
-                              y = ~value,
-                              color = ~variable,
-                              legendgroup = ~variable,
-                              type = "scatter",
-                              mode = mode,
-                              opacity = alpha,
-                              colors = colors,
-                              split = ~ interaction(variable, i), # ensures each line is treated separately
-                              showlegend = FALSE,
-                              # Add traces for stock variables (visible = TRUE)
-                              visible = TRUE
+        data = df_highlight,
+        x = ~ get(x_col),
+        y = ~value,
+        color = ~variable,
+        legendgroup = ~variable,
+        type = "scatter",
+        mode = mode,
+        opacity = alpha,
+        colors = colors,
+        split = ~ interaction(variable, i), # ensures each line is treated separately
+        showlegend = FALSE,
+        # Add traces for stock variables (visible = TRUE)
+        visible = TRUE
       )
     }
   }
@@ -1235,109 +1414,109 @@ plot_ensemble_helper <- function(j_idx, j_name, j, j_labels,
   if (mode == "lines") {
     if (plot_nonhighlight) {
       pl <- plotly::add_trace(pl,
-                              data = summary_df_nonhighlight,
-                              x = ~ get(x_col),
-                              y = ~ get(central_tendency),
-                              color = ~variable,
-                              legendgroup = ~variable,
-                              type = "scatter",
-                              mode = mode,
-                              colors = colors,
-                              showlegend = showlegend,
-                              line = list(width = central_tendency_width), # thicker line for mean
-                              visible = "legendonly"
+        data = summary_df_nonhighlight,
+        x = ~ get(x_col),
+        y = ~ get(central_tendency),
+        color = ~variable,
+        legendgroup = ~variable,
+        type = "scatter",
+        mode = mode,
+        colors = colors,
+        showlegend = showlegend,
+        line = list(width = central_tendency_width), # thicker line for mean
+        visible = "legendonly"
       )
     }
 
     if (plot_highlight) {
       pl <- plotly::add_trace(pl,
-                              data = summary_df_highlight,
-                              x = ~ get(x_col),
-                              y = ~ get(central_tendency),
-                              color = ~variable,
-                              legendgroup = ~variable,
-                              type = "scatter",
-                              mode = mode,
-                              line = list(width = central_tendency_width), # thicker line for mean
-                              showlegend = showlegend,
-                              colors = colors,
-                              visible = TRUE
+        data = summary_df_highlight,
+        x = ~ get(x_col),
+        y = ~ get(central_tendency),
+        color = ~variable,
+        legendgroup = ~variable,
+        type = "scatter",
+        mode = mode,
+        line = list(width = central_tendency_width), # thicker line for mean
+        showlegend = showlegend,
+        colors = colors,
+        visible = TRUE
       )
     }
   } else if (mode == "markers" & type == "summary") {
     if (plot_nonhighlight) {
       pl <- plotly::add_trace(pl,
-                              data = summary_df_nonhighlight,
-                              x = ~ get(x_col),
-                              y = ~ get(central_tendency),
-                              color = ~variable,
-                              legendgroup = ~variable,
-                              type = "scatter",
-                              error_y = ~ list(
-                                symmetric = FALSE,
-                                arrayminus = get(central_tendency) - get(q_low),
-                                array = get(q_high) - get(central_tendency),
-                                color = colors
-                              ),
-                              mode = mode,
-                              colors = colors,
-                              showlegend = showlegend,
-                              marker = list(size = central_tendency_width * 3), # thicker line for mean
-                              visible = "legendonly"
+        data = summary_df_nonhighlight,
+        x = ~ get(x_col),
+        y = ~ get(central_tendency),
+        color = ~variable,
+        legendgroup = ~variable,
+        type = "scatter",
+        error_y = ~ list(
+          symmetric = FALSE,
+          arrayminus = get(central_tendency) - get(q_low),
+          array = get(q_high) - get(central_tendency),
+          color = colors
+        ),
+        mode = mode,
+        colors = colors,
+        showlegend = showlegend,
+        marker = list(size = central_tendency_width * 3), # thicker line for mean
+        visible = "legendonly"
       )
     }
 
     if (plot_highlight) {
       pl <- plotly::add_trace(pl,
-                              data = summary_df_highlight,
-                              x = ~ get(x_col),
-                              y = ~ get(central_tendency),
-                              color = ~variable,
-                              legendgroup = ~variable,
-                              type = "scatter",
-                              error_y = ~ list(
-                                symmetric = FALSE,
-                                arrayminus = get(central_tendency) - get(q_low),
-                                array = get(q_high) - get(central_tendency),
-                                color = colors
-                              ),
-                              mode = mode,
-                              marker = list(size = central_tendency_width * 3), # thicker line for mean
-                              showlegend = showlegend,
-                              colors = colors,
-                              visible = TRUE
+        data = summary_df_highlight,
+        x = ~ get(x_col),
+        y = ~ get(central_tendency),
+        color = ~variable,
+        legendgroup = ~variable,
+        type = "scatter",
+        error_y = ~ list(
+          symmetric = FALSE,
+          arrayminus = get(central_tendency) - get(q_low),
+          array = get(q_high) - get(central_tendency),
+          color = colors
+        ),
+        mode = mode,
+        marker = list(size = central_tendency_width * 3), # thicker line for mean
+        showlegend = showlegend,
+        colors = colors,
+        visible = TRUE
       )
     }
   } else if (mode == "markers" & type == "sims") {
     if (plot_nonhighlight) {
       pl <- plotly::add_trace(pl,
-                              data = summary_df_nonhighlight,
-                              x = ~ get(x_col),
-                              y = ~ get(central_tendency),
-                              color = ~variable,
-                              legendgroup = ~variable,
-                              type = "scatter",
-                              mode = mode,
-                              colors = colors,
-                              showlegend = showlegend,
-                              marker = list(size = central_tendency_width * 3), # thicker line for mean
-                              visible = "legendonly"
+        data = summary_df_nonhighlight,
+        x = ~ get(x_col),
+        y = ~ get(central_tendency),
+        color = ~variable,
+        legendgroup = ~variable,
+        type = "scatter",
+        mode = mode,
+        colors = colors,
+        showlegend = showlegend,
+        marker = list(size = central_tendency_width * 3), # thicker line for mean
+        visible = "legendonly"
       )
     }
 
     if (plot_highlight) {
       pl <- plotly::add_trace(pl,
-                              data = summary_df_highlight,
-                              x = ~ get(x_col),
-                              y = ~ get(central_tendency),
-                              color = ~variable,
-                              legendgroup = ~variable,
-                              type = "scatter",
-                              mode = mode,
-                              marker = list(size = central_tendency_width * 3), # thicker line for mean
-                              showlegend = showlegend,
-                              colors = colors,
-                              visible = TRUE
+        data = summary_df_highlight,
+        x = ~ get(x_col),
+        y = ~ get(central_tendency),
+        color = ~variable,
+        legendgroup = ~variable,
+        type = "scatter",
+        mode = mode,
+        marker = list(size = central_tendency_width * 3), # thicker line for mean
+        showlegend = showlegend,
+        colors = colors,
+        visible = TRUE
       )
     }
   }
@@ -1346,22 +1525,28 @@ plot_ensemble_helper <- function(j_idx, j_name, j, j_labels,
 
   # Customize layout
   pl <- plotly::layout(pl,
-                       margin = list(t = 50, b = 50, l = 50, r = 50),
-                       # xaxis = list(tickfont = list(size = ceiling(font_size *.75))),
-                       # yaxis = list(tickfont = list(size = ceiling(font_size *.75))),
-                       # As the most important things are at the top, reverse the trace order
-                       legend = list(
-                         traceorder = "reversed",
-                         font = list(size = ceiling(font_size * .85))
-                       )
+    margin = list(t = 50, b = 50, l = 50, r = 50),
+    # xaxis = list(tickfont = list(size = ceiling(font_size *.75))),
+    # yaxis = list(tickfont = list(size = ceiling(font_size *.75))),
+    # As the most important things are at the top, reverse the trace order
+    legend = list(
+      traceorder = "reversed",
+      font = list(size = ceiling(font_size * .85))
+    )
   )
+
+  # If there is only one trace, legend doesn't show
+  if (showlegend & (nr_var == 1)) {
+    pl <- plotly::layout(pl, showlegend = TRUE)
+  }
+
 
   if (!create_subplots) {
     pl <- plotly::layout(pl,
-                         title = main,
-                         xaxis = list(title = xlab),
-                         yaxis = list(title = ylab),
-                         font = list(family = font_family, size = font_size)
+      title = main,
+      xaxis = list(title = xlab),
+      yaxis = list(title = ylab),
+      font = list(family = font_family, size = font_size)
     )
   }
 
@@ -1369,37 +1554,33 @@ plot_ensemble_helper <- function(j_idx, j_name, j, j_labels,
   # Add subplot title
   if (create_subplots & j_labels) {
     pl <- plotly::layout(pl,
-                         annotations = list(
-                           list(
-                             text = paste0("j = ", j_name),
-                             font = list(
-                               family = font_family,
-                               size = ceiling(font_size * .75)
-                             ),
-                             bgcolor = "white",
-                             xref = "paper",
-                             yref = "paper",
-                             xanchor = "center", yanchor = "top",
-                             x = 0.5, y = 1,
-                             showarrow = FALSE
-                           )
-                         )
+      annotations = list(
+        list(
+          text = paste0("j = ", j_name),
+          font = list(
+            family = font_family,
+            size = ceiling(font_size * .75)
+          ),
+          bgcolor = "white",
+          xref = "paper",
+          yref = "paper",
+          xanchor = "center", yanchor = "top",
+          x = 0.5, y = 1,
+          showarrow = FALSE
+        )
+      )
     )
   }
 
   # Set x-axis limits if specified
   if ("xlim" %in% names(dots)) {
-    pl <- plotly::layout(pl, xaxis = list(range = dots[["xlim"]])
-    )
+    pl <- plotly::layout(pl, xaxis = list(range = dots[["xlim"]]))
   }
 
   # Set y-axis limits if specified
   if ("ylim" %in% names(dots)) {
-    pl <- plotly::layout(pl, yaxis = list(range = dots[["ylim"]])
-    )
+    pl <- plotly::layout(pl, yaxis = list(range = dots[["ylim"]]))
   }
 
   return(pl)
 }
-
-

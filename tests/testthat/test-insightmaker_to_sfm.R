@@ -10,8 +10,6 @@ test_that("translating Insight Maker models works", {
     "Either URL or filepath_IM needs to be specified, not both"
   )
 
-  # ** add stop() with useful message when there is a problem in translation
-  # ** test arguments to insightmaker_to_sfm()
   sfm_list <- list()
 
   URL <- "https://insightmaker.com/insight/3xgsvC7QKgPktHWZuXyGAl/Clone-of-Global-Climate-Change"
@@ -31,7 +29,6 @@ test_that("translating Insight Maker models works", {
     "The model contains unit strings u\\(''\\), which are not supported for simulations in R"
   )
 
-
   URL <- "https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022"
   sfm_list[[2]] <- sfm <- expect_no_error(insightmaker_to_sfm(URL = URL))
   expect_no_error(as.data.frame(sfm))
@@ -39,7 +36,10 @@ test_that("translating Insight Maker models works", {
   expect_equal(nrow(df) > 0, TRUE)
   expect_equal("macro" %in% df$type, TRUE)
 
-  sim <- expect_no_error(simulate(sfm |> sim_specs(language = "R")))
+  sim <- expect_no_error(simulate(sfm |> sim_specs(
+    language = "R", start = 0,
+    dt = 0.1, stop = 10
+  )))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
 
@@ -59,7 +59,12 @@ test_that("translating Insight Maker models works", {
   testthat::skip_on_cran()
 
   lapply(sfm_list, function(sfm) {
-    sim <- expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
+    # For some models with units, save_at and save_from create error
+    sim <- expect_no_error(simulate(sfm |> sim_specs(
+      language = "Julia",
+      # dt = 0.1, start = 0,
+      # stop = 10
+    )))
     expect_equal(sim$success, TRUE)
     expect_equal(nrow(sim$df) > 0, TRUE)
   })

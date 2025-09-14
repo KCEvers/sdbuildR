@@ -1,3 +1,10 @@
+test_that("round_IM works", {
+  expect_equal(round_IM(0.5), 1)
+  expect_equal(round_IM(-0.5), 0)
+  expect_equal(round_IM(-2.2), -2)
+  expect_equal(round_IM(-2.2, 2), -2.20)
+})
+
 test_that("logit works", {
   expect_equal(logit(.5), 0)
 })
@@ -11,10 +18,60 @@ test_that("rbool works", {
   expect_equal(rbool(1), TRUE)
 })
 
+test_that("length_IM works", {
+  expect_equal(length_IM(c("a", "b", "c")), 3)
+  expect_equal(length_IM("abcdef"), 6)
+  expect_equal(length_IM(c("abcdef")), 6)
+})
+
+
+test_that("contains_IM works", {
+  expect_false(contains_IM(c("a", "b", "c"), "d"))
+  expect_true(contains_IM(c("abcdef"), "bc"))
+})
+
+test_that("indexof works", {
+  expect_equal(indexof(c("a", "b", "c"), "b"), 2)
+  expect_equal(indexof("haystack", "hay"), 1)
+  expect_equal(indexof("haystack", "haym"), 0)
+})
+
 
 test_that("nonnegative works", {
   expect_equal(nonnegative(-10), 0)
+  expect_equal(nonnegative(10), 10)
+  expect_equal(nonnegative(0), 0)
 })
+
+
+test_that("rem works", {
+  a <- 7
+  b <- 3
+  expect_equal(rem(a, b), mod(a, b))
+  a <- -7
+  b <- 3
+  expect_equal(rem(a, b), -1)
+  expect_equal(mod(a, b), 2)
+  a <- 7
+  b <- -3
+  expect_equal(rem(a, b), 1)
+  expect_equal(mod(a, b), -2)
+  a <- -7
+  b <- -3
+  expect_equal(rem(a, b), mod(a, b))
+  expect_equal(a %REM% b, rem(a, b))
+})
+
+
+test_that("saveat_func works", {
+  time_vec <- seq(0, 10, by = .1)
+  df <- data.frame(time = time_vec, y = sin(time_vec))
+  new_times <- 1:10
+  result <- saveat_func(df, "time", new_times)
+  expect_equal(result[["time"]], new_times)
+  expect_equal(result[["y"]], df[match(new_times, df[["time"]]), "y"])
+})
+
 
 test_that("convert_u works", {
   expect_equal(convert_u(1, u("s")), 1)

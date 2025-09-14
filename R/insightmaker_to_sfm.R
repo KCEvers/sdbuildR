@@ -19,7 +19,7 @@
 #' # Load a model from Insight Maker
 #' sfm <- insightmaker_to_sfm(
 #'   URL =
-#'     "https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022"
+#'     "https://insightmaker.com/insight/43tz1nvUgbIiIOGSGtzIzj/Romeo-Juliet"
 #' )
 #' plot(sfm)
 #'
@@ -80,62 +80,75 @@ insightmaker_to_sfm <- function(URL,
     }
 
     # Read file
-    xml_file <- xml2::read_xml(filepath_IM)
+    xml_file <- tryCatch({
+      xml2::read_xml(filepath_IM)
+    })
+
+    if ("error" %in% class(xml_file)) {
+      stop("An error occurred when parsing the Insight Maker model.")
+    }
     header_info <- list()
   }
 
-  # Create model structure
-  sfm <- IM_to_xmile(xml_file)
+  sfm <- tryCatch({
+    # Create model structure
+    sfm <- IM_to_xmile(xml_file)
 
-  # Add header information
-  if (length(header_info) > 0) {
-    sfm[["header"]][["author"]] <- header_info[["model_author_name"]]
-    sfm[["header"]][["name"]] <- header_info[["model_title"]]
-    sfm[["header"]][["caption"]] <- header_info[["model_description"]]
-    sfm[["header"]][["version"]] <- header_info[["model_version"]]
-    sfm[["header"]][["insightmaker_id"]] <- header_info[["model_id"]]
-  }
+    # Add header information
+    if (length(header_info) > 0) {
+      sfm[["header"]][["author"]] <- header_info[["model_author_name"]]
+      sfm[["header"]][["name"]] <- header_info[["model_title"]]
+      sfm[["header"]][["caption"]] <- header_info[["model_description"]]
+      sfm[["header"]][["version"]] <- header_info[["model_version"]]
+      sfm[["header"]][["insightmaker_id"]] <- header_info[["model_id"]]
+    }
 
-  # Clean up units
-  if (.sdbuildR_env[["P"]][["debug"]]) {
-    message("Cleaning units...")
-  }
-  # Get regular expressions to convert units to Julia
-  regex_units <- get_regex_units()
-  sfm <- clean_units_IM(sfm, regex_units)
+    # Clean up units
+    if (.sdbuildR_env[["P"]][["debug"]]) {
+      message("Cleaning units...")
+    }
+    # Get regular expressions to convert units to Julia
+    regex_units <- get_regex_units()
+    sfm <- clean_units_IM(sfm, regex_units)
 
-  # Check non-negativity for flows and stocks
-  sfm <- check_nonnegativity(sfm, keep_nonnegative_flow, keep_nonnegative_stock, keep_solver)
+    # Check non-negativity for flows and stocks
+    sfm <- check_nonnegativity(sfm, keep_nonnegative_flow, keep_nonnegative_stock, keep_solver)
 
-  # Convert Insight Maker equation to R, including macros
-  if (.sdbuildR_env[["P"]][["debug"]]) {
-    message("Converting equations from Insight Maker to R...")
-  }
+    # Convert Insight Maker equation to R, including macros
+    if (.sdbuildR_env[["P"]][["debug"]]) {
+      message("Converting equations from Insight Maker to R...")
+    }
 
-  # Convert macros - important to do before equations, as some macros may have
-  # syntactically invalid names
-  sfm <- convert_macros_IM_wrapper(sfm, regex_units = regex_units)
+    # Convert macros - important to do before equations, as some macros may have
+    # syntactically invalid names
+    sfm <- convert_macros_IM_wrapper(sfm, regex_units = regex_units)
 
-  # Convert equations in model variables
-  sfm <- convert_equations_IM_wrapper(sfm, regex_units = regex_units)
+    # Convert equations in model variables
+    sfm <- convert_equations_IM_wrapper(sfm, regex_units = regex_units)
 
-  # Finalize equations by removing brackets from names
-  sfm <- remove_brackets_from_names(sfm)
+    # Finalize equations by removing brackets from names
+    sfm <- remove_brackets_from_names(sfm)
 
-  # Convert equations and macros to Julia
-  sfm <- convert_equations_julia_wrapper(sfm, regex_units = regex_units)
+    # Convert equations and macros to Julia
+    sfm <- convert_equations_julia_wrapper(sfm, regex_units = regex_units)
 
-  # As a last step in the translation, split auxiliaries into constants and auxiliaries
-  sfm <- split_aux_wrapper(sfm)
+    # As a last step in the translation, split auxiliaries into constants and auxiliaries
+    sfm <- split_aux_wrapper(sfm)
 
-  # Determine simulation language: if using units or delay functions, set to Julia
-  delayN_smoothN <- get_delayN_smoothN(sfm)
-  delay_past <- get_delay_past(sfm)
-  unit_strings <- find_unit_strings(sfm)
-  df <- as.data.frame(sfm, type = c("stock", "aux", "constant", "gf"))
+    # Determine simulation language: if using units or delay functions, set to Julia
+    delayN_smoothN <- get_delayN_smoothN(sfm)
+    delay_past <- get_delay_past(sfm)
+    unit_strings <- find_unit_strings(sfm)
+    df <- as.data.frame(sfm, type = c("stock", "aux", "constant", "gf"))
 
-  if (length(delayN_smoothN) > 0 | length(delay_past) > 0 | length(unit_strings) > 0 | length(sfm[["model_units"]]) > 0 | any(df[["units"]] != "1")) {
-    sfm <- sfm |> sim_specs(language = "Julia")
+    if (length(delayN_smoothN) > 0 | length(delay_past) > 0 | length(unit_strings) > 0 | length(sfm[["model_units"]]) > 0 | any(df[["units"]] != "1")) {
+      sfm <- sfm |> sim_specs(language = "Julia")
+    }
+    sfm
+  })
+
+  if ("error" %in% class(sfm)) {
+    stop("An error occurred when translating the Insight Maker model.")
   }
 
   return(sfm)

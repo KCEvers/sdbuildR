@@ -4,10 +4,10 @@ test_that("templates work", {
   testthat::skip_on_cran()
 
   for (s in c("SIR", "predator-prey", "logistic_model", "Crielaard2022", "Duffing", "Chua")) {
-    sfm <- xmile(s) |> sim_specs(language = "Julia")
+    sfm <- xmile(s) |> sim_specs(language = "Julia", stop = 10, dt = 0.1)
     expect_no_error(plot(sfm))
     expect_no_error(as.data.frame(sfm))
-    expect_equal(nrow(as.data.frame(sfm)) > 0, TRUE)
+    expect_true(nrow(as.data.frame(sfm)) > 0)
   }
 
   # Check whether coffee cup reaches room temperature
@@ -15,8 +15,8 @@ test_that("templates work", {
   expect_no_error(plot(sfm))
   expect_no_error(as.data.frame(sfm))
   sim <- expect_no_error(simulate(sfm))
-  expect_equal(sim$success, TRUE)
-  expect_equal(nrow(sim$df) > 0, TRUE)
+  expect_true(sim$success)
+  expect_true(nrow(sim$df) > 0)
   expect_equal(dplyr::last(sim$df[sim$df$variable == "coffee_temperature", "value"]),
     sim$constants[["room_temperature"]],
     tolerance = .01
@@ -29,14 +29,15 @@ test_that("output of simulate in Julia", {
 
   sfm <- xmile("SIR") |> sim_specs(language = "Julia", start = 0, stop = 10, dt = .1)
   sim <- expect_no_error(simulate(sfm))
-  expect_equal(all(c("df", "init", "constants", "sfm", "script", "duration") %in% names(sim)), TRUE)
+  expect_true(all(c("df", "init", "constants", "sfm", "script", "duration")
+  %in% names(sim)))
 
   # Check that init and constants are not Julia objects
   expect_equal(class(sim$constants), "numeric")
   expect_equal(class(sim$init), "numeric")
   expect_equal(
     sort(names(sim$constants)),
-    c("Delay", "Effective_Contact_Rate", "Total_Population")
+    c("Beta", "Delay", "Effective_Contact_Rate", "Total_Population")
   )
   expect_equal(
     sort(names(sim$init)),
@@ -46,6 +47,8 @@ test_that("output of simulate in Julia", {
 
 
 test_that("save_at works", {
+  testthat::skip_on_cran()
+
   # Cannot set save_at to lower than dt
   sfm <- xmile("SIR")
   expect_warning(
@@ -55,9 +58,7 @@ test_that("save_at works", {
 
   # Check whether dataframe is returned at save_at times
   sfm <- sfm |>
-    sim_specs(save_at = 0.1, dt = 0.001, start = 100, stop = 200)
-
-  testthat::skip_on_cran()
+    sim_specs(save_at = 1, dt = 0.1, start = 10, stop = 20)
 
   sim <- simulate(sfm |> sim_specs(language = "Julia"))
   expect_equal(
@@ -68,7 +69,7 @@ test_that("save_at works", {
   # Also works with models with units
   sfm <- xmile("coffee_cup") |>
     sim_specs(language = "Julia") |>
-    sim_specs(save_at = 0.1, dt = 0.001, start = 100, stop = 200)
+    sim_specs(save_at = 1, dt = 0.01, start = 10, stop = 20)
   sim <- simulate(sfm |> sim_specs(language = "Julia"))
   expect_equal(
     diff(sim$df[sim$df$variable == "coffee_temperature", "time"])[1],
@@ -81,12 +82,12 @@ test_that("save_from works", {
   testthat::skip_on_cran()
 
   sfm <- xmile("SIR") |> sim_specs(
-    start = 0, stop = 100,
+    start = 0, stop = 20,
     save_from = 10, language = "Julia"
   )
   sim <- expect_no_error(simulate(sfm))
   expect_equal(min(sim$df$time), 10)
-  expect_equal(max(sim$df$time), 100)
+  expect_equal(max(sim$df$time), 20)
   expect_no_error(plot(sim))
   expect_no_error(summary(sfm))
 })
@@ -161,12 +162,16 @@ test_that("simulate with different components works", {
 
   # Only keep stocks
   sfm <- xmile("SIR")
-  sim <- simulate(sfm |> sim_specs(language = "Julia"), only_stocks = TRUE)
+  sim <- simulate(sfm |> sim_specs(stop = 10, dt = 0.1, language = "Julia"),
+    only_stocks = TRUE
+  )
   expect_equal(length(unique(as.data.frame(sim)$variable)), length(names(sfm$model$variables$stock)))
 
   # All variables should be kept if only_stocks = FALSE
   sfm <- xmile("SIR")
-  sim <- simulate(sfm |> sim_specs(language = "Julia"), only_stocks = FALSE)
+  sim <- simulate(sfm |> sim_specs(language = "Julia", stop = 10, dt = 0.1),
+    only_stocks = FALSE
+  )
   df <- as.data.frame(sfm)
   df <- df[df$type != "constant", ]
   expect_equal(length(unique(as.data.frame(sim)$variable)), length(df$name))
@@ -182,7 +187,7 @@ test_that("seed works", {
 
   # Without a seed, simulations shouldn't be the same
   sfm <- xmile("predator-prey") |>
-    sim_specs(seed = NULL) |>
+    sim_specs(seed = NULL, stop = 10, dt = 0.1) |>
     build(c("predator", "prey"), eqn = "runif(1, 20, 50)") |>
     sim_specs(language = "Julia")
   sim1 <- simulate(sfm)
@@ -204,12 +209,12 @@ test_that("units in stocks and flows", {
 
   # No unit specified in stock yet stock evaluates to unit
   sfm <- xmile() |>
-    sim_specs(language = "Julia") |>
+    sim_specs(language = "Julia", stop = 10, dt = 0.1) |>
     build("a", "stock", eqn = "round(u('100.80 kilograms'))")
   expect_no_error(simulate(sfm))
 
   sfm <- xmile() |>
-    sim_specs(language = "Julia") |>
+    sim_specs(language = "Julia", stop = 10, dt = 0.1) |>
     build("a", "stock", eqn = "round(u('108.67 seconds'))")
   expect_no_error(simulate(sfm))
 })
@@ -222,8 +227,7 @@ test_that("function in aux still works", {
     sim_specs(language = "Julia", start = 0, stop = 10, dt = .1) |>
     build("A", "stock") |>
     build("input", "aux", eqn = "ramp(5, 10, -1)")
-  sim <- expect_no_error(simulate(sfm, only_stocks = FALSE))
-  sim <- expect_no_message(simulate(sfm, only_stocks = FALSE))
+  sim <- expect_no_error(expect_no_message(simulate(sfm, only_stocks = FALSE)))
 
   # Check that input is not returned as a variable
   expect_equal(sort(unique(sim$df$variable)), c("A"))
@@ -231,17 +235,20 @@ test_that("function in aux still works", {
   # Check with two intermediary variables
   sfm <- sfm |>
     build("a2", "aux", eqn = " 0.38 + input(t)")
-  sim <- expect_no_error(simulate(sfm, only_stocks = FALSE))
-  sim <- expect_no_message(simulate(sfm, only_stocks = FALSE))
+  sim <- expect_no_error(expect_no_message(simulate(sfm, only_stocks = FALSE)))
 
   # Check that input is not returned as a variable
   expect_equal(sort(unique(sim$df$variable)), c("A", "a2"))
 })
 
+
 test_that("negative times are possible", {
   testthat::skip_on_cran()
 
-  sfm <- xmile("logistic_model") |> sim_specs(start = -100, language = "Julia")
+  sfm <- xmile("logistic_model") |> sim_specs(
+    start = -1, stop = 10, dt = 0.1,
+    language = "Julia"
+  )
   expect_no_error({
     sim <- simulate(sfm)
   })
@@ -253,33 +260,36 @@ test_that("functions in Julia work", {
 
   # round() with units
   sfm <- xmile() |>
-    sim_specs(language = "Julia") |>
+    sim_specs(language = "Julia", stop = 1, dt = 0.1) |>
     build("a", "stock", eqn = "round(10.235)")
   expect_no_error(simulate(sfm))
 
   sfm <- xmile() |>
-    sim_specs(language = "Julia") |>
+    sim_specs(language = "Julia", stop = 1, dt = 0.1) |>
     build("a", "stock", eqn = "round(u('100.80 kilograms'))")
   expect_no_error(simulate(sfm))
 
   sfm <- xmile() |>
-    sim_specs(language = "Julia") |>
+    sim_specs(language = "Julia", stop = 1, dt = 0.1) |>
     build("a", "stock", eqn = "round(u('108.67 seconds'))")
   expect_no_error(simulate(sfm))
 
   # Cosine function needs unitless argument or argument in radians
   sfm <- xmile() |>
-    sim_specs(language = "Julia") |>
+    sim_specs(language = "Julia", stop = 1, dt = 0.1) |>
     build("a", "stock", eqn = "cos(10)")
   expect_no_error(simulate(sfm))
 
   sfm <- xmile() |>
-    sim_specs(language = "Julia") |>
+    sim_specs(language = "Julia", stop = 1, dt = 0.1) |>
     build("a", "stock", eqn = "cos(u('10meters'))")
-  expect_warning(simulate(sfm), "An error occurred while running the Julia script")
+  expect_warning(
+    simulate(sfm),
+    "An error occurred while running the Julia script"
+  )
 
   sfm <- xmile() |>
-    sim_specs(language = "Julia") |>
+    sim_specs(language = "Julia", stop = 1, dt = 0.1) |>
     build("a", "stock", eqn = "cos(u('10radians'))")
   expect_no_error(simulate(sfm))
 })

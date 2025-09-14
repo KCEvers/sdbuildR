@@ -18,23 +18,17 @@ Equivalent of .Length() in Insight Maker, which returns the number of elements w
 \examples{
 length_IM(c("a", "b", "c")) # 3
 length_IM("abcdef") # 6
-length_IM(c("abcdef")) # 6
 }
 \seealso{
 Other custom: 
-\code{\link{\%REM\%}()},
 \code{\link{contains_IM}()},
 \code{\link{expit}()},
-\code{\link{filter_IM}()},
 \code{\link{indexof}()},
 \code{\link{logistic}()},
 \code{\link{logit}()},
-\code{\link{mod}()},
 \code{\link{rbool}()},
 \code{\link{rdist}()},
 \code{\link{rem}()},
-\code{\link{round_IM}()},
-\code{\link{shuffle}()},
-\code{\link{substr_i}()}
+\code{\link{round_IM}()}
 }
 \concept{custom}

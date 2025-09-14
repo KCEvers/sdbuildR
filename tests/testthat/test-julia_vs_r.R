@@ -1,7 +1,7 @@
 test_that("compare output Julia and R for templates", {
   testthat::skip_on_cran()
 
-  sfm <- xmile("SIR")
+  sfm <- xmile("SIR") |> sim_specs(dt = 0.1, save_at = 1, stop = 10)
   sim1 <- simulate(sfm |> sim_specs(language = "R"))
   sim2 <- simulate(sfm |> sim_specs(language = "Julia"))
   comp <- compare_sim(sim1, sim2)
@@ -20,7 +20,7 @@ test_that("compare output Julia and R for templates", {
   expect_equal(sim2$success, TRUE)
   expect_equal(nrow(sim2$df) > 0, TRUE)
 
-  sfm <- xmile("predator-prey")
+  sfm <- xmile("predator-prey") |> sim_specs(dt = 0.1, save_at = 1, stop = 10)
   sim1 <- simulate(sfm |> sim_specs(language = "R"))
   sim2 <- simulate(sfm |> sim_specs(language = "Julia"))
   comp <- compare_sim(sim1, sim2)
@@ -39,7 +39,8 @@ test_that("compare output Julia and R for templates", {
   expect_equal(sim2$success, TRUE)
   expect_equal(nrow(sim2$df) > 0, TRUE)
 
-  sfm <- xmile("logistic_model")
+  sfm <- xmile("logistic_model") |>
+    sim_specs(dt = 0.1, save_at = 10, stop = 100)
   sim1 <- simulate(sfm |> sim_specs(language = "R"))
   sim2 <- simulate(sfm |> sim_specs(language = "Julia"))
   comp <- compare_sim(sim1, sim2)
@@ -69,8 +70,11 @@ test_that("compare output Julia and R for templates", {
   expect_equal(nrow(sim2$df) > 0, TRUE)
 
   sfm <- xmile("Crielaard2022") |>
+    sim_specs(dt = 0.1, save_at = 1, stop = 10) |>
     # Update initial condition to be non-stochastic
-    build(c("Food_intake", "Hunger", "Compensatory_behaviour"), eqn = round(runif(3), 8))
+    build(c("Food_intake", "Hunger", "Compensatory_behaviour"),
+      eqn = round(runif(3), 8)
+    )
 
   sim1 <- simulate(sfm |> sim_specs(language = "R"))
   sim2 <- simulate(sfm |> sim_specs(language = "Julia"))
@@ -91,7 +95,7 @@ test_that("compare output Julia and R for templates", {
   expect_equal(nrow(sim2$df) > 0, TRUE)
 
   # Duffing previously had an error with cos()
-  sfm <- xmile("Duffing")
+  sfm <- xmile("Duffing") |> sim_specs(dt = 0.1, save_at = 1, stop = 10)
   sim1 <- simulate(sfm |> sim_specs(language = "R"))
   sim2 <- simulate(sfm |> sim_specs(language = "Julia"))
   comp <- compare_sim(sim1, sim2)
@@ -110,7 +114,7 @@ test_that("compare output Julia and R for templates", {
   expect_equal(sim2$success, TRUE)
   expect_equal(nrow(sim2$df) > 0, TRUE)
 
-  sfm <- xmile("Chua")
+  sfm <- xmile("Chua") |> sim_specs(dt = 0.1, save_at = 1, stop = 10)
   sim1 <- simulate(sfm |> sim_specs(language = "R"))
   sim2 <- simulate(sfm |> sim_specs(language = "Julia"))
   comp <- compare_sim(sim1, sim2)
@@ -130,7 +134,10 @@ test_that("compare output Julia and R for templates", {
   expect_equal(nrow(sim2$df) > 0, TRUE)
 
   # Check whether coffee cup reaches room temperature
-  sfm <- xmile("coffee_cup") |> sim_specs(language = "Julia")
+  sfm <- xmile("coffee_cup") |> sim_specs(
+    dt = 0.1, save_at = 10, stop = 100,
+    language = "Julia"
+  )
   sim1 <- simulate(sfm)
   expect_equal(sim1$success, TRUE)
   expect_equal(nrow(sim1$df) > 0, TRUE)
@@ -142,7 +149,7 @@ test_that("compare output Julia and R for templates", {
 
 
 test_that("as.data.frame(sim) works", {
-  sfm <- xmile("SIR")
+  sfm <- xmile("SIR") |> sim_specs(dt = 0.1, save_at = 1, stop = 10)
 
   sim <- simulate(sfm |> sim_specs(language = "R"))
   expect_equal(class(as.data.frame(sim)), "data.frame")
@@ -159,7 +166,6 @@ test_that("as.data.frame(sim) works", {
 
 
 test_that("translating solvers works", {
-
   # Translate solvers
   expect_equal(solvers("euler", from = "R", to = "Julia", show_info = FALSE), "Euler()")
   expect_equal(solvers("rk4", from = "R", to = "Julia", show_info = FALSE), "RK4()")
@@ -175,5 +181,4 @@ test_that("translating solvers works", {
   expect_error(solvers(), "Either method or from must be specified")
   expect_no_error(solvers(from = "R"))
   expect_no_error(solvers(from = "Julia"))
-
 })

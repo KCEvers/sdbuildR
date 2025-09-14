@@ -17,8 +17,8 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
       lapply(x, function(y) {
         if (is_defined(y[["eqn"]])) {
           out <- convert_equations_julia(sfm, y[["type"]], y[["name"]],
-                                         y[["eqn"]], var_names,
-                                         regex_units = regex_units
+            y[["eqn"]], var_names,
+            regex_units = regex_units
           )
           y <- utils::modifyList(y, out)
         }
@@ -338,8 +338,10 @@ replace_op_julia <- function(eqn, var_names) {
     # Get match and replacement
     df_logical_op <- as.data.frame(do.call(rbind, idxs_logical_op))
     df_logical_op[["match"]] <- stringr::str_sub(eqn, df_logical_op[["start"]], df_logical_op[["end"]])
-    df_logical_op[["replacement"]] <- rep(unname(logical_op),
-                                          vapply(idxs_logical_op, nrow, numeric(1)))
+    df_logical_op[["replacement"]] <- rep(
+      unname(logical_op),
+      vapply(idxs_logical_op, nrow, numeric(1))
+    )
     df_logical_op <- df_logical_op[order(df_logical_op[["start"]]), ]
     df_logical_op
 
@@ -477,8 +479,10 @@ convert_all_statements_julia <- function(eqn, var_names) {
       # Look for statements
       idx_statements <- stringr::str_locate_all(eqn, unname(statement_regex))
       df_statements <- as.data.frame(do.call(rbind, idx_statements))
-      df_statements[["statement"]] <- rep(names(statement_regex),
-                                          vapply(idx_statements, nrow, numeric(1)))
+      df_statements[["statement"]] <- rep(
+        names(statement_regex),
+        vapply(idx_statements, nrow, numeric(1))
+      )
 
       # # Remove those matches that are in quotation marks or names
       idxs_exclude <- get_seq_exclude(eqn, var_names, type = "quot")
@@ -1719,7 +1723,6 @@ conv_distribution <- function(arg, julia_func, distribution) {
 #' @noRd
 #'
 conv_seq <- function(arg, R_func, julia_func) {
-
   if (R_func == "seq_along") {
     julia_str <- paste0(julia_func, "(1.0, length(", arg[["along.with"]], "))")
   } else if (R_func == "seq_len") {
@@ -1766,7 +1769,6 @@ conv_seq <- function(arg, R_func, julia_func) {
 #' @returns String with Julia code
 #' @noRd
 conv_sample <- function(arg, R_func, julia_func) {
-
   # Order in StatsBase.sample() is different
   if (R_func == "sample.int") {
     arg[["x"]] <- paste0("seq(1.0, ", arg[["n"]], ")")

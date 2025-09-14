@@ -1,11 +1,3 @@
-test_that("destructuring assignment", {
-  result <- conv_destructuring_assignment("a, b <- {4, 5}")
-  expected <- "c(a, b) %<-% {4, 5}"
-  expect_equal(result, expected)
-})
-
-
-
 test_that("convert_builtin_functions_IM assignment", {
   sfm <- xmile("predator-prey")
   var_names <- get_model_var(sfm)

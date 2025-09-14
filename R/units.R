@@ -248,9 +248,12 @@ clean_unit_in_u <- function(x, regex_units) {
 
 
   # Clean all matches at once
-  cleaned <- paste0("u(\"", vapply(matches_no_u, clean_unit, character(1),
-                                   regex_units = regex_units, USE.NAMES = FALSE),
-                    "\")")
+  cleaned <- paste0(
+    "u(\"", vapply(matches_no_u, clean_unit, character(1),
+      regex_units = regex_units, USE.NAMES = FALSE
+    ),
+    "\")"
+  )
 
   # Replace back
   result <- x
@@ -609,7 +612,8 @@ get_regex_time_units <- function() {
         "^[", toupper(stringr::str_sub(x, 1, 1)), "|", tolower(stringr::str_sub(x, 1, 1)), "]",
         stringr::str_sub(x, 2, nchar(x)), "[s]?$"
       )
-    }, character(1))
+    }, character(1)
+  )
 
   # Get named list with regular expressions
   regex_time_units_julia <- stats::setNames(units_df[, "name"], unname(regex_time_units_julia))
@@ -726,7 +730,8 @@ get_regex_units <- function(sfm = NULL) {
         "^[", toupper(stringr::str_sub(x, 1, 1)), "|", tolower(stringr::str_sub(x, 1, 1)), "]",
         stringr::str_sub(x, 2, nchar(x)), ifelse(x %in% no_s_suffix, "$", "[s]?$")
       )
-    }, character(1))
+    }, character(1)
+  )
 
   # Get named list with regular expressions
   regex_units <- stats::setNames(units_df[, "name"], unname(regex_units))
