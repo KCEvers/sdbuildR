@@ -161,6 +161,7 @@ test_that("sim_specs() works", {
 
 
 test_that("flow cannot have same stock as to and from", {
+
   sfm <- xmile() |> build("a", "stock")
   expect_error(
     sfm |> build("b", "flow", to = "a", from = "a", eqn = "1"),
@@ -193,6 +194,28 @@ test_that("flow cannot have same stock as to and from", {
     sfm |> build("b", to = "a"),
     "b is flowing to and from the same variable \\(a\\)"
   )
+
+  # Flow cannot flow to itself
+  sfm <- xmile()
+  expect_error(
+    sfm |> build("b", "flow", to = "b"),
+    "A flow cannot flow to itself"
+  )
+  expect_error(
+    sfm |> build("b", "flow", from = "b"),
+    "A flow cannot flow from itself"
+  )
+  expect_error(
+    sfm |> build(c("a", "b", "c"), "flow", to = "b"),
+    "A flow cannot flow to itself"
+  )
+  expect_error(
+    sfm |> build(c("a", "b", "c"), "flow", from = "b"),
+    "A flow cannot flow from itself"
+  )
+  expect_no_error(
+    sfm |> build(c("a", "b", "c"), "flow", to = "d"))
+
 })
 
 
@@ -284,13 +307,10 @@ test_that("change_name and change_type in build()", {
   sfm <- xmile() |>
     build("G", "stock") |>
     build("to_G", "flow", to = "G")
-  expect_message(
-    {
-      sfm |> build("G", change_type = "aux")
-    },
-    "to_G is flowing to a variable which is not a stock"
+  expect_warning(sfm |> build("G", change_type = "aux"),
+    "to_G is flowing to a variable which is not a stock \\(G\\)"
   )
-  suppressMessages({
+  suppressWarnings({
     sfm <- sfm |> build("G", change_type = "aux")
   })
   expect_equal(sfm$model$variables$flow$to_G$to, "")
@@ -353,6 +373,20 @@ test_that("change_name and change_type in build()", {
 })
 
 
+test_that("from and to can only be stocks", {
+
+  sfm <- expect_no_error(expect_no_message(expect_no_warning(xmile() |> build("a", "flow", to = "b"))))
+  sfm = expect_warning(sfm |> build("b", "flow"), "a is flowing to a variable which is not a stock \\(b\\)! Removing b from `to`")
+  expect_null(sfm[["model"]][["variables"]][["flow"]][["a"]][["to"]])
+
+  sfm <- expect_no_error(expect_no_message(expect_no_warning(xmile() |> build("a", "flow", from = "b"))))
+  sfm = expect_warning(sfm |> build("b", "flow"), "a is flowing from a variable which is not a stock \\(b\\)! Removing b from `from`")
+  expect_null(sfm[["model"]][["variables"]][["flow"]][["a"]][["from"]])
+
+  expect_error(xmile() |> build("a", "flow", from = "b", to = "b"),
+               "A flow cannot flow to and from the same stock")
+})
+
 
 test_that("erase in build() works", {
   sfm <- xmile("Lorenz")
@@ -392,22 +426,22 @@ test_that("inappropriate properties throw warning", {
   expect_warning(
     xmile() |> build(c("a", "b", "c"), c("aux", "stock", "flow"),
       eqn = 1,
-      from = "b"
+      from = "d"
     ),
     "These properties are not appropriate for all specified types \\(aux, stock, flow\\):\\n- from\nThese will be ignored"
   )
   sfm <- suppressWarnings(xmile() |> build(c("a", "b", "c"),
     c("aux", "stock", "flow"),
     eqn = 1,
-    from = "b"
+    from = "d"
   ))
   expect_null(sfm$model$variables$aux$a$from)
   expect_null(sfm$model$variables$stock$b$from)
-  expect_equal(sfm$model$variables$flow$c$from, "b")
+  expect_equal(sfm$model$variables$flow$c$from, "d")
   df <- data.frame(sfm)
   expect_true(is.na(df[df$name == "a", "from"]))
   expect_true(is.na(df[df$name == "b", "from"]))
-  expect_equal(df[df$name == "c", "from"], "b")
+  expect_equal(df[df$name == "c", "from"], "d")
 })
 
 
@@ -491,10 +525,11 @@ test_that("flows always have a from and to property", {
   expect_true("from" %in% names(sfm$model$variables$flow$a))
   expect_true("to" %in% names(sfm$model$variables$flow$a))
 
-  sfm <- xmile() |> build("a", "flow", to = "a")
+  sfm <- xmile() |> build("a", "flow", to = "b")
   expect_true("from" %in% names(sfm$model$variables$flow$a))
   expect_true("to" %in% names(sfm$model$variables$flow$a))
 })
+
 
 test_that("build() works", {
   # Empty build() gives error
@@ -1026,8 +1061,10 @@ test_that("as.data.frame(sfm) works", {
 
 
 test_that("summary() works", {
-  ans <- summary(xmile("SIR"))
+  sfm <- xmile("SIR")
+  ans <- summary(sfm)
   expect_true(length(ans) > 0)
+  expect_no_error(expect_no_warning(print(summary(sfm))))
 })
 
 

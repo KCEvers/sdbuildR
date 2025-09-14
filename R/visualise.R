@@ -43,10 +43,20 @@ export_plot <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi =
   }
 
   if ("grViz" %in% class(pl)) {
+
+    if (!nzchar(format)){
+      stop("No file extension specified! Choose one of png, pdf, svg, ps, eps, webp.")
+    }
+
     export_diagram(pl, filepath, format,
       width = width, height = height
     )
   } else if ("plotly" %in% class(pl)) {
+
+    if (!nzchar(format)){
+      stop("No file extension specified! Choose one of png, pdf, jpg, jpeg, webp.")
+    }
+
     export_plotly(pl, filepath,
       format = format,
       width = width, height = height
@@ -91,6 +101,7 @@ export_diagram <- function(pl, filepath, format, width, height) {
   } else {
     stop("format ", format, " not supported")
   }
+
   return(invisible())
 }
 

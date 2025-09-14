@@ -425,9 +425,9 @@ nonnegative <- function(x) {
 
 
 
-#' Remainder and Modulus
+#' Remainder and modulus
 #'
-#' Note that modulus and remainder are not the same in case either a or b is negative. If you work with negative numbers, modulus is always non-negative (it matches the sign of the divisor).
+#' Remainder and modulus operators. The modulus and remainder are not the same in case either a or b is negative. If you work with negative numbers, modulus is always non-negative (it matches the sign of the divisor).
 #'
 #' @param a Dividend
 #' @param b Divisor
@@ -438,10 +438,12 @@ nonnegative <- function(x) {
 #' @rdname rem_mod
 #'
 #' @examples
+#' # Modulus and remainder are the same when a and b are positive
 #' a <- 7
 #' b <- 3
 #' rem(a, b)
 #' mod(a, b)
+#' # Modulus and remainder are NOT when either a or b is negative
 #' a <- -7
 #' b <- 3
 #' rem(a, b)
@@ -450,10 +452,13 @@ nonnegative <- function(x) {
 #' b <- -3
 #' rem(a, b)
 #' mod(a, b)
+#' # Modulus and remainder are the same when both a and b are negative
 #' a <- -7
 #' b <- -3
 #' rem(a, b)
 #' mod(a, b)
+#'
+#' # Alternative way of computing the remainder:
 #' a %REM% b
 rem <- function(a, b) {
   return(a - b * trunc(a / b))

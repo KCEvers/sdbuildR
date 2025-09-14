@@ -343,10 +343,10 @@ validate_xmile <- function(sfm) {
         non_stocks <- x[["from"]][!x[["from"]] %in% stock_names &
                                     x[["from"]] %in% nonstock_names]
         if (length(non_stocks) > 0) {
-          message(paste0(x[["name"]],
-                         " is flowing from variables which are not stocks (",
-                         paste0(non_stocks, collapse = ", "),
-                         ")! Removing non-stocks from `from`..."))
+          warning(paste0(x[["name"]],
+                         " is flowing from a variable which is not a stock (",
+                         paste0(non_stocks, collapse = ", "), ")! Removing ",
+                         paste0(non_stocks, collapse = ", "), " from `from`..."))
           x[["from"]] <- intersect(x[["from"]], stock_names)
           if (length(x[["from"]]) == 0) {
             x[["from"]] <- ""
@@ -360,7 +360,7 @@ validate_xmile <- function(sfm) {
         non_stocks <- x[["to"]][!x[["to"]] %in% stock_names &
                                   x[["to"]] %in% nonstock_names]
         if (length(non_stocks) > 0) {
-          message(paste0(x[["name"]],
+          warning(paste0(x[["name"]],
                          " is flowing to a variable which is not a stock (",
                          paste0(non_stocks, collapse = ", "), ")! Removing ",
                          paste0(non_stocks, collapse = ", "), " from `to`..."))
@@ -1605,7 +1605,13 @@ build <- function(sfm, name, type,
     if (length(name) == 1 & length(to) > 1) {
       stop("A flow may only have one target!")
     }
+
     to <- ensure_length(to, name)
+
+    if (any(to == name)){
+      stop("A flow cannot flow to itself!")
+    }
+
   }
 
   if ("from" %in% passed_arg) {
@@ -1622,7 +1628,13 @@ build <- function(sfm, name, type,
     if (length(name) == 1 & length(from) > 1) {
       stop("A flow may only have one source!")
     }
+
     from <- ensure_length(from, name)
+
+    if (any(from == name)){
+      stop("A flow cannot flow from itself!")
+    }
+
   }
 
   # Ensure to and from are not the same
@@ -1631,6 +1643,7 @@ build <- function(sfm, name, type,
       stop("A flow cannot flow to and from the same stock!")
     }
   }
+
 
   # Graphical functions
   if (any(type == "gf")) {
@@ -1941,7 +1954,7 @@ build <- function(sfm, name, type,
 #'
 add_from_df <- function(sfm, df) {
   if (!inherits(df, "data.frame")) {
-    stop("df must be a daaframe!")
+    stop("df must be a dataframe!")
   }
 
   # Get all properties
