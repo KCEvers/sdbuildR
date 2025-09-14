@@ -160,9 +160,6 @@ export_plotly <- function(pl, filepath, format, width, height) {
   # Cleanup
   file.remove(temp_html)
 
-  # # Explicit cleanup to avoid "connections left open"
-  # gc()
-
   return(invisible())
 }
 

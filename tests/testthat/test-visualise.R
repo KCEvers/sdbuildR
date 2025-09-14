@@ -1,6 +1,9 @@
 test_that("export_plot works", {
   skip_on_cran() # requires chrome
 
+  # Ubuntu throws error because it cannot access chrome
+  skip_on_os("linux")
+
   sfm = xmile("SIR") |> sim_specs(stop=10,dt=.1)
 
   # Plot sfm
