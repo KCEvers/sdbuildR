@@ -58,7 +58,7 @@ template <- function(name) {
       build("Susceptible", "stock", eqn = "99999") |>
       build("Infected", "stock", eqn = "1") |>
       build("Recovered", "stock", eqn = "0.0") |>
-      build("Beta", "aux", eqn = "Effective_Contact_Rate / Total_Population") |>
+      build("Beta", "constant", eqn = "Effective_Contact_Rate / Total_Population") |>
       build("Lambda", "aux", eqn = "Beta * Infected") |>
       build("Infection_Rate", "flow", eqn = "Susceptible * Lambda", from = "Susceptible", to = "Infected") |>
       build("Recovery_Rate", "flow", eqn = "Infected / Delay", from = "Infected", to = "Recovered") |>
@@ -157,7 +157,10 @@ template <- function(name) {
       build("room_temperature", "constant", eqn = "18", units = "Celsius", label = "Room temperature")
   } else if (name == "bank_account") {
     sfm <- xmile() |>
-      header(name = "Bank account with interest", caption = "Bank account with compounding interest from Meadows' Thinking in Systems (Chapter 1)") |>
+      header(
+        name = "Bank account with interest",
+        caption = "Bank account with compounding interest from Meadows' Thinking in Systems (Chapter 1)"
+      ) |>
       sim_specs(start = 0, stop = 12, dt = 1, time_units = "year") |>
       build("money_in_bank_account", "stock",
         eqn = "100",

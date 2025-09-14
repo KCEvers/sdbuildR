@@ -88,6 +88,4 @@ if (!exists(".sdbuildR_env")) {
     "CSV" = "0.10",
     "SciMLBase" = "2.102"
   )
-
-
 }

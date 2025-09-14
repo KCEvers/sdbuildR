@@ -37,7 +37,7 @@ Insight Maker models can be imported using either a URL or an Insight Maker file
 # Load a model from Insight Maker
 sfm <- insightmaker_to_sfm(
   URL =
-    "https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022"
+    "https://insightmaker.com/insight/43tz1nvUgbIiIOGSGtzIzj/Romeo-Juliet"
 )
 plot(sfm)
 

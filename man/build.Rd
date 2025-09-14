@@ -15,8 +15,6 @@ build(
   change_name = NULL,
   change_type = NULL,
   erase = FALSE,
-  conveyor = FALSE,
-  len = "",
   to = NULL,
   from = NULL,
   non_negative = FALSE,
@@ -24,7 +22,8 @@ build(
   ypts = NULL,
   source = NULL,
   interpolation = "linear",
-  extrapolation = "nearest"
+  extrapolation = "nearest",
+  df = NULL
 )
 }
 \arguments{
@@ -48,10 +47,6 @@ build(
 
 \item{erase}{If TRUE, remove variable from model. Defaults to FALSE.}
 
-\item{conveyor}{If TRUE, the stock behaves as a conveyor. This feature is coming soon, but is now unusable. Defaults to FALSE.}
-
-\item{len}{Numerical value indicating the delay length of the conveyor stock. This feature is coming soon, but is now unusable. Defaults to NULL.}
-
 \item{to}{Target of flow. Must be a stock in the model. Defaults to NULL to indicate no target.}
 
 \item{from}{Source of flow. Must be a stock in the model. Defaults to NULL to indicate no source.}
@@ -67,6 +62,8 @@ build(
 \item{interpolation}{Only for graphical functions: interpolation method. Must be either "constant" or "linear". Defaults to "linear".}
 
 \item{extrapolation}{Only for graphical functions: extrapolation method. Must be either "nearest" or "NA". Defaults to "nearest".}
+
+\item{df}{Dataframe with variable properties to add and/or modify.}
 }
 \value{
 Updated stock-and-flow model.
@@ -77,7 +74,7 @@ Add, change, or erase variables in a stock-and-flow model. Variables may be stoc
 \section{Stocks}{
  Stocks define the state of the system. They accumulate material or information over time, such as people, products, or beliefs, which creates memory and inertia in the system. As such, stocks need not be tangible. Stocks are variables that can increase and decrease, and can be measured at a single moment in time. The value of a stock is increased or decreased by flows. A stock may have multiple inflows and multiple outflows. The net change in a stock is the sum of its inflows minus the sum of its outflows.
 
-The obligatory properties of a stock are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative", "conveyor", "len".
+The obligatory properties of a stock are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative".
 }
 
 \section{Flows}{
@@ -167,7 +164,23 @@ sfm <- build(sfm, "DELTA", change_type = "stock")
 # Remove variable
 sfm <- build(sfm, "prey", erase = TRUE)
 
-# Identify problems
+# To add and/or modify variables more quickly, pass a dataframe.
+# The dataframe is processed row-wise.
+# To create a logistic population growth model:
+df <- data.frame(
+  type = c("stock", "flow", "flow", "constant", "constant"),
+  name = c("X", "inflow", "outflow", "r", "K"),
+  eqn = c(.01, "r * X", "r * X^2 / K", 0.1, 1),
+  label = c(
+    "Population size", "Births", "Deaths", "Growth rate",
+    "Carrying capacity"
+  ),
+  to = c(NA, "X", NA, NA, NA),
+  from = c(NA, NA, "X", NA, NA)
+)
+sfm <- build(sfm, df = df)
+
+# Check for errors in the model
 debugger(sfm)
 
 }

@@ -29,21 +29,20 @@ solvers <- function(method,
                     from = c("R", "Julia"),
                     to = NULL,
                     show_info = FALSE) {
-
-  if (missing(method) & missing(from)){
+  if (missing(method) & missing(from)) {
     stop("Either method or from must be specified!")
   }
   from <- clean_language(from)
 
   # If 'to' is missing, check whether method is valid for this language
   if (is.null(to)) {
-    translate = FALSE
+    translate <- FALSE
   } else {
-    translate = TRUE
+    translate <- TRUE
     to <- clean_language(to)
-    if (to == from){
-      translate = FALSE
-      to = NULL
+    if (to == from) {
+      translate <- FALSE
+      to <- NULL
     }
   }
 
@@ -757,12 +756,13 @@ solvers <- function(method,
     if (from == "R") {
       # Check whether user asked for method in deSolve that is not available in the package
       if (!method %in% names(solver_dict[["r_to_julia"]])) {
-
         # From https://github.com/cran/deSolve/blob/master/R/ode.R
-        additional_methods = c("lsoda","lsode","lsodes","lsodar","vode","daspk",
-                               "euler", "rk4", "ode23", "ode45", "radau",
-                               "bdf", "bdf_d", "adams", "impAdams", "impAdams_d",
-                               "iteration")
+        additional_methods <- c(
+          "lsoda", "lsode", "lsodes", "lsodar", "vode", "daspk",
+          "euler", "rk4", "ode23", "ode45", "radau",
+          "bdf", "bdf_d", "adams", "impAdams", "impAdams_d",
+          "iteration"
+        )
 
         if (method %in% c(deSolve::rkMethod(), additional_methods)) {
           stop(
@@ -781,10 +781,7 @@ solvers <- function(method,
       } else {
         solver_info <- solver_dict[["r_to_julia"]][[method]]
       }
-
-
     } else if (from == "Julia") {
-
       if (!method %in% names(solver_dict[["julia_to_r"]])) {
         # Handle case variations
         method_clean <- method
@@ -814,20 +811,16 @@ solvers <- function(method,
             paste0(names(solver_dict[["julia_to_r"]]), collapse = ", ")
           )
         } else {
-          method = method_clean
+          method <- method_clean
         }
-
       }
       solver_info <- solver_dict[["julia_to_r"]][[method]]
-
     }
 
     # Remove translation
     solver_info[["translation"]] <- NULL
     solver_info[["name"]] <- method
-
   } else if (translate) {
-
     # Perform translation
     if (from == "R" && to == "Julia") {
       if (!method %in% names(solver_dict[["r_to_julia"]])) {
@@ -841,9 +834,7 @@ solvers <- function(method,
       }
 
       solver_info <- solver_dict[["r_to_julia"]][[method]]
-
     } else if (from == "Julia" && to == "R") {
-
       if (!method %in% names(solver_dict[["julia_to_r"]])) {
         # Handle case variations
         method_clean <- method
@@ -871,11 +862,10 @@ solvers <- function(method,
             )
           )
         } else {
-          method = method_clean
+          method <- method_clean
         }
       }
       solver_info <- solver_dict[["julia_to_r"]][[method]]
-
     }
   }
 
@@ -884,14 +874,13 @@ solvers <- function(method,
   if (show_info) {
     return(solver_info)
   } else {
-
-    if (translate){
-      if (!is.null(solver_info[["r_only"]])){
-        if (solver_info[["r_only"]]){
+    if (translate) {
+      if (!is.null(solver_info[["r_only"]])) {
+        if (solver_info[["r_only"]]) {
           return(solver_info[["alternatives"]][1])
         }
-      } else if (!is.null(solver_info[["julia_only"]])){
-        if (solver_info[["julia_only"]]){
+      } else if (!is.null(solver_info[["julia_only"]])) {
+        if (solver_info[["julia_only"]]) {
           return(solver_info[["alternatives"]][1])
         }
       }
@@ -900,6 +889,4 @@ solvers <- function(method,
       return(solver_info[["name"]])
     }
   }
-
 }
-

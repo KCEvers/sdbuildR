@@ -11,7 +11,9 @@
 #' @family custom
 #' @export
 #'
-#' @examples round_IM(.5)
+#' @examples
+#' round_IM(.5) # 1
+#' round_IM(-.5) # 0
 round_IM <- function(x, digits = 0) {
   return(ifelse(x %% 1 == 0.5 | x %% 1 == -0.5,
     ceiling(x),
@@ -102,6 +104,7 @@ rdist <- function(a, b) {
 #' @examples
 #' indexof(c("a", "b", "c"), "b") # 2
 #' indexof("haystack", "hay") # 1
+#' indexof("haystack", "m") # 0
 indexof <- function(haystack, needle) {
   if (length(haystack) == 1 & is.character(haystack)) {
     matches <- stringr::str_locate(haystack, stringr::fixed(needle))
@@ -137,7 +140,6 @@ indexof <- function(haystack, needle) {
 #' @examples
 #' length_IM(c("a", "b", "c")) # 3
 #' length_IM("abcdef") # 6
-#' length_IM(c("abcdef")) # 6
 length_IM <- function(x) {
   if (length(x) == 1 & is.character(x)) {
     return(stringr::str_length(x))
@@ -170,57 +172,6 @@ contains_IM <- function(haystack, needle) {
 }
 
 
-#' Extract characters from string by index
-#'
-#' Equivalent of .Range() in Insight Maker
-#'
-#' @param string String to extract from
-#' @param idxs Integer or vector of integers indexing which characters to extract
-#'
-#' @return Substring
-#' @family custom
-#' @export
-#'
-#' @examples
-#' substr_i("InsightMaker", 3) # "s"
-#' substr_i("InsightMaker", c(1, 5, 10)) # "Igk"
-substr_i <- function(string, idxs) {
-  paste0(strsplit(string, "")[[1]][idxs], collapse = "")
-}
-
-
-#' Filter vector based on logical function
-#'
-#' Equivalent of .Filter() in Insight Maker when using arguments x and key in the filter function
-#'
-#' @param y Named vector
-#' @param condition_func Function which takes arguments x and key and outputs a boolean value
-#'
-#' @return Vector with elements which meet condition_func
-#' @family custom
-#' @export
-#'
-#' @examples
-#' filter_IM(c(a = 1, b = 2, c = 3), function(x, key) {
-#'   x > 1
-#' })
-#' # b c
-#' # 2 3
-#' filter_IM(c(a = 1, b = 2, c = 3), function(x, key) {
-#'   x > 1 & key != "b"
-#' })
-#' # c
-#' # 3
-filter_IM <- function(y, condition_func) {
-  purrr::map2(y, names(y), function(x, key) {
-    if (condition_func(x, key)) {
-      return(x)
-    }
-  }) |>
-    purrr::compact() |>
-    unlist()
-}
-
 
 
 #' Create ramp function
@@ -245,7 +196,7 @@ filter_IM <- function(y, condition_func) {
 #'   build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
 #' \dontshow{
-#' sfm <- sim_specs(sfm, save_at = .1)
+#' sfm <- sim_specs(sfm, save_at = 1, dt = .1)
 #' }
 #'
 #' sim <- simulate(sfm, only_stocks = FALSE)
@@ -308,6 +259,10 @@ ramp <- function(start, finish, height = 1) {
 #'   build("a", "stock") |>
 #'   build("input", "constant", eqn = "pulse(5, 2, 1)") |>
 #'   build("inflow", "flow", eqn = "input(t)", to = "a")
+#'
+#' \dontshow{
+#' sfm <- sim_specs(sfm, dt = .1)
+#' }
 #'
 #' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
@@ -379,6 +334,10 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL) {
 #'   build("a", "stock") |>
 #'   build("input", "constant", eqn = "step(50, 5)") |>
 #'   build("inflow", "flow", eqn = "input(t)", to = "a")
+#'
+#' \dontshow{
+#' sfm <- sim_specs(sfm, dt = .1)
+#' }
 #'
 #' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
@@ -466,9 +425,9 @@ nonnegative <- function(x) {
 
 
 
-#' Remainder
+#' Remainder and modulus
 #'
-#' Note that modulus and remainder are not the same in case either a or b is negative. If you work with negative numbers, modulus is always non-negative (it matches the sign of the divisor).
+#' Remainder and modulus operators. The modulus and remainder are not the same in case either a or b is negative. If you work with negative numbers, modulus is always non-negative (it matches the sign of the divisor).
 #'
 #' @param a Dividend
 #' @param b Divisor
@@ -476,12 +435,15 @@ nonnegative <- function(x) {
 #' @returns Remainder
 #' @family custom
 #' @export
+#' @rdname rem_mod
 #'
 #' @examples
+#' # Modulus and remainder are the same when a and b are positive
 #' a <- 7
 #' b <- 3
 #' rem(a, b)
 #' mod(a, b)
+#' # Modulus and remainder are NOT when either a or b is negative
 #' a <- -7
 #' b <- 3
 #' rem(a, b)
@@ -490,80 +452,33 @@ nonnegative <- function(x) {
 #' b <- -3
 #' rem(a, b)
 #' mod(a, b)
+#' # Modulus and remainder are the same when both a and b are negative
 #' a <- -7
 #' b <- -3
 #' rem(a, b)
 #' mod(a, b)
+#'
+#' # Alternative way of computing the remainder:
+#' a %REM% b
 rem <- function(a, b) {
   return(a - b * trunc(a / b))
 }
 
 
-#' Modulus
-#'
-#' Note that modulus and remainder are not the same in case either a or b is negative. If you work with negative numbers, modulus is always non-negative (it matches the sign of the divisor).
-#'
-#' @inheritParams rem
-#'
-#' @returns Modulus
-#' @family custom
+
 #' @export
-#'
-#' @examples
-#'
-#' # mod(a, b) is the same as a %% b
-#'
-#' a <- 7
-#' b <- 3
-#' rem(a, b)
-#' mod(a, b)
-#' a <- -7
-#' b <- 3
-#' rem(a, b)
-#' mod(a, b)
-#' a <- 7
-#' b <- -3
-#' rem(a, b)
-#' mod(a, b)
-#' a <- -7
-#' b <- -3
-#' rem(a, b)
-#' mod(a, b)
+#' @rdname rem_mod
 mod <- function(a, b) {
   return(a %% b)
 }
 
 
 
-#' Remainder operator
-#'
-#' This is a wrapper for the rem() function. It is used to match Insight Maker's mod, which is the remainder operator.
-#'
-#' @inheritParams rem
-#'
-#' @returns Remainder
-#' @family custom
+
 #' @export
-#'
-#' @examples
-#' -7 %REM% 3
+#' @rdname rem_mod
 `%REM%` <- function(a, b) {
   rem(a, b)
-}
-
-
-#' Shuffle vector
-#'
-#' @param x Vector to shuffle
-#'
-#' @returns Shuffled x
-#' @family custom
-#' @export
-#'
-#' @examples
-#' shuffle(1:10)
-shuffle <- function(x) {
-  return(sample(x, length(x), replace = FALSE))
 }
 
 

@@ -195,7 +195,9 @@ test_that("converting functions to Julia with named arguments", {
 
 
 test_that("custom function definitons work", {
-  sfm <- xmile() |> macro("func", "function(x, y = 1, z = 2) x + y")
+  sfm <- xmile() |>
+    macro("func", "function(x, y = 1, z = 2) x + y") |>
+    sim_specs(dt = 0.1, stop = 10)
   expect_equal(sfm$macro$func$eqn_julia, "function func(x, y = 1.0, z = 2.0)\n x .+ y\nend")
 
   # Is the function now usable?

@@ -7,13 +7,13 @@ test_that("use_julia() works", {
   # .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] = TRUE
   #
 
-  expect_no_error(use_julia(stop = TRUE))
-  expect_no_warning(use_julia(stop = TRUE))
-  expect_no_message(use_julia(stop = TRUE))
+  expect_no_error(expect_no_warning(expect_no_message(use_julia(stop = TRUE))))
 
-  expect_no_error(use_julia())
-  expect_no_warning(use_julia())
-  expect_no_message(use_julia())
+  expect_false(julia_setup_ok())
+
+  expect_no_error(expect_no_warning(expect_message(use_julia())))
+
+  expect_true(julia_setup_ok())
 
   expect_no_error(use_julia(stop = TRUE))
 

@@ -74,11 +74,12 @@ sdbuildR::use_julia()
   them to be non-negative.
 
 - sdbuildR does not support vectorized operations, destructuring
-  assignment, or variable constraints.
+  assignment, or minimum and maximum constraints for variables.
 
-- sdbuildR does not support the Insight Maker functions Pause(), Fix(),
-  Map(), Filter(), and Repeat(). A message is issued if any of these are
-  detected.
+- sdbuildR does not support the Insight Maker functions Stop(),
+  Prompt(), Confirm(), Pause(), Fix(), Map(), Filter(), and Repeat(),
+  nor the delay and past functions. A message is issued if any of these
+  are detected.
 
 ## Other System Dynamics software
 

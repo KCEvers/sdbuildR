@@ -56,7 +56,6 @@ simulate <- function(sfm,
   }
 
   if (tolower(sfm[["sim_specs"]][["language"]]) == "julia") {
-
     return(simulate_julia(sfm,
       keep_nonnegative_flow = keep_nonnegative_flow,
       keep_nonnegative_stock = keep_nonnegative_stock,
@@ -140,7 +139,13 @@ detect_undefined_var <- function(sfm) {
       lapply(seq_along(x), function(j) {
         y <- x[[j]]
         prop <- names(x)[j]
-        paste0("- ", name, "$", prop, ": ", paste0(unname(y), collapse = ", "))
+        # paste0("- ", name, "$", prop, ": ", paste0(unname(y), collapse = ", "))
+        paste0(
+          "- The variable", ifelse(length(y) > 1, "s ", " "),
+          paste0(paste0("'", unname(y), "'"), collapse = ", "),
+          ifelse(length(y) > 1, " are ", " is "), "referenced in ",
+          name, "$", prop, " but hasn't been defined.\n"
+        )
       })
     }) |>
       unlist() |>
@@ -149,7 +154,8 @@ detect_undefined_var <- function(sfm) {
     return(list(
       issue = TRUE,
       msg = paste0(c(
-        "The properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes.",
+        # "The properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes.",
+        "Please define these missing variables or correct any spelling mistakes:",
         paste0(missing_ref_format, collapse = "\n")
       ), collapse = "\n")
     ))
@@ -309,6 +315,7 @@ find_newly_defined_var <- function(eqn) {
 #' Find which other variables each variable is dependent on.
 #'
 #' @inheritParams build
+#' @param reverse If FALSE, list for each variable X which variables Y it depends on for its equation definition. If TRUE, reverse dependencies, such that for each variable X, it lists what other variables Y depend on X.
 #'
 #' @return Vector of dependencies (variable names in equation)
 #' @family build
@@ -318,10 +325,55 @@ find_newly_defined_var <- function(eqn) {
 #' sfm <- xmile("SIR")
 #' find_dependencies(sfm)
 #'
-find_dependencies <- function(sfm) {
-  find_dependencies_(sfm, eqns = NULL, only_var = TRUE, only_model_var = TRUE)
+find_dependencies <- function(sfm, reverse = FALSE) {
+  dep <- find_dependencies_(sfm, eqns = NULL, only_var = TRUE, only_model_var = TRUE)
+
+  if (reverse) {
+    dep <- reverse_dep(dep)
+  }
+
+  return(dep)
 }
 
+
+
+#' Reverse dependencies
+#'
+#' @param dep List of dependencies
+#'
+#' @returns List with reversed dependencies
+#' @noRd
+reverse_dep <- function(dep) {
+  reverse_dep <- list()
+
+  # Initialize empty lists for all variables that appear as dependencies
+  all_dependencies <- unique(unlist(dep))
+  for (var in all_dependencies) {
+    reverse_dep[[var]] <- character(0)
+  }
+
+  # Also initialize for variables that have dependencies (they might not be dependencies themselves)
+  for (var in names(dep)) {
+    if (!var %in% names(reverse_dep)) {
+      reverse_dep[[var]] <- character(0)
+    }
+  }
+
+  # Build reverse mapping
+  for (target_var in names(dep)) {
+    source_vars <- dep[[target_var]]
+    if (length(source_vars) > 0) {
+      for (source_var in source_vars) {
+        reverse_dep[[source_var]] <- c(reverse_dep[[source_var]], target_var)
+      }
+    }
+  }
+
+  # Remove duplicates (shouldn't happen but just in case)
+  reverse_dep <- lapply(reverse_dep, unique)
+
+  return(reverse_dep)
+}
 
 
 #' Find dependencies in equation (only for package)
@@ -785,10 +837,6 @@ ensemble <- function(sfm,
     n_conditions <- 1
   }
 
-  # if (!julia_setup_ok()){
-  #   stop("The Julia environment has not been set up yet! Run use_julia().")
-  # }
-
   if (verbose) {
     message(paste0(
       "Running a total of ", n * n_conditions,
@@ -832,12 +880,16 @@ ensemble <- function(sfm,
 
 
   # Get output filepaths
-  ensemble_pars[["filepath_df"]] <- c("df" = get_tempfile(fileext = ".csv"),
-                                      "constants" = get_tempfile(fileext = ".csv"),
-                                      "init" = get_tempfile(fileext = ".csv"))
-  ensemble_pars[["filepath_summary"]] <- c("df" = get_tempfile(fileext = ".csv"),
-                                      "constants" = get_tempfile(fileext = ".csv"),
-                                      "init" = get_tempfile(fileext = ".csv"))
+  ensemble_pars[["filepath_df"]] <- c(
+    "df" = get_tempfile(fileext = ".csv"),
+    "constants" = get_tempfile(fileext = ".csv"),
+    "init" = get_tempfile(fileext = ".csv")
+  )
+  ensemble_pars[["filepath_summary"]] <- c(
+    "df" = get_tempfile(fileext = ".csv"),
+    "constants" = get_tempfile(fileext = ".csv"),
+    "init" = get_tempfile(fileext = ".csv")
+  )
   filepath <- get_tempfile(fileext = ".jl")
 
   # Compile script
@@ -859,11 +911,11 @@ ensemble <- function(sfm,
       use_julia()
 
       # Set Julia BINDIR
-      old_option = Sys.getenv("JULIA_BINDIR", unset = NA)
+      old_option <- Sys.getenv("JULIA_BINDIR", unset = NA)
       Sys.setenv("JULIA_BINDIR" = .sdbuildR_env[["JULIA_BINDIR"]])
 
       on.exit({
-        if (is.na(old_option)){
+        if (is.na(old_option)) {
           Sys.unsetenv("JULIA_BINDIR")
         } else {
           Sys.setenv("JULIA_BINDIR" = old_option)
@@ -908,8 +960,8 @@ ensemble <- function(sfm,
       # init <- JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_name"]])
       # colnames(init) <- c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_names"]]))
 
-      constants = list()
-      init = list()
+      constants <- list()
+      init <- list()
 
       # Read the simulation results
       if (return_sims) {

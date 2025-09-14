@@ -23,8 +23,46 @@ test_that("xmile() works", {
 })
 
 
+test_that("type in build()", {
+  sfm <- xmile()
+  expect_error(build(sfm, "a", "stockss"), "type needs to be one of 'stock', 'flow', 'constant', 'aux', or 'gf'")
+
+  sfm1 <- build(sfm, "a", "stocks")
+  expect_equal(as.data.frame(sfm1)[["name"]], "a")
+
+  sfm1 <- build(sfm, "a", "flows")
+  expect_equal(as.data.frame(sfm1)[["name"]], "a")
+
+  sfm1 <- build(sfm, "a", "auxiliary")
+  expect_equal(as.data.frame(sfm1)[["name"]], "a")
+})
+
+
+test_that("modify to and from", {
+  sfm <- xmile("SIR")
+
+  sfm2 <- expect_no_error(expect_no_message(build(sfm, "Infection_Rate", from = "")))
+  expect_equal(sfm2[["model"]][["variables"]][["flow"]][["Infection_Rate"]][["from"]], "")
+
+  sfm2 <- expect_no_error(expect_no_message(build(sfm, "Infection_Rate", from = NULL)))
+  expect_equal(sfm2[["model"]][["variables"]][["flow"]][["Infection_Rate"]][["from"]], "")
+
+  sfm2 <- expect_no_error(expect_no_message(build(sfm, "Infection_Rate", from = NA)))
+  expect_equal(sfm2[["model"]][["variables"]][["flow"]][["Infection_Rate"]][["from"]], "")
+
+  sfm2 <- expect_no_error(expect_no_message(build(sfm, "Recovery_Rate", to = "")))
+  expect_equal(sfm2[["model"]][["variables"]][["flow"]][["Recovery_Rate"]][["to"]], "")
+
+  sfm2 <- expect_no_error(expect_no_message(build(sfm, "Recovery_Rate", to = NULL)))
+  expect_equal(sfm2[["model"]][["variables"]][["flow"]][["Recovery_Rate"]][["to"]], "")
+
+  sfm2 <- expect_no_error(expect_no_message(build(sfm, "Recovery_Rate", to = NA)))
+  expect_equal(sfm2[["model"]][["variables"]][["flow"]][["Recovery_Rate"]][["to"]], "")
+})
+
+
 test_that("plot(sfm) works", {
-  sfm = xmile("SIR")
+  sfm <- xmile("SIR")
   expect_no_error(plot(sfm))
 
   # Plot without stocks or flows throws error
@@ -35,8 +73,6 @@ test_that("plot(sfm) works", {
 
   # Plot with only one flow works
   expect_no_error(xmile() |> build("a", "flow"))
-
-
 })
 
 
@@ -125,6 +161,7 @@ test_that("sim_specs() works", {
 
 
 test_that("flow cannot have same stock as to and from", {
+
   sfm <- xmile() |> build("a", "stock")
   expect_error(
     sfm |> build("b", "flow", to = "a", from = "a", eqn = "1"),
@@ -157,6 +194,28 @@ test_that("flow cannot have same stock as to and from", {
     sfm |> build("b", to = "a"),
     "b is flowing to and from the same variable \\(a\\)"
   )
+
+  # Flow cannot flow to itself
+  sfm <- xmile()
+  expect_error(
+    sfm |> build("b", "flow", to = "b"),
+    "A flow cannot flow to itself"
+  )
+  expect_error(
+    sfm |> build("b", "flow", from = "b"),
+    "A flow cannot flow from itself"
+  )
+  expect_error(
+    sfm |> build(c("a", "b", "c"), "flow", to = "b"),
+    "A flow cannot flow to itself"
+  )
+  expect_error(
+    sfm |> build(c("a", "b", "c"), "flow", from = "b"),
+    "A flow cannot flow from itself"
+  )
+  expect_no_error(
+    sfm |> build(c("a", "b", "c"), "flow", to = "d"))
+
 })
 
 
@@ -222,8 +281,7 @@ test_that("change_name and change_type in build()", {
 
   # Check build() with change_type; are the properties copied?
   sfm <- xmile() |> build("K", "aux", eqn = 100, label = "K", units = "kg")
-  expect_no_error(sfm |> build("K", change_type = "stock"))
-  expect_no_message(sfm |> build("K", change_type = "stock"))
+  expect_no_error(expect_no_message(sfm |> build("K", change_type = "stock")))
   sfm <- sfm |> build("K", change_type = "stock")
   expect_equal(sfm$model$variables$aux$K, NULL)
   expect_equal(sfm$model$variables$stock$K$eqn, "100")
@@ -240,8 +298,7 @@ test_that("change_name and change_type in build()", {
   expect_equal(sfm$model$variables$flow[["H_new"]], NULL)
   expect_equal(sfm$model$variables$aux[["H"]], NULL)
   expect_equal(sfm$model$variables$aux$H_new$eqn, "100")
-  expect_no_error(as.data.frame(sfm))
-  expect_no_message(as.data.frame(sfm))
+  expect_no_error(expect_no_message(as.data.frame(sfm)))
   df <- as.data.frame(sfm)
   expect_equal(as.data.frame(sfm)$name, "H_new")
   expect_equal(as.data.frame(sfm)$type, "aux")
@@ -250,13 +307,10 @@ test_that("change_name and change_type in build()", {
   sfm <- xmile() |>
     build("G", "stock") |>
     build("to_G", "flow", to = "G")
-  expect_message(
-    {
-      sfm |> build("G", change_type = "aux")
-    },
-    "to_G is flowing to a variable which is not a stock"
+  expect_warning(sfm |> build("G", change_type = "aux"),
+    "to_G is flowing to a variable which is not a stock \\(G\\)"
   )
-  suppressMessages({
+  suppressWarnings({
     sfm <- sfm |> build("G", change_type = "aux")
   })
   expect_equal(sfm$model$variables$flow$to_G$to, "")
@@ -291,29 +345,27 @@ test_that("change_name and change_type in build()", {
   expect_equal(sort(df$name), c("drugs", "frustration"))
   expect_equal(sort(df$label), c("Predator", "Prey")) # Label is unchanged
   df <- as.data.frame(sfm)
-  expect_equal(grepl("frustration", df[df$name == "predator_births", "eqn"]), TRUE)
-  expect_equal(grepl("prey", df[df$name == "predator_births", "eqn"]), FALSE)
+  expect_true(grepl("frustration", df[df$name == "predator_births", "eqn"]))
+  expect_false(grepl("prey", df[df$name == "predator_births", "eqn"]))
 
-  expect_equal(grepl("drugs", df[df$name == "predator_deaths", "eqn"]), TRUE)
-  expect_equal(grepl("predator", df[df$name == "predator_deaths", "eqn"]), FALSE)
+  expect_true(grepl("drugs", df[df$name == "predator_deaths", "eqn"]))
+  expect_false(grepl("predator", df[df$name == "predator_deaths", "eqn"]))
 
-  expect_equal(grepl("frustration", df[df$name == "prey_births", "eqn"]), TRUE)
-  expect_equal(grepl("prey", df[df$name == "prey_births", "eqn"]), FALSE)
+  expect_true(grepl("frustration", df[df$name == "prey_births", "eqn"]))
+  expect_false(grepl("prey", df[df$name == "prey_births", "eqn"]))
 
-  expect_equal(grepl("frustration", df[df$name == "prey_deaths", "eqn"]), TRUE)
-  expect_equal(grepl("prey", df[df$name == "prey_deaths", "eqn"]), FALSE)
+  expect_true(grepl("frustration", df[df$name == "prey_deaths", "eqn"]))
+  expect_false(grepl("prey", df[df$name == "prey_deaths", "eqn"]))
 
-  expect_equal(grepl("drugs", df[df$name == "prey_deaths", "eqn"]), TRUE)
-  expect_equal(grepl("predator", df[df$name == "prey_deaths", "eqn"]), FALSE)
+  expect_true(grepl("drugs", df[df$name == "prey_deaths", "eqn"]))
+  expect_false(grepl("predator", df[df$name == "prey_deaths", "eqn"]))
 
 
   # Check that no message or warning is thrown
   sfm <- xmile() |>
     build("a", "aux")
 
-  expect_no_error(sfm |> build("a", change_type = "flow", from = "b"))
-  expect_no_warning(sfm |> build("a", change_type = "flow", from = "b"))
-  expect_no_message(sfm |> build("a", change_type = "flow", from = "b"))
+  expect_no_error(expect_no_warning(expect_no_message(sfm |> build("a", change_type = "flow", from = "b"))))
 
   # Check that label is retained
   sfm <- sfm |> build("a", change_type = "flow", label = "B")
@@ -321,11 +373,24 @@ test_that("change_name and change_type in build()", {
 })
 
 
+test_that("from and to can only be stocks", {
+
+  sfm <- expect_no_error(expect_no_message(expect_no_warning(xmile() |> build("a", "flow", to = "b"))))
+  sfm = expect_warning(sfm |> build("b", "flow"), "a is flowing to a variable which is not a stock \\(b\\)! Removing b from `to`")
+  expect_null(sfm[["model"]][["variables"]][["flow"]][["a"]][["to"]])
+
+  sfm <- expect_no_error(expect_no_message(expect_no_warning(xmile() |> build("a", "flow", from = "b"))))
+  sfm = expect_warning(sfm |> build("b", "flow"), "a is flowing from a variable which is not a stock \\(b\\)! Removing b from `from`")
+  expect_null(sfm[["model"]][["variables"]][["flow"]][["a"]][["from"]])
+
+  expect_error(xmile() |> build("a", "flow", from = "b", to = "b"),
+               "A flow cannot flow to and from the same stock")
+})
+
 
 test_that("erase in build() works", {
   sfm <- xmile("Lorenz")
-  expect_no_error(sfm |> build("x", erase = TRUE))
-  expect_no_message(sfm |> build("x", erase = TRUE))
+  expect_no_error(expect_no_message(sfm |> build("x", erase = TRUE)))
   sfm <- sfm |> build("x", erase = TRUE)
   expect_equal(sfm$model$variables$stock$x, NULL)
   expect_equal(sfm$model$variables$flow$dx_dt$to, NULL)
@@ -340,8 +405,7 @@ test_that("erase in build() works", {
   )
 
   # erase while specifying type and other properties; these should be ignored
-  expect_no_error(sfm |> build("x", "stock", eqn = "10", units = "kg", erase = TRUE))
-  expect_no_message(sfm |> build("x", "stock", eqn = "10", units = "kg", erase = TRUE))
+  expect_no_error(expect_no_message(sfm |> build("x", "stock", eqn = "10", units = "kg", erase = TRUE)))
   sfm <- sfm |> build("sigma", "constant", eqn = "10", units = "kg", erase = TRUE)
   expect_equal(sfm$model$variables$constant$sigma, NULL)
   df <- as.data.frame(sfm)
@@ -362,29 +426,29 @@ test_that("inappropriate properties throw warning", {
   expect_warning(
     xmile() |> build(c("a", "b", "c"), c("aux", "stock", "flow"),
       eqn = 1,
-      from = "b"
+      from = "d"
     ),
     "These properties are not appropriate for all specified types \\(aux, stock, flow\\):\\n- from\nThese will be ignored"
   )
   sfm <- suppressWarnings(xmile() |> build(c("a", "b", "c"),
     c("aux", "stock", "flow"),
     eqn = 1,
-    from = "b"
+    from = "d"
   ))
-  expect_equal(sfm$model$variables$aux$a$from, NULL)
-  expect_equal(sfm$model$variables$stock$b$from, NULL)
-  expect_equal(sfm$model$variables$flow$c$from, "b")
+  expect_null(sfm$model$variables$aux$a$from)
+  expect_null(sfm$model$variables$stock$b$from)
+  expect_equal(sfm$model$variables$flow$c$from, "d")
   df <- data.frame(sfm)
-  expect_equal(is.na(df[df$name == "a", "from"]), TRUE)
-  expect_equal(is.na(df[df$name == "b", "from"]), TRUE)
-  expect_equal(df[df$name == "c", "from"], "b")
+  expect_true(is.na(df[df$name == "a", "from"]))
+  expect_true(is.na(df[df$name == "b", "from"]))
+  expect_equal(df[df$name == "c", "from"], "d")
 })
 
 
 test_that("Julia equations are added in build()", {
   # Ensure Julia equations are added immediately
   sfm <- xmile() |> build("c", "aux", eqn = "a")
-  expect_equal("eqn_julia" %in% names(sfm$model$variables$aux$c), TRUE)
+  expect_true("eqn_julia" %in% names(sfm$model$variables$aux$c))
   expect_equal(sfm$model$variables$aux$c$eqn_julia, "a")
 
   # Ensure Julia equation is updated with changed equation
@@ -458,13 +522,14 @@ test_that("vectorized adding variables works in build()", {
 
 test_that("flows always have a from and to property", {
   sfm <- xmile() |> build("a", "flow")
-  expect_equal("from" %in% names(sfm$model$variables$flow$a), TRUE)
-  expect_equal("to" %in% names(sfm$model$variables$flow$a), TRUE)
+  expect_true("from" %in% names(sfm$model$variables$flow$a))
+  expect_true("to" %in% names(sfm$model$variables$flow$a))
 
-  sfm <- xmile() |> build("a", "flow", to = "a")
-  expect_equal("from" %in% names(sfm$model$variables$flow$a), TRUE)
-  expect_equal("to" %in% names(sfm$model$variables$flow$a), TRUE)
+  sfm <- xmile() |> build("a", "flow", to = "b")
+  expect_true("from" %in% names(sfm$model$variables$flow$a))
+  expect_true("to" %in% names(sfm$model$variables$flow$a))
 })
+
 
 test_that("build() works", {
   # Empty build() gives error
@@ -540,9 +605,13 @@ test_that("build() works", {
   # Ensure equation with missing brackets throws useful error
   expect_error(xmile() |> build("c", "aux", eqn = "a + (1, "), "Parsing equation of c failed")
 
-  # # Multiple equations but only one name should throw error
-  # expect_error({xmile() |> build("a", eqn = c("1", "2"))},
-  # "The length of eqn =  must be either 1 or equal to the length of name = 'a'.")
+  # Multiple equations but only one name should throw error
+  expect_error(
+    {
+      xmile() |> build("a", "constant", eqn = c("1", "2"))
+    },
+    "The length of eqn = 1, 2 must be either 1 or equal to the length of name = a."
+  )
 })
 
 
@@ -574,8 +643,7 @@ test_that("model_units() works", {
   result <- names(sfm$model_units)
   expected <- "abc"
   expect_equal(result, expected)
-  expect_no_error(as.data.frame(sfm, type = "model_units"))
-  expect_no_message(as.data.frame(sfm, type = "model_units"))
+  expect_no_error(expect_no_message(as.data.frame(sfm, type = "model_units")))
   expect_equal(as.data.frame(sfm, type = "model_units")$name, "abc")
   expect_equal(as.data.frame(sfm, type = "model_units")$eqn, "0")
 
@@ -613,7 +681,7 @@ test_that("model_units() works", {
   expected <- c("abc", "def")
   expect_equal(result, expected)
 
-  result <- purrr::map_vec(sfm$model_units, "eqn") |> unname()
+  result <- unname(unlist(lapply(sfm$model_units, `[[`, "eqn")))
   expected <- c("1", "1")
   expect_equal(result, expected)
 
@@ -645,8 +713,7 @@ test_that("model_units() works", {
 
 test_that("find_dependencies works", {
   sfm <- xmile("SIR")
-  expect_no_error(find_dependencies(sfm))
-  expect_no_message(find_dependencies(sfm))
+  expect_no_error(expect_no_message(find_dependencies(sfm)))
 })
 
 
@@ -710,8 +777,7 @@ test_that("erase in model_units() works", {
 test_that("change_name in model_units() works", {
   # Change name
   sfm <- xmile() |> model_units("abc", eqn = "def")
-  expect_no_error(sfm |> model_units("abc", change_name = "xyz"))
-  expect_no_message(sfm |> model_units("abc", change_name = "xyz"))
+  expect_no_error(expect_no_message(sfm |> model_units("abc", change_name = "xyz")))
   sfm <- sfm |> model_units("abc", change_name = "xyz")
   expect_equal(names(sfm$model_units), "xyz")
   expect_equal(sfm$model_units$xyz$eqn, "def")
@@ -793,63 +859,26 @@ test_that("create_R_names() works", {
 
 test_that("debugger() works", {
   expect_message(
-    {
-      debugger(xmile("SIR"))
-    },
+    debugger(xmile("SIR")),
     "No problems detected"
   )
-  expect_message(
-    {
-      debugger(xmile("SIR"))
-    },
-    "These variables have an equation of 0:\\n- Recovered"
-  )
-  expect_message(
-    {
-      debugger(xmile("predator-prey"))
-    },
-    "No problems detected!"
-  )
-  expect_message(
-    {
-      debugger(xmile("logistic_model"))
-    },
-    "No problems detected!"
-  )
-  expect_message(
-    {
-      debugger(xmile("Crielaard2022"))
-    },
-    "No problems detected!"
-  )
+  expect_message(debugger(xmile("SIR")), "These variables have an equation of 0:\\n- Recovered")
+  expect_message(debugger(xmile("predator-prey")), "No problems detected!")
+  expect_message(debugger(xmile("logistic_model")), "No problems detected!")
+  expect_message(debugger(xmile("Crielaard2022")), "No problems detected!")
 
   # Detect absence of stocks or flows
-  expect_message(
-    {
-      debugger(xmile())
-    },
-    "Your model has no stocks"
-  )
+  expect_message(debugger(xmile()), "Your model has no stocks")
 
   # Detect stocks without inflows or outflows
-  expect_message(
-    {
-      debugger(xmile() |> build("Prey", "stock"))
-    },
-    "Your model has no flows."
-  )
+  expect_message(debugger(xmile() |> build("Prey", "stock")), "Your model has no flows.")
 
   # Detect one stock without inflows or outflows
   sfm <- xmile() |>
     build("Prey", "stock") |>
     build("Predator", "stock") |>
     build("births", "flow", eqn = "0.1 * Predator", to = "Prey")
-  expect_message(
-    {
-      debugger(sfm)
-    },
-    "These stocks are not connected to any flows:\\n- Predator"
-  )
+  expect_message(debugger(sfm), "These stocks are not connected to any flows:\\n- Predator")
 
   # Detect circularities in equation definitions
   expect_message(
@@ -867,11 +896,9 @@ test_that("debugger() works", {
     build("K", change_type = "stock")
   expect_message(debugger(sfm), "These stocks are not connected to any flows:\\n- K")
 
-
-
-  # **to do: dependency on itself
-  # sfm = xmile() |> build("a", "stock", eqn = "cos(a)")
-  # sim = simulate(sfm)
+  # Dependency on itself
+  sfm <- xmile() |> build("a", "stock", eqn = "cos(a)")
+  expect_error(simulate(sfm), "The variable 'a' is referenced in a\\$eqn but hasn't been defined")
 })
 
 
@@ -879,7 +906,7 @@ test_that("detect_undefined_var() works", {
   # Check that undefined variables are detected
   sfm <- xmile() |> build("a", "aux", eqn = "b + c")
   out <- detect_undefined_var(sfm)
-  expect_equal(grepl("The properties below contain references to undefined variables.\nPlease define the missing variables or correct any spelling mistakes", out$msg), TRUE)
+  expect_equal(grepl("Please define these missing variables or correct any spelling mistakes", out$msg), TRUE)
 
   # Check that no error is thrown for defined variables
   sfm <- xmile() |>
@@ -916,12 +943,13 @@ test_that("get_build_code() works", {
 
   for (s in c("SIR", "Crielaard2022")) {
     # Replicate with get_build_code
-    sfm <- xmile(s) |> sim_specs(save_at = 1)
+    sfm <- xmile(s) |> sim_specs(save_at = 1, start = 0, stop = 10)
 
     if (s == "Crielaard2022") {
       sfm <- sfm |>
         build(c("Food_intake", "Hunger", "Compensatory_behaviour"),
-              eqn = c(.5, .3, .1))
+          eqn = c(.5, .3, .1)
+        )
     }
 
     sim1 <- simulate(sfm)
@@ -929,8 +957,7 @@ test_that("get_build_code() works", {
 
     # Create a new environment to collect variables
     envir <- new.env()
-    expect_no_error(eval(parse(text = script), envir = envir))
-    expect_no_message(eval(parse(text = script), envir = envir))
+    expect_no_error(expect_no_message(eval(parse(text = script), envir = envir)))
     sfm2 <- envir[["sfm"]]
     sim2 <- simulate(sfm2)
     expect_identical(sim1$df$value, sim2$df$value)
@@ -948,12 +975,12 @@ test_that("as.data.frame(sfm) works", {
   sfm <- sfm |> build("a", "aux", eqn = "10")
   df <- as.data.frame(sfm)
   expect_equal(class(df), "data.frame")
-  expect_equal(all(c("type", "name", "eqn", "label", "units") %in% names(df)), TRUE)
-  expect_equal(any(c("intermediary", "func") %in% names(df)), FALSE)
+  expect_true(all(c("type", "name", "eqn", "label", "units") %in% names(df)))
+  expect_false(any(c("intermediary", "func") %in% names(df)))
 
   # Check that it works with templates
   sfm <- xmile("predator-prey")
-  expect_equal(nrow(as.data.frame(sfm)) > 0, TRUE)
+  expect_true(nrow(as.data.frame(sfm)) > 0)
 
   # Specify type
   sfm <- xmile("predator-prey")
@@ -992,8 +1019,8 @@ test_that("as.data.frame(sfm) works", {
     model_units("meal", eqn = "700kcal")
 
   df <- as.data.frame(sfm)
-  expect_equal(all(df$type == "model_units"), TRUE)
-  expect_equal(all(c("BMI", "BAC", "bottle", "meal") %in% df$name), TRUE)
+  expect_true(all(df$type == "model_units"))
+  expect_true(all(c("BMI", "BAC", "bottle", "meal") %in% df$name))
   expect_equal(as.data.frame(sfm, name = "BMI")$name, "BMI")
   expect_equal(names(as.data.frame(sfm, properties = "eqn")), c("type", "name", "eqn"))
   expect_equal(nrow(as.data.frame(sfm, type = c("gf"))), 0)
@@ -1002,8 +1029,7 @@ test_that("as.data.frame(sfm) works", {
   sfm <- xmile() |>
     model_units("abc") |>
     model_units("abc", erase = TRUE)
-  expect_no_error(as.data.frame(sfm, type = "model_units"))
-  expect_no_message(as.data.frame(sfm, type = "model_units"))
+  expect_no_error(expect_no_message(as.data.frame(sfm, type = "model_units")))
 
   # Works with macros
   sfm <- xmile() |>
@@ -1012,8 +1038,8 @@ test_that("as.data.frame(sfm) works", {
     macro("c")
   expect_no_error(as.data.frame(sfm))
   df <- as.data.frame(sfm)
-  expect_equal(all(df$type == "macro"), TRUE)
-  expect_equal(all(c("a", "b", "c") %in% df$name), TRUE)
+  expect_true(all(df$type == "macro"))
+  expect_true(all(c("a", "b", "c") %in% df$name))
   expect_equal(as.data.frame(sfm, name = "a")$name, "a")
   expect_equal(names(as.data.frame(sfm, properties = "eqn")), c("type", "name", "eqn"))
   expect_equal(nrow(as.data.frame(sfm, type = c("aux"))), 0)
@@ -1035,8 +1061,10 @@ test_that("as.data.frame(sfm) works", {
 
 
 test_that("summary() works", {
-  ans <- summary(xmile("SIR"))
-  expect_equal(length(ans) > 0, TRUE)
+  sfm <- xmile("SIR")
+  ans <- summary(sfm)
+  expect_true(length(ans) > 0)
+  expect_no_error(expect_no_warning(print(summary(sfm))))
 })
 
 
@@ -1116,7 +1144,6 @@ test_that("macro() works", {
   expect_equal(sfm$macro$G$eqn, "function(x) 1 + x")
   expect_equal(sfm$macro$G$eqn_julia, "function G(x)\n 1.0 .+ x\nend")
   expect_equal(sfm$macro$F1, NULL)
-
 })
 
 
@@ -1128,4 +1155,23 @@ test_that("clean_language works", {
   expect_equal(clean_language(" julia"), "Julia")
   expect_equal(clean_language("jl"), "Julia")
   expect_error(clean_language("python"), "The language python is not one of the languages available in sdbuildR")
+})
+
+
+test_that("add_from_df() works", {
+  df <- data.frame(
+    type = c("stock", "flow", "flow", "constant", "constant"),
+    name = c("X", "inflow", "outflow", "r", "K"),
+    eqn = c(.01, "r * X", "r * X^2 / K", 0.1, 1),
+    label = c("Population size", "Births", "Deaths", "Growth rate", "Carrying capacity"),
+    to = c(NA, "X", NA, NA, NA),
+    from = c(NA, NA, "X", NA, NA)
+  )
+
+  sfm <- xmile()
+  sfm <- expect_no_error(expect_no_message(add_from_df(sfm, df = df)))
+  expect_equal(sort(get_names(sfm)[["name"]]), sort(c("X", "inflow", "outflow", "r", "K")))
+  expect_null(sfm[["model"]][["variables"]][["stock"]][["X"]][["to"]])
+  expect_equal(sfm[["model"]][["variables"]][["flow"]][["inflow"]][["to"]], "X")
+  expect_no_error(expect_no_message(simulate(sfm)))
 })

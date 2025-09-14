@@ -28,37 +28,37 @@ $$
 $$
 
 $$
-\frac{\text{tasks}}{hr} = \frac{mg}{hr} \cdot \frac{\text{tasks}}{mg}
+\frac{\text{tasks}}{\text{hr}} = \frac{\text{mg}}{\text{hr}} \cdot \frac{\text{tasks}}{\text{mg}}
 $$
 
 
 Dimensional consistency is also required between stocks and flows. A stock can only be connected to flows with a matching unit measured over a period of time. For example, a stock with the unit kilocalories can be connected to flows with the unit kilocalories per hour. This is dimensionally consistent, as flows are measured over a certain period of time:
 
 $$
-kcal = \frac{kcal}{hr} \cdot hr
+\text{kcal} = \frac{\text{kcal}}{\text{hr}} \cdot \text{hr}
 $$
 
 However, note that the left and right hand side of the equation do not need to be in exactly the same units in order to match. For example, we may measure the flow over a period of minutes: 
 
 $$
-kcal = \frac{kcal}{hr} \cdot min
+\text{kcal} = \frac{\text{kcal}}{\text{hr}} \cdot \text{min}
 $$
 
 Such an equation is still dimensionally consistent, as minutes and hours match and can be converted to one another. There is no need to add an additional factor to convert minutes to hours. In sdbuildR, Julia's *Unitful* package takes care of the conversion between matching units.
 
-Mathematical operations differ in their unit compatibility requirements. Addition and subtraction can only be applied to variables that have the same unit, as these operations combine or compare quantities directly. For instance, it is not possible to add kilocalories to body fat in kilograms, $kg + kcal$. To specify how consuming food can add body fat, we need to translate kilocalories to kilograms. A correct formulation divides the number of kilocalories consumed by the number of kilocalories in a kilogram of body fat, which is dimensionally consistent with $kg$:
+Mathematical operations differ in their unit compatibility requirements. Addition and subtraction can only be applied to variables that have the same unit, as these operations combine or compare quantities directly. For instance, it is not possible to add kilocalories to body fat in kilograms, $\text{kg} + \text{kcal}$. To specify how consuming food can add body fat, we need to translate kilocalories to kilograms. A correct formulation divides the number of kilocalories consumed by the number of kilocalories in a kilogram of body fat, which is dimensionally consistent with $\text{kg}$:
 
 $$
-\frac{kcal}{\frac{7700kcal}{kg}}
+\frac{\text{kcal}}{\frac{7700\text{kcal}}{\text{kg}}}
 $$
 
 Conversely, variables do not need to have matching units for division and multiplication, as these operations transform the unit. For example, labour cost can be computed by multiplying the number of employees with income per month:
 
 $$
-\text{employees} \cdot \frac{€}{month} = \frac{\text{employees} \cdot €}{month}
+\text{employees} \cdot \frac{€}{\text{month}} = \frac{\text{employees} \cdot €}{\text{month}}
 $$
 
-Exponentiation changes the unit itself, such as when squaring the amount of meters in a space, $m^2$. 
+Exponentiation changes the unit itself, such as when squaring the amount of meters in a space, $\text{m}^2$. 
 
 Not all variables need to have units, though. Some are unitless (i.e. dimensionless), such as fractions or ratios. For example, the interest rate on a bank account is unitless, as $€ \cdot \text{interest} = €$. Similarly, variables can be rendered unitless by division and multiplication. For instance, dividing the number of infected individuals by the total population yields a dimensionless ratio:
 
@@ -79,7 +79,7 @@ In summary, units help ensure equations are correctly formulated. If equations a
 
 ### Model interpretation & communication
 
-In addition to verifying the model is dimensionally consistent, units help keep variables interpretable. Units give meaning and a timescale to variables. For instance, a variable such as productivity could be defined in numerous ways. Specifying its unit as $\frac{\text{tasks}}{hr}$ clearly communicates what higher or lower productivity means and how it can be measured. Equations with puzzling constructions of units without a clear interpretation are immediately suspect, such as $kcal^3/s^2/m$. As such, units help to relate your model to the real world, and make it possible to compare your model results with empirical data.
+In addition to verifying the model is dimensionally consistent, units help keep variables interpretable. Units give meaning and a timescale to variables. For instance, a variable such as productivity could be defined in numerous ways. Specifying its unit as $\frac{\text{tasks}}{\text{hr}}$ clearly communicates what higher or lower productivity means and how it can be measured. Equations with puzzling constructions of units without a clear interpretation are immediately suspect, such as $\text{kcal}^3/\text{s}^2/\text{m}$. As such, units help to relate your model to the real world, and make it possible to compare your model results with empirical data.
  <!-- \cite{sterman, p. 866} -->
  
 Moreover, units help identify and differentiate between time scales in the system. It may not feel natural to define each variable on the same timescale, where for instance the number of hours slept is typically defined on a daily basis, but attention is more naturally thought of on the timescale of milliseconds. Units help keep these timescales preserved without needing to scale every variable to the same time scale. 
@@ -211,7 +211,7 @@ sfm <- build(sfm, "change",
 )
 ```
 
-When specifying fractions, take care to use the correct syntax. For example, `1/6 * hour` is interpreted as one sixth of an hour, but `1/6 hour` is interpreted as one sixth of $\frac{1}{hour}$. 
+When specifying fractions, take care to use the correct syntax. For example, `1/6 * hour` is interpreted as one sixth of an hour, but `1/6 hour` is interpreted as one sixth of $\frac{1}{\text{hr}}$, which thus takes the inverse of the unit hour. 
 
 <!-- When translating R code to Julia, these are translated to u"", which is Unitful's syntax to indicate units.  -->
 

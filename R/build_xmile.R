@@ -1,10 +1,29 @@
 #' Create a new stock-and-flow model
 #'
-#' Initialize an empty stock-and-flow model of class sdbuildR_xmile. You can either create an empty stock-and-flow model or load a template from the model library.
+#' Initialize an empty stock-and-flow model of class sdbuildR_xmile. You can
+#' either create an empty stock-and-flow model or load a template from the model
+#' library.
 #'
-#' @param name Name of the template to load. If NULL, an empty stock-and-flow model will be created with default simulation parameters and a default header. If specified, the name should be one of "logistic_model", "SIR", "predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua", "spruce_budworm".
+#' Do not edit the object manually; this will likely lead to errors downstream.
+#' Rather, use [header()], [sim_specs()], [build()], [macro()], and
+#' [model_units()] for safe manipulation.
 #'
-#' @return Stock-and-flow model of class sdbuildR_xmile.
+#' @param name Name of the template to load. If NULL, an empty stock-and-flow
+#' model will be created with default simulation parameters and a default header.
+#' If specified, the name should be one of "logistic_model", "SIR",
+#' "predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz",
+#' "Rossler", "vanderPol", "Duffing", "Chua", "spruce_budworm".
+#'
+#' @return Stock-and-flow model of class sdbuildR_xmile. Its structure is based
+#'  on [XML Interchange Language for System Dynamics (XMILE)](https://docs.oasis-open.org/xmile/xmile/v1.0/os/xmile-v1.0-os.html). It is a nested list, containing:
+#' \describe{
+#'  \item{header}{Meta-information about model. A list containing arguments listed in [header()].}
+#'  \item{sim_specs}{Simulation specifications. A list containing arguments listed in [sim_specs()].}
+#'  \item{model}{Model variables. A nested list containing arguments listed in [build()].}
+#'  \item{macro}{Global variable or functions. A list containing arguments listed in [macro()].}
+#'  \item{model_units}{Custom model units. A list containing arguments listed in [model_units()].}
+#'  }
+#'
 #' @export
 #' @family build
 #' @seealso [build()]
@@ -32,13 +51,13 @@ xmile <- function(name = NULL) {
 
 #' Create new object of class sdbuildR_xmile
 #'
-#' @returns Stock-and-flow model of class sdbuildR_xmile.
+#' @return Stock-and-flow model of class [`xmile`][sdbuildR_xmile]
 #' @noRd
 #'
-new_sdbuildR_xmile <- function(){
+new_sdbuildR_xmile <- function() {
   header_defaults <- as.list(formals(header))
   header_defaults <- header_defaults[!names(header_defaults) %in%
-                                       c("sfm", "...")]
+    c("sfm", "...")]
   header_defaults[["created"]] <- Sys.time() # manually overwrite
 
   spec_defaults <- as.list(formals(sim_specs))
@@ -156,149 +175,6 @@ as.data.frame.sdbuildR_sim <- function(x,
   return(df)
 }
 
-#' Print overview of stock-and-flow model
-#'
-#' Print summary of stock-and-flow model, including number of stocks, flows, constants, auxiliaries, graphical functions, macros, custom model units, and use of delay functions. Also prints simulation specifications.
-#'
-#' @param object Stock-and-flow model of class sdbuildR_xmile
-#' @inheritParams plot.sdbuildR_xmile
-#'
-#' @return NULL
-#' @family build
-#' @export
-#' @seealso [build()]
-#'
-#' @examples
-#' sfm <- xmile("SIR")
-#' summary(sfm)
-#'
-summary.sdbuildR_xmile <- function(object, ...) {
-  # Extract model components
-  stocks <- names(object[["model"]][["variables"]][["stock"]])
-  flows <- names(object[["model"]][["variables"]][["flow"]])
-  constants <- names(object[["model"]][["variables"]][["constant"]])
-  auxs <- names(object[["model"]][["variables"]][["aux"]])
-  gfs <- names(object[["model"]][["variables"]][["gf"]])
-  model_units_str <- names(object[["model_units"]])
-  macro_str <- lapply(object[["macro"]], `[[`, "property") |>
-    unlist() |>
-    Filter(nzchar, x = _)
-
-  # Check for delay functions
-  delay_past <- get_delay_past(object)
-  delay_func <- get_delayN_smoothN(object)
-  matched_time_unit <- find_matching_regex(object[["sim_specs"]][["time_units"]], get_regex_time_units())
-
-  # Create structured summary object
-  summary_obj <- list(
-    model_components = list(
-      stocks = stocks,
-      flows = flows,
-      constants = constants,
-      auxiliaries = auxs,
-      graphical_functions = gfs,
-      custom_units = model_units_str,
-      macros = macro_str
-    ),
-    delay_functions = list(
-      delay_past = if(length(delay_past) > 0) unique(names(delay_past)) else character(0),
-      delay_func = if(length(delay_func) > 0) unique(names(delay_func)) else character(0)
-    ),
-    simulation = list(
-      start = object[["sim_specs"]][["start"]],
-      stop = object[["sim_specs"]][["stop"]],
-      dt = object[["sim_specs"]][["dt"]],
-      save_at = object[["sim_specs"]][["save_at"]],
-      time_units = matched_time_unit,
-      method = object[["sim_specs"]][["method"]],
-      seed = object[["sim_specs"]][["seed"]],
-      language = object[["sim_specs"]][["language"]]
-    )
-  )
-
-  class(summary_obj) <- "summary.sdbuildR_xmile"
-  return(summary_obj)
-}
-
-
-#' Print method for summary.sdbuildR_xmile
-#'
-#' @param x A summary object of class "summary.sdbuildR_xmile"
-#' @param ... Additional arguments (unused)
-#'
-#' @return Invisibly returns the input object
-#' @export
-#' @family build
-print.summary.sdbuildR_xmile <- function(x, ...) {
-  cat("Your model contains:\n")
-
-  # Print model components
-  with(x$model_components, {
-    cat(sprintf("* %d Stocks%s%s\n",
-                length(stocks),
-                ifelse(length(stocks) > 0, ": ", ""),
-                paste0(stocks, collapse = ", ")))
-    cat(sprintf("* %d Flows%s%s\n",
-                length(flows),
-                ifelse(length(flows) > 0, ": ", ""),
-                paste0(flows, collapse = ", ")))
-    cat(sprintf("* %d Constants%s%s\n",
-                length(constants),
-                ifelse(length(constants) > 0, ": ", ""),
-                paste0(constants, collapse = ", ")))
-    cat(sprintf("* %d Auxiliaries%s%s\n",
-                length(auxiliaries),
-                ifelse(length(auxiliaries) > 0, ": ", ""),
-                paste0(auxiliaries, collapse = ", ")))
-    cat(sprintf("* %d Graphical Functions%s%s\n",
-                length(graphical_functions),
-                ifelse(length(graphical_functions) > 0, ": ", ""),
-                paste0(graphical_functions, collapse = ", ")))
-    cat(sprintf("* %d Custom model units%s%s\n",
-                length(custom_units),
-                ifelse(length(custom_units) > 0, ": ", ""),
-                paste0(custom_units, collapse = ", ")))
-    cat(sprintf("* %d Macro%s\n",
-                length(macros),
-                ifelse(length(macros) == 1, "", "s")))
-  })
-
-  # Print delay functions if present
-  if (length(x$delay_functions$delay_past) > 0 || length(x$delay_functions$delay_func) > 0) {
-    cat("\nDelay family functions:\n")
-
-    if (length(x$delay_functions$delay_past) > 0) {
-      cat(sprintf("* %d variable%s uses past() or delay(): %s\n",
-                  length(x$delay_functions$delay_past),
-                  ifelse(length(x$delay_functions$delay_past) == 1, "", "s"),
-                  paste0(x$delay_functions$delay_past, collapse = ", ")))
-    }
-
-    if (length(x$delay_functions$delay_func) > 0) {
-      cat(sprintf("* %d variable%s uses delayN() or smoothN(): %s\n",
-                  length(x$delay_functions$delay_func),
-                  ifelse(length(x$delay_functions$delay_func) == 1, "", "s"),
-                  paste0(x$delay_functions$delay_func, collapse = ", ")))
-    }
-  }
-
-  # Print simulation specifications
-  cat(sprintf("\nSimulation time: %s to %s %s (dt = %s%s)\n",
-              x$simulation$start, x$simulation$stop, x$simulation$time_units,
-              x$simulation$dt,
-              ifelse(x$simulation$save_at == x$simulation$dt, "",
-                     paste0(", save_at = ", x$simulation$save_at))))
-
-  cat(sprintf("Simulation settings: solver %s%s in %s\n",
-              x$simulation$method,
-              ifelse(is_defined(x$simulation$seed),
-                     paste0(" and seed ", x$simulation$seed), ""),
-              x$simulation$language))
-
-  invisible(x)
-}
-
-
 
 #' Find longest regex match
 #'
@@ -314,7 +190,8 @@ find_matching_regex <- function(x, regex_units) {
   matches <- sub("\\$$", "", sub("^\\^", "", matches))
   matches <- sub("\\[s\\]\\?", "s", matches)
 
-  matches <- unique(tolower(stringr::str_replace_all(matches, "\\[([a-zA-Z])\\|([a-zA-Z])\\]", "\\1")))
+  matches <- unique(tolower(stringr::str_replace_all(matches,
+             "\\[([a-zA-Z])\\|([a-zA-Z])\\]", "\\1")))
   matches[which.max(nchar(matches))] # Return longest match
 }
 
@@ -326,7 +203,8 @@ find_matching_regex <- function(x, regex_units) {
 #' @returns List with delayN and smoothN functions
 #' @noRd
 get_delayN_smoothN <- function(sfm) {
-  z <- unlist(unname(sfm[["model"]][["variables"]]), recursive = FALSE, use.names = TRUE)
+  z <- unlist(unname(sfm[["model"]][["variables"]]), recursive = FALSE,
+              use.names = TRUE)
   z <- lapply(z, function(x) {
     c(x[["func"]][["delayN"]], x[["func"]][["smoothN"]])
   })
@@ -381,7 +259,8 @@ validate_xmile <- function(sfm) {
 
   # Ensure model units have default properties
   defaults <- as.list(formals(model_units))
-  defaults <- defaults[!names(defaults) %in% c("sfm", "name", "erase", "change_name")]
+  defaults <- defaults[!names(defaults) %in% c("sfm", "name", "erase",
+                                               "change_name")]
   sfm[["model_units"]] <- lapply(sfm[["model_units"]], function(x) {
     x[["prefix"]] <- FALSE
 
@@ -390,13 +269,13 @@ validate_xmile <- function(sfm) {
   })
 
   # Ensure names are the same as names properties
-  names(sfm[["model_units"]]) <- unname(unlist(lapply(sfm[["model_units"]], `[[`, "name")))
+  names(sfm[["model_units"]]) <- unname(unlist(lapply(sfm[["model_units"]],
+                                                      `[[`, "name")))
 
 
   # No need to validate model variables if there are no variables
   nr_var <- sum(lengths(sfm[["model"]][["variables"]]))
   if (nr_var > 0) {
-
     # Make sure name property matches with the name of the list entry
     type_names <- names(sfm[["model"]][["variables"]])
     sfm[["model"]][["variables"]] <- lapply(
@@ -422,7 +301,8 @@ validate_xmile <- function(sfm) {
     )
     names(sfm[["model"]][["variables"]]) <- type_names
 
-    # Ensure each variable has the necessary properties for its building block; otherwise, add defaults.
+    # Ensure each variable has the necessary properties for its building block;
+    # otherwise, add defaults.
     keep_prop <- get_building_block_prop()
     defaults <- as.list(formals(build))
     defaults <- defaults[!names(defaults) %in% c(
@@ -432,7 +312,8 @@ validate_xmile <- function(sfm) {
 
     # Process variables
     type_names <- names(sfm[["model"]][["variables"]])
-    sfm[["model"]][["variables"]] <- lapply(names(sfm[["model"]][["variables"]]), function(type) {
+    sfm[["model"]][["variables"]] <- lapply(names(sfm[["model"]][["variables"]]),
+                                            function(type) {
       vars <- sfm[["model"]][["variables"]][[type]]
       # Pre-compute type-specific defaults
       type_defaults <- defaults[names(defaults) %in% keep_prop[[type]]]
@@ -454,21 +335,18 @@ validate_xmile <- function(sfm) {
     stock_names <- names_df[names_df[["type"]] == "stock", "name"]
     nonstock_names <- names_df[names_df[["type"]] != "stock", "name"]
 
-    sfm[["model"]][["variables"]][["flow"]] <- lapply(sfm[["model"]][["variables"]][["flow"]], function(x) {
+    sfm[["model"]][["variables"]][["flow"]] <- lapply(
+      sfm[["model"]][["variables"]][["flow"]], function(x) {
       if (is_defined(x[["from"]])) {
-        # # If length of from is more than 1, select first
-        # if (length(x[["from"]]) > 1) {
-        #   message(paste0(
-        #     x[["name"]], " is flowing from more than one variable (",
-        #     paste0(x[["from"]], collapse = ", "), ")! Only keeping ", x[["from"]][1], "..."
-        #   ))
-        #   x[["from"]] <- x[["from"]][1]
-        # }
 
         # If from is not in stocks but is another variable, remove
-        non_stocks <- x[["from"]][!x[["from"]] %in% stock_names & x[["from"]] %in% nonstock_names]
+        non_stocks <- x[["from"]][!x[["from"]] %in% stock_names &
+                                    x[["from"]] %in% nonstock_names]
         if (length(non_stocks) > 0) {
-          message(paste0(x[["name"]], " is flowing from variables which are not stocks (", paste0(non_stocks, collapse = ", "), ")! Removing non-stocks from `from`..."))
+          warning(paste0(x[["name"]],
+                         " is flowing from a variable which is not a stock (",
+                         paste0(non_stocks, collapse = ", "), ")! Removing ",
+                         paste0(non_stocks, collapse = ", "), " from `from`..."))
           x[["from"]] <- intersect(x[["from"]], stock_names)
           if (length(x[["from"]]) == 0) {
             x[["from"]] <- ""
@@ -477,19 +355,15 @@ validate_xmile <- function(sfm) {
       }
 
       if (is_defined(x[["to"]])) {
-        # # If length of to is more than 1, select first
-        # if (length(x[["to"]]) > 1) {
-        #   message(paste0(
-        #     x[["name"]], " is flowing to more than one variable (",
-        #     paste0(x[["to"]], collapse = ", "), ")! Only keeping ", x[["to"]][1], "..."
-        #   ))
-        #   x[["to"]] <- x[["to"]][1]
-        # }
 
         # If to is not in stocks but is another variable, remove
-        non_stocks <- x[["to"]][!x[["to"]] %in% stock_names & x[["to"]] %in% nonstock_names]
+        non_stocks <- x[["to"]][!x[["to"]] %in% stock_names &
+                                  x[["to"]] %in% nonstock_names]
         if (length(non_stocks) > 0) {
-          message(paste0(x[["name"]], " is flowing to a variable which is not a stock (", paste0(non_stocks, collapse = ", "), ")! Removing ", paste0(non_stocks, collapse = ", "), " from `to`..."))
+          warning(paste0(x[["name"]],
+                         " is flowing to a variable which is not a stock (",
+                         paste0(non_stocks, collapse = ", "), ")! Removing ",
+                         paste0(non_stocks, collapse = ", "), " from `to`..."))
           x[["to"]] <- intersect(x[["to"]], stock_names)
           if (length(x[["to"]]) == 0) {
             x[["to"]] <- ""
@@ -498,19 +372,22 @@ validate_xmile <- function(sfm) {
       }
 
       # Ensure that to and from are not the same
-      if (is_defined(x[["to"]]) && is_defined(x[["from"]]) && x[["to"]] == x[["from"]]) {
-        message(paste0(x[["name"]], " is flowing to and from the same variable (", x[["to"]], ")! Removing `from`..."))
+      if (is_defined(x[["to"]]) && is_defined(x[["from"]]) &&
+          x[["to"]] == x[["from"]]) {
+        message(paste0(x[["name"]],
+                       " is flowing to and from the same variable (",
+                       x[["to"]], ")! Removing `from`..."))
         x[["from"]] <- ""
       }
 
       return(x)
     })
-
   }
 
   # Ensure macros have default properties
   defaults <- as.list(formals(macro))
-  defaults <- defaults[!names(defaults) %in% c("sfm", "name", "erase", "change_name")]
+  defaults <- defaults[!names(defaults) %in% c("sfm", "name", "erase",
+                                               "change_name")]
   sfm[["macro"]] <- lapply(sfm[["macro"]], function(x) {
     if (is.null(x[["eqn"]])) x[["eqn"]] <- "0.0"
     if (is.null(x[["eqn_julia"]])) x[["eqn_julia"]] <- "0.0"
@@ -1038,8 +915,9 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' @seealso [solvers()]
 #' @export
 #'
-#' @examples sfm <- xmile("predator-prey") |>
-#'   sim_specs(start = 0, stop = 10, dt = 0.01)
+#' @examples
+#' sfm <- xmile("predator-prey") |>
+#'   sim_specs(start = 0, stop = 50, dt = 0.1)
 #' sim <- simulate(sfm)
 #' plot(sim)
 #'
@@ -1050,19 +928,15 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' sfm <- sim_specs(sfm, time_units = "years")
 #'
 #' # To save storage but not affect accuracy, use save_at and save_from
-#' sfm <- sim_specs(sfm, dt = 0.001, save_at = .1, save_from = 1)
+#' sfm <- sim_specs(sfm, save_at = 1, save_from = 10)
 #' sim <- simulate(sfm)
 #' head(as.data.frame(sim))
 #'
 #' # Add stochastic initial condition but specify seed to obtain same result
 #' sfm <- sim_specs(sfm, seed = 1) |>
 #'   build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
-#' sim1 <- simulate(sfm)
-#' sim2 <- simulate(sfm)
-#' plot(sim1)
-#' plot(sim2)
 #'
-#' # Change the simulation language to Julia to use units and delay functions
+#' # Change the simulation language to Julia to use units
 #' sfm <- sim_specs(sfm, language = "Julia")
 #'
 sim_specs <- function(sfm,
@@ -1149,40 +1023,37 @@ sim_specs <- function(sfm,
 
 
   if ("method" %in% passed_arg) {
-    method = trimws(method)
+    method <- trimws(method)
   }
 
   # Check coding language
   if ("language" %in% passed_arg) {
-    language = clean_language(language)
+    language <- clean_language(language)
 
     # Translate method if method was not specified
-    old_language = sfm[["sim_specs"]][["language"]]
-    if (!"method" %in% passed_arg & language != old_language){
-      method = solvers(sfm[["sim_specs"]][["method"]],
-                       from = old_language, to = language,
-                       show_info = TRUE)
+    old_language <- sfm[["sim_specs"]][["language"]]
+    if (!"method" %in% passed_arg & language != old_language) {
+      method <- solvers(sfm[["sim_specs"]][["method"]],
+        from = old_language, to = language,
+        show_info = TRUE
+      )
 
-      if (is.null(method[["translation"]])){
-        method = method[["alternatives"]][1]
+      if (is.null(method[["translation"]])) {
+        method <- method[["alternatives"]][1]
       } else {
-        method = method[["translation"]]
+        method <- method[["translation"]]
       }
-      passed_arg = c(passed_arg, "method")
-
-    } else if ("method" %in% passed_arg ){
-
+      passed_arg <- c(passed_arg, "method")
+    } else if ("method" %in% passed_arg) {
       # If method was specified, check whether it is a valid method in the new coding language
-      method = solvers(method, from = language, show_info = TRUE)
-      method = method[["name"]]
-
+      method <- solvers(method, from = language, show_info = TRUE)
+      method <- method[["name"]]
     }
-
   } else if ("method" %in% passed_arg) {
     # If language was not specified but methods were, check method
     language <- sfm[["sim_specs"]][["language"]]
-    method = solvers(method, from = language, show_info = TRUE)
-    method = method[["name"]]
+    method <- solvers(method, from = language, show_info = TRUE)
+    method <- method[["name"]]
   }
 
   # Check whether start is smaller than stop
@@ -1348,25 +1219,27 @@ sim_specs <- function(sfm,
 #'
 erase_var <- function(sfm, name) {
   # Erase specified variables
-  sfm[["model"]][["variables"]] <- lapply(sfm[["model"]][["variables"]],
-                                          function(x) {
-    # Remove variable from model
-    x <- x[!names(x) %in% name]
+  sfm[["model"]][["variables"]] <- lapply(
+    sfm[["model"]][["variables"]],
+    function(x) {
+      # Remove variable from model
+      x <- x[!names(x) %in% name]
 
-    # Remove variable from to, from, source
-    lapply(x, function(y) {
-      if (is_defined(y[["to"]])) {
-        if (y[["to"]] %in% name) y[["to"]] <- NULL
-      }
-      if (is_defined(y[["from"]])) {
-        if (y[["from"]] %in% name) y[["from"]] <- NULL
-      }
-      if (is_defined(y[["source"]])) {
-        if (y[["source"]] %in% name) y[["source"]] <- NULL
-      }
-      return(y)
-    })
-  })
+      # Remove variable from to, from, source
+      lapply(x, function(y) {
+        if (is_defined(y[["to"]])) {
+          if (y[["to"]] %in% name) y[["to"]] <- NULL
+        }
+        if (is_defined(y[["from"]])) {
+          if (y[["from"]] %in% name) y[["from"]] <- NULL
+        }
+        if (is_defined(y[["source"]])) {
+          if (y[["source"]] %in% name) y[["source"]] <- NULL
+        }
+        return(y)
+      })
+    }
+  )
 
   sfm <- validate_xmile(sfm)
 
@@ -1408,7 +1281,7 @@ report_name_change <- function(old_names, new_names) {
 #'
 #' @section Stocks: Stocks define the state of the system. They accumulate material or information over time, such as people, products, or beliefs, which creates memory and inertia in the system. As such, stocks need not be tangible. Stocks are variables that can increase and decrease, and can be measured at a single moment in time. The value of a stock is increased or decreased by flows. A stock may have multiple inflows and multiple outflows. The net change in a stock is the sum of its inflows minus the sum of its outflows.
 #'
-#' The obligatory properties of a stock are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative", "conveyor", "len".
+#' The obligatory properties of a stock are "name", "type", and "eqn". Optional additional properties are "units", "label", "doc", "non_negative".
 #'
 #' @section Flows: Flows move material and information through the system. Stocks can only decrease or increase through flows. A flow must flow from and/or flow to a stock. If a flow is not flowing from a stock, the source of the flow is outside of the model boundary. Similarly, if a flow is not flowing to a stock, the destination of the flow is outside the model boundary. Flows are defined in units of material or information moved over time, such as birth rates, revenue, and sales.
 #'
@@ -1434,8 +1307,6 @@ report_name_change <- function(old_names, new_names) {
 #' @param erase If TRUE, remove variable from model. Defaults to FALSE.
 #' @param label Name of variable used for plotting. Defaults to the same as name.
 #' @param eqn Equation (or initial value in the case of stocks). Defaults to "0.0".
-#' @param conveyor If TRUE, the stock behaves as a conveyor. This feature is coming soon, but is now unusable. Defaults to FALSE.
-#' @param len Numerical value indicating the delay length of the conveyor stock. This feature is coming soon, but is now unusable. Defaults to NULL.
 #' @param to Target of flow. Must be a stock in the model. Defaults to NULL to indicate no target.
 #' @param from Source of flow. Must be a stock in the model. Defaults to NULL to indicate no source.
 #' @param units Unit of variable, such as 'meter'. Defaults to "1" (no units).
@@ -1446,6 +1317,7 @@ report_name_change <- function(old_names, new_names) {
 #' @param interpolation Only for graphical functions: interpolation method. Must be either "constant" or "linear". Defaults to "linear".
 #' @param extrapolation Only for graphical functions: extrapolation method. Must be either "nearest" or "NA". Defaults to "nearest".
 #' @param doc Description of variable. Defaults to "".
+#' @param df Dataframe with variable properties to add and/or modify.
 #'
 #' @return Updated stock-and-flow model.
 #' @seealso [xmile()]
@@ -1515,7 +1387,23 @@ report_name_change <- function(old_names, new_names) {
 #' # Remove variable
 #' sfm <- build(sfm, "prey", erase = TRUE)
 #'
-#' # Identify problems
+#' # To add and/or modify variables more quickly, pass a dataframe.
+#' # The dataframe is processed row-wise.
+#' # To create a logistic population growth model:
+#' df <- data.frame(
+#'   type = c("stock", "flow", "flow", "constant", "constant"),
+#'   name = c("X", "inflow", "outflow", "r", "K"),
+#'   eqn = c(.01, "r * X", "r * X^2 / K", 0.1, 1),
+#'   label = c(
+#'     "Population size", "Births", "Deaths", "Growth rate",
+#'     "Carrying capacity"
+#'   ),
+#'   to = c(NA, "X", NA, NA, NA),
+#'   from = c(NA, NA, "X", NA, NA)
+#' )
+#' sfm <- build(sfm, df = df)
+#'
+#' # Check for errors in the model
 #' debugger(sfm)
 #'
 build <- function(sfm, name, type,
@@ -1526,9 +1414,6 @@ build <- function(sfm, name, type,
                   change_name = NULL,
                   change_type = NULL,
                   erase = FALSE,
-                  # Stock conveyor arguments
-                  conveyor = FALSE, len = "",
-                  # leakage = .1, leakage_type = "linear", **to do
                   # Flow arguments
                   to = NULL, from = NULL,
                   # Rarely used arguments
@@ -1537,10 +1422,17 @@ build <- function(sfm, name, type,
                   xpts = NULL, ypts = NULL,
                   source = NULL,
                   interpolation = "linear",
-                  extrapolation = "nearest") {
+                  extrapolation = "nearest",
+                  df = NULL) {
   # Basic check
   if (missing(sfm)) {
     stop("No model specified!")
+  }
+  check_xmile(sfm)
+
+  if (!is.null(df)) {
+    sfm <- add_from_df(sfm, df)
+    return(sfm)
   }
 
   if (missing(name)) {
@@ -1573,7 +1465,6 @@ build <- function(sfm, name, type,
   }
 
   # Get names dataframe
-  check_xmile(sfm)
   names_df <- get_names(sfm)
   var_names <- names_df[["name"]]
 
@@ -1600,14 +1491,7 @@ build <- function(sfm, name, type,
     # Find corresponding building block
     type <- names_df[match(name, names_df[["name"]]), "type"]
   } else if (!missing(type)) {
-
-    type <- trimws(tolower(type))
-
-    # Allow for use of auxiliary instead of aux
-    type[type == "auxiliary"] <- "aux"
-
-    # Remove trailing s if present
-    type <- gsub("s$", "", type)
+    type <- clean_type(type)
 
     if (!all(type %in% c("stock", "flow", "constant", "aux", "gf"))) {
       stop("type needs to be one of 'stock', 'flow', 'constant', 'aux', or 'gf'!")
@@ -1667,6 +1551,10 @@ build <- function(sfm, name, type,
     if (length(change_name) > 1 | length(name) > 1) {
       stop("You can only change the name of one variable at a time!")
     }
+
+    if (!nzchar(trimws(change_name))) {
+      stop("change_name cannot be empty!")
+    }
   }
 
   # Check change type of variable
@@ -1675,8 +1563,8 @@ build <- function(sfm, name, type,
       stop("You can only change the type of one variable at a time!")
     }
 
-    change_type <- tolower(change_type)
-    if (!all(change_type %in% c("stock", "flow", "constant", "aux", "gf"))) {
+    change_type <- clean_type(change_type)
+    if (!change_type %in% c("stock", "flow", "constant", "aux", "gf")) {
       stop("change_type needs to be one of 'stock', 'flow', 'constant', 'aux', or 'gf'!")
     }
   }
@@ -1703,7 +1591,13 @@ build <- function(sfm, name, type,
   }
 
   # Flow properties
-  if (!is.null(to)) {
+  if ("to" %in% passed_arg) {
+    if (identical(to, NULL)) {
+      to <- ""
+    }
+
+    to[is.na(to)] <- ""
+
     if (!inherits(to, "character")) {
       stop("to must be a character!")
     }
@@ -1711,10 +1605,22 @@ build <- function(sfm, name, type,
     if (length(name) == 1 & length(to) > 1) {
       stop("A flow may only have one target!")
     }
+
     to <- ensure_length(to, name)
+
+    if (any(to == name)){
+      stop("A flow cannot flow to itself!")
+    }
+
   }
 
-  if (!is.null(from)) {
+  if ("from" %in% passed_arg) {
+    if (identical(from, NULL)) {
+      from <- ""
+    }
+
+    from[is.na(from)] <- ""
+
     if (!inherits(from, "character")) {
       stop("from must be a character!")
     }
@@ -1722,7 +1628,13 @@ build <- function(sfm, name, type,
     if (length(name) == 1 & length(from) > 1) {
       stop("A flow may only have one source!")
     }
+
     from <- ensure_length(from, name)
+
+    if (any(from == name)){
+      stop("A flow cannot flow from itself!")
+    }
+
   }
 
   # Ensure to and from are not the same
@@ -1731,6 +1643,7 @@ build <- function(sfm, name, type,
       stop("A flow cannot flow to and from the same stock!")
     }
   }
+
 
   # Graphical functions
   if (any(type == "gf")) {
@@ -1907,15 +1820,20 @@ build <- function(sfm, name, type,
 
 
   # Only need regex_units if any of the following are passed
-  if (any(c("eqn", "units", "len") %in% passed_arg)) {
+  if (any(c("eqn", "units") %in% passed_arg)) {
     regex_units <- get_regex_units()
   }
 
 
   if ("eqn" %in% passed_arg) {
-    if (any(is.null(eqn))) {
-      warning("eqn cannot be NULL! Setting empty equations to 0...")
-      eqn[is.null(eqn)] <- "0.0"
+    if (is.null(eqn)) {
+      warning("eqn cannot be NULL! Setting empty equation to 0...")
+      eqn <- "0.0"
+    }
+
+    if (any(is.na(eqn))) {
+      warning("eqn cannot be NA! Setting equations to 0...")
+      eqn[is.na(eqn)] <- "0.0"
     }
 
     if (any(!nzchar(eqn))) {
@@ -1966,18 +1884,6 @@ build <- function(sfm, name, type,
       clean_unit(x, regex_units)
     }, character(1), USE.NAMES = FALSE)
     units <- ensure_length(units, name)
-  }
-
-  if ("conveyor" %in% passed_arg) {
-    if (!inherits(conveyor, "logical")) {
-      stop("conveyor must be either TRUE or FALSE!")
-    }
-    conveyor <- ensure_length(conveyor, name)
-  }
-
-  if ("len" %in% passed_arg) {
-    len <- clean_unit_in_u(len, regex_units)
-    len <- ensure_length(len, name)
   }
 
   if ("non_negative" %in% passed_arg) {
@@ -2039,6 +1945,55 @@ build <- function(sfm, name, type,
 
 
 
+#' Add and/or modify model from dataframe
+#'
+#' @inheritParams build
+#'
+#' @return Updated stock-and-flow model.
+#' @noRd
+#'
+add_from_df <- function(sfm, df) {
+  if (!inherits(df, "data.frame")) {
+    stop("df must be a dataframe!")
+  }
+
+  # Get all properties
+  prop <- get_building_block_prop()
+
+  # Check whether dataframe has necessary columns
+  nec_prop <- c("type", "name")
+
+  if (!all(nec_prop %in% colnames(df))) {
+    stop("Please specify ", paste0(nec_prop, collapse = ", "))
+  }
+
+  # Check whether dataframe has columns only in prop
+  idx <- !colnames(df) %in% unique(unlist(prop))
+  if (any(idx)) {
+    stop("The following column names are not valid properties: ",
+         paste0(colnames(df)[idx], collapse = ", "))
+  }
+
+  # Add each row
+  for (i in seq_len(nrow(df))) {
+    arg <- as.list(df[i, ])
+    arg <- arg[!is.na(arg)]
+
+    # Only keep appropriate properties for this type
+    arg <- arg[names(arg) %in% prop[[arg[["type"]]]]]
+
+    arg[["sfm"]] <- sfm
+    sfm <- do.call(sdbuildR::build, arg)
+  }
+
+  sfm <- validate_xmile(sfm)
+
+  return(sfm)
+}
+
+
+
+
 #' Get possible variable properties per building block type
 #'
 #' @return List with default properties per building block type
@@ -2048,7 +2003,7 @@ get_building_block_prop <- function() {
   return(list(
     "stock" = c(
       "name", "type", "eqn", "units", "label", "doc",
-      "non_negative", "conveyor", "len",
+      "non_negative",
       "eqn_julia"
     ),
     "flow" = c(
@@ -2523,7 +2478,6 @@ debugger <- function(sfm, quietly = FALSE) {
 #' @noRd
 #' @returns Logical value
 static_depend_on_dyn <- function(sfm) {
-
   # Check whether a stock depends on a dynamic variable, give warning
   dependencies <- sfm[["model"]][["variables"]][c("stock", "constant")] |>
     unname() |>
@@ -2563,7 +2517,6 @@ static_depend_on_dyn <- function(sfm) {
     return(list(issue = FALSE))
   }
 }
-
 
 
 
@@ -2756,4 +2709,172 @@ as.data.frame.sdbuildR_xmile <- function(x,
   }
 
   return(df)
+}
+
+
+
+#' Print overview of stock-and-flow model
+#'
+#' Print summary of stock-and-flow model, including number of stocks, flows, constants, auxiliaries, graphical functions, macros, custom model units, and use of delay functions. Also prints simulation specifications.
+#'
+#' @param object Stock-and-flow model of class sdbuildR_xmile
+#' @inheritParams plot.sdbuildR_xmile
+#'
+#' @return NULL
+#' @family build
+#' @export
+#' @seealso [build()]
+#'
+#' @examples
+#' sfm <- xmile("SIR")
+#' summary(sfm)
+#'
+summary.sdbuildR_xmile <- function(object, ...) {
+  # Extract model components
+  stocks <- names(object[["model"]][["variables"]][["stock"]])
+  flows <- names(object[["model"]][["variables"]][["flow"]])
+  constants <- names(object[["model"]][["variables"]][["constant"]])
+  auxs <- names(object[["model"]][["variables"]][["aux"]])
+  gfs <- names(object[["model"]][["variables"]][["gf"]])
+  model_units_str <- names(object[["model_units"]])
+  macro_str <- lapply(object[["macro"]], `[[`, "property") |>
+    unlist() |>
+    Filter(nzchar, x = _)
+
+  # Check for delay functions
+  delay_past <- get_delay_past(object)
+  delay_func <- get_delayN_smoothN(object)
+  matched_time_unit <- find_matching_regex(object[["sim_specs"]][["time_units"]], get_regex_time_units())
+
+  # Create structured summary object
+  summary_obj <- list(
+    model_components = list(
+      stocks = stocks,
+      flows = flows,
+      constants = constants,
+      auxiliaries = auxs,
+      graphical_functions = gfs,
+      custom_units = model_units_str,
+      macros = macro_str
+    ),
+    delay_functions = list(
+      delay_past = if (length(delay_past) > 0) unique(names(delay_past)) else character(0),
+      delay_func = if (length(delay_func) > 0) unique(names(delay_func)) else character(0)
+    ),
+    simulation = list(
+      start = object[["sim_specs"]][["start"]],
+      stop = object[["sim_specs"]][["stop"]],
+      dt = object[["sim_specs"]][["dt"]],
+      save_at = object[["sim_specs"]][["save_at"]],
+      time_units = matched_time_unit,
+      method = object[["sim_specs"]][["method"]],
+      seed = object[["sim_specs"]][["seed"]],
+      language = object[["sim_specs"]][["language"]]
+    )
+  )
+
+  class(summary_obj) <- "summary.sdbuildR_xmile"
+  return(summary_obj)
+}
+
+
+#' Print method for summary.sdbuildR_xmile
+#'
+#' @param x A summary object of class "summary.sdbuildR_xmile"
+#' @param ... Additional arguments (unused)
+#'
+#' @return Invisibly returns the input object
+#' @export
+#' @family build
+print.summary.sdbuildR_xmile <- function(x, ...) {
+  cat("Your model contains:\n")
+
+  # Print model components
+  with(x$model_components, {
+    cat(sprintf(
+      "* %d Stocks%s%s\n",
+      length(stocks),
+      ifelse(length(stocks) > 0, ": ", ""),
+      paste0(stocks, collapse = ", ")
+    ))
+    cat(sprintf(
+      "* %d Flows%s%s\n",
+      length(flows),
+      ifelse(length(flows) > 0, ": ", ""),
+      paste0(flows, collapse = ", ")
+    ))
+    cat(sprintf(
+      "* %d Constants%s%s\n",
+      length(constants),
+      ifelse(length(constants) > 0, ": ", ""),
+      paste0(constants, collapse = ", ")
+    ))
+    cat(sprintf(
+      "* %d Auxiliaries%s%s\n",
+      length(auxiliaries),
+      ifelse(length(auxiliaries) > 0, ": ", ""),
+      paste0(auxiliaries, collapse = ", ")
+    ))
+    cat(sprintf(
+      "* %d Graphical Functions%s%s\n",
+      length(graphical_functions),
+      ifelse(length(graphical_functions) > 0, ": ", ""),
+      paste0(graphical_functions, collapse = ", ")
+    ))
+    cat(sprintf(
+      "* %d Custom model units%s%s\n",
+      length(custom_units),
+      ifelse(length(custom_units) > 0, ": ", ""),
+      paste0(custom_units, collapse = ", ")
+    ))
+    cat(sprintf(
+      "* %d Macro%s\n",
+      length(macros),
+      ifelse(length(macros) == 1, "", "s")
+    ))
+  })
+
+  # Print delay functions if present
+  if (length(x$delay_functions$delay_past) > 0 || length(x$delay_functions$delay_func) > 0) {
+    cat("\nDelay family functions:\n")
+
+    if (length(x$delay_functions$delay_past) > 0) {
+      cat(sprintf(
+        "* %d variable%s uses past() or delay(): %s\n",
+        length(x$delay_functions$delay_past),
+        ifelse(length(x$delay_functions$delay_past) == 1, "", "s"),
+        paste0(x$delay_functions$delay_past, collapse = ", ")
+      ))
+    }
+
+    if (length(x$delay_functions$delay_func) > 0) {
+      cat(sprintf(
+        "* %d variable%s uses delayN() or smoothN(): %s\n",
+        length(x$delay_functions$delay_func),
+        ifelse(length(x$delay_functions$delay_func) == 1, "", "s"),
+        paste0(x$delay_functions$delay_func, collapse = ", ")
+      ))
+    }
+  }
+
+  # Print simulation specifications
+  cat(sprintf(
+    "\nSimulation time: %s to %s %s (dt = %s%s)\n",
+    x$simulation$start, x$simulation$stop, x$simulation$time_units,
+    x$simulation$dt,
+    ifelse(x$simulation$save_at == x$simulation$dt, "",
+      paste0(", save_at = ", x$simulation$save_at)
+    )
+  ))
+
+  cat(sprintf(
+    "Simulation settings: solver %s%s in %s\n",
+    x$simulation$method,
+    ifelse(is_defined(x$simulation$seed),
+      paste0(" and seed ", x$simulation$seed), ""
+    ),
+    x$simulation$language
+  ))
+
+  invisible(x)
 }

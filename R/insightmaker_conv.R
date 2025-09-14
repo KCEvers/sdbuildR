@@ -271,8 +271,10 @@ IM_to_xmile <- function(xml_file) {
 
   # Replace old names with new names
   model_elements <- lapply(model_elements, function(x) {
-    x[["eqn_insightmaker"]] <- stringr::str_replace_all(x[["eqn_insightmaker"]],
-                                                        stringr::fixed(c("\\n" = "\n")))
+    x[["eqn_insightmaker"]] <- stringr::str_replace_all(
+      x[["eqn_insightmaker"]],
+      stringr::fixed(c("\\n" = "\n"))
+    )
     x[["eqn_insightmaker"]] <- replace_names_IM(x[["eqn_insightmaker"]],
       original = old_names[ids %in% x[["access_ids"]]],
       replacement = new_names[ids %in% x[["access_ids"]]]
@@ -1218,8 +1220,6 @@ convert_equations_IM_wrapper <- function(sfm, regex_units) {
       if (.sdbuildR_env[["P"]][["debug"]]) {
         message(out)
       }
-
-
 
       return(out)
     }) |>

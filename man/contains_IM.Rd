@@ -23,19 +23,14 @@ contains_IM(c("abcdef"), "bc") # TRUE
 }
 \seealso{
 Other custom: 
-\code{\link{\%REM\%}()},
 \code{\link{expit}()},
-\code{\link{filter_IM}()},
 \code{\link{indexof}()},
 \code{\link{length_IM}()},
 \code{\link{logistic}()},
 \code{\link{logit}()},
-\code{\link{mod}()},
 \code{\link{rbool}()},
 \code{\link{rdist}()},
 \code{\link{rem}()},
-\code{\link{round_IM}()},
-\code{\link{shuffle}()},
-\code{\link{substr_i}()}
+\code{\link{round_IM}()}
 }
 \concept{custom}

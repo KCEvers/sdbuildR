@@ -1,14 +1,13 @@
 Package: sdbuildR
-Title: Easily Build and Simulate Stock-and-Flow Models in R
+Title: Easily Build and Simulate Stock-and-Flow Models
 Version: 0.0.0.9000
 Authors@R: 
     person("Kyra", "Evers", , "kyra.c.evers@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-6890-3482", ROR = "04dkp9463"))
-Description: Easily build and simulate stock-and-flow models with sdbuildR
-    in R. With 'Julia' as a backend, sdbuildR combines fast performance
-    with flexibility in a user-friendly R environment.
+Description: Easily build and simulate stock-and-flow models. Stock-and-flow models are a computational method from the field of system dynamics, and model how systems change over time. They are mathematically equivalent to differential equation models. 'sdbuildR' (system dynamics buildeR) is designed to make stock-and-flow modelling more accessible and fit for iterative model development. Models can be simulated using either 'R' or 'Julia'. Additionally, stock-and-flow models from 'Insight Maker' (<https://insightmaker.com/>) can be imported.
 License: GPL (>= 3) | file LICENSE
 URL: https://kcevers.github.io/sdbuildR/
+BugReports: https://github.com/KCEvers/sdbuildR/issues
 Depends: 
     R (>= 4.2.0)
 Imports: 
