@@ -5,6 +5,7 @@
 <url><loc>https://kcevers.github.io/sdbuildR/articles/build.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/articles/ensemble.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/articles/index.html</loc></url>
+<url><loc>https://kcevers.github.io/sdbuildR/articles/julia-setup.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/articles/sdbuildR.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/articles/units.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/authors.html</loc></url>
@@ -13,6 +14,7 @@
 <url><loc>https://kcevers.github.io/sdbuildR/reference/as.data.frame.sdbuildR_sim.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/as.data.frame.sdbuildR_xmile.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/build.html</loc></url>
+<url><loc>https://kcevers.github.io/sdbuildR/reference/clean_name.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/compare_sim.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/contains_IM.html</loc></url>
 <url><loc>https://kcevers.github.io/sdbuildR/reference/convert_u.html</loc></url>

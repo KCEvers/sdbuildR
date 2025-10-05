@@ -37,6 +37,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/build.html">Building stock-and-flow models</a></li>
+    <li><a class="dropdown-item" href="articles/julia-setup.html">Setting up Julia</a></li>
     <li><a class="dropdown-item" href="articles/ensemble.html">Ensemble simulations</a></li>
     <li><a class="dropdown-item" href="articles/units.html">Using (custom) units</a></li>
   </ul>
@@ -81,6 +82,8 @@
 <li>
 <code>vignette("build")</code> Learn how to build, modify, and debug stock-and-flow models.</li>
 <li>
+<code>vignette("julia-setup")</code> Install and set up the Julia environment for running ensemble simulations and using units.</li>
+<li>
 <code>vignette("ensemble")</code> Learn how to assess a model’s sensitivity, uncertainty and robustness with ensemble simulations.</li>
 <li>
 <code>vignette("units")</code> Learn why and how to use (custom) units. <!-- 3. **Delays**: Not all dynamics are instantaneous. Learn about delays (fixed, smooth, material and information) and how to implement them with sdbuildR. --> <!-- 4. **Sensitivity**:  -->
@@ -92,14 +95,9 @@
 </h2>
 <p>You can install the development version of sdbuildR like so:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
+<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://remotes.r-lib.org" class="external-link">"remotes"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"KCEvers/sdbuildR"</span><span class="op">)</span></span></code></pre></div>
-<p>sdbuildR offers two simulation engines: R and Julia (supported by <a href="https://github.com/stefan-m-lenz/JuliaConnectoR/" class="external-link">JuliaConnectoR</a>). If you would like to run ensemble simulations and use units, you will need to set up the Julia environment. Run <code><a href="reference/use_julia.html">use_julia()</a></code> to install Julia and required packages (initial setup may take 5–15 minutes):</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">sdbuildR</span><span class="fu">::</span><span class="fu"><a href="reference/use_julia.html">use_julia</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Starting Julia ...</span></span>
-<span><span class="co">#&gt; Connecting to Julia TCP server at localhost:11980 ...</span></span>
-<span><span class="co">#&gt; Setting up Julia environment for sdbuildR...</span></span></code></pre></div>
+<p>sdbuildR offers two simulation engines: R and Julia (supported by <a href="https://github.com/stefan-m-lenz/JuliaConnectoR/" class="external-link">JuliaConnectoR</a>). If you would like to run ensemble simulations and use units, you will need to install and set up the Julia environment. Follow the guide at <code>vignette("julia-setup")</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="limitations">Limitations<a class="anchor" aria-label="anchor" href="#limitations"></a>
@@ -148,7 +146,7 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Kyra Evers <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0001-6890-3482" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> <a href="https://ror.org/04dkp9463" class="external-link"><img src="https://raw.githubusercontent.com/ror-community/ror-logos/main/ror-icon-rgb.svg" class="ror" alt="ROR"></a> </li>
+<li>Kyra Caitlin Evers <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0001-6890-3482" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> <a href="https://ror.org/04dkp9463" class="external-link"><img src="https://raw.githubusercontent.com/ror-community/ror-logos/main/ror-icon-rgb.svg" class="ror" alt="ROR"></a> </li>
 </ul>
 </div>
 
@@ -165,7 +163,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Kyra Evers.</p>
+  <p>Developed by Kyra Caitlin Evers.</p>
 </div>
 
 <div class="pkgdown-footer-right">
