@@ -97,7 +97,6 @@ end"
 
 
 test_that("converting functions to Julia with named arguments", {
-
   sfm <- xmile("predator_prey")
   var_names <- get_model_var(sfm)
   regex_units <- get_regex_units()

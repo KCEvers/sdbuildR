@@ -1,14 +1,14 @@
 # Load packages
-using OrdinaryDiffEq
-using DiffEqCallbacks
+using CSV
 using DataFrames
+using DataInterpolations
+using DiffEqCallbacks
 using Distributions
+using OrdinaryDiffEq
+using Random
 using Statistics
 using StatsBase
 using Unitful
-using DataInterpolations
-using Random
-using CSV
 using SystemDynamicsBuildR
 using SystemDynamicsBuildR.sdbuildR_units
 Base.:<(x::Unitful.Quantity, y::Float64) = <(x, y * Unitful.unit(x))

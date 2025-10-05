@@ -34,6 +34,8 @@ All package capabilities are described in the vignettes:
 
 - `vignette("build")` Learn how to build, modify, and debug
   stock-and-flow models.
+- `vignette("julia-setup")` Install and set up the Julia environment for
+  running ensemble simulations and using units.
 - `vignette("ensemble")` Learn how to assess a model’s sensitivity,
   uncertainty and robustness with ensemble simulations.
 - `vignette("units")` Learn why and how to use (custom) units.

@@ -74,28 +74,28 @@ template <- function(name) {
       build("predator", "stock", eqn = 10, label = "Predator") |>
       build("prey", "stock", eqn = 50, label = "Prey") |>
       build("predator_births", "flow",
-            eqn = "delta*prey*predator",
-            label = "Births", to = "predator"
+        eqn = "delta*prey*predator",
+        label = "Births", to = "predator"
       ) |>
       build("predator_deaths", "flow",
-            eqn = "gamma*predator",
-            label = "Deaths", from = "predator"
+        eqn = "gamma*predator",
+        label = "Deaths", from = "predator"
       ) |>
       build("prey_births", "flow",
-            eqn = "alpha*prey",
-            label = "Births", to = "prey"
+        eqn = "alpha*prey",
+        label = "Births", to = "prey"
       ) |>
       build("prey_deaths", "flow",
-            eqn = "beta*prey*predator",
-            label = "Deaths", from = "prey"
+        eqn = "beta*prey*predator",
+        label = "Deaths", from = "prey"
       ) |>
       build(c("delta", "gamma", "alpha", "beta"), "constant",
-            eqn = c(.025, .5, .5, .05),
-            label = c("Delta", "Gamma", "Alpha", "Beta"),
-            doc = c(
-              "Birth rate of predators", "Death rate of predators",
-              "Birth rate of prey", "Death rate of prey by predators"
-            )
+        eqn = c(.025, .5, .5, .05),
+        label = c("Delta", "Gamma", "Alpha", "Beta"),
+        doc = c(
+          "Birth rate of predators", "Death rate of predators",
+          "Birth rate of prey", "Death rate of prey by predators"
+        )
       )
   } else if (name == "cusp") {
     sfm <- xmile() |>
@@ -103,8 +103,8 @@ template <- function(name) {
       sim_specs(method = "euler", stop = 500) |>
       build("x", "stock", eqn = .1) |>
       build("dxdt", "flow",
-            eqn = "a + b*x - x^3 + rnorm(1, dt)",
-            to = "x"
+        eqn = "a + b*x - x^3 + rnorm(1, dt)",
+        to = "x"
       ) |>
       build("a", "constant", eqn = 2, label = "Normal variable") |>
       build("b", "constant", eqn = 2, label = "Splitting variable")
@@ -160,7 +160,6 @@ template <- function(name) {
       ) |>
       build(c("a0", "a1", "a2"), "constant", eqn = c(1.31, 1.5, 0.38)) |>
       macro(name = "Sig", eqn = "function(x) 1 / (1 + exp(1)^(-x))")
-
   } else if (name == "coffee_cup") {
     sfm <- xmile() |>
       header(name = "Coffee cup", caption = "Coffee cup cooling or heating from Meadows' Thinking in Systems (Chapter 1)") |>

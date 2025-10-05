@@ -72,6 +72,7 @@ jobs:
             Pkg.add(name="DataFrames", version="1.7")
             Pkg.add(name="Distributions", version="0.25")
             Pkg.add(name="Statistics", version="1.11")
+            Pkg.add(name="StatsBase", version="0.34.6")
             Pkg.add(name="Unitful", version="1.23")
             Pkg.add(name="DataInterpolations", version="8.1")
             Pkg.add(name="Random", version="1.11")

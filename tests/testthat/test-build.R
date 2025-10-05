@@ -146,7 +146,6 @@ test_that("sim_specs() works", {
 
 
 test_that("save_at works", {
-
   sfm <- xmile("SIR") |> sim_specs(language = "R", save_at = 1)
   sim <- simulate(sfm)
   df <- as.data.frame(sim)
@@ -156,12 +155,10 @@ test_that("save_at works", {
   sim <- simulate(sfm)
   df <- as.data.frame(sim)
   expect_equal(unique(round(diff(sort(unique(df[["time"]]))), 4)), 1)
-
 })
 
 
 test_that("flow cannot have same stock as to and from", {
-
   sfm <- xmile() |> build("a", "stock")
   expect_error(
     sfm |> build("b", "flow", to = "a", from = "a", eqn = "1"),
@@ -214,8 +211,8 @@ test_that("flow cannot have same stock as to and from", {
     "A flow cannot flow from itself"
   )
   expect_no_error(
-    sfm |> build(c("a", "b", "c"), "flow", to = "d"))
-
+    sfm |> build(c("a", "b", "c"), "flow", to = "d")
+  )
 })
 
 
@@ -307,7 +304,8 @@ test_that("change_name and change_type in build()", {
   sfm <- xmile() |>
     build("G", "stock") |>
     build("to_G", "flow", to = "G")
-  expect_warning(sfm |> build("G", change_type = "aux"),
+  expect_warning(
+    sfm |> build("G", change_type = "aux"),
     "to_G is flowing to a variable which is not a stock \\(G\\)"
   )
   suppressWarnings({
@@ -374,17 +372,18 @@ test_that("change_name and change_type in build()", {
 
 
 test_that("from and to can only be stocks", {
-
   sfm <- expect_no_error(expect_no_message(expect_no_warning(xmile() |> build("a", "flow", to = "b"))))
-  sfm = expect_warning(sfm |> build("b", "flow"), "a is flowing to a variable which is not a stock \\(b\\)! Removing b from `to`")
+  sfm <- expect_warning(sfm |> build("b", "flow"), "a is flowing to a variable which is not a stock \\(b\\)! Removing b from `to`")
   expect_null(sfm[["model"]][["variables"]][["flow"]][["a"]][["to"]])
 
   sfm <- expect_no_error(expect_no_message(expect_no_warning(xmile() |> build("a", "flow", from = "b"))))
-  sfm = expect_warning(sfm |> build("b", "flow"), "a is flowing from a variable which is not a stock \\(b\\)! Removing b from `from`")
+  sfm <- expect_warning(sfm |> build("b", "flow"), "a is flowing from a variable which is not a stock \\(b\\)! Removing b from `from`")
   expect_null(sfm[["model"]][["variables"]][["flow"]][["a"]][["from"]])
 
-  expect_error(xmile() |> build("a", "flow", from = "b", to = "b"),
-               "A flow cannot flow to and from the same stock")
+  expect_error(
+    xmile() |> build("a", "flow", from = "b", to = "b"),
+    "A flow cannot flow to and from the same stock"
+  )
 })
 
 

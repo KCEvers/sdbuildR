@@ -43,8 +43,7 @@ export_plot <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi =
   }
 
   if ("grViz" %in% class(pl)) {
-
-    if (!nzchar(format)){
+    if (!nzchar(format)) {
       stop("No file extension specified! Choose one of png, pdf, svg, ps, eps, webp.")
     }
 
@@ -52,8 +51,7 @@ export_plot <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi =
       width = width, height = height
     )
   } else if ("plotly" %in% class(pl)) {
-
-    if (!nzchar(format)){
+    if (!nzchar(format)) {
       stop("No file extension specified! Choose one of png, pdf, jpg, jpeg, webp.")
     }
 
@@ -271,26 +269,26 @@ plot.sdbuildR_xmile <- function(x,
     flow_df <- flow_df[flow_df[["name"]] %in% vars, , drop = FALSE]
 
     # Set stocks not in vars to ''
-    flow_df[["to"]][!flow_df[["to"]] %in% vars] <- ''
-    flow_df[["from"]][!flow_df[["from"]] %in% vars] <- ''
+    flow_df[["to"]][!flow_df[["to"]] %in% vars] <- ""
+    flow_df[["from"]][!flow_df[["from"]] %in% vars] <- ""
 
     # Set show_aux to TRUE if any variables are aux
-    if (any(vars %in% df[df[["type"]] == "aux", "name"])){
+    if (any(vars %in% df[df[["type"]] == "aux", "name"])) {
       show_aux <- TRUE
     }
 
     # Set show_constants to TRUE if any variables are constants
-    if (any(vars %in% df[df[["type"]] == "constant", "name"])){
+    if (any(vars %in% df[df[["type"]] == "constant", "name"])) {
       show_constants <- TRUE
     }
   }
 
   if (format_label) {
     df[["label"]] <- ifelse(df[["name"]] == df[["label"]],
-                            stringr::str_replace_all(
-                              df[["label"]],
-                              c("_" = " ", "\\." = " ", "  " = " ")
-                            ), df[["label"]]
+      stringr::str_replace_all(
+        df[["label"]],
+        c("_" = " ", "\\." = " ", "  " = " ")
+      ), df[["label"]]
     )
   }
 
@@ -429,16 +427,15 @@ plot.sdbuildR_xmile <- function(x,
   cloud_nodes <- flow_edges <- flow_nodes <- dependency_edges <- legend_nodes <- legend_edges <- ""
 
   if (length(flow_names) > 0) {
-
     # # Create dataframe with direction of flows
     # flow_df <- get_flow_df(sfm)
 
     # If the flow is to a stock that doesn't exist, remove
     flow_df[["from"]] <- ifelse(flow_df[["from"]] %in% stock_names,
-                                flow_df[["from"]], ""
+      flow_df[["from"]], ""
     )
     flow_df[["to"]] <- ifelse(flow_df[["to"]] %in% stock_names,
-                              flow_df[["to"]], ""
+      flow_df[["to"]], ""
     )
     flow_df <- as.matrix(flow_df)
 
@@ -512,7 +509,6 @@ plot.sdbuildR_xmile <- function(x,
 
   # Add dependency arrows if requested
   if (show_dependencies) {
-
     # Only keep dependencies in plot_var
     dep <- lapply(dep, function(x) {
       intersect(x, plot_var)
@@ -521,8 +517,7 @@ plot.sdbuildR_xmile <- function(x,
     # Only keep entries in plot_var
     dep <- dep[names(dep) %in% plot_var]
 
-    if (length(dep) > 0){
-
+    if (length(dep) > 0) {
       dependency_edges <- unlist(lapply(names(dep), function(x) {
         if (length(dep[[x]]) > 0) {
           vapply(dep[[x]], function(y) {
@@ -599,7 +594,6 @@ plot.sdbuildR_xmile <- function(x,
 #' @noRd
 #'
 prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette, colors, wrap_width) {
-
   # Get names of stocks and non-stock variables
   names_df <- get_names(sfm)
 
@@ -617,8 +611,10 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
 
   # If vars is specified and it contains a constant, set add_constants = TRUE
   if (!is.null(vars)) {
-    constant_names <- names_df[names_df[["type"]] %in% c("constant", "gf"),
-                               "name"]
+    constant_names <- names_df[
+      names_df[["type"]] %in% c("constant", "gf"),
+      "name"
+    ]
     vars_constants <- intersect(constant_names, vars)
     constants_not_in_vars <- setdiff(constant_names, vars_constants)
 
@@ -627,16 +623,17 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
 
     # If not all constants should be added, only select those in vars
     if (add_constants) {
-
       # Remove constants not in vars
       names_df <- names_df[!(names_df[["name"]] %in% constants_not_in_vars), ,
-                           drop = FALSE]
+        drop = FALSE
+      ]
 
       if (type_sim == "sim") {
         constants <- constants[vars_constants]
       } else if (type_sim == "ensemble") {
         constants <- constants[!(constants[["variable"]] %in% constants_not_in_vars), ,
-                               drop = FALSE]
+          drop = FALSE
+        ]
       }
     }
   } # else {
@@ -654,7 +651,8 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
 
         # Remove from names
         names_df <- names_df[!names_df[["name"]] %in% names(idx_func[idx_func]), ,
-                             drop = FALSE]
+          drop = FALSE
+        ]
 
         # Duplicate long format for each constant
         if (length(constants) > 0) {
@@ -726,17 +724,20 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
   if (nrow(names_df) != length(unique(names_df[["label"]]))) {
     labels <- names_df[["label"]]
     dup_indices <- which(labels %in% labels[duplicated(labels) |
-                                              duplicated(labels, fromLast = TRUE)])
+      duplicated(labels, fromLast = TRUE)])
 
     # Relabel, otherwise plotting will go wrong with recoded variables
-    names_df[dup_indices, "label"] <- paste0(names_df[dup_indices, "label"], "(",
-                                             names_df[dup_indices, "name"], ")")
+    names_df[dup_indices, "label"] <- paste0(
+      names_df[dup_indices, "label"], "(",
+      names_df[dup_indices, "name"], ")"
+    )
   }
 
 
   # Ensure only variables which are in the dataframe are included
   names_df <- names_df[names_df[["name"]] %in% unique(df[["variable"]]), ,
-                       drop = FALSE]
+    drop = FALSE
+  ]
 
   # Create dictionary with stock and non-stock names and labels
   highlight_names <- names_df[match(highlight_these_names, names_df[["name"]]), , drop = FALSE]

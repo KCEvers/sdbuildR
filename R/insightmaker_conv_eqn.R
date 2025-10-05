@@ -17,7 +17,6 @@ convert_equations_IM <- function(type,
                                  eqn,
                                  var_names,
                                  regex_units) {
-
   if (.sdbuildR_env[["P"]][["debug"]]) {
     message("")
     # message(type)
@@ -1624,8 +1623,9 @@ parse_args <- function(bracket_arg) {
 extract_prefunc_args <- function(eqn, var_names, start_func, names_with_brackets) {
   # Get all enclosing elements before start of function
   prefunc_brackets <- get_range_all_pairs(eqn, var_names,
-                                          # add_custom = "paste0()",
-                                          names_with_brackets = names_with_brackets)
+    # add_custom = "paste0()",
+    names_with_brackets = names_with_brackets
+  )
 
   prefunc_brackets <- prefunc_brackets[
     prefunc_brackets[["type"]] != "square",

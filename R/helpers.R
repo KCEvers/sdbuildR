@@ -236,7 +236,6 @@ clean_type <- function(type) {
 #' @family internal
 #'
 clean_name <- function(new, existing, protected = c()) {
-
   # Define protected names: these cannot be used as variable names
   protected_names <- c(
     # Reserved words in R
@@ -397,11 +396,11 @@ get_names <- function(sfm) {
 #'
 safe_convert <- function(x, target_class) {
   result <- switch(target_class,
-                   "numeric" = suppressWarnings(as.numeric(x)),
-                   "integer" = suppressWarnings(as.integer(x)),
-                   "logical" = suppressWarnings(as.logical(x)),
-                   "character" = as.character(x),
-                   x  # return original if class not recognized
+    "numeric" = suppressWarnings(as.numeric(x)),
+    "integer" = suppressWarnings(as.integer(x)),
+    "logical" = suppressWarnings(as.logical(x)),
+    "character" = as.character(x),
+    x # return original if class not recognized
   )
 
   # Keep original if conversion failed (became NA but wasn't originally NA)

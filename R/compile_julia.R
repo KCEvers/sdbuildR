@@ -381,8 +381,10 @@ prep_ensemble_range <- function(sfm, ensemble_pars) {
 
     # Set the equations of the variables in the model to 0 because these will be replaced by the ensemble parameters
     names_df <- get_names(sfm)
-    stocks <- names_df[match(names(ensemble_pars[["range"]]),
-                             names_df[["name"]]), "type"]
+    stocks <- names_df[match(
+      names(ensemble_pars[["range"]]),
+      names_df[["name"]]
+    ), "type"]
 
     for (i in seq_along(ensemble_pars[["range"]])) {
       name <- names(ensemble_pars[["range"]])[i]
@@ -1470,7 +1472,8 @@ compile_run_ode_julia <- function(sfm,
       .sdbuildR_env[["P"]][["parameter_name"]], ", ",
       .sdbuildR_env[["P"]][["initial_value_name"]],
       ifelse(ensemble_pars[["threaded"]], " = ensemble_to_df_threaded(",
-             " = ensemble_to_df("),
+        " = ensemble_to_df("
+      ),
       .sdbuildR_env[["P"]][["solution_name"]], ", ",
       .sdbuildR_env[["P"]][["model_setup_name"]], ".",
       .sdbuildR_env[["P"]][["initial_value_names"]],
@@ -1484,15 +1487,21 @@ compile_run_ode_julia <- function(sfm,
     )
 
     if (ensemble_pars[["return_sims"]]) {
-      script <- paste0(script, 'CSV.write("',
-                       ensemble_pars[["filepath_df"]][["df"]], '", ',
-                       .sdbuildR_env[["P"]][["sim_df_name"]], ")\n")
-      script <- paste0(script, 'CSV.write("',
-                       ensemble_pars[["filepath_df"]][["constants"]], '", ',
-                       .sdbuildR_env[["P"]][["parameter_name"]], ")\n")
-      script <- paste0(script, 'CSV.write("',
-                       ensemble_pars[["filepath_df"]][["init"]], '", ',
-                       .sdbuildR_env[["P"]][["initial_value_name"]], ")\n")
+      script <- paste0(
+        script, 'CSV.write("',
+        ensemble_pars[["filepath_df"]][["df"]], '", ',
+        .sdbuildR_env[["P"]][["sim_df_name"]], ")\n"
+      )
+      script <- paste0(
+        script, 'CSV.write("',
+        ensemble_pars[["filepath_df"]][["constants"]], '", ',
+        .sdbuildR_env[["P"]][["parameter_name"]], ")\n"
+      )
+      script <- paste0(
+        script, 'CSV.write("',
+        ensemble_pars[["filepath_df"]][["init"]], '", ',
+        .sdbuildR_env[["P"]][["initial_value_name"]], ")\n"
+      )
     }
 
 
@@ -1501,14 +1510,16 @@ compile_run_ode_julia <- function(sfm,
       script, "\n# Compute summary statisics\n",
       .sdbuildR_env[["P"]][["summary_df_name"]],
       ifelse(ensemble_pars[["threaded"]], " = ensemble_summ_threaded(",
-             " = ensemble_summ("),
+        " = ensemble_summ("
+      ),
       .sdbuildR_env[["P"]][["sim_df_name"]], ", ",
       "[", paste0(ensemble_pars[["quantiles"]], collapse = ", "),
       "])\n\n",
       .sdbuildR_env[["P"]][["parameter_name"]], "[!, :time] .= 0.0\n",
       .sdbuildR_env[["P"]][["summary_df_constants_name"]],
       ifelse(ensemble_pars[["threaded"]], " = ensemble_summ_threaded(",
-             " = ensemble_summ("),
+        " = ensemble_summ("
+      ),
       .sdbuildR_env[["P"]][["parameter_name"]], ", ",
       "[", paste0(ensemble_pars[["quantiles"]], collapse = ", "),
       "])\n",
@@ -1517,7 +1528,8 @@ compile_run_ode_julia <- function(sfm,
       .sdbuildR_env[["P"]][["initial_value_name"]], "[!, :time] .= 0.0\n",
       .sdbuildR_env[["P"]][["summary_df_init_name"]],
       ifelse(ensemble_pars[["threaded"]], " = ensemble_summ_threaded(",
-             " = ensemble_summ("),
+        " = ensemble_summ("
+      ),
       .sdbuildR_env[["P"]][["initial_value_name"]], ", ",
       "[", paste0(ensemble_pars[["quantiles"]], collapse = ", "),
       "])\n",

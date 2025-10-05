@@ -115,7 +115,6 @@ convert_equations_julia <- function(sfm, type, name, eqn, var_names, regex_units
   if (!nzchar(eqn) | eqn == "0" | eqn == "0.0") {
     return(default_out)
   } else {
-
     # Ensure there is no scientific notation
     eqn <- scientific_notation(eqn)
 
@@ -1150,7 +1149,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
   add_Rcode <- list(func = list())
 
   if (grepl("[[:alpha:]]", eqn)) {
-
     # Dataframe with regular expressions for each built-in Insight Maker function
     out <- get_syntax_julia()
     syntax_df <- out[["syntax_df"]]
@@ -1162,7 +1160,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
     R_regex <- syntax_df[["R_regex_first_iter"]]
 
     while (!done) {
-
       # Remove those matches that are in quotation marks or names
       idxs_exclude <- get_seq_exclude(eqn, var_names)
 
@@ -1280,7 +1277,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
 
         if (idx_func[["syntax"]] == "syntax0") {
           replacement <- idx_func[["julia"]]
-
         } else if (idx_func[["syntax"]] == "syntax1") {
           arg <- paste0(arg, collapse = ", ")
 
@@ -1374,8 +1370,10 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           arg4 <- ifelse(length(arg) > 3, arg[4], arg[1])
 
           # Number delayN() as there may be multiple
-          func_name <- paste0(name, .sdbuildR_env[["P"]][["delayN_suffix"]],
-                              length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
+          func_name <- paste0(
+            name, .sdbuildR_env[["P"]][["delayN_suffix"]],
+            length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1
+          )
 
           replacement <- paste0(func_name, .sdbuildR_env[["P"]][["outflow_suffix"]])
           setup <- paste0(
@@ -1454,7 +1452,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             initial = arg4
           )
         } else if (idx_func[["syntax"]] == "syntaxD") {
-
           # Convert random number generation
           replacement <- conv_distribution(
             arg,
@@ -1644,12 +1641,11 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
 #' @noRd
 #'
 conv_distribution <- function(arg, R_func, julia_func, distribution) {
-
   # The first argument must be an integer
   arg <- as.list(arg)
   arg[[1]] <- safe_convert(arg[[1]], "integer")
 
-  if (!is.integer(arg[[1]])){
+  if (!is.integer(arg[[1]])) {
     stop("The first argument of ", R_func, "() must be an integer!")
   }
 

@@ -11,6 +11,7 @@ if (!exists(".sdbuildR_env")) {
     jl_required_version = "1.11",
     # jl_pkg_name = "sdbuildRUtils",
     jl_pkg_name = "SystemDynamicsBuildR",
+    jl_pkg_version = "0.1.1",
     model_setup_name = "model_setup",
     macro_name = "macro",
     initial_value_name = "init",
@@ -66,5 +67,4 @@ if (!exists(".sdbuildR_env")) {
     saveat_func = "saveat_func",
     init_sdbuildR = "init_sdbuildR"
   )
-
 }
