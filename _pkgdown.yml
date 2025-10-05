@@ -1,6 +1,14 @@
 url: https://kcevers.github.io/sdbuildR/
 template:
   bootstrap: 5
+articles:
+- title: Vignettes
+  navbar: ~
+  contents:
+  - articles/build
+  - articles/julia-setup
+  - articles/ensemble
+  - articles/units
 reference:
 - title: Building stock-and-flow models
 - contents:

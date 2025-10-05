@@ -1,5 +1,5 @@
 test_that("converting equations to Julia", {
-  sfm <- xmile("predator-prey")
+  sfm <- xmile("predator_prey")
   var_names <- get_model_var(sfm)
   regex_units <- get_regex_units()
   name <- var_names[1]
@@ -97,7 +97,7 @@ end"
 
 
 test_that("converting functions to Julia with named arguments", {
-  sfm <- xmile("predator-prey")
+  sfm <- xmile("predator_prey")
   var_names <- get_model_var(sfm)
   regex_units <- get_regex_units()
   name <- var_names[1]
@@ -148,27 +148,39 @@ test_that("converting functions to Julia with named arguments", {
     sfm, type, name, "sd(a, y = test)",
     var_names,
     regex_units
-  ), "Argument y is not allowed for function sd\\. Allowed arguments: x, na\\.rm")
+  ), "Argument y is not allowed for function sd\\(\\)\\. Allowed arguments: x, na\\.rm")
 
   expect_error(convert_equations_julia(
     sfm, type, name, "rnorm(x = predator_births, mean = 0)",
     var_names,
     regex_units
-  ), "Argument x is not allowed for function rnorm. Allowed arguments: n, mean, sd")
+  ), "Argument x is not allowed for function rnorm\\(\\)\\. Allowed arguments: n, mean, sd")
 
   expect_error(convert_equations_julia(
     sfm, type, name, "rnorm(n = 1, x = predator_births, mean = 0)",
     var_names,
     regex_units
-  ), "Argument x is not allowed for function rnorm. Allowed arguments: n, mean, sd")
+  ), "Argument x is not allowed for function rnorm\\(\\)\\. Allowed arguments: n, mean, sd")
+
+  expect_error(convert_equations_julia(
+    sfm, type, name, "rnorm(dt)",
+    var_names,
+    regex_units
+  ), "The first argument of rnorm\\(\\) must be an integer")
 
 
   # Check for missing obligatory arguments
   expect_error(convert_equations_julia(
+    sfm, type, name, "rnorm()",
+    var_names,
+    regex_units
+  ), "Obligatory argument n is missing for function rnorm\\(\\)")
+
+  expect_error(convert_equations_julia(
     sfm, type, name, "rnorm(sd = predator_births, mean = 0)",
     var_names,
     regex_units
-  ), "Obligatory argument n is missing for function rnorm")
+  ), "Obligatory argument n is missing for function rnorm\\(\\)")
 
 
   # Check error for too many arguments
@@ -176,7 +188,7 @@ test_that("converting functions to Julia with named arguments", {
     sfm, type, name, "dnorm(1, 2, 3, log=FALSE, predator_deaths)",
     var_names,
     regex_units
-  ), "Too many arguments for function dnorm. Allowed arguments: x, mean, sd, log")
+  ), "Too many arguments for function dnorm\\(\\). Allowed arguments: x, mean, sd, log")
 
 
   # Error when not all default arguments are at the end
@@ -458,7 +470,7 @@ test_that("clean_unit_in_u() works", {
 
 
 test_that("converting statements", {
-  sfm <- xmile("predator-prey")
+  sfm <- xmile("predator_prey")
   var_names <- get_model_var(sfm)
 
   eqn <- "if(a > b){\n\t a + b\n} # test () {}"
@@ -530,7 +542,7 @@ test_that("replace_written_powers() works", {
 
 
 test_that("convert_distribution() to Julia", {
-  sfm <- xmile("predator-prey")
+  sfm <- xmile("predator_prey")
   # names_df = get_names(sfm)
   var_names <- get_model_var(sfm)
   name <- var_names[1]
@@ -600,7 +612,7 @@ test_that("convert_distribution() to Julia", {
 
 
 test_that("convert sequence works", {
-  sfm <- xmile("predator-prey")
+  sfm <- xmile("predator_prey")
   var_names <- get_model_var(sfm)
   name <- var_names[1]
   type <- "aux"
@@ -632,7 +644,7 @@ test_that("convert sequence works", {
 
 
 test_that("convert sample works", {
-  sfm <- xmile("predator-prey")
+  sfm <- xmile("predator_prey")
   var_names <- get_model_var(sfm)
   name <- var_names[1]
   type <- "aux"

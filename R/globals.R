@@ -9,7 +9,9 @@ if (!exists(".sdbuildR_env")) {
     debug = FALSE,
     insightmaker_version = 38,
     jl_required_version = "1.11",
-    jl_pkg_name = "sdbuildRUtils",
+    # jl_pkg_name = "sdbuildRUtils",
+    jl_pkg_name = "SystemDynamicsBuildR",
+    jl_pkg_version = "0.1.1",
     model_setup_name = "model_setup",
     macro_name = "macro",
     initial_value_name = "init",
@@ -64,28 +66,5 @@ if (!exists(".sdbuildR_env")) {
     MyCustomUnits = "MyCustomUnits",
     saveat_func = "saveat_func",
     init_sdbuildR = "init_sdbuildR"
-  )
-
-  .sdbuildR_env[["jl_pkg_pkg"]] <- c(
-    "DataFrames" = "1.7",
-    "Distributions" = "0.25",
-    "Statistics" = "1.11",
-    "Unitful" = "1.23",
-    "DataInterpolations" = "8.1",
-    "Random" = "1.11"
-  )
-
-  .sdbuildR_env[["jl_env_pkg"]] <- c(
-    "OrdinaryDiffEq" = "6.98",
-    "DiffEqCallbacks" = "4.8",
-    "DataFrames" = "1.7",
-    "Distributions" = "0.25",
-    "Statistics" = "1.11",
-    "StatsBase" = "0.34",
-    "Unitful" = "1.23",
-    "DataInterpolations" = "8.1",
-    "Random" = "1.11",
-    "CSV" = "0.10",
-    "SciMLBase" = "2.102"
   )
 }

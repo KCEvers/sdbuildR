@@ -3,7 +3,7 @@
 test_that("templates work", {
   testthat::skip_on_cran()
 
-  for (s in c("SIR", "predator-prey", "logistic_model", "Crielaard2022", "Duffing", "Chua")) {
+  for (s in c("SIR", "predator_prey", "logistic_model", "Crielaard2022", "Duffing", "Chua")) {
     sfm <- xmile(s) |> sim_specs(language = "Julia", stop = 10, dt = 0.1)
     expect_no_error(plot(sfm))
     expect_no_error(as.data.frame(sfm))
@@ -186,7 +186,7 @@ test_that("seed works", {
   testthat::skip_on_cran()
 
   # Without a seed, simulations shouldn't be the same
-  sfm <- xmile("predator-prey") |>
+  sfm <- xmile("predator_prey") |>
     sim_specs(seed = NULL, stop = 10, dt = 0.1) |>
     build(c("predator", "prey"), eqn = "runif(1, 20, 50)") |>
     sim_specs(language = "Julia")

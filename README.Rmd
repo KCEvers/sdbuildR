@@ -33,6 +33,7 @@ Model systems as stock-and-flow models in R. Stock-and-flow models are foundatio
 All package capabilities are described in the vignettes:
 
 * `vignette("build")` Learn how to build, modify, and debug stock-and-flow models.
+* `vignette("julia-setup")` Install and set up the Julia environment for running ensemble simulations and using units.
 * `vignette("ensemble")` Learn how to assess a model's sensitivity, uncertainty and robustness with ensemble simulations.
 * `vignette("units")` Learn why and how to use (custom) units.
 <!-- 3. **Delays**: Not all dynamics are instantaneous. Learn about delays (fixed, smooth, material and information) and how to implement them with sdbuildR. -->
@@ -44,16 +45,11 @@ All package capabilities are described in the vignettes:
 You can install the development version of sdbuildR like so:
 
 ```{r eval=FALSE, include=TRUE}
-# install.packages("remotes")
+if (!require("remotes")) install.packages("remotes")
 remotes::install_github("KCEvers/sdbuildR")
 ```
 
-sdbuildR offers two simulation engines: R and Julia (supported by [JuliaConnectoR](https://github.com/stefan-m-lenz/JuliaConnectoR/)). If you would like to run ensemble simulations and use units, you will need to set up the Julia environment. Run `use_julia()` to install Julia and required packages (initial setup may take 5–15 minutes):
-
-```{r installing Julia, eval=TRUE, include=TRUE}
-sdbuildR::use_julia()
-```
-
+sdbuildR offers two simulation engines: R and Julia (supported by [JuliaConnectoR](https://github.com/stefan-m-lenz/JuliaConnectoR/)). If you would like to run ensemble simulations and use units, you will need to install and set up the Julia environment. Follow the guide at `vignette("julia-setup")`.
 
 ## Limitations
 

@@ -45,7 +45,7 @@ Updated stock-and-flow model with new simulation specifications
 Simulation specifications are the settings that determine how the model is simulated, such as the integration method (i.e. solver), start and stop time, and timestep. Modify these specifications for an existing stock-and-flow model.
 }
 \examples{
-sfm <- xmile("predator-prey") |>
+sfm <- xmile("predator_prey") |>
   sim_specs(start = 0, stop = 50, dt = 0.1)
 sim <- simulate(sfm)
 plot(sim)

@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 inst/doc
+inst/Manifest.toml
 /doc/
 validate/
 paper/

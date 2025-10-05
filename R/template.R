@@ -2,14 +2,16 @@
 #'
 #' Create a stock-and-flow model from a template in the model library. The function will return a stock-and-flow model ready to be simulated and plotted, or modified in any way you like.
 #'
-#' @param name Name of model; one of "logistic_model", "SIR", "predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua", "spruce_budworm"
+#' @param name Name of model.
 #'
 #' @noRd
 #' @return Stock-and-flow model of class sdbuildR_xmile.
 #'
 template <- function(name) {
   model_names <- c(
-    "logistic_model", "SIR", "predator-prey", "Crielaard2022",
+    "logistic_model", "SIR", "predator_prey",
+    "cusp",
+    "Crielaard2022",
     # Meadows
     "coffee_cup", "bank_account",
     "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua",
@@ -65,7 +67,7 @@ template <- function(name) {
       build("Total_Population", "constant", eqn = "100000") |>
       build("Effective_Contact_Rate", "constant", eqn = "2") |>
       build("Delay", "constant", eqn = "2")
-  } else if (name == "predator-prey") {
+  } else if (name == "predator_prey") {
     sfm <- xmile() |>
       header(name = "Predator-Prey Dynamics (Lotka-Volterra)") |>
       sim_specs(method = "euler", stop = 500) |>
@@ -95,6 +97,17 @@ template <- function(name) {
           "Birth rate of prey", "Death rate of prey by predators"
         )
       )
+  } else if (name == "cusp") {
+    sfm <- xmile() |>
+      header(name = "Cusp Catastrophe") |>
+      sim_specs(method = "euler", stop = 500) |>
+      build("x", "stock", eqn = .1) |>
+      build("dxdt", "flow",
+        eqn = "a + b*x - x^3 + rnorm(1, dt)",
+        to = "x"
+      ) |>
+      build("a", "constant", eqn = 2, label = "Normal variable") |>
+      build("b", "constant", eqn = 2, label = "Splitting variable")
   } else if (name == "Crielaard2022") {
     sfm <- xmile() |>
       header(
@@ -275,12 +288,6 @@ template <- function(name) {
       build("beta", "constant", eqn = "28", label = "Parameter beta") |>
       build("m0", "constant", eqn = "-1.143", label = "Nonlinear slope m0") |>
       build("m1", "constant", eqn = "-0.714", label = "Nonlinear slope m1")
-  } else if (name == "spruce_budworm") {
-    sfm <- xmile() |>
-      build("N", "stock", eqn = .5) |>
-      build("inflow", "flow", eqn = "r * N * (1 - N/K)", to = "N") |>
-      build("outflow", "flow", eqn = "(B * N^2) / (A^2 + N^2)", from = "N") |>
-      build(c("r", "K", "B", "A"), "constant", eqn = c(.5, 1000, 10000, 1))
   }
 
 

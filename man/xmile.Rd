@@ -10,8 +10,8 @@ xmile(name = NULL)
 \item{name}{Name of the template to load. If NULL, an empty stock-and-flow
 model will be created with default simulation parameters and a default header.
 If specified, the name should be one of "logistic_model", "SIR",
-"predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz",
-"Rossler", "vanderPol", "Duffing", "Chua", "spruce_budworm".}
+"predator_prey", "cusp", "Crielaard2022", "coffee_cup", "bank_account",
+"Lorenz", "Rossler", "vanderPol", "Duffing", "Chua".}
 }
 \value{
 Stock-and-flow model of class sdbuildR_xmile. Its structure is based

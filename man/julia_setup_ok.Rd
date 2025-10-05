@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup_julia.R
 \name{julia_setup_ok}
 \alias{julia_setup_ok}
-\title{Check Julia environment set up}
+\title{Check Julia environment setup}
 \usage{
 julia_setup_ok()
 }
@@ -10,7 +10,7 @@ julia_setup_ok()
 Logical value
 }
 \description{
-Check Julia environment set up
+Check Julia environment setup
 }
 \examples{
 julia_setup_ok()

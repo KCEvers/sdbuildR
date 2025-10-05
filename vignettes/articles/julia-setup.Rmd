@@ -1,0 +1,244 @@
+---
+title: "Setting up Julia"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Setting up Julia}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+sdbuildR uses Julia for ensemble simulations and working with units in models. This is supported by the R package [JuliaConnectoR](https://github.com/stefan-m-lenz/JuliaConnectoR/). This guide will help you install Julia and configure it to work with sdbuildR.
+
+## Step 1: Install Julia
+
+Download and install Julia from [https://julialang.org/install/](https://julialang.org/install/). If you already have Julia installed, you can go to step 2.
+
+We recommend using **juliaup**, Julia's official version manager, which makes it easy to install and switch between Julia versions. Some useful commands are listed below.
+
+```bash
+# See installed versions and current default
+juliaup status
+
+# Install latest stable version
+juliaup add release
+
+# Install specific version
+juliaup add 1.11.3
+
+# Set default version
+juliaup default 1.11.3
+
+# Update juliaup and all Julia versions
+juliaup update
+
+# Remove a version
+juliaup remove 1.10.0
+
+# List all available versions
+juliaup list
+```
+
+Alternatively, you can download a standalone Julia installer from [https://julialang.org/downloads/](https://julialang.org/downloads/).
+
+## Step 2: Check if Julia is accessible
+
+After installing Julia, check if R can find it:
+
+```{r eval=FALSE}
+# Check if Julia is on your PATH
+Sys.which("julia")
+
+# Check if JULIA_BINDIR is set
+Sys.getenv("JULIA_BINDIR")
+
+# Verify JuliaConnectoR can find Julia
+JuliaConnectoR::juliaSetupOk()
+```
+
+If both `Sys.which("julia")` and `Sys.getenv("JULIA_BINDIR")` return an empty string (`""`), you'll need to add Julia to your PATH. If the Julia installation can be found, you can skip to step 6.
+
+## Step 3: Find your Julia installation path
+
+You need to locate the **bin directory** of your Julia installation (not the Julia executable itself).
+
+### From Julia
+
+If you can start Julia from your terminal/command prompt, run this inside Julia:
+
+```julia
+juliaBase.julia_cmd()[1]
+```
+
+This returns something like:
+
+- Windows: `"C:\\Users\\YourName\\.julia\\juliaup\\julia-1.11.3+0.x64.w64.mingw32\\bin\\julia.exe"`
+- macOS: `"/Applications/Julia-1.11.app/Contents/Resources/julia/bin/julia"`
+- Linux: `"/usr/bin/julia"`
+
+**Important**: You need the bin directory containing the executable (remove `julia.exe` or `julia` from the end).
+
+
+### From your terminal/command prompt
+
+**Windows:**
+```bash
+where julia
+```
+
+**macOS/Linux:**
+```bash
+which julia
+# or
+whereis julia
+```
+
+Take note of the path, removing the filename to get just the `bin` directory.
+
+## Step 4: Add Julia to your PATH permanently
+
+To make Julia accessible to R across all sessions, add it to your `.Renviron` file.
+
+### Open .Renviron
+
+Run this in R to open your `.Renviron` file:
+
+```{r eval=FALSE}
+# Install usethis if needed
+if (!require("usethis")) install.packages("usethis")
+
+# Open .Renviron for editing
+usethis::edit_r_environ()
+```
+
+This will open `.Renviron` in your text editor. If the file doesn't exist, it will be created.
+
+### Add Julia to PATH
+
+Add one of the following lines to `.Renviron`, replacing the path with your actual Julia bin directory:
+
+**Windows (use forward slashes):**
+```
+PATH="C:/Users/YourName/.julia/juliaup/julia-1.11.3+0.x64.w64.mingw32/bin;${PATH}"
+```
+
+**macOS:**
+```
+PATH="/Applications/Julia-1.11.app/Contents/Resources/julia/bin:${PATH}"
+```
+
+**Linux:**
+```
+PATH="/usr/bin:${PATH}"
+```
+
+If using **juliaup** (recommended), you can point to the **juliaup** directory instead of a specific version:
+
+**Windows:**
+```
+PATH="C:/Users/YourName/.julia/juliaup;${PATH}"
+```
+
+**macOS/Linux:**
+```
+PATH="~/.julia/juliaup/bin:${PATH}"
+```
+
+This allows **juliaup** to manage which Julia version is used.
+
+
+### Save and restart R.
+
+1. Save the `.Renviron` file
+2. Restart R (Session → Restart R in RStudio, or close and reopen R)
+
+## Step 5: Verify the setup
+
+After restarting R, verify that Julia is accessible:
+
+```{r eval=FALSE}
+# Should show the path to julia executable
+Sys.which("julia")
+
+# Check Julia version
+system("julia --version")
+
+# Verify JuliaConnectoR can find Julia
+JuliaConnectoR::juliaSetupOk()
+```
+
+If `Sys.which("julia")` returns a path and `juliaSetupOk()` returns `TRUE`, R can find your Julia installation!
+
+## Troubleshooting
+
+### Julia still not found after restarting R
+
+1. Double-check the path you added to `.Renviron`
+2. Make sure you're pointing to the `bin` directory, not the Julia executable
+3. On Windows, use forward slashes (`/`) not backslashes (`\`)
+4. Verify you saved `.Renviron` and restarted R
+
+### View your current PATH
+
+To see all directories in your PATH:
+
+```{r eval=FALSE}
+# View PATH split by separator for readability
+strsplit(Sys.getenv("PATH"), .Platform$path.sep)[[1]]
+```
+
+Look for your Julia bin directory in this list.
+
+## Advanced: Using multiple Julia versions
+
+If you have multiple Julia versions installed, the first one found in your PATH will be used by default.
+
+### Switch versions with juliaup
+
+If using juliaup, you can change the default version without modifying `.Renviron`:
+
+```bash
+# From terminal/command prompt
+juliaup default 1.11.3
+```
+
+## Step 6: Using Julia with sdbuildR
+
+To set up the Julia environment for sdbuildR, including all necessary packages, run `use_julia()`. First time use can take quite a while (i.e., 10-30 minutes). 
+
+```{r eval=FALSE}
+library(sdbuildR)
+```
+
+```{r eval=FALSE}
+use_julia()
+```
+
+The Julia environment needs to be set up for *each* new R session, but should now be much quicker.
+
+### Using a specific version with sdbuildR
+
+By default, sdbuildR uses your default Julia version. To use a different version:
+
+```{r eval=FALSE}
+use_julia(JULIA_HOME = "C:/Users/YourName/.julia/juliaup/julia-1.11.3+0.x64.w64.mingw32/bin")
+```
+
+Note: This only affects the current R session and is not permanent.
+
+### Close Julia session
+
+To close the Julia session:
+
+```{r eval=FALSE}
+use_julia(stop = TRUE)
+```
+

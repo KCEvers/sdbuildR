@@ -5,7 +5,6 @@ test_that("use_julia() works", {
   # .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] = NULL
   #
   # .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] = TRUE
-  #
 
   expect_no_error(expect_no_warning(expect_no_message(use_julia(stop = TRUE))))
 

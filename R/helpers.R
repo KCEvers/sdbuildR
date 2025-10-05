@@ -31,7 +31,7 @@ has_internet <- function() {
 #' @examples
 #' not_on_cran()
 not_on_cran <- function() {
-  env <- Sys.getenv("NOT_CRAN")
+  env <- Sys.getenv("NOT_CRAN", unset = "")
   if (identical(env, "")) {
     interactive()
   } else {
@@ -201,22 +201,112 @@ clean_language <- function(language) {
 }
 
 
-#' Clean type
+#' Clean variable type
 #'
 #' @inheritParams build
 #'
-#' @returns Cleaned type string
+#' @returns Cleaned string or vector
 #' @noRd
 clean_type <- function(type) {
-  trimws(tolower(type))
+  type <- Filter(nzchar, trimws(tolower(type)))
 
   # Allow for use of auxiliary instead of aux
-  type[type == "auxiliary"] <- "aux"
+  type[type == "auxiliary" | type == "auxiliaries"] <- "aux"
 
   # Remove trailing s if present
   type <- gsub("s$", "", type)
+
+  type[type == "model_unit"] <- "model_units"
+
   return(type)
 }
+
+
+
+#' Clean variable name(s)
+#'
+#' Clean variable name(s) to create syntactically valid, unique names for use in R and Julia.
+#'
+#' @param new Vector of names to transform to valid names
+#' @param existing Vector of existing names in model
+#' @param protected Optional vector of protected names
+#'
+#' @return Translated names
+#' @export
+#' @family internal
+#'
+clean_name <- function(new, existing, protected = c()) {
+  # Define protected names: these cannot be used as variable names
+  protected_names <- c(
+    # Reserved words in R
+    "if",
+    "else", "repeat", "function", "return", "while", "for", "in", "next", "break", "TRUE", "FALSE", # already protected
+    "T", "F",
+    # "NULL", "Inf", "NaN", "NA", "NA_integer_", "NA_real_", "NA_complex_", "NA_character_", # already protected
+    "time", # used as first variable in simulation dataframe #"Time", "TIME",
+    # "constraints",
+    # Add Julia keywords
+    "baremodule", "begin", "break", "catch", "const", "continue", "do",
+    "else", "elseif", "end", "export", "false", "finally",
+    "global", "error", "throw",
+    "import", "let", "local", "macro", "module", "quote", "return", "struct", "true", "try", "catch", "using",
+    "Missing", "missing", "Nothing", "nothing",
+
+    # Add R custom functions
+    get_exported_functions("sdbuildR"),
+
+    # Add Julia custom function names
+    names(get_func_julia()),
+
+    # These are variables in the ode and cannot be model element names
+    unname(unlist(.sdbuildR_env[["P"]][names(.sdbuildR_env[["P"]]) %in% c(
+      "jl_pkg_name", "model_setup_name", "macro_name", "initial_value_name", "initial_value_names", "parameter_name", "parameter_names",
+      "state_name", "time_name", "change_state_name", "times_name", "timestep_name", "saveat_name", "time_units_name", "ensemble_iter", "ode_func_name", "callback_func_name", "callback_name", "intermediaries", "rootfun_name", "eventfun_name", "convert_u_func", "sdbuildR_units", "MyCustomUnits", "init_sdbuildR"
+    )])),
+    protected,
+    as.character(stats::na.omit(existing))
+  ) |> unique()
+
+  # stock_names <- names_df[names_df[["type"]] == "stock", "name"]
+  # if (length(stock_names) > 0) {
+  #   if (all(!is.null(stock_names) & !is.na(stock_names))) {
+  #     protected_names <- c(
+  #       protected_names,
+  #       paste0(.sdbuildR_env[["P"]][["change_prefix"]], stock_names)
+  #     )
+  #   }
+  # }
+
+  # Make syntactically valid and unique names out of character vectors; Insight Maker allows names to be double, so make unique
+  new_names <- make.names(c(protected_names, trimws(new)), unique = TRUE)
+  # For Julia translation, remove names with a period
+  new_names <- stringr::str_replace_all(new_names, "\\.", "_")
+  # This may cause overlap in names, so repeat
+  new_names <- make.names(new_names, unique = TRUE)
+  new_names <- stringr::str_replace_all(new_names, "\\.", "_")
+  new_names <- make.names(new_names, unique = TRUE)[-seq_along(protected_names)] # Remove protected names
+
+  # If any names end in a suffix used by sdbuildR, add _
+  pattern <- paste0(
+    # e.g. names cannot end with _delay[0-9]+$ or _delay[0-9]+_acc[0-9]+$
+    .sdbuildR_env[["P"]][["conveyor_suffix"]], "$|", .sdbuildR_env[["P"]][["delay_suffix"]],
+    "[0-9]+$|", .sdbuildR_env[["P"]][["past_suffix"]], "[0-9]+$|",
+    .sdbuildR_env[["P"]][["fix_suffix"]], "$|",
+    .sdbuildR_env[["P"]][["fix_length_suffix"]], "$|",
+    .sdbuildR_env[["P"]][["conveyor_suffix"]], "$|",
+    .sdbuildR_env[["P"]][["delayN_suffix"]], "[0-9]+",
+    .sdbuildR_env[["P"]][["acc_suffix"]], "[0-9]+$|",
+    .sdbuildR_env[["P"]][["smoothN_suffix"]], "[0-9]+",
+    .sdbuildR_env[["P"]][["acc_suffix"]], "[0-9]+$"
+  )
+
+  idx <- grepl(new_names, pattern = pattern)
+  new_names[idx] <- paste0(new_names[idx], "_")
+
+  return(new_names)
+}
+
+
 
 
 #' Quickly get names of model variables
@@ -294,4 +384,29 @@ get_names <- function(sfm) {
 
   rownames(names_df) <- NULL
   return(names_df)
+}
+
+
+#' Convert if possible
+#'
+#' @param x Value
+#'
+#' @returns Converted value
+#' @noRd
+#'
+safe_convert <- function(x, target_class) {
+  result <- switch(target_class,
+    "numeric" = suppressWarnings(as.numeric(x)),
+    "integer" = suppressWarnings(as.integer(x)),
+    "logical" = suppressWarnings(as.logical(x)),
+    "character" = as.character(x),
+    x # return original if class not recognized
+  )
+
+  # Keep original if conversion failed (became NA but wasn't originally NA)
+  if (target_class != "character" && is.na(result) && !is.na(x)) {
+    return(x)
+  } else {
+    return(result)
+  }
 }

@@ -20,7 +20,7 @@ test_that("compare output Julia and R for templates", {
   expect_equal(sim2$success, TRUE)
   expect_equal(nrow(sim2$df) > 0, TRUE)
 
-  sfm <- xmile("predator-prey") |> sim_specs(dt = 0.1, save_at = 1, stop = 10)
+  sfm <- xmile("predator_prey") |> sim_specs(dt = 0.1, save_at = 1, stop = 10)
   sim1 <- simulate(sfm |> sim_specs(language = "R"))
   sim2 <- simulate(sfm |> sim_specs(language = "Julia"))
   comp <- compare_sim(sim1, sim2)

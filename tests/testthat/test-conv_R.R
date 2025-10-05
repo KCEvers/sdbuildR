@@ -1,5 +1,5 @@
 test_that("convert_builtin_functions_IM assignment", {
-  sfm <- xmile("predator-prey")
+  sfm <- xmile("predator_prey")
   var_names <- get_model_var(sfm)
   regex_units <- get_regex_units()
   name <- "test"

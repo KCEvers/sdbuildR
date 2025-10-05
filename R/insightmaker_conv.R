@@ -204,9 +204,9 @@ IM_to_xmile <- function(xml_file) {
 
   # Variables cannot be the same name as Insight Maker functions
   IM_func_names <- get_syntax_IM()[["conv_df"]][["insightmaker"]]
-  new_names <- create_R_names(old_names,
+  new_names <- clean_name(old_names,
     # Normally, names_df is specified here
-    data.frame(name = NULL),
+    NULL,
     protected = c(
       IM_func_names, tolower(IM_func_names),
       toupper(IM_func_names)
@@ -961,9 +961,9 @@ replace_macro_names_IM <- function(sfm) {
         name_insightmaker <- trimws(sub("^function", "", sub("\\(.*", "", sub_eqn, ignore.case = TRUE), ignore.case = TRUE))
 
         # Variables cannot be the same name as Insight Maker functions
-        name <- create_R_names(name_insightmaker,
+        name <- clean_name(name_insightmaker,
           # Normally, names_df is specified here
-          data.frame(name = var_names),
+          var_names,
           protected = c(
             IM_func_names, tolower(IM_func_names),
             toupper(IM_func_names)
@@ -986,9 +986,9 @@ replace_macro_names_IM <- function(sfm) {
           contains_name <- stringr::str_detect(arg, "=")
           arg_split <- stringr::str_split_fixed(arg, "=", n = 2)
           names_arg_insightmaker <- arg_split[, 1]
-          names_arg <- create_R_names(names_arg_insightmaker,
+          names_arg <- clean_name(names_arg_insightmaker,
             # Normally, names_df is specified here
-            data.frame(name = var_names),
+            var_names,
             protected = c(
               IM_func_names, tolower(IM_func_names),
               toupper(IM_func_names)
@@ -998,9 +998,9 @@ replace_macro_names_IM <- function(sfm) {
           # Extract function name, but add opening bracket
           name_insightmaker <- trimws(sub("\\(.*", "", name_insightmaker))
 
-          name <- create_R_names(name_insightmaker,
+          name <- clean_name(name_insightmaker,
             # Normally, names_df is specified here
-            data.frame(name = var_names),
+            var_names,
             protected = c(
               IM_func_names, tolower(IM_func_names),
               toupper(IM_func_names)
@@ -1012,9 +1012,9 @@ replace_macro_names_IM <- function(sfm) {
           name <- paste0(name, "(")
         } else {
           # Variables cannot be the same name as Insight Maker functions
-          name <- create_R_names(name_insightmaker,
+          name <- clean_name(name_insightmaker,
             # Normally, names_df is specified here
-            data.frame(name = var_names),
+            var_names,
             protected = c(
               IM_func_names, tolower(IM_func_names),
               toupper(IM_func_names)

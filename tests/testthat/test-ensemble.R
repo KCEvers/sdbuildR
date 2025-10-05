@@ -129,7 +129,7 @@ test_that("ensemble works", {
 
 test_that("plotting ensemble also works with singular time point", {
   # If you already have random elements in the model, no need to specify what to vary
-  sfm <- xmile("predator-prey") |>
+  sfm <- xmile("predator_prey") |>
     sim_specs(
       language = "Julia",
       start = 0, stop = 5,
@@ -287,7 +287,7 @@ test_that("ensemble works with units", {
 
 test_that("ensemble works with NA", {
   # Combine varying initial condition and parameters
-  sfm <- xmile("predator-prey") |>
+  sfm <- xmile("predator_prey") |>
     build(c("predator", "prey"), eqn = "runif(1, 30, 50)") |>
     sim_specs(
       language = "Julia",

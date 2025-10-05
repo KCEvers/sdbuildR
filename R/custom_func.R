@@ -506,6 +506,7 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
 
 
 
+
 #' Internal function to save dataframe at specific times
 #'
 #' Internal function used to save the dataframe at specific times in case save_at is not equal to dt in the simulation specifications.

@@ -103,15 +103,15 @@ The obligatory properties of an auxiliary are "name", "type", "xpts", and "ypts"
 
 \examples{
 
-# First initialize an empty model:
+# First initialize an empty model
 sfm <- xmile()
 summary(sfm)
 \dontshow{
 sfm <- sim_specs(sfm, save_at = .5)
 }
 
-# Add two stocks. Specify their initial values in the "eqn" property, as well
-# as their plotting label
+# Add two stocks. Specify their initial values in the "eqn" property
+# and their plotting label.
 sfm <- build(sfm, "predator", "stock", eqn = 10, label = "Predator") |>
   build("prey", "stock", eqn = 50, label = "Prey")
 
@@ -138,7 +138,7 @@ sfm <- build(sfm, "predator_births", "flow",
 plot(sfm)
 
 # The flows make use of four other variables: "delta", "gamma", "alpha", and
-# "beta". Define these as constants in a vectorized manner for efficiency:
+# "beta". Define these as constants in a vectorized manner for efficiency.
 sfm <- build(sfm, c("delta", "gamma", "alpha", "beta"), "constant",
   eqn = c(.025, .5, .5, .05),
   label = c("Delta", "Gamma", "Alpha", "Beta"),
@@ -148,11 +148,11 @@ sfm <- build(sfm, c("delta", "gamma", "alpha", "beta"), "constant",
   )
 )
 
-# We now have a complete predator-prey model which is ready to be simulated
+# We now have a complete predator-prey model which is ready to be simulated.
 sim <- simulate(sfm)
 plot(sim)
 
-# Modify variable
+# Modify a variable - note that we no longer need to specify type
 sfm <- build(sfm, "delta", eqn = .03, label = "DELTA")
 
 # Change variable name (throughout the model)
@@ -166,7 +166,7 @@ sfm <- build(sfm, "prey", erase = TRUE)
 
 # To add and/or modify variables more quickly, pass a dataframe.
 # The dataframe is processed row-wise.
-# To create a logistic population growth model:
+# For instance, to create a logistic population growth model:
 df <- data.frame(
   type = c("stock", "flow", "flow", "constant", "constant"),
   name = c("X", "inflow", "outflow", "r", "K"),

@@ -43,8 +43,7 @@ export_plot <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi =
   }
 
   if ("grViz" %in% class(pl)) {
-
-    if (!nzchar(format)){
+    if (!nzchar(format)) {
       stop("No file extension specified! Choose one of png, pdf, svg, ps, eps, webp.")
     }
 
@@ -52,8 +51,7 @@ export_plot <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi =
       width = width, height = height
     )
   } else if ("plotly" %in% class(pl)) {
-
-    if (!nzchar(format)){
+    if (!nzchar(format)) {
       stop("No file extension specified! Choose one of png, pdf, jpg, jpeg, webp.")
     }
 
@@ -160,12 +158,8 @@ export_plotly <- function(pl, filepath, format, width, height) {
   # Cleanup
   file.remove(temp_html)
 
-  # # Explicit cleanup to avoid "connections left open"
-  # gc()
-
   return(invisible())
 }
-
 
 
 
@@ -175,6 +169,7 @@ export_plotly <- function(pl, filepath, format, width, height) {
 #' Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Thin grey edges indicate dependencies between variables. By default, constants (indicated by italic labels) are not shown. Hover over the variables to see their equations.
 #'
 #' @param x Stock-and-flow model of class sdbuildR_xmile
+#' @param vars Variables to plot. Defaults to NULL to plot all variables.
 #' @param format_label If TRUE, apply default formatting (removing periods and underscores) to labels if labels are the same as variable names.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 20.
 #' @param font_size Font size. Defaults to 18.
@@ -198,7 +193,13 @@ export_plotly <- function(pl, filepath, format, width, height) {
 #' sfm <- xmile("SIR")
 #' plot(sfm)
 #'
+#' # Don't show constants or auxiliaries
+#' plot(sfm, show_constants = FALSE, show_aux = FALSE)
+#'
+#' # Only show specific variables
+#' plot(sfm, vars = "Susceptible")
 plot.sdbuildR_xmile <- function(x,
+                                vars = NULL,
                                 format_label = TRUE,
                                 wrap_width = 20,
                                 font_size = 18,
@@ -212,16 +213,75 @@ plot.sdbuildR_xmile <- function(x,
                                 minlen = 2,
                                 ...) {
   sfm <- x
-  check_xmile(x)
-
-  # Check whether there are any stocks or flows
-  temp <- length(sfm[["model"]][["variables"]][["stock"]]) == 0 & length(sfm[["model"]][["variables"]][["flow"]]) == 0
-  if (temp) {
-    stop("Your model contains no stocks or flows!")
-  }
+  rm(x)
+  check_xmile(sfm)
 
   # Get property dataframe
   df <- as.data.frame(sfm, properties = c("type", "name", "label", "eqn"))
+
+  # Check whether there are any variables
+  if (nrow(df) == 0) {
+    stop("Your model contains no variables!")
+  }
+
+  # Get dependencies
+  dep <- find_dependencies(sfm)
+  flow_df <- get_flow_df(sfm)
+
+  if (!is.null(vars)) {
+    if (!is.character(vars)) {
+      stop("vars must be a character vector!")
+    }
+
+    vars <- unique(vars)
+
+    if (length(vars) == 0) {
+      stop("vars cannot be of length zero!")
+    }
+
+    # Check whether specified variables are in the model
+    idx <- !(vars %in% df[["name"]])
+    if (any(idx)) {
+      stop(paste0(
+        paste0(vars[idx], collapse = ", "),
+        ifelse(sum(idx) == 1, " is not a variable", " are not variables"),
+        " in the model! Model variables: ",
+        paste0(df[["name"]], collapse = ", ")
+      ))
+    }
+
+    # # Add dependencies of vars
+    # vars <- c(vars, unname(unlist(dep[vars])))
+    #
+    # # For all stocks in vars, also include their inflows and outflows,
+    # # and the stocks that those inflows and outflows are connected to.
+    # stock_vars <- vars[vars %in% df[df[["type"]] == "stock", "name"]]
+    # if (length(stock_vars) > 0){
+    #   idx <- flow_df[["to"]] %in% stock_vars | flow_df[["from"]] %in% stock_vars
+    #   if (any(idx)){
+    #     vars <- unique(c(vars, unname(unlist(flow_df[idx, ])) ))
+    #   }
+    # }
+
+    # Only keep these variables in flow_df, dep, and df
+    df <- df[df[["name"]] %in% vars, , drop = FALSE]
+    dep <- dep[names(dep) %in% vars]
+    flow_df <- flow_df[flow_df[["name"]] %in% vars, , drop = FALSE]
+
+    # Set stocks not in vars to ''
+    flow_df[["to"]][!flow_df[["to"]] %in% vars] <- ""
+    flow_df[["from"]][!flow_df[["from"]] %in% vars] <- ""
+
+    # Set show_aux to TRUE if any variables are aux
+    if (any(vars %in% df[df[["type"]] == "aux", "name"])) {
+      show_aux <- TRUE
+    }
+
+    # Set show_constants to TRUE if any variables are constants
+    if (any(vars %in% df[df[["type"]] == "constant", "name"])) {
+      show_constants <- TRUE
+    }
+  }
 
   if (format_label) {
     df[["label"]] <- ifelse(df[["name"]] == df[["label"]],
@@ -233,6 +293,7 @@ plot.sdbuildR_xmile <- function(x,
   }
 
   # Text wrap to prevent long names
+  df[["label"]] <- gsub("'", "\\\\'", df[["label"]])
   df[["label"]] <- stringr::str_wrap(df[["label"]], width = wrap_width)
   dict <- stats::setNames(df[["label"]], df[["name"]])
 
@@ -260,20 +321,11 @@ plot.sdbuildR_xmile <- function(x,
     plot_var <- c(plot_var, aux_names)
   }
 
-  format_flow <- function(var) {
-    ifelse(var %in% flow_names,
-      paste0("flow_", var),
-      var
-    )
-  }
-
-  # Get dependencies
-  dep <- find_dependencies(x)
-
   # Prepare stock nodes
   if (length(stock_names) > 0) {
     stock_nodes <- sprintf(
-      "%s [label='%s',tooltip = 'eqn = %s',shape=box,style=filled,fillcolor='%s',fontsize=%s,fontname='%s']",
+      "%s [id=%s,label='%s',tooltip = 'eqn = %s',shape=box,style=filled,fillcolor='%s',fontsize=%s,fontname='%s']",
+      paste0("'", stock_names, "'"),
       paste0("'", stock_names, "'"),
       dict[stock_names],
       dict_eqn[stock_names],
@@ -286,7 +338,8 @@ plot.sdbuildR_xmile <- function(x,
   # Prepare auxiliary nodes
   if (length(aux_names) > 0) {
     aux_nodes <- sprintf(
-      "%s [label='%s',tooltip = 'eqn = %s',shape=plaintext,fontsize=%s,fontname='%s', width=0.6, height=0.3]",
+      "%s [id=%s,label='%s',tooltip = 'eqn = %s',shape=plaintext,fontsize=%s,fontname='%s', width=0.6, height=0.3]",
+      paste0("'", aux_names, "'"),
       paste0("'", aux_names, "'"),
       dict[aux_names],
       dict_eqn[aux_names],
@@ -305,9 +358,10 @@ plot.sdbuildR_xmile <- function(x,
     }, character(1), USE.NAMES = FALSE)
 
     const_nodes <- sprintf(
-      "%s [label=<%s>, tooltip = 'eqn = %s',
+      "%s [id=%s,label=<%s>, tooltip = 'eqn = %s',
                          shape=plaintext,fontsize=%s,fontname='%s',
                          width=0.6, height=0.3]",
+      paste0("'", const_names, "'"),
       paste0("'", const_names, "'"),
       formatted_labels,
       dict_eqn[const_names],
@@ -361,7 +415,7 @@ plot.sdbuildR_xmile <- function(x,
   rank_statements <- ""
   if (length(rank_groups) > 0) {
     rank_statements <- vapply(names(rank_groups), function(rank_node) {
-      vars_in_rank <- format_flow(rank_groups[[rank_node]])
+      vars_in_rank <- rank_groups[[rank_node]]
       sprintf(
         "      {rank=same; %s }",
         paste0("'", c(rank_node, vars_in_rank), "'", collapse = "; ")
@@ -373,8 +427,9 @@ plot.sdbuildR_xmile <- function(x,
   cloud_nodes <- flow_edges <- flow_nodes <- dependency_edges <- legend_nodes <- legend_edges <- ""
 
   if (length(flow_names) > 0) {
-    # Create dataframe with direction of flows
-    flow_df <- get_flow_df(sfm)
+    # # Create dataframe with direction of flows
+    # flow_df <- get_flow_df(sfm)
+
     # If the flow is to a stock that doesn't exist, remove
     flow_df[["from"]] <- ifelse(flow_df[["from"]] %in% stock_names,
       flow_df[["from"]], ""
@@ -406,10 +461,10 @@ plot.sdbuildR_xmile <- function(x,
     }
 
     # Create intermediate flow nodes (small nodes that flows pass through)
-    flow_node_names <- paste0("flow_", flow_names)
     flow_nodes <- sprintf(
-      "%s [label='%s', tooltip = 'eqn = %s', shape = plaintext, fontsize=%s, fontname='%s', width=0.6, height=0.3]",
-      paste0("'", flow_node_names, "'"),
+      "%s [id=%s,label='%s', tooltip = 'eqn = %s', shape = plaintext, fontsize=%s, fontname='%s', width=0.6, height=0.3]",
+      paste0("'", flow_names, "'"),
+      paste0("'", flow_names, "'"),
       dict[flow_names],
       dict_eqn[flow_names],
       font_size - 2,
@@ -420,7 +475,7 @@ plot.sdbuildR_xmile <- function(x,
     flow_edges <- c()
     for (i in seq_len(nrow(flow_df))) {
       flow_name <- flow_df[i, "name"]
-      flow_node <- paste0("flow_", flow_name)
+      flow_node <- flow_name
       from_node <- flow_df[i, "from"]
       to_node <- flow_df[i, "to"]
 
@@ -459,18 +514,23 @@ plot.sdbuildR_xmile <- function(x,
       intersect(x, plot_var)
     })
 
-    dependency_edges <- unlist(lapply(names(dep), function(x) {
-      if (length(dep[[x]]) > 0) {
-        vapply(dep[[x]], function(y) {
-          sprintf(
-            "%s -> %s [color='%s', arrowsize=0.8, penwidth=1, splines=true, constraint=false, tailport='_']",
-            paste0("'", format_flow(y), "'"),
-            paste0("'", format_flow(x), "'"),
-            dependency_col
-          )
-        }, character(1), USE.NAMES = FALSE)
-      }
-    }))
+    # Only keep entries in plot_var
+    dep <- dep[names(dep) %in% plot_var]
+
+    if (length(dep) > 0) {
+      dependency_edges <- unlist(lapply(names(dep), function(x) {
+        if (length(dep[[x]]) > 0) {
+          vapply(dep[[x]], function(y) {
+            sprintf(
+              "%s -> %s [color='%s', arrowsize=0.8, penwidth=1, splines=true, constraint=false, tailport='_']",
+              paste0("'", y, "'"),
+              paste0("'", x, "'"),
+              dependency_col
+            )
+          }, character(1), USE.NAMES = FALSE)
+        }
+      }))
+    }
   }
 
   # Compile string for diagram
@@ -516,7 +576,6 @@ plot.sdbuildR_xmile <- function(x,
   )
 
   pl <- DiagrammeR::grViz(viz_str)
-  pl
 
   return(pl)
 }
@@ -549,25 +608,32 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
       stop("vars cannot be of length zero!")
     }
   }
+
   # If vars is specified and it contains a constant, set add_constants = TRUE
   if (!is.null(vars)) {
-    constant_names <- names_df[names_df[["type"]] %in% c("constant", "gf"), "name"]
+    constant_names <- names_df[
+      names_df[["type"]] %in% c("constant", "gf"),
+      "name"
+    ]
     vars_constants <- intersect(constant_names, vars)
     constants_not_in_vars <- setdiff(constant_names, vars_constants)
 
     # Overwrite
     add_constants <- length(vars_constants) > 0
 
-
-    # If not all constants shouls be added, only select those in vars
+    # If not all constants should be added, only select those in vars
     if (add_constants) {
       # Remove constants not in vars
-      names_df <- names_df[!(names_df[["name"]] %in% constants_not_in_vars), , drop = FALSE]
+      names_df <- names_df[!(names_df[["name"]] %in% constants_not_in_vars), ,
+        drop = FALSE
+      ]
 
       if (type_sim == "sim") {
         constants <- constants[vars_constants]
       } else if (type_sim == "ensemble") {
-        constants <- constants[!(constants[["variable"]] %in% constants_not_in_vars), , drop = FALSE]
+        constants <- constants[!(constants[["variable"]] %in% constants_not_in_vars), ,
+          drop = FALSE
+        ]
       }
     }
   } # else {
@@ -584,7 +650,9 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
         constants <- constants[!idx_func]
 
         # Remove from names
-        names_df <- names_df[!names_df[["name"]] %in% names(idx_func[idx_func]), , drop = FALSE]
+        names_df <- names_df[!names_df[["name"]] %in% names(idx_func[idx_func]), ,
+          drop = FALSE
+        ]
 
         # Duplicate long format for each constant
         if (length(constants) > 0) {
@@ -656,17 +724,20 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
   if (nrow(names_df) != length(unique(names_df[["label"]]))) {
     labels <- names_df[["label"]]
     dup_indices <- which(labels %in% labels[duplicated(labels) |
-                                              duplicated(labels, fromLast = TRUE)])
+      duplicated(labels, fromLast = TRUE)])
 
     # Relabel, otherwise plotting will go wrong with recoded variables
-    names_df[dup_indices, "label"] <- paste0(names_df[dup_indices, "label"], "(",
-                                             names_df[dup_indices, "name"], ")")
+    names_df[dup_indices, "label"] <- paste0(
+      names_df[dup_indices, "label"], "(",
+      names_df[dup_indices, "name"], ")"
+    )
   }
 
 
   # Ensure only variables which are in the dataframe are included
   names_df <- names_df[names_df[["name"]] %in% unique(df[["variable"]]), ,
-                       drop = FALSE]
+    drop = FALSE
+  ]
 
   # Create dictionary with stock and non-stock names and labels
   highlight_names <- names_df[match(highlight_these_names, names_df[["name"]]), , drop = FALSE]
