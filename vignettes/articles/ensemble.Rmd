@@ -40,7 +40,7 @@ sfm <- xmile("Crielaard2022")
 summary(sfm)
 ```
 
-Ensemble simulations are only supported in Julia, so we need to load the Julia environment and change the simulation language to Julia:
+Ensemble simulations are only supported in Julia, so we need to load the Julia environment and change the simulation language to Julia. For guidance on installing and setting up the Julia environment, see `vignette(julia-setup)`.
 
 ```{r, results='hide'}
 use_julia()

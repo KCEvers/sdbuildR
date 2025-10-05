@@ -6,6 +6,7 @@
 \usage{
 \method{plot}{sdbuildR_xmile}(
   x,
+  vars = NULL,
   format_label = TRUE,
   wrap_width = 20,
   font_size = 18,
@@ -22,6 +23,8 @@
 }
 \arguments{
 \item{x}{Stock-and-flow model of class sdbuildR_xmile}
+
+\item{vars}{Variables to plot. Defaults to NULL to plot all variables.}
 
 \item{format_label}{If TRUE, apply default formatting (removing periods and underscores) to labels if labels are the same as variable names.}
 
@@ -57,6 +60,11 @@ Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as b
 sfm <- xmile("SIR")
 plot(sfm)
 
+# Don't show constants or auxiliaries
+plot(sfm, show_constants = FALSE, show_aux = FALSE)
+
+# Only show specific variables
+plot(sfm, vars = "Susceptible")
 }
 \seealso{
 \code{\link[=insightmaker_to_sfm]{insightmaker_to_sfm()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=plot.sdbuildR_sim]{plot.sdbuildR_sim()}}

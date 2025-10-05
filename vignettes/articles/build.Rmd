@@ -365,7 +365,7 @@ kableExtra::kbl(functions_table,
 We may want to observe the system over a longer time period, or with a different time step. To change the simulation specifications, use `sim_specs()`. Below, we simulate from 0 to 250 days.  To decrease the size of the resulting dataframe, the simulation time step `dt` should *not* be lowered, as this can affect the accuracy of the simulation. Rather, we can save the simulation results only every 0.1 days, which preserves accuracy. We additionally don't save the first 100 days. The method is set to `"euler"`, which is the simplest numerical integration method. 
 
 ```{r}
-sfm <- xmile("predator-prey") |>
+sfm <- xmile("predator_prey") |>
   sim_specs(
     time_units = "days",
     start = 0,

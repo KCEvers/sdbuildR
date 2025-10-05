@@ -21,6 +21,7 @@ Compare two simulations
 }
 \seealso{
 Other internal: 
+\code{\link{clean_name}()},
 \code{\link{has_internet}()},
 \code{\link{nonnegative}()},
 \code{\link{not_on_cran}()},

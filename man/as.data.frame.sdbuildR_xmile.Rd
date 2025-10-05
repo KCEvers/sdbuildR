@@ -21,7 +21,7 @@
 
 \item{optional}{Ignored parameter.}
 
-\item{type}{Variable types to retain in the dataframe. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'model_units', or 'macro'. Defaults to NULL to include all variable types.}
+\item{type}{Variable types to retain in the dataframe. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'macro', or 'model_units'. Defaults to NULL to include all types.}
 
 \item{name}{Variable names to retain in the dataframe. Defaults to NULL to include all variables.}
 

@@ -69,7 +69,7 @@ If you do not see any variation within a condition of the ensemble (i.e. the con
 }
 \examples{
 # Load example and set simulation language to Julia
-sfm <- xmile("predator-prey") |> sim_specs(language = "Julia")
+sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
 
 # Set random initial conditions
 sfm <- build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")

@@ -61,21 +61,6 @@ test_that("modify to and from", {
 })
 
 
-test_that("plot(sfm) works", {
-  sfm <- xmile("SIR")
-  expect_no_error(plot(sfm))
-
-  # Plot without stocks or flows throws error
-  expect_error(plot(xmile()), "Your model contains no stocks or flows")
-
-  # Plot with only one stock works
-  expect_no_error(xmile() |> build("a", "stock"))
-
-  # Plot with only one flow works
-  expect_no_error(xmile() |> build("a", "flow"))
-})
-
-
 test_that("sim_specs() works", {
   # Ensure that default simulation specifications are with digits
   sfm <- xmile()
@@ -157,6 +142,21 @@ test_that("sim_specs() works", {
   expect_equal(sim_specs(xmile(), time_units = "Years")$sim_specs$time_units, "yr")
   expect_equal(sim_specs(xmile(), time_units = "Months")$sim_specs$time_units, "month")
   expect_equal(sim_specs(xmile(), time_units = "Quarters")$sim_specs$time_units, "quarter")
+})
+
+
+test_that("save_at works", {
+
+  sfm <- xmile("SIR") |> sim_specs(language = "R", save_at = 1)
+  sim <- simulate(sfm)
+  df <- as.data.frame(sim)
+  expect_equal(unique(round(diff(sort(unique(df[["time"]]))), 4)), 1)
+
+  sfm <- sfm |> sim_specs(language = "Julia")
+  sim <- simulate(sfm)
+  df <- as.data.frame(sim)
+  expect_equal(unique(round(diff(sort(unique(df[["time"]]))), 4)), 1)
+
 })
 
 
@@ -331,7 +331,7 @@ test_that("change_name and change_type in build()", {
 
 
   # Check multiple change names
-  sfm <- template("predator-prey")
+  sfm <- template("predator_prey")
   expect_error(sfm |> build("prey", change_name = c("prey1", "prey2")), "You can only change the name of one variable at a time")
   expect_error(sfm |> build(c("prey", "predator"), change_name = c("prey1", "prey2")), "You can only change the name of one variable at a time")
 
@@ -840,20 +840,20 @@ test_that("get_names() works", {
 })
 
 
-test_that("create_R_names() works", {
+test_that("clean_name() works", {
   sfm <- xmile()
   names_df <- get_names(sfm)
 
   # Check for syntactically correct names
-  expect_equal(create_R_names(c("TRUE", "T"), names_df), c("TRUE__1", "T_1"))
-  expect_equal(create_R_names(c("a", "b", "T"), names_df), c("a", "b", "T_1"))
-  expect_equal(create_R_names(c("a-1", "b!2", "c.1"), names_df), c("a_1", "b_2", "c_1"))
-  expect_equal(create_R_names(c("a-1", "a!1"), names_df), c("a_1", "a_1_1"))
-  expect_equal(create_R_names(c(" Hell0 ", "Hell0"), names_df), c("Hell0", "Hell0_1"))
+  expect_equal(clean_name(c("TRUE", "T"), names_df[["name"]]), c("TRUE__1", "T_1"))
+  expect_equal(clean_name(c("a", "b", "T"), names_df[["name"]]), c("a", "b", "T_1"))
+  expect_equal(clean_name(c("a-1", "b!2", "c.1"), names_df[["name"]]), c("a_1", "b_2", "c_1"))
+  expect_equal(clean_name(c("a-1", "a!1"), names_df[["name"]]), c("a_1", "a_1_1"))
+  expect_equal(clean_name(c(" Hell0 ", "Hell0"), names_df[["name"]]), c("Hell0", "Hell0_1"))
 
   # Difficult, but ensure unique names
-  expect_equal(create_R_names(c("F"), data.frame(name = "F_1")), c("F_1_1"))
-  expect_equal(create_R_names(c("-1", "_1"), names_df), c("X_1", "X_1_1"))
+  expect_equal(clean_name(c("F"), "F_1"), c("F_1_1"))
+  expect_equal(clean_name(c("-1", "_1"), names_df[["name"]]), c("X_1", "X_1_1"))
 })
 
 
@@ -863,7 +863,7 @@ test_that("debugger() works", {
     "No problems detected"
   )
   expect_message(debugger(xmile("SIR")), "These variables have an equation of 0:\\n- Recovered")
-  expect_message(debugger(xmile("predator-prey")), "No problems detected!")
+  expect_message(debugger(xmile("predator_prey")), "No problems detected!")
   expect_message(debugger(xmile("logistic_model")), "No problems detected!")
   expect_message(debugger(xmile("Crielaard2022")), "No problems detected!")
 
@@ -975,16 +975,19 @@ test_that("as.data.frame(sfm) works", {
   sfm <- sfm |> build("a", "aux", eqn = "10")
   df <- as.data.frame(sfm)
   expect_equal(class(df), "data.frame")
+  expect_equal(df[["type"]], "aux")
   expect_true(all(c("type", "name", "eqn", "label", "units") %in% names(df)))
   expect_false(any(c("intermediary", "func") %in% names(df)))
 
   # Check that it works with templates
-  sfm <- xmile("predator-prey")
+  sfm <- xmile("predator_prey")
   expect_true(nrow(as.data.frame(sfm)) > 0)
 
   # Specify type
-  sfm <- xmile("predator-prey")
-  expect_error(as.data.frame(sfm, type = "auxiliary"), "type needs to be one or more of")
+  sfm <- xmile("predator_prey")
+  expect_error(as.data.frame(sfm, type = "variable"), "type needs to be one or more of")
+  expect_no_error(as.data.frame(sfm, type = "auxiliary")) # works with spelling out aux
+  expect_no_error(as.data.frame(sfm, type = "auxiliaries")) # works with spelling out aux
   expect_no_error(as.data.frame(sfm, type = "Stock")) # works with capital letters
   expect_no_error(as.data.frame(sfm, type = c("stock", "gf"))) # works with multiple types
   expect_no_error(as.data.frame(sfm, type = c("gf"))) # works when type doesn't exist
@@ -1000,7 +1003,7 @@ test_that("as.data.frame(sfm) works", {
   expect_no_error(as.data.frame(sfm, name = c("x", "dy_dt", "sigma")))
 
   # Specify properties
-  sfm <- xmile("predator-prey")
+  sfm <- xmile("predator_prey")
   expect_error(as.data.frame(sfm, properties = "a"), "a is not an existing property")
   expect_error(as.data.frame(sfm, properties = c("a", "b")), "a, b are not existing properties")
   expect_error(as.data.frame(sfm, properties = c("a", "eqn")), "a is not an existing property")

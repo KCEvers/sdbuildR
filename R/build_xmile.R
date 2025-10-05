@@ -11,8 +11,8 @@
 #' @param name Name of the template to load. If NULL, an empty stock-and-flow
 #' model will be created with default simulation parameters and a default header.
 #' If specified, the name should be one of "logistic_model", "SIR",
-#' "predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz",
-#' "Rossler", "vanderPol", "Duffing", "Chua", "spruce_budworm".
+#' "predator_prey", "cusp", "Crielaard2022", "coffee_cup", "bank_account",
+#' "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua".
 #'
 #' @return Stock-and-flow model of class sdbuildR_xmile. Its structure is based
 #'  on [XML Interchange Language for System Dynamics (XMILE)](https://docs.oasis-open.org/xmile/xmile/v1.0/os/xmile-v1.0-os.html). It is a nested list, containing:
@@ -58,7 +58,7 @@ new_sdbuildR_xmile <- function() {
   header_defaults <- as.list(formals(header))
   header_defaults <- header_defaults[!names(header_defaults) %in%
     c("sfm", "...")]
-  header_defaults[["created"]] <- Sys.time() # manually overwrite
+  header_defaults[["created"]] <- Sys.time() # Manually overwrite time
 
   spec_defaults <- as.list(formals(sim_specs))
   spec_defaults <- spec_defaults[!names(spec_defaults) %in% c("sfm", "...")]
@@ -721,7 +721,7 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
     if (!is.null(change_name)) {
       # Ensure new name is syntactically valid
       chosen_new_name <- change_name
-      change_name <- create_R_names(change_name, names_df)
+      change_name <- clean_name(change_name, names_df[["name"]])
       report_name_change(chosen_new_name, change_name)
 
       # Overwrite name
@@ -771,7 +771,7 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
     # Ensure names are valid of new variables
     if (any(!idx_exist)) {
       # Create syntactically valid, unique names (this also avoids overlap with previous names, but we stopped the function already if this is the case)
-      new_names <- create_R_names(name[!idx_exist], names_df)
+      new_names <- clean_name(name[!idx_exist], names_df[["name"]])
 
       # Warning if specified name changed
       report_name_change(name[!idx_exist], new_names)
@@ -916,7 +916,7 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' @export
 #'
 #' @examples
-#' sfm <- xmile("predator-prey") |>
+#' sfm <- xmile("predator_prey") |>
 #'   sim_specs(start = 0, stop = 50, dt = 0.1)
 #' sim <- simulate(sfm)
 #' plot(sim)
@@ -1326,15 +1326,15 @@ report_name_change <- function(old_names, new_names) {
 #'
 #' @examples
 #'
-#' # First initialize an empty model:
+#' # First initialize an empty model
 #' sfm <- xmile()
 #' summary(sfm)
 #' \dontshow{
 #' sfm <- sim_specs(sfm, save_at = .5)
 #' }
 #'
-#' # Add two stocks. Specify their initial values in the "eqn" property, as well
-#' # as their plotting label
+#' # Add two stocks. Specify their initial values in the "eqn" property
+#' # and their plotting label.
 #' sfm <- build(sfm, "predator", "stock", eqn = 10, label = "Predator") |>
 #'   build("prey", "stock", eqn = 50, label = "Prey")
 #'
@@ -1361,7 +1361,7 @@ report_name_change <- function(old_names, new_names) {
 #' plot(sfm)
 #'
 #' # The flows make use of four other variables: "delta", "gamma", "alpha", and
-#' # "beta". Define these as constants in a vectorized manner for efficiency:
+#' # "beta". Define these as constants in a vectorized manner for efficiency.
 #' sfm <- build(sfm, c("delta", "gamma", "alpha", "beta"), "constant",
 #'   eqn = c(.025, .5, .5, .05),
 #'   label = c("Delta", "Gamma", "Alpha", "Beta"),
@@ -1371,11 +1371,11 @@ report_name_change <- function(old_names, new_names) {
 #'   )
 #' )
 #'
-#' # We now have a complete predator-prey model which is ready to be simulated
+#' # We now have a complete predator-prey model which is ready to be simulated.
 #' sim <- simulate(sfm)
 #' plot(sim)
 #'
-#' # Modify variable
+#' # Modify a variable - note that we no longer need to specify type
 #' sfm <- build(sfm, "delta", eqn = .03, label = "DELTA")
 #'
 #' # Change variable name (throughout the model)
@@ -1389,7 +1389,7 @@ report_name_change <- function(old_names, new_names) {
 #'
 #' # To add and/or modify variables more quickly, pass a dataframe.
 #' # The dataframe is processed row-wise.
-#' # To create a logistic population growth model:
+#' # For instance, to create a logistic population growth model:
 #' df <- data.frame(
 #'   type = c("stock", "flow", "flow", "constant", "constant"),
 #'   name = c("X", "inflow", "outflow", "r", "K"),
@@ -1520,7 +1520,7 @@ build <- function(sfm, name, type,
     # Ensure names are valid of new variables
     if (any(!idx_exist)) {
       # Create syntactically valid, unique names (this also avoids overlap with previous names, but we stopped the function already if this is the case)
-      new_names <- create_R_names(name[!idx_exist], names_df)
+      new_names <- clean_name(name[!idx_exist], names_df[["name"]])
 
       # Warning if specified name changed
       report_name_change(name[!idx_exist], new_names)
@@ -1592,7 +1592,7 @@ build <- function(sfm, name, type,
 
   # Flow properties
   if ("to" %in% passed_arg) {
-    if (identical(to, NULL)) {
+    if (is.null(to)) {
       to <- ""
     }
 
@@ -1615,7 +1615,7 @@ build <- function(sfm, name, type,
   }
 
   if ("from" %in% passed_arg) {
-    if (identical(from, NULL)) {
+    if (is.null(from)) {
       from <- ""
     }
 
@@ -1725,7 +1725,7 @@ build <- function(sfm, name, type,
   if (!is.null(change_name)) {
     # Ensure new name is syntactically valid
     chosen_new_name <- change_name
-    change_name <- create_R_names(change_name, names_df)
+    change_name <- clean_name(change_name, names_df[["name"]])
     report_name_change(chosen_new_name, change_name)
 
     # Overwrite name
@@ -1842,9 +1842,7 @@ build <- function(sfm, name, type,
     }
 
     # Change all equations to characters
-    if (!is.null(eqn)) {
-      eqn <- as.character(eqn)
-    }
+    eqn <- as.character(eqn)
 
     if (any(grepl("^[ ]*function[ ]*\\(", eqn))) {
       stop("Model variables cannot be functions! To add a custom function, use macro().")
@@ -2024,94 +2022,6 @@ get_building_block_prop <- function() {
     "gf" = c("name", "type", "units", "label", "xpts", "ypts", "source", "interpolation", "extrapolation", "doc")
   ))
 }
-
-
-
-
-#' Create syntactically valid, unique names for use in R and Julia
-#'
-#' @param create_names Vector of strings with names to transform to valid names
-#' @param names_df Dataframe with at least the column name
-#' @param protected Optional vector of protected names
-#'
-#' @return Translated names
-#' @noRd
-#'
-create_R_names <- function(create_names, names_df, protected = c()) {
-  # Define protected names: these cannot be used as variable names
-  protected_names <- c(
-
-    # Reserved words in R
-    "if",
-    "else", "repeat", "function", "return", "while", "for", "in", "next", "break", "TRUE", "FALSE", # already protected
-    "T", "F",
-    # "NULL", "Inf", "NaN", "NA", "NA_integer_", "NA_real_", "NA_complex_", "NA_character_", # already protected
-    "time", # used as first variable in simulation dataframe #"Time", "TIME",
-    # "constraints",
-    # Add Julia keywords
-    "baremodule", "begin", "break", "catch", "const", "continue", "do",
-    "else", "elseif", "end", "export", "false", "finally",
-    "global", "error", "throw",
-    "import", "let", "local", "macro", "module", "quote", "return", "struct", "true", "try", "catch", "using",
-    "Missing", "missing", "Nothing", "nothing",
-    # "?", "]",
-
-    # Add R custom functions
-    get_exported_functions("sdbuildR"),
-
-    # Add julia custom functions
-    names(get_func_julia()),
-
-    # These are variables in the ode and cannot be model element names
-    unname(unlist(.sdbuildR_env[["P"]][names(.sdbuildR_env[["P"]]) %in% c(
-      "jl_pkg_name", "model_setup_name", "macro_name", "initial_value_name", "initial_value_names", "parameter_name", "parameter_names",
-      "state_name", "time_name", "change_state_name", "times_name", "timestep_name", "saveat_name", "time_units_name", "ensemble_iter", "ode_func_name", "callback_func_name", "callback_name", "intermediaries", "rootfun_name", "eventfun_name", "convert_u_func", "sdbuildR_units", "MyCustomUnits", "init_sdbuildR"
-    )])),
-    protected,
-    as.character(stats::na.omit(names_df[["name"]]))
-  ) |> unique()
-
-  stock_names <- names_df[names_df[["type"]] == "stock", "name"]
-  if (length(stock_names) > 0) {
-    if (all(!is.null(stock_names) & !is.na(stock_names))) {
-      protected_names <- c(
-        protected_names,
-        paste0(.sdbuildR_env[["P"]][["change_prefix"]], stock_names)
-      )
-    }
-  }
-
-  # Make syntactically valid and unique names out of character vectors; Insight Maker allows names to be double, so make unique
-  new_names <- make.names(c(protected_names, trimws(create_names)), unique = TRUE)
-  # For Julia translation, remove names with a period
-  new_names <- stringr::str_replace_all(new_names, "\\.", "_")
-  # This may cause overlap in names, so repeat
-  new_names <- make.names(new_names, unique = TRUE)
-  new_names <- stringr::str_replace_all(new_names, "\\.", "_")
-  new_names <- make.names(new_names, unique = TRUE)[-seq_along(protected_names)] # Remove protected names
-
-
-
-  # If any names end in a suffix used by sdbuildR, add _
-  pattern <- paste0(
-    .sdbuildR_env[["P"]][["conveyor_suffix"]], "$|", .sdbuildR_env[["P"]][["delay_suffix"]],
-    "[0-9]+$|", .sdbuildR_env[["P"]][["past_suffix"]], "[0-9]+$|",
-    .sdbuildR_env[["P"]][["fix_suffix"]], "$|",
-    .sdbuildR_env[["P"]][["fix_length_suffix"]], "$|",
-    .sdbuildR_env[["P"]][["conveyor_suffix"]], "$|",
-    .sdbuildR_env[["P"]][["delayN_suffix"]], "[0-9]+",
-    .sdbuildR_env[["P"]][["acc_suffix"]], "[0-9]+$|",
-    .sdbuildR_env[["P"]][["smoothN_suffix"]], "[0-9]+",
-    .sdbuildR_env[["P"]][["acc_suffix"]], "[0-9]+$"
-  )
-
-  idx <- grepl(new_names, pattern = pattern)
-  new_names[idx] <- paste0(new_names[idx], "_")
-  # e.g. names cannot end with _delay[0-9]+$ or _delay[0-9]+_acc[0-9]+$
-
-  return(new_names)
-}
-
 
 
 
@@ -2493,7 +2403,6 @@ static_depend_on_dyn <- function(sfm) {
   }) |> compact_()
 
   if (length(static_with_dyn_dep) > 0) {
-    # static_with_dyn_dep <- sapply(static_with_dyn_dep, paste0, collapse = ", ")
     static_with_dyn_dep <- vapply(static_with_dyn_dep, paste0, character(1), collapse = ", ")
     stock_or_constant <- names_df[match(names(static_with_dyn_dep), names_df[["name"]]), "type"]
 
@@ -2527,7 +2436,7 @@ static_depend_on_dyn <- function(sfm) {
 #' Create a dataframe with properties of all model variables, model units, and macros. Specify the variable types, variable names, and/or properties to get a subset of the dataframe.
 #'
 #' @inheritParams plot.sdbuildR_xmile
-#' @param type Variable types to retain in the dataframe. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'model_units', or 'macro'. Defaults to NULL to include all variable types.
+#' @param type Variable types to retain in the dataframe. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'macro', or 'model_units'. Defaults to NULL to include all types.
 #' @param name Variable names to retain in the dataframe. Defaults to NULL to include all variables.
 #' @param properties Variable properties to retain in the dataframe. Defaults to NULL to include all properties.
 #' @param row.names NULL or a character vector giving the row names for the data frame. Missing values are not allowed.
@@ -2554,18 +2463,15 @@ as.data.frame.sdbuildR_xmile <- function(x,
 
   # Only keep specified types
   if (!is.null(type)) {
-    type <- Filter(nzchar, unique(tolower(type)))
+
+    type <- clean_type(type)
 
     if (length(type) == 0) {
       stop("At least one type must be specified!")
     }
 
-    # Remove trailing "s" from plural types to show a bit more grace to the user
-    type[type != "model_units"] <- gsub("s$", "", type[type != "model_units"])
-    type[type == "model_unit"] <- "model_units"
-
     if (!all(type %in% c("stock", "flow", "constant", "aux", "gf", "model_units", "macro"))) {
-      stop("type needs to be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'model_units', or 'macro'!")
+      stop("type needs to be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'macro', or 'model_units'.")
     }
   }
 
@@ -2579,7 +2485,8 @@ as.data.frame.sdbuildR_xmile <- function(x,
     }
 
     # Remove func
-    sfm[["model"]][["variables"]] <- lapply(sfm[["model"]][["variables"]], function(y) {
+    sfm[["model"]][["variables"]] <- lapply(sfm[["model"]][["variables"]],
+                                            function(y) {
       lapply(y, function(x) {
         x["translated_func"] <- NULL
         x["func"] <- NULL
@@ -2610,9 +2517,8 @@ as.data.frame.sdbuildR_xmile <- function(x,
 
   # Add macros
   if ((is.null(type) | "macro" %in% type) & length(sfm[["macro"]]) > 0) {
-    # Remove func
     sfm[["macro"]] <- lapply(sfm[["macro"]], function(x) {
-      # x["translated_func"] = NULL
+      # Remove func
       x["func"] <- NULL
       return(x)
     })

@@ -17,6 +17,7 @@ convert_equations_IM <- function(type,
                                  eqn,
                                  var_names,
                                  regex_units) {
+
   if (.sdbuildR_env[["P"]][["debug"]]) {
     message("")
     # message(type)
@@ -36,18 +37,16 @@ convert_equations_IM <- function(type,
     add_Rcode <- list()
   } else {
     # Step 2. Syntax (bracket types, destructuring assignment, time units {1 Month})
-    eqn <-
-      # Replace curly brackets {} with c()
-      curly_to_vector_brackets(eqn, var_names)
-
+    # Replace curly brackets {} with c()
+    eqn <- curly_to_vector_brackets(eqn, var_names)
 
     # Step 3. Statements (if, for, while, functions, try)
     eqn <- convert_all_statements(eqn, var_names)
 
     # Step 4. Operators (booleans, logical operators, addition of strings)
     eqn <- eqn |>
-      # Convert addition of strings to paste0
-      convert_addition_of_strings(var_names) |>
+      # # Convert addition of strings to paste0
+      # convert_addition_of_strings(var_names) |>
       # Replace logical operators (true, false, = (but not if in function()))
       replace_op_IM(var_names) |>
       # Replace range, e.g. 0:2:10; replace other colons : with =
@@ -64,7 +63,6 @@ convert_equations_IM <- function(type,
 
     # Replace two consecutive newlines and trim white space
     eqn <- stringr::str_replace_all(trimws(eqn), "\\\n[ ]*\\\n", "\n")
-
 
     # If it is a multi-line statement, surround by brackets in case they aren't macros
     eqn <- trimws(eqn)
@@ -1139,7 +1137,7 @@ get_syntax_IM <- function() {
       "Confirm", "readline", "syntax5", FALSE, TRUE, "",
 
       # String Functions (10)
-      "Range", "substr_i", "syntax5", FALSE, TRUE, "",
+      "Range", "", "syntax5", FALSE, TRUE, "",
       "Split", "strsplit", "syntax2", FALSE, TRUE, "",
       "UpperCase", "toupper", "syntax2", FALSE, TRUE, "",
       "LowerCase", "tolower", "syntax2", FALSE, TRUE, "",
@@ -1380,7 +1378,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
       } else {
         # To find the arguments within round brackets, find all indices of matching '', (), [], c()
         paired_idxs <- get_range_all_pairs(eqn, var_names,
-          add_custom = "paste0()",
+          # add_custom = "paste0()",
           names_with_brackets = TRUE
         )
         paired_idxs
@@ -1625,7 +1623,9 @@ parse_args <- function(bracket_arg) {
 #'
 extract_prefunc_args <- function(eqn, var_names, start_func, names_with_brackets) {
   # Get all enclosing elements before start of function
-  prefunc_brackets <- get_range_all_pairs(eqn, var_names, add_custom = "paste0()", names_with_brackets = names_with_brackets)
+  prefunc_brackets <- get_range_all_pairs(eqn, var_names,
+                                          # add_custom = "paste0()",
+                                          names_with_brackets = names_with_brackets)
 
   prefunc_brackets <- prefunc_brackets[
     prefunc_brackets[["type"]] != "square",
@@ -1686,76 +1686,6 @@ conv_lookup <- function(func, arg, name) {
     replacement = replacement,
     add_Rcode = add_Rcode
   ))
-}
-
-
-#' Convert Insight Maker's addition of strings to R
-#'
-#' Insight Maker allows for strings to be concatenated by +, whereas R doesn't and uses paste0() instead.
-#'
-#' @inheritParams convert_equations_IM
-#' @return Transformed eqn
-#' @noRd
-#'
-convert_addition_of_strings <- function(eqn, var_names) {
-  # First get rid of all spaces next to + in order to identify neighbours
-  eqn <- stringr::str_replace_all(eqn, " \\+", "+") |> stringr::str_replace_all("\\+ ", "+")
-
-  done <- FALSE
-
-  # Use a while loop to iteratively convert + to paste0 if it neighbours quotation marks; if there's a variable [x] that is defined as a eqn, we unfortunately can't know here
-  while (!done) {
-    # Find all instances of "+" and of quotation marks
-    idxs_plus <- unname(stringr::str_locate_all(eqn, "\\+")[[1]][, 1])
-
-    if (length(idxs_plus) == 0) {
-      done <- TRUE
-    } else {
-      # Find all indices of all elements like [], c(), ''
-      paired_idxs <- get_range_all_pairs(eqn, var_names, add_custom = "paste0()", names_with_brackets = TRUE)
-
-      # Are + left or right adjacent to any quotation dplyr::groups
-      # Right adjacent to
-      right_adjacents <- match(idxs_plus, paired_idxs[["end"]] + 1)
-
-      # Left adjacent to
-      left_adjacents <- match(idxs_plus, paired_idxs[["start"]] - 1)
-
-      # Condition: It needs to be adjacent to some paired_idxs, and either right or left needs to be in quotation marks
-      cond <- which(!is.na(right_adjacents) &
-        !is.na(left_adjacents) &
-        (((paired_idxs[right_adjacents, "type"] == "quot") + (paired_idxs[left_adjacents, "type"] == "quot")
-        ) > 0))[1]
-
-      # Choose first + that meets the condition
-      idxs_plus_adj <- idxs_plus[cond]
-      right_adjacent <- right_adjacents[cond]
-      left_adjacent <- left_adjacents[cond]
-
-      if (is.na(idxs_plus_adj)) {
-        done <- TRUE
-      } else {
-        left_arg <- stringr::str_sub(eqn, paired_idxs[right_adjacent, ][["start"]], paired_idxs[right_adjacent, ][["end"]])
-        right_arg <- stringr::str_sub(eqn, paired_idxs[left_adjacent, ][["start"]], paired_idxs[left_adjacent, ][["end"]])
-
-        # In case left or right argument is in paste0() already, remove paste0()
-        l <- stringr::str_length("paste0(")
-        if (stringr::str_sub(left_arg, 1, l) == "paste0(") {
-          left_arg <- stringr::str_sub(left_arg, l + 1, stringr::str_length(left_arg) - 1)
-        }
-        if (stringr::str_sub(right_arg, 1, l) == "paste0(") {
-          right_arg <- stringr::str_sub(right_arg, l + 1, stringr::str_length(right_arg) - 1)
-        }
-
-        # Overwrite eqn
-        stringr::str_sub(eqn, paired_idxs[right_adjacent, ][["start"]], paired_idxs[left_adjacent, ][["end"]]) <- sprintf("paste0(%s, %s)", left_arg, right_arg)
-      }
-    }
-  }
-
-  eqn <- stringr::str_replace_all(eqn, "\\+", " + ")
-
-  return(eqn)
 }
 
 

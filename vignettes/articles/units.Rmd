@@ -100,7 +100,7 @@ Units thus help to verify and interpret our models. Next, we'll use the simple e
 use_julia()
 ```
 
-For all models, the simulation engine has to be changed to Julia:
+For guidance on installing and setting up the Julia environment, see `vignette(julia-setup)`. For all models, the simulation engine has to be changed to Julia:
 
 ```{r}
 sfm <- xmile() |>

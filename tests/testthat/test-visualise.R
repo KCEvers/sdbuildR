@@ -30,6 +30,24 @@ test_that("export_plot works", {
 
 test_that("plot sfm", {
 
+  # Empty models should throw error
+  sfm0 <- xmile()
+  expect_error(plot(sfm0), "Your model contains no variables")
+
+  # A model with one variable should already be plottable
+  sfm <- build(sfm0, "a", "constant")
+  expect_no_error(expect_no_message(expect_no_warning(plot(sfm, show_constants = TRUE))))
+
+  sfm <- build(sfm0, "a", "stock")
+  expect_no_error(expect_no_message(expect_no_warning(plot(sfm))))
+
+  sfm <- build(sfm0, "a", "aux")
+  expect_no_error(expect_no_message(expect_no_warning(plot(sfm, show_aux = TRUE))))
+
+  sfm <- build(sfm0, "a", "flow")
+  expect_no_error(expect_no_message(expect_no_warning(plot(sfm))))
+
+  # Test full models
   sfm = xmile("SIR")
 
   # Plot sfm
@@ -43,6 +61,10 @@ test_that("plot sfm", {
   expect_no_error(expect_no_message(expect_no_warning(plot(sfm, show_aux = FALSE, show_constants = TRUE, show_dependencies = TRUE))))
 
   expect_no_error(expect_no_message(expect_no_warning(plot(sfm, show_aux = FALSE, show_constants = FALSE, show_dependencies = FALSE))))
+
+  expect_no_error(expect_no_message(expect_no_warning(plot(sfm, vars = "Susceptible"))))
+  expect_no_error(expect_no_message(expect_no_warning(plot(sfm, vars = c("Infected", "Infection_Rate")))))
+
 
 })
 

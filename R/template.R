@@ -2,14 +2,16 @@
 #'
 #' Create a stock-and-flow model from a template in the model library. The function will return a stock-and-flow model ready to be simulated and plotted, or modified in any way you like.
 #'
-#' @param name Name of model; one of "logistic_model", "SIR", "predator-prey", "Crielaard2022", "coffee_cup", "bank_account", "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua", "spruce_budworm"
+#' @param name Name of model.
 #'
 #' @noRd
 #' @return Stock-and-flow model of class sdbuildR_xmile.
 #'
 template <- function(name) {
   model_names <- c(
-    "logistic_model", "SIR", "predator-prey", "Crielaard2022",
+    "logistic_model", "SIR", "predator_prey",
+    "cusp",
+    "Crielaard2022",
     # Meadows
     "coffee_cup", "bank_account",
     "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua",
@@ -65,36 +67,47 @@ template <- function(name) {
       build("Total_Population", "constant", eqn = "100000") |>
       build("Effective_Contact_Rate", "constant", eqn = "2") |>
       build("Delay", "constant", eqn = "2")
-  } else if (name == "predator-prey") {
+  } else if (name == "predator_prey") {
     sfm <- xmile() |>
       header(name = "Predator-Prey Dynamics (Lotka-Volterra)") |>
       sim_specs(method = "euler", stop = 500) |>
       build("predator", "stock", eqn = 10, label = "Predator") |>
       build("prey", "stock", eqn = 50, label = "Prey") |>
       build("predator_births", "flow",
-        eqn = "delta*prey*predator",
-        label = "Births", to = "predator"
+            eqn = "delta*prey*predator",
+            label = "Births", to = "predator"
       ) |>
       build("predator_deaths", "flow",
-        eqn = "gamma*predator",
-        label = "Deaths", from = "predator"
+            eqn = "gamma*predator",
+            label = "Deaths", from = "predator"
       ) |>
       build("prey_births", "flow",
-        eqn = "alpha*prey",
-        label = "Births", to = "prey"
+            eqn = "alpha*prey",
+            label = "Births", to = "prey"
       ) |>
       build("prey_deaths", "flow",
-        eqn = "beta*prey*predator",
-        label = "Deaths", from = "prey"
+            eqn = "beta*prey*predator",
+            label = "Deaths", from = "prey"
       ) |>
       build(c("delta", "gamma", "alpha", "beta"), "constant",
-        eqn = c(.025, .5, .5, .05),
-        label = c("Delta", "Gamma", "Alpha", "Beta"),
-        doc = c(
-          "Birth rate of predators", "Death rate of predators",
-          "Birth rate of prey", "Death rate of prey by predators"
-        )
+            eqn = c(.025, .5, .5, .05),
+            label = c("Delta", "Gamma", "Alpha", "Beta"),
+            doc = c(
+              "Birth rate of predators", "Death rate of predators",
+              "Birth rate of prey", "Death rate of prey by predators"
+            )
       )
+  } else if (name == "cusp") {
+    sfm <- xmile() |>
+      header(name = "Cusp Catastrophe") |>
+      sim_specs(method = "euler", stop = 500) |>
+      build("x", "stock", eqn = .1) |>
+      build("dxdt", "flow",
+            eqn = "a + b*x - x^3 + rnorm(1, dt)",
+            to = "x"
+      ) |>
+      build("a", "constant", eqn = 2, label = "Normal variable") |>
+      build("b", "constant", eqn = 2, label = "Splitting variable")
   } else if (name == "Crielaard2022") {
     sfm <- xmile() |>
       header(
@@ -147,6 +160,7 @@ template <- function(name) {
       ) |>
       build(c("a0", "a1", "a2"), "constant", eqn = c(1.31, 1.5, 0.38)) |>
       macro(name = "Sig", eqn = "function(x) 1 / (1 + exp(1)^(-x))")
+
   } else if (name == "coffee_cup") {
     sfm <- xmile() |>
       header(name = "Coffee cup", caption = "Coffee cup cooling or heating from Meadows' Thinking in Systems (Chapter 1)") |>
@@ -275,12 +289,6 @@ template <- function(name) {
       build("beta", "constant", eqn = "28", label = "Parameter beta") |>
       build("m0", "constant", eqn = "-1.143", label = "Nonlinear slope m0") |>
       build("m1", "constant", eqn = "-0.714", label = "Nonlinear slope m1")
-  } else if (name == "spruce_budworm") {
-    sfm <- xmile() |>
-      build("N", "stock", eqn = .5) |>
-      build("inflow", "flow", eqn = "r * N * (1 - N/K)", to = "N") |>
-      build("outflow", "flow", eqn = "(B * N^2) / (A^2 + N^2)", from = "N") |>
-      build(c("r", "K", "B", "A"), "constant", eqn = c(.5, 1000, 10000, 1))
   }
 
 

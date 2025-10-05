@@ -115,6 +115,7 @@ convert_equations_julia <- function(sfm, type, name, eqn, var_names, regex_units
   if (!nzchar(eqn) | eqn == "0" | eqn == "0.0") {
     return(default_out)
   } else {
+
     # Ensure there is no scientific notation
     eqn <- scientific_notation(eqn)
 
@@ -1149,6 +1150,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
   add_Rcode <- list(func = list())
 
   if (grepl("[[:alpha:]]", eqn)) {
+
     # Dataframe with regular expressions for each built-in Insight Maker function
     out <- get_syntax_julia()
     syntax_df <- out[["syntax_df"]]
@@ -1160,6 +1162,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
     R_regex <- syntax_df[["R_regex_first_iter"]]
 
     while (!done) {
+
       # Remove those matches that are in quotation marks or names
       idxs_exclude <- get_seq_exclude(eqn, var_names)
 
@@ -1192,11 +1195,11 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
       idx_df <- do.call(rbind, idx_df)
 
       if (nrow(idx_df) > 0) idx_df <- idx_df[!(idx_df[["start"]] %in% idxs_exclude | idx_df[["end"]] %in% idxs_exclude), ]
+
       if (nrow(idx_df) == 0) {
         done <- TRUE
         next
       }
-
 
       # For the first iteration, add _replace to all detected functions, so we don't end in an infinite loop (some Julia and R functions have the same name)
       if (i == 1 & nrow(idx_df) > 0) {
@@ -1217,7 +1220,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
         # Stop first iteration
         next
       }
-
 
       if (nrow(idx_df) == 0) {
         done <- TRUE
@@ -1277,8 +1279,8 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
         end_idx <- idx_func[["end"]]
 
         if (idx_func[["syntax"]] == "syntax0") {
-          # arg = paste0(arg, collapse = ", ")
           replacement <- idx_func[["julia"]]
+
         } else if (idx_func[["syntax"]] == "syntax1") {
           arg <- paste0(arg, collapse = ", ")
 
@@ -1372,12 +1374,12 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           arg4 <- ifelse(length(arg) > 3, arg[4], arg[1])
 
           # Number delayN() as there may be multiple
-          func_name <- paste0(name, .sdbuildR_env[["P"]][["delayN_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
+          func_name <- paste0(name, .sdbuildR_env[["P"]][["delayN_suffix"]],
+                              length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
 
           replacement <- paste0(func_name, .sdbuildR_env[["P"]][["outflow_suffix"]])
           setup <- paste0(
             "setup_delayN(", arg4, ", ", arg[2], ", ", arg[3],
-            # ", \"", func_name, "\")")
             # Symbols are faster
             ", :", func_name, ")"
           )
@@ -1452,9 +1454,11 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             initial = arg4
           )
         } else if (idx_func[["syntax"]] == "syntaxD") {
+
           # Convert random number generation
           replacement <- conv_distribution(
             arg,
+            idx_func[["R_first_iter"]],
             idx_func[["julia"]],
             idx_func[["add_first_arg"]]
           )
@@ -1544,7 +1548,7 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
         ifelse(sum(idx) > 1, "s ", " "),
         paste0(names_arg[idx], collapse = ", "),
         ifelse(sum(idx) > 1, " are", " is"),
-        " not allowed for function ", func_name, ". Allowed arguments: ",
+        " not allowed for function ", func_name, "(). Allowed arguments: ",
         paste0(names(default_arg), collapse = ", "), "."
       ))
     }
@@ -1552,7 +1556,7 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
     # Check if there are too many arguments
     if (!varargs & length(arg) > length(default_arg)) {
       stop(paste0(
-        "Too many arguments for function ", func_name, ". Allowed arguments: ",
+        "Too many arguments for function ", func_name, "(). Allowed arguments: ",
         paste0(names(default_arg), collapse = ", "), "."
       ))
     }
@@ -1577,7 +1581,7 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
         ifelse(sum(idx) > 1, "s ", " "),
         paste0(names(default_arg[obligatory_args])[idx], collapse = ", "),
         ifelse(sum(idx) > 1, " are", " is"),
-        " missing for function ", func_name, "."
+        " missing for function ", func_name, "()."
       ))
     }
 
@@ -1633,22 +1637,31 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
 #'
 #' @inheritParams sort_args
 #' @param julia_func String with Julia function
+#' @param R_func String with R function, e.g. "seq", "seq_along"
 #' @param distribution String with Julia distribution call
 #'
 #' @returns String with Julia code
 #' @noRd
 #'
-conv_distribution <- function(arg, julia_func, distribution) {
-  # If n = 1, don't include it, as rand(..., 1) generates a vector. n is the first argument.
+conv_distribution <- function(arg, R_func, julia_func, distribution) {
 
+  # The first argument must be an integer
+  arg <- as.list(arg)
+  arg[[1]] <- safe_convert(arg[[1]], "integer")
+
+  if (!is.integer(arg[[1]])){
+    stop("The first argument of ", R_func, "() must be an integer!")
+  }
+
+  # If n = 1, don't include it, as rand(..., 1) generates a vector. n is the first argument.
   julia_str <- sprintf(
     "%s(%s(%s), %d)",
     julia_func, distribution,
     # Don't include names of arguments
-    paste0(arg[-1], collapse = ", "), as.numeric(arg[1])
+    paste0(arg[-1], collapse = ", "), arg[[1]]
   )
 
-  if (as.numeric(arg[1]) == 1 & julia_func == "rand") {
+  if (arg[1] == 1 & julia_func == "rand") {
     julia_str <- sprintf(
       "%s(%s(%s))",
       julia_func, distribution,
@@ -1662,14 +1675,14 @@ conv_distribution <- function(arg, julia_func, distribution) {
         "log%s(%s(%s), %d)",
         julia_func, distribution,
         # Don't include names of arguments; skip log
-        paste0(arg[-c(1, length(arg) - 1, length(arg))], collapse = ", "), as.numeric(arg[1])
+        paste0(arg[-c(1, length(arg) - 1, length(arg))], collapse = ", "), arg[[1]]
       )
     } else {
       julia_str <- sprintf(
         "%s(%s(%s), %d)",
         julia_func, distribution,
         # Don't include names of arguments; skip log
-        paste0(arg[-c(1, length(arg) - 1, length(arg))], collapse = ", "), as.numeric(arg[1])
+        paste0(arg[-c(1, length(arg) - 1, length(arg))], collapse = ", "), arg[[1]]
       )
     }
   } else if (julia_func == "Distributions.pdf.") {
@@ -1679,14 +1692,14 @@ conv_distribution <- function(arg, julia_func, distribution) {
         "log%s(%s(%s), %d)",
         julia_func, distribution,
         # Don't include names of arguments; skip lower.tail and log.p
-        paste0(arg[-c(1, length(arg))], collapse = ", "), as.numeric(arg[1])
+        paste0(arg[-c(1, length(arg))], collapse = ", "), arg[[1]]
       )
     } else {
       julia_str <- sprintf(
         "%s(%s(%s), %d)",
         julia_func, distribution,
         # Don't include names of arguments; skip lower.tail and log.p
-        paste0(arg[-c(1, length(arg))], collapse = ", "), as.numeric(arg[1])
+        paste0(arg[-c(1, length(arg))], collapse = ", "), arg[[1]]
       )
     }
   } else if (julia_func == "Distributions.quantile.") {
@@ -1696,14 +1709,14 @@ conv_distribution <- function(arg, julia_func, distribution) {
         "invlogcdf(%s(%s), %d)",
         distribution,
         # Don't include names of arguments; skip lower.tail and log.p
-        paste0(arg[-c(1, length(arg) - 1, length(arg))], collapse = ", "), as.numeric(arg[1])
+        paste0(arg[-c(1, length(arg) - 1, length(arg))], collapse = ", "), arg[[1]]
       )
     } else {
       julia_str <- sprintf(
         "%s(%s(%s), %d)",
         julia_func, distribution,
         # Don't include names of arguments; skip lower.tail and log.p
-        paste0(arg[-c(1, length(arg) - 1, length(arg))], collapse = ", "), as.numeric(arg[1])
+        paste0(arg[-c(1, length(arg) - 1, length(arg))], collapse = ", "), arg[[1]]
       )
     }
   }

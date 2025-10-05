@@ -21,6 +21,7 @@ Internal function used to save the dataframe at specific times in case save_at i
 }
 \seealso{
 Other internal: 
+\code{\link{clean_name}()},
 \code{\link{compare_sim}()},
 \code{\link{has_internet}()},
 \code{\link{nonnegative}()},

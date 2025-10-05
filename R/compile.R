@@ -315,7 +315,7 @@ find_newly_defined_var <- function(eqn) {
 #' Find which other variables each variable is dependent on.
 #'
 #' @inheritParams build
-#' @param reverse If FALSE, list for each variable X which variables Y it depends on for its equation definition. If TRUE, reverse dependencies, such that for each variable X, it lists what other variables Y depend on X.
+#' @param reverse If FALSE, list for each variable X which variables Y it depends on for its equation definition. If TRUE, don't show dependencies but dependents. This reverses the dependencies, such that for each variable X, it lists what other variables Y depend on X.
 #'
 #' @return Vector of dependencies (variable names in equation)
 #' @family build
@@ -341,7 +341,7 @@ find_dependencies <- function(sfm, reverse = FALSE) {
 #'
 #' @param dep List of dependencies
 #'
-#' @returns List with reversed dependencies
+#' @returns List with reversed dependencies, showing dependents instead.
 #' @noRd
 reverse_dep <- function(dep) {
   reverse_dep <- list()
@@ -376,7 +376,7 @@ reverse_dep <- function(dep) {
 }
 
 
-#' Find dependencies in equation (only for package)
+#' Find dependencies in equation (only for internal use)
 #'
 #' @param eqns String with equation to find dependencies in; defaults to NULL to find dependencies of all variables.
 #' @inheritParams build
@@ -659,7 +659,7 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 #'
 #' @examples
 #' # Load example and set simulation language to Julia
-#' sfm <- xmile("predator-prey") |> sim_specs(language = "Julia")
+#' sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
 #'
 #' # Set random initial conditions
 #' sfm <- build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
@@ -952,14 +952,6 @@ ensemble <- function(sfm,
         conditions <- NULL
       }
 
-      # # Read the constants
-      # constants <- JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_name"]])
-      # colnames(constants) <- c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["parameter_names"]]))
-      #
-      # # Read the initial values of stocks
-      # init <- JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_name"]])
-      # colnames(init) <- c("j", "i", JuliaConnectoR::juliaEval(.sdbuildR_env[["P"]][["initial_value_names"]]))
-
       constants <- list()
       init <- list()
 
@@ -1013,7 +1005,6 @@ ensemble <- function(sfm,
         structure(class = "sdbuildR_ensemble")
     }
   )
-
 
   return(sim)
 }

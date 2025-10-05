@@ -19,6 +19,7 @@ has_internet()
 }
 \seealso{
 Other internal: 
+\code{\link{clean_name}()},
 \code{\link{compare_sim}()},
 \code{\link{nonnegative}()},
 \code{\link{not_on_cran}()},

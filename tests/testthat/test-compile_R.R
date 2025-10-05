@@ -1,5 +1,5 @@
 test_that("simulate R for templates", {
-  for (s in c("SIR", "predator-prey", "logistic_model", "Crielaard2022", "Duffing", "Chua")) {
+  for (s in c("SIR", "predator_prey", "logistic_model", "Crielaard2022", "Duffing", "Chua")) {
     sfm <- xmile(s) |> sim_specs(save_at = 1)
 
     if (s == "Crielaard2022") {
@@ -174,7 +174,7 @@ test_that("save_from works", {
 
 test_that("seed works", {
   # Without a seed, simulations shouldn't be the same
-  sfm <- xmile("predator-prey") |>
+  sfm <- xmile("predator_prey") |>
     sim_specs(language = "R", start = 0, stop = 10, dt = 0.1) |>
     sim_specs(seed = NULL) |>
     build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
