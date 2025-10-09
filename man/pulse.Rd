@@ -4,9 +4,11 @@
 \alias{pulse}
 \title{Create pulse function}
 \usage{
-pulse(start, height = 1, width = 1, repeat_interval = NULL)
+pulse(times, start, height = 1, width = 1, repeat_interval = NULL)
 }
 \arguments{
+\item{times}{Vector of simulation times}
+
 \item{start}{Start time of pulse in simulation time units.}
 
 \item{height}{Height of pulse. Defaults to 1.}
@@ -30,7 +32,8 @@ Equivalent of Pulse() in Insight Maker
 # with a width of 1, and does not repeat
 sfm <- xmile() |>
   build("a", "stock") |>
-  build("input", "constant", eqn = "pulse(5, 2, 1)") |>
+  # Specify the global variable "times" as simulation times
+  build("input", "constant", eqn = "pulse(times, 5, 2, 1)") |>
   build("inflow", "flow", eqn = "input(t)", to = "a")
 
 \dontshow{
@@ -41,7 +44,7 @@ sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim)
 
 # Create a pulse that repeats every 5 time units
-sfm <- build(sfm, "input", eqn = "pulse(5, 2, 1, 5)")
+sfm <- build(sfm, "input", eqn = "pulse(times, 5, 2, 1, 5)")
 
 sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim)

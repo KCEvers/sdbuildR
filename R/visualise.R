@@ -3,7 +3,7 @@
 #' Save a plot of a stock-and-flow diagram or a simulation to a specified filepath.
 #'
 #' @param pl Plot object.
-#' @param filepath Filepath to save plot to.
+#' @param filepath File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. If no file extension is specified, it will default to png.
 #' @param width Width of image in units.
 #' @param height Height of image in units.
 #' @param units Units in which width and heigth are specified. Either "cm", "in", or "px".
@@ -44,7 +44,10 @@ export_plot <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi =
 
   if ("grViz" %in% class(pl)) {
     if (!nzchar(format)) {
-      stop("No file extension specified! Choose one of png, pdf, svg, ps, eps, webp.")
+      # stop("No file extension specified! Choose one of png, pdf, svg, ps, eps, webp.")
+      # Default to png
+      format <- "png"
+      filepath <- paste0(filepath, ".", format)
     }
 
     export_diagram(pl, filepath, format,
@@ -52,7 +55,10 @@ export_plot <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi =
     )
   } else if ("plotly" %in% class(pl)) {
     if (!nzchar(format)) {
-      stop("No file extension specified! Choose one of png, pdf, jpg, jpeg, webp.")
+      # stop("No file extension specified! Choose one of png, pdf, jpg, jpeg, webp.")
+      # Default to png
+      format <- "png"
+      filepath <- paste0(filepath, ".", format)
     }
 
     export_plotly(pl, filepath,
@@ -636,10 +642,7 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
         ]
       }
     }
-  } # else {
-  #   constants_in_vars = FALSE
-  # }
-
+  }
 
   # Add constants
   if (add_constants) {

@@ -6,35 +6,35 @@ test_that("converting equations to Julia", {
   type <- "aux"
 
   result <- convert_equations_julia(
-    sfm, type, name, "min(predator_births)", var_names,
+    type, name, "min(predator_births)", var_names,
     regex_units
   )
   expected <- "min(predator_births)"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "max(predator_births)", var_names,
+    type, name, "max(predator_births)", var_names,
     regex_units
   )
   expected <- "max(predator_births)"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "c(0, predator_births, 1)", var_names,
+    type, name, "c(0, predator_births, 1)", var_names,
     regex_units
   )
   expected <- "[0.0, predator_births, 1.0]"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "range(predator_births, predator_deaths) * 10", var_names,
+    type, name, "range(predator_births, predator_deaths) * 10", var_names,
     regex_units
   )
   expected <- "extrema(predator_births, predator_deaths) .* 10.0"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "test = function(a, b){
+    type, name, "test = function(a, b){
                                        a + b
                                        }", var_names,
     regex_units
@@ -43,35 +43,35 @@ test_that("converting equations to Julia", {
   expect_equal(stringr::str_squish(result$eqn_julia), expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "c(9 + 8 - 0, c('1 + 2 + 3'))", var_names,
+    type, name, "c(9 + 8 - 0, c('1 + 2 + 3'))", var_names,
     regex_units
   )
   expected <- "[9.0 .+ 8.0 .- 0.0, [\"1 + 2 + 3\"]]"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "1E08", var_names,
+    type, name, "1E08", var_names,
     regex_units
   )
   expected <- "100000000.0"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "c(T, TRUE, 'F', F+T, NULL, NA)", var_names,
+    type, name, "c(T, TRUE, 'F', F+T, NULL, NA)", var_names,
     regex_units
   )
   expected <- "[true, true, \"F\", false .+ true, nothing, missing]"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "for (i in 1:9){\n\tprint(i)\n}", var_names,
+    type, name, "for (i in 1:9){\n\tprint(i)\n}", var_names,
     regex_units
   )
   expected <- "for  i in 1.0:9.0\n\tprintln(i)\nend"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "if(t<2020){\n\tgf<-0.07\n} else if (t<2025){\n\tgf<-0.03\n} else {\n\tgf<-0.02\n}", var_names,
+    type, name, "if(t<2020){\n\tgf<-0.07\n} else if (t<2025){\n\tgf<-0.03\n} else {\n\tgf<-0.02\n}", var_names,
     regex_units
   )
   expected <- "if t .< 2020.0
@@ -85,7 +85,7 @@ end"
 
   # while
   result <- convert_equations_julia(
-    sfm, type, name, "while(a < 0){\n\tif (prey >0){\n\t\ta <- 0\n\t} else {\n\ta = 1\n\t}\n}", var_names,
+    type, name, "while(a < 0){\n\tif (prey >0){\n\t\ta <- 0\n\t} else {\n\ta = 1\n\t}\n}", var_names,
     regex_units
   )
   expected <- "while a .< 0.0\n\tif prey .> 0.0\n\t\ta = 0.0\n\t else\n\ta = 1.0\n\tend\nend"
@@ -105,35 +105,35 @@ test_that("converting functions to Julia with named arguments", {
 
   # Check that functions without named arguments (e.g. min) have their names stripped
   result <- convert_equations_julia(
-    sfm, type, name, "min(x = predator_births)", var_names,
+    type, name, "min(x = predator_births)", var_names,
     regex_units
   )
   expected <- "min(predator_births)"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "min(x = max(y = predator_births))", var_names,
+    type, name, "min(x = max(y = predator_births))", var_names,
     regex_units
   )
   expected <- "min(max(predator_births))"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "range(x = 10, y= 8)", var_names,
+    type, name, "range(x = 10, y= 8)", var_names,
     regex_units
   )
   expected <- "extrema(10.0, 8.0)"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "logistic(x, midpoint = 8)", var_names,
+    type, name, "logistic(x, midpoint = 8)", var_names,
     regex_units
   )
   expected <- "logistic.(x, 1.0, 8.0, 1.0)"
   expect_equal(result$eqn_julia, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "logistic(x, upper = 8)", var_names,
+    type, name, "logistic(x, upper = 8)", var_names,
     regex_units
   )
   expected <- "logistic.(x, 1.0, 0.0, 8.0)"
@@ -145,25 +145,25 @@ test_that("converting functions to Julia with named arguments", {
 
   # Check that wrong arguments throw error
   expect_error(convert_equations_julia(
-    sfm, type, name, "sd(a, y = test)",
+    type, name, "sd(a, y = test)",
     var_names,
     regex_units
   ), "Argument y is not allowed for function sd\\(\\)\\. Allowed arguments: x, na\\.rm")
 
   expect_error(convert_equations_julia(
-    sfm, type, name, "rnorm(x = predator_births, mean = 0)",
+    type, name, "rnorm(x = predator_births, mean = 0)",
     var_names,
     regex_units
   ), "Argument x is not allowed for function rnorm\\(\\)\\. Allowed arguments: n, mean, sd")
 
   expect_error(convert_equations_julia(
-    sfm, type, name, "rnorm(n = 1, x = predator_births, mean = 0)",
+    type, name, "rnorm(n = 1, x = predator_births, mean = 0)",
     var_names,
     regex_units
   ), "Argument x is not allowed for function rnorm\\(\\)\\. Allowed arguments: n, mean, sd")
 
   expect_error(convert_equations_julia(
-    sfm, type, name, "rnorm(dt)",
+    type, name, "rnorm(dt)",
     var_names,
     regex_units
   ), "The first argument of rnorm\\(\\) must be an integer")
@@ -171,13 +171,13 @@ test_that("converting functions to Julia with named arguments", {
 
   # Check for missing obligatory arguments
   expect_error(convert_equations_julia(
-    sfm, type, name, "rnorm()",
+    type, name, "rnorm()",
     var_names,
     regex_units
   ), "Obligatory argument n is missing for function rnorm\\(\\)")
 
   expect_error(convert_equations_julia(
-    sfm, type, name, "rnorm(sd = predator_births, mean = 0)",
+    type, name, "rnorm(sd = predator_births, mean = 0)",
     var_names,
     regex_units
   ), "Obligatory argument n is missing for function rnorm\\(\\)")
@@ -185,7 +185,7 @@ test_that("converting functions to Julia with named arguments", {
 
   # Check error for too many arguments
   expect_error(convert_equations_julia(
-    sfm, type, name, "dnorm(1, 2, 3, log=FALSE, predator_deaths)",
+    type, name, "dnorm(1, 2, 3, log=FALSE, predator_deaths)",
     var_names,
     regex_units
   ), "Too many arguments for function dnorm\\(\\). Allowed arguments: x, mean, sd, log")
@@ -617,27 +617,27 @@ test_that("convert sequence works", {
   name <- var_names[1]
   type <- "aux"
 
-  result <- convert_equations_julia(sfm, type, name, "seq()", var_names)[["eqn_julia"]]
+  result <- convert_equations_julia(type, name, "seq()", var_names)[["eqn_julia"]]
   expected <- "range(1.0, 1.0, step=1.0)"
   expect_equal(result, expected)
 
-  result <- convert_equations_julia(sfm, type, name, "seq(by = 1)", var_names)[["eqn_julia"]]
+  result <- convert_equations_julia(type, name, "seq(by = 1)", var_names)[["eqn_julia"]]
   expected <- "range(1.0, 1.0, step=1.0)"
   expect_equal(result, expected)
 
-  result <- convert_equations_julia(sfm, type, name, "seq(1, 10)", var_names)[["eqn_julia"]]
+  result <- convert_equations_julia(type, name, "seq(1, 10)", var_names)[["eqn_julia"]]
   expected <- "range(1.0, 10.0, step=1.0)"
   expect_equal(result, expected)
 
-  result <- convert_equations_julia(sfm, type, name, "seq(1, 10, 2)", var_names)[["eqn_julia"]]
+  result <- convert_equations_julia(type, name, "seq(1, 10, 2)", var_names)[["eqn_julia"]]
   expected <- "range(1.0, 10.0, step=2.0)"
   expect_equal(result, expected)
 
-  result <- convert_equations_julia(sfm, type, name, "seq(1, 10, by=2)", var_names)[["eqn_julia"]]
+  result <- convert_equations_julia(type, name, "seq(1, 10, by=2)", var_names)[["eqn_julia"]]
   expected <- "range(1.0, 10.0, step=2.0)"
   expect_equal(result, expected)
 
-  result <- convert_equations_julia(sfm, type, name, "seq(1, 10, length.out=5)", var_names)[["eqn_julia"]]
+  result <- convert_equations_julia(type, name, "seq(1, 10, length.out=5)", var_names)[["eqn_julia"]]
   expected <- "range(1.0, 10.0, round_(5.0))"
   expect_equal(result, expected)
 })
@@ -649,20 +649,20 @@ test_that("convert sample works", {
   name <- var_names[1]
   type <- "aux"
 
-  result <- convert_equations_julia(sfm, type, name, "sample(1:10, 5)", var_names)[["eqn_julia"]]
+  result <- convert_equations_julia(type, name, "sample(1:10, 5)", var_names)[["eqn_julia"]]
   expected <- "StatsBase.sample(1.0:10.0, round_(5.0), replace=false)"
   expect_equal(result, expected)
 
-  result <- convert_equations_julia(sfm, type, name, "sample(1:10, 5, replace = TRUE)", var_names)[["eqn_julia"]]
+  result <- convert_equations_julia(type, name, "sample(1:10, 5, replace = TRUE)", var_names)[["eqn_julia"]]
   expected <- "StatsBase.sample(1.0:10.0, round_(5.0), replace=true)"
   expect_equal(result, expected)
 
-  result <- convert_equations_julia(sfm, type, name, "sample(1:10, 5, replace = FALSE)", var_names)[["eqn_julia"]]
+  result <- convert_equations_julia(type, name, "sample(1:10, 5, replace = FALSE)", var_names)[["eqn_julia"]]
   expected <- "StatsBase.sample(1.0:10.0, round_(5.0), replace=false)"
   expect_equal(result, expected)
 
   result <- convert_equations_julia(
-    sfm, type, name, "sample(1:10, 5, prob = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1))",
+    type, name, "sample(1:10, 5, prob = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1))",
     var_names
   )[["eqn_julia"]]
   expected <- "StatsBase.sample(1.0:10.0, StatsBase.pweights([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]), round_(5.0), replace=false)"

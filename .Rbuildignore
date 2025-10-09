@@ -5,7 +5,7 @@
 ^validate/
 ^paper/
 ^notes/
-^inst/julia
+^inst/Manifest.toml
 ^doc$
 ^Meta$
 ^_pkgdown\.yml$
@@ -14,3 +14,7 @@
 ^\.github$
 ^vignettes/articles$
 ^cran-comments\.md$
+^data-raw$
+^tests/testthat/testdata/insightmaker/validation$
+^tests/testthat/testdata/insightmaker/delay$
+^tests/testthat/testdata/insightmaker/fix$

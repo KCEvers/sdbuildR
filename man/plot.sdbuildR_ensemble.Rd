@@ -77,7 +77,6 @@ Visualize ensemble simulation results of a stock-and-flow model. Either summary 
 Other simulate: 
 \code{\link{ensemble}()},
 \code{\link{export_plot}()},
-\code{\link{julia_setup_ok}()},
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},

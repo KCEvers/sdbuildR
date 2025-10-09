@@ -121,7 +121,6 @@ test_that("logistic works", {
     logistic(x, slope = -9, midpoint = 0.5, upper = 10)
   )
 
-
   sim <- expect_no_error(simulate(sfm2 |> sim_specs(language = "Julia")))
   df <- as.data.frame(sim)
   x <- df[df$variable == "b", "time"]
@@ -133,14 +132,22 @@ test_that("logistic works", {
 
 
 test_that("step works", {
+
+  times <- seq(0, 10, by = .1)
+
+  expect_error(step(), "argument \"start\" is missing, with no default")
+  expect_error(step(times), "argument \"start\" is missing, with no default")
+  expect_warning(step(times, -10), "Start of step before beginning of simulation time")
+  expect_warning(step(times, 11), "Start of step after end of simulation time")
+
   # Set-up basic sfm
   sfm0 <- xmile() |>
     sim_specs(stop = 10, dt = .1) |>
     build("a", "stock") |>
     build("b", "flow", eqn = "input(t)", to = "a")
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(5)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(5)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, 5)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, 5)")
   sim <- expect_no_error(simulate(sfm))
   df <- as.data.frame(sim)
   a <- df[df$variable == "a", "value"]
@@ -149,24 +156,24 @@ test_that("step works", {
   expect_equal(a[which(df$time > 5)[1]], 0.1 * 1) # dt * height step
 
   # Also works with keyword arguments
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(start=5)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(start=5)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, start=5)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, start=5)")
   expect_no_error(simulate(sfm))
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(start = 5, 8)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(start = 5, 8)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, start = 5, 8)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, start = 5, 8)")
   expect_no_error(simulate(sfm))
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(5, height = 8)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(5, height = 8)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, 5, height = 8)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, 5, height = 8)")
   expect_no_error(simulate(sfm))
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(height = 8, 5)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(height = 8, 5)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, height = 8, 5)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, height = 8, 5)")
   expect_no_error(simulate(sfm))
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(start = 5, height = 8)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(start = 5, height = 8)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, start = 5, height = 8)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, start = 5, height = 8)")
   sim <- expect_no_error(simulate(sfm))
 
   # Ensure plotting works with add_constants as these are functions
@@ -184,8 +191,8 @@ test_that("step works (Julia)", {
     build("a", "stock") |>
     build("b", "flow", eqn = "input(t)", to = "a")
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(5)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(5)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, 5)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, 5)")
   sim <- expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   df <- as.data.frame(sim)
   a <- df[df$variable == "a", "value"]
@@ -194,24 +201,24 @@ test_that("step works (Julia)", {
   expect_equal(a[which(df$time > 5)[1]], 0.1 * 1) # dt * height step
 
   # Also works with keyword arguments
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(start=5)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(start=5)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, start=5)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, start=5)")
   expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(start = 5, 8)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(start = 5, 8)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, start = 5, 8)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, start = 5, 8)")
   expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(5, height = 8)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(5, height = 8)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, 5, height = 8)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, 5, height = 8)")
   expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(height = 8, 5)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(height = 8, 5)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, height = 8, 5)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, height = 8, 5)")
   expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(start = 5, height = 8)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "step(start = 5, height = 8)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, start = 5, height = 8)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "step(times, start = 5, height = 8)")
   sim <- expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
 
   # Ensure plotting works with add_constants as these are functions
@@ -219,9 +226,9 @@ test_that("step works (Julia)", {
   expect_no_error(plot(sim, add_constants = TRUE))
 
   # Also works with units
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(start = u('5seconds'))"))
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "step(times, start = u('5seconds'))"))
   sfm <- sfm0 |>
-    build("input", "constant", eqn = "step(start = u('5seconds'))") |>
+    build("input", "constant", eqn = "step(times, start = u('5seconds'))") |>
     sim_specs(language = "Julia", time_units = "seconds")
   sim <- expect_no_error(simulate(sfm))
   df <- as.data.frame(sim)
@@ -231,8 +238,17 @@ test_that("step works (Julia)", {
   expect_equal(a[which(df$time > 5)[1]], 0.1 * 1) # dt * height step
 })
 
+
 test_that("pulse works", {
-  expect_error(pulse(5, 1, 0), "The width of the pulse cannot be equal to or less than 0")
+  times <- seq(0, 10, by = .1)
+
+  expect_error(pulse(), "argument \"start\" is missing, with no default")
+  expect_error(pulse(times), "argument \"start\" is missing, with no default")
+  expect_error(pulse(times, 5, 1, 0), "The width of the pulse cannot be equal to or less than 0")
+  expect_warning(pulse(times, -10), "Start of pulse before beginning of simulation time")
+  expect_warning(pulse(times, 11), "Start of pulse after end of simulation time")
+  expect_warning(pulse(times, 5, 1, 10, 10),
+                 "width \\(10\\) >= repeat_interval \\(10\\) creates a continuous pulse")
 
   # Set-up basic sfm
   sfm0 <- xmile() |>
@@ -240,8 +256,8 @@ test_that("pulse works", {
     build("a", "stock") |>
     build("b", "flow", eqn = "input(t)", to = "a")
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "pulse(5, 2)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "pulse(5, 2)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "pulse(times, 5, 2)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "pulse(times, 5, 2)")
   sim <- expect_no_error(simulate(sfm))
   df <- as.data.frame(sim)
   a <- df[df$variable == "a", "value"]
@@ -249,9 +265,14 @@ test_that("pulse works", {
   expect_equal(a[which(dplyr::near(df$time, 5))[1]], 0)
   expect_equal(a[which(df$time > 5)[1]], 0.1 * 2) # dt * height pulse
 
+  # Forgetting times
+  sfm <- expect_error(sfm0 |> build("input", "constant",
+                                       eqn = "pulse(10)"
+  ), "Obligatory argument start is missing for function pulse")
+
   # Passing a NULL argument
   sfm <- expect_no_error(sfm0 |> build("input", "constant",
-    eqn = "pulse(10, height = 1, width = 1, repeat_interval = NULL)"
+    eqn = "pulse(times, 10, height = 1, width = 1, repeat_interval = NULL)"
   ))
   sim <- expect_no_error(simulate(sfm))
   df <- as.data.frame(sim)
@@ -262,7 +283,7 @@ test_that("pulse works", {
 
   # Test repeating pulses
   sfm <- expect_no_error(sfm0 |> build("input", "constant",
-    eqn = "pulse(10, height = 1, width = 1, repeat_interval = 5)"
+    eqn = "pulse(times, 10, height = 1, width = 1, repeat_interval = 5)"
   ))
   sim <- expect_no_error(simulate(sfm))
   df <- as.data.frame(sim)
@@ -287,7 +308,7 @@ test_that("pulse works (Julia)", {
     build("a", "stock") |>
     build("b", "flow", eqn = "input(t)", to = "a")
 
-  sfm <- sfm0 |> build("input", "constant", eqn = "pulse(5, 2)")
+  sfm <- sfm0 |> build("input", "constant", eqn = "pulse(times, 5, 2)")
   sim <- expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   df <- as.data.frame(sim)
   a <- df[df$variable == "a", "value"]
@@ -297,7 +318,7 @@ test_that("pulse works (Julia)", {
 
   # Passing a NULL argument
   sfm <- expect_no_error(sfm0 |> build("input", "constant",
-    eqn = "pulse(10, height = 1, width = 1, repeat_interval = NULL)"
+    eqn = "pulse(times, 10, height = 1, width = 1, repeat_interval = NULL)"
   ))
   sim <- expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   df <- as.data.frame(sim)
@@ -308,7 +329,7 @@ test_that("pulse works (Julia)", {
 
   # Test repeating pulses
   sfm <- expect_no_error(sfm0 |> build("input", "constant",
-    eqn = "pulse(10, height = 1, width = 1, repeat_interval = 5)"
+    eqn = "pulse(times, 10, height = 1, width = 1, repeat_interval = 5)"
   ))
   sim <- expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   df <- as.data.frame(sim)
@@ -324,7 +345,13 @@ test_that("pulse works (Julia)", {
 })
 
 test_that("ramp works", {
-  expect_error(ramp(5, 2), "The finish time of the ramp cannot be before the start time\\. To specify a decreasing ramp, set the height to a negative value")
+  times <- seq(0, 10, by = .1)
+
+  # If there are multiple missing arguments, it always gives the last one
+  expect_error(ramp(), "argument \"finish\" is missing, with no default")
+  expect_error(ramp(times), "argument \"finish\" is missing, with no default")
+  expect_error(ramp(times, 1), "argument \"finish\" is missing, with no default")
+  expect_error(ramp(times, 5, 2), "The finish time of the ramp cannot be before the start time\\. To specify a decreasing ramp, set the height to a negative value")
 
   # Set-up basic sfm
   sfm0 <- xmile() |>
@@ -333,12 +360,12 @@ test_that("ramp works", {
     build("b", "flow", eqn = "input(t)", to = "a")
 
   expect_warning(
-    simulate(sfm0 |> build("input", "constant", eqn = "ramp(5, 2)")),
+    simulate(sfm0 |> build("input", "constant", eqn = "ramp(times, 5, 2)")),
     "An error occurred while running the R script"
   )
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "ramp(2, 5)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "ramp(2, 5)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "ramp(times, 2, 5)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "ramp(times, 2, 5)")
   sim <- expect_no_error(simulate(sfm))
   df <- as.data.frame(sim)
   a <- df[df$variable == "a", "value"]
@@ -362,7 +389,7 @@ test_that("ramp works (Julia)", {
     build("a", "stock") |>
     build("b", "flow", eqn = "input(t)", to = "a")
 
-  sfm <- sfm0 |> build("input", "constant", eqn = "ramp(2, 5)")
+  sfm <- sfm0 |> build("input", "constant", eqn = "ramp(times, 2, 5)")
   sim <- expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   df <- as.data.frame(sim)
   a <- df[df$variable == "a", "value"]
@@ -378,7 +405,10 @@ test_that("ramp works (Julia)", {
 
 
 test_that("seasonal works", {
-  expect_error(seasonal(-10), "The period of the seasonal wave must be greater than 0")
+  times <- seq(0, 10, by = .1)
+
+  expect_error(seasonal(), "argument \"times\" is missing, with no default")
+  expect_error(seasonal(times, -10), "The period of the seasonal wave must be greater than 0")
 
   # Set-up basic sfm
   sfm0 <- xmile() |>
@@ -386,8 +416,8 @@ test_that("seasonal works", {
     build("a", "stock") |>
     build("b", "flow", eqn = "input(t)", to = "a")
 
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "seasonal()"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "seasonal()")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "seasonal(times)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "seasonal(times)")
   sim <- expect_no_error(simulate(sfm))
   df <- as.data.frame(sim)
   a <- df[df$variable == "a", "value"]
@@ -395,8 +425,8 @@ test_that("seasonal works", {
   expect_equal(a[2] > 0, TRUE)
 
   # With shift
-  expect_no_error(sfm0 |> build("input", "constant", eqn = "seasonal(shift = 1)"))
-  sfm <- sfm0 |> build("input", "constant", eqn = "seasonal(shift = 1)")
+  expect_no_error(sfm0 |> build("input", "constant", eqn = "seasonal(times, shift = 1)"))
+  sfm <- sfm0 |> build("input", "constant", eqn = "seasonal(times, shift = 1)")
   sim <- expect_no_error(simulate(sfm))
   df <- as.data.frame(sim)
   a <- df[df$variable == "a", "value"]
@@ -417,7 +447,7 @@ test_that("seasonal works (Julia)", {
     build("a", "stock") |>
     build("b", "flow", eqn = "input(t)", to = "a")
 
-  sfm <- sfm0 |> build("input", "constant", eqn = "seasonal()")
+  sfm <- sfm0 |> build("input", "constant", eqn = "seasonal(times)")
   sim <- expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   df <- as.data.frame(sim)
   a <- df[df$variable == "a", "value"]
@@ -425,7 +455,7 @@ test_that("seasonal works (Julia)", {
   expect_equal(a[2] > 0, TRUE)
 
   # With shift
-  sfm <- sfm0 |> build("input", "constant", eqn = "seasonal(shift = 1)")
+  sfm <- sfm0 |> build("input", "constant", eqn = "seasonal(times, shift = 1)")
   sim <- expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   df <- as.data.frame(sim)
   a <- df[df$variable == "a", "value"]
@@ -436,3 +466,4 @@ test_that("seasonal works (Julia)", {
   sim <- expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   expect_no_error(plot(sim, add_constants = TRUE))
 })
+

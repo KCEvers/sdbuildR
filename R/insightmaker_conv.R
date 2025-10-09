@@ -3,14 +3,14 @@
 #' For internal use; use `insightmaker_to_sfm()` to import an Insight Maker model.
 #'
 #' @param URL String with URL to an Insight Maker model
-#' @param filepath_IM String with file path to an Insight Maker model with suffix .InsightMaker
+#' @param file String with file path to an Insight Maker model with suffix .InsightMaker
 #'
 #' @return String with Insight Maker model
 #' @seealso [insightmaker_to_sfm()]
 #' @export
 #' @family insightmaker
 #'
-url_to_IM <- function(URL, filepath_IM) {
+url_to_IM <- function(URL, file) {
   # Read URL
   url_data <- rvest::read_html(URL)
 
@@ -25,8 +25,10 @@ url_to_IM <- function(URL, filepath_IM) {
   script_texts <- iframe_page |> rvest::html_elements("script")
 
   # Keep script with certain keywords
-  script_model <- script_texts[stringr::str_detect(script_texts |> rvest::html_text(trim = TRUE), "model_id") & stringr::str_detect(script_texts |> rvest::html_text(trim = TRUE), "model_title")] |>
-    as.character()
+  script_model <- as.character(
+    script_texts[stringr::str_detect(
+    rvest::html_text(script_texts, trim = TRUE), "model_id") & stringr::str_detect(rvest::html_text(script_texts, trim = TRUE), "model_title")]
+    )
 
   # Extract part of interest
   xml_str <- stringr::str_match_all(
@@ -48,33 +50,33 @@ url_to_IM <- function(URL, filepath_IM) {
       sprintf("\"%s\":\"(.*?)\"", x)
     )[, 2]
   }, character(1)) |> as.list()
-  # header_info$URL = URL
-  header_str <- sprintf("<header> %s </header>", paste0(names(header_info), "=\"", unname(textutils::HTMLencode(header_info, encode.only = c("&", "<", ">"))), "\"", collapse = ", "))
+  header_str <- sprintf("<header> %s </header>", paste0(names(header_info),
+                                                        "=\"",
+                                                        unname(textutils::HTMLencode(header_info, encode.only = c("&", "<", ">"))), "\"", collapse = ", "))
 
-  # Insert header
+  # Insert header in xml_str
   idx_root <- stringr::str_locate(xml_str, "<root>")
   stringr::str_sub(xml_str, idx_root[, "start"], idx_root[, "end"]) <- paste0("<root> \\n", header_str)
 
-  # Save data to .InsightMaker file
-  if (is.null(filepath_IM)) {
+  # Save and read .InsightMaker file
+  if (is.null(file)) {
     delete_after <- TRUE
-    filepath_IM <- tempfile(fileext = ".InsightMaker")
+    file <- tempfile(fileext = ".InsightMaker")
   } else {
     delete_after <- FALSE
   }
-  writeLines(xml_str, filepath_IM)
-  xml_file <- xml2::read_xml(filepath_IM)
+  writeLines(xml_str, file)
+  xml_file <- xml2::read_xml(file)
 
   # If no file path was specified before, delete file
   if (delete_after) {
-    file.remove(filepath_IM)
-    filepath_IM <- NULL
+    file.remove(file)
+    file <- NULL
   }
 
   return(list(
     xml_file = xml_file,
-    header_info = header_info,
-    filepath_IM = filepath_IM
+    file = file
   ))
 }
 
@@ -87,6 +89,7 @@ url_to_IM <- function(URL, filepath_IM) {
 #' @noRd
 #'
 IM_to_xmile <- function(xml_file) {
+
   # Get the children nodes
   children <- xml2::xml_children(xml_file)
   if (xml2::xml_name(children) == "root") {
@@ -443,7 +446,16 @@ IM_to_xmile <- function(xml_file) {
     )
 
   # Header
-  header_list[["method_insightmaker"]] <- settings[["SolutionAlgorithm"]]
+  header_list[["insightmaker_method"]] <- settings[["SolutionAlgorithm"]]
+
+  # Rename elements in header
+  new_names <- names(header_list)
+  new_names[new_names == "model_author_name"] <- "author"
+  new_names[new_names == "model_author_id"] <- "insightmaker_author_id"
+  new_names[new_names == "model_title"] <- "name"
+  new_names[new_names == "model_id"] <- "insightmaker_model_id"
+  names(header_list) <- new_names
+
   sfm[["header"]] <- utils::modifyList(sfm[["header"]], header_list)
 
   # Variables
@@ -656,6 +668,7 @@ replace_names_IM <- function(string, original, replacement, with_brackets = TRUE
 #' @noRd
 #'
 clean_units_IM <- function(sfm, regex_units) {
+
   # Get names of all model elements
   var_names <- get_model_var(sfm)
 
@@ -754,34 +767,43 @@ clean_units_IM <- function(sfm, regex_units) {
 
   # Define function to clean units contained in curly brackets
   clean_units_curly <- function(x, regex_units) {
+
+    # First check if there are any curly brackets
+    if (!grepl("\\{", x)){
+      return(x)
+    }
+
     # Get indices of curly brackets
     paired_idxs <- get_range_all_pairs(x, var_names, type = "curly", names_with_brackets = TRUE)
 
-    if (nrow(paired_idxs) > 0) {
-      # At least one letter needs to be in between the curly brackets and there cannot be commas
-      paired_idxs <- paired_idxs[stringr::str_detect(paired_idxs[["match"]], "[a-zA-Z]") &
-        !stringr::str_detect(paired_idxs[["match"]], ","), ]
-
-      if (nrow(paired_idxs) > 0) {
-        # Apply clean unit here already, because Insight Maker doesn't care about case, though it will also be applied when converting equations
-        # Find replacements by applying clean_unit()
-        replacements <- lapply(
-          seq.int(nrow(paired_idxs)),
-          function(i) {
-            # Remove curly brackets
-            # Insight Maker treats units as case-insensitive
-            stringr::str_sub(tolower(x), paired_idxs[i, "start"] + 1, paired_idxs[i, "end"] - 1) |>
-              clean_unit(regex_units, ignore_case = TRUE)
-          }
-        )
-
-        # Replace in reverse order
-        for (i in rev(seq.int(nrow(paired_idxs)))) {
-          stringr::str_sub(x, paired_idxs[i, "start"], paired_idxs[i, "end"]) <- paste0("u(\"", replacements[[i]], "\")")
-        }
-      }
+    if (nrow(paired_idxs) == 0) {
+      return(x)
     }
 
+    # At least one letter needs to be in between the curly brackets and there cannot be commas
+    paired_idxs <- paired_idxs[stringr::str_detect(paired_idxs[["match"]], "[a-zA-Z]") &
+      !stringr::str_detect(paired_idxs[["match"]], ","), ]
+
+    if (nrow(paired_idxs) == 0) {
+      return(x)
+    }
+
+    # Apply clean unit here already, because Insight Maker doesn't care about case, though it will also be applied when converting equations
+    # Find replacements by applying clean_unit()
+    replacements <- lapply(
+      seq.int(nrow(paired_idxs)),
+      function(i) {
+        # Remove curly brackets
+        # Insight Maker treats units as case-insensitive
+        stringr::str_sub(tolower(x), paired_idxs[i, "start"] + 1, paired_idxs[i, "end"] - 1) |>
+          clean_unit(regex_units, ignore_case = TRUE)
+      }
+    )
+
+    # Replace in reverse order
+    for (i in rev(seq.int(nrow(paired_idxs)))) {
+      stringr::str_sub(x, paired_idxs[i, "start"], paired_idxs[i, "end"]) <- paste0("u(\"", replacements[[i]], "\")")
+    }
 
     return(x)
   }
@@ -814,13 +836,13 @@ clean_units_IM <- function(sfm, regex_units) {
       sfm[["global"]][["eqn"]],
       unlist(lapply(sfm[["macro"]], `[[`, "eqn"))
     ),
-    new_units = sfm[["model"]][["variables"]] |>
+    new_units = unlist(sfm[["model"]][["variables"]] |>
       lapply(function(x) {
         lapply(x, `[[`, "units")
-      }) |> unlist(),
+      })),
     regex_units = regex_units, R_or_Julia = "R"
   )
-  sfm[["model_units"]] <- add_model_units |> utils::modifyList(sfm[["model_units"]])
+  sfm[["model_units"]] <- utils::modifyList(add_model_units, sfm[["model_units"]])
 
 
   sfm <- validate_xmile(sfm)
@@ -850,7 +872,7 @@ check_nonnegativity <- function(sfm, keep_nonnegative_flow, keep_nonnegative_sto
   if (keep_nonnegative_stock & length(nonneg_stock) > 0) {
     if (!keep_solver & sfm[["sim_specs"]][["method"]] == "rk4") {
       message("Non-negative Stocks detected! Switching the ODE solver to Euler to ensure Insight Maker and sdbuildR produce the same output. Turn off by setting keep_solver = TRUE.")
-      sfm[["sim_specs"]][["method_insightmaker"]] <- sfm[["sim_specs"]][["method"]]
+      sfm[["sim_specs"]][["insightmaker_method"]] <- sfm[["sim_specs"]][["method"]]
       sfm[["sim_specs"]][["method"]] <- "euler"
     }
   }
@@ -1198,43 +1220,75 @@ split_macros_IM <- function(sfm) {
 #' @noRd
 #'
 convert_equations_IM_wrapper <- function(sfm, regex_units) {
+
   # Convert each equation and create list of model elements to add
   var_names <- get_model_var(sfm)
 
-  add_model_elements <- unlist(unname(sfm[["model"]][["variables"]][c("stock", "aux", "flow")]), recursive = FALSE) |>
-    lapply(function(x) {
-      if (.sdbuildR_env[["P"]][["debug"]]) {
-        message(x[["name"]])
-        message(x[["eqn"]])
-      }
+  unlist_vars <- unlist(unname(sfm[["model"]][["variables"]][c("stock", "aux", "flow")]),
+                        recursive = FALSE)
 
-      # Convert equation
-      out <- convert_equations_IM(
-        type = x[["type"]],
-        name = x[["name"]],
-        eqn = x[["eqn"]],
-        var_names = var_names,
-        regex_units = regex_units
-      )
 
-      if (.sdbuildR_env[["P"]][["debug"]]) {
-        message(out)
-      }
+  # add_model_elements1 <- lapply(unlist_vars, function(x) {
+  #     if (.sdbuildR_env[["P"]][["debug"]]) {
+  #       message(x[["name"]])
+  #       message(x[["eqn"]])
+  #     }
+  #
+  #     # Convert equation
+  #     out <- convert_equations_IM(
+  #       type = x[["type"]],
+  #       name = x[["name"]],
+  #       eqn = x[["eqn"]],
+  #       var_names = var_names,
+  #       regex_units = regex_units
+  #     )
+  #
+  #     if (.sdbuildR_env[["P"]][["debug"]]) {
+  #       message(out)
+  #     }
+  #
+  #     return(out)
+  #   }) |>
+  #   purrr::flatten()
+  #
+  #
+  #
+  # add_model_elements1 <- lapply(add_model_elements, function(x) {
+  #   z <- names(x)
+  #   lapply(seq_along(x), function(i) {
+  #     y <- x[[i]]
+  #     name <- names(x)[i]
+  #     y[["name"]] <- name
+  #     return(y)
+  #   }) |> stats::setNames(z)
+  # })
 
-      return(out)
-    }) |>
+
+  # Extract all fields as vectors (much faster than repeated list access)
+  types <- vapply(unlist_vars, `[[`, character(1), "type")
+  names <- vapply(unlist_vars, `[[`, character(1), "name")
+  eqns <- vapply(unlist_vars, `[[`, character(1), "eqn")
+
+  # Call function with vectorized arguments
+  add_model_elements <- Map(
+    convert_equations_IM,
+    type = types,
+    name = names,
+    eqn = eqns,
+    MoreArgs = list(
+      var_names = var_names,
+      regex_units = regex_units
+    )
+  ) |>
     purrr::flatten()
 
+  # Add name
   add_model_elements <- lapply(add_model_elements, function(x) {
-    z <- names(x)
-    lapply(seq_along(x), function(i) {
-      y <- x[[i]]
-      name <- names(x)[i]
-      y[["name"]] <- name
-      return(y)
-    }) |> stats::setNames(z)
+    for (i in seq_along(x)) {
+      x[[i]][["name"]] <- names(x)[i]
+    }
+    x
   })
-
 
   # Add to sfm
   for (i in seq_along(add_model_elements)) {
@@ -1269,7 +1323,6 @@ remove_brackets_from_names <- function(sfm) {
   sfm[["model"]][["variables"]] <- lapply(sfm[["model"]][["variables"]], function(y) {
     lapply(y, function(x) {
       x[["eqn"]] <- stringr::str_replace_all(x[["eqn"]], dict)
-
       return(x)
     })
   })
@@ -1327,7 +1380,8 @@ split_aux_wrapper <- function(sfm) {
 
   sfm[["model"]][["variables"]][["constant"]] <- sfm[["model"]][["variables"]][["aux"]][constants]
   sfm[["model"]][["variables"]][["aux"]][constants] <- NULL
-  sfm[["model"]][["variables"]][["constant"]] <- lapply(sfm[["model"]][["variables"]][["constant"]], function(x) {
+  sfm[["model"]][["variables"]][["constant"]] <- lapply(sfm[["model"]][["variables"]][["constant"]],
+                                                        function(x) {
     x[["type"]] <- "constant"
     return(x)
   })

@@ -1,9 +1,6 @@
 test_that("export_plot works", {
   skip_on_cran() # requires chrome
 
-  # Ubuntu throws error because it cannot access chrome
-  skip_on_os("linux")
-
   sfm <- xmile("SIR") |> sim_specs(stop = 10, dt = .1)
 
   # Plot sfm
@@ -14,16 +11,26 @@ test_that("export_plot works", {
   file.remove(filepath)
 
   # Plot simulation
+
+  # Ubuntu throws error because it cannot access chrome
+  skip_on_os("linux")
+
+  skip_if_not(has_internet()) # requires internet
   sim <- simulate(sfm)
   pl <- plot(sim)
   filepath <- tempfile(fileext = ".png")
 
-  expect_no_error(expect_no_message(expect_no_warning(export_plot(pl, filepath))))
+  # This may throw a message "Reconnecting to chrome process;
+  # All active sessions will be need to be respawned"
+  expect_no_error(expect_no_warning(export_plot(pl, filepath)))
   expect_true(file.exists(filepath))
   file.remove(filepath)
 
+  # Without file extension, default to png
   filepath <- "test"
-  expect_error(export_plot(pl, filepath), "No file extension specified")
+  expect_no_error(expect_no_warning(export_plot(pl, filepath)))
+  expect_true(file.exists(paste0(filepath, ".png")))
+  file.remove(paste0(filepath, ".png"))
 })
 
 

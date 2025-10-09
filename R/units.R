@@ -276,10 +276,14 @@ clean_unit_in_u <- function(x, regex_units) {
 #' @noRd
 #'
 #' @returns Updated string
-clean_unit <- function(x, regex_units, ignore_case = FALSE, include_translation = FALSE, unit_name = FALSE) {
+clean_unit <- function(x, regex_units, ignore_case = FALSE,
+                       include_translation = FALSE, unit_name = FALSE) {
   if (x == "1") {
     x_new <- x
     x_parts <- stats::setNames(x, x)
+  } else if (tolower(x) %in% c("unitless", "dimensionless", "dmnl", "no units", "no unit")){
+    x_new <- "1"
+    x_parts <- stats::setNames(x_new, x)
   } else {
     # Ensure there is no scientific notation
     x <- scientific_notation(x, task = "remove")
@@ -402,6 +406,39 @@ detect_undefined_units <- function(sfm, new_eqns, new_units, regex_units, R_or_J
   }
 
   return(add_model_units)
+}
+
+
+
+#' Find unit strings
+#'
+#' @inheritParams build
+#'
+#' @returns List with unit strings
+#' @noRd
+find_unit_strings <- function(sfm) {
+  # Extract all unit strings from equations
+  var_units <- lapply(sfm[["model"]][["variables"]], function(y) {
+    lapply(y, function(x) {
+      if (is_defined(x[["eqn"]])) {
+        return(stringr::str_extract_all(x[["eqn"]], "(?:^|(?<=\\W))u\\([\"|'](.*?)[\"|']\\)"))
+      }
+    })
+  }) |>
+    unname() |>
+    unlist()
+
+  # Extract all unit strings from macros
+  macro_units <- lapply(sfm[["macro"]], function(x) {
+    if (is_defined(x[["eqn"]])) {
+      return(stringr::str_extract_all(x[["eqn"]], "(?:^|(?<=\\W))u\\([\"|'](.*?)[\"|']\\)"))
+    }
+    return(x)
+  }) |> unlist()
+
+  eqn_units <- c(var_units, macro_units)
+
+  return(eqn_units)
 }
 
 

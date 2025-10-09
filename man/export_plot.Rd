@@ -9,7 +9,7 @@ export_plot(pl, filepath, width = 3, height = 4, units = "cm", dpi = 300)
 \arguments{
 \item{pl}{Plot object.}
 
-\item{filepath}{Filepath to save plot to.}
+\item{filepath}{File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. If no file extension is specified, it will default to png.}
 
 \item{width}{Width of image in units.}
 
@@ -41,7 +41,6 @@ file.remove(filepath)
 \seealso{
 Other simulate: 
 \code{\link{ensemble}()},
-\code{\link{julia_setup_ok}()},
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},

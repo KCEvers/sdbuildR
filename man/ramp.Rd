@@ -4,9 +4,11 @@
 \alias{ramp}
 \title{Create ramp function}
 \usage{
-ramp(start, finish, height = 1)
+ramp(times, start, finish, height = 1)
 }
 \arguments{
+\item{times}{Vector of simulation times}
+
 \item{start}{Start time of ramp}
 
 \item{finish}{End time of ramp}
@@ -26,7 +28,8 @@ Equivalent of Ramp() in Insight Maker
 # Create a simple model with a ramp function
 sfm <- xmile() |>
   build("a", "stock") |>
-  build("input", "constant", eqn = "ramp(20, 30, 3)") |>
+  # Specify the global variable "times" as simulation times
+  build("input", "constant", eqn = "ramp(times, 20, 30, 3)") |>
   build("inflow", "flow", eqn = "input(t)", to = "a")
 
 \dontshow{
@@ -37,7 +40,7 @@ sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim)
 
 # To create a decreasing ramp, set the height to a negative value
-sfm <- build(sfm, "input", eqn = "ramp(20, 30, -3)")
+sfm <- build(sfm, "input", eqn = "ramp(times, 20, 30, -3)")
 
 sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim)

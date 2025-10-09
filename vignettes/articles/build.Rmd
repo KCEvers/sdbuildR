@@ -330,20 +330,17 @@ kableExtra::kbl(functions_table,
 ```{r echo=FALSE}
 functions_table <- data.frame(
   Variable = c(
-    "`t`", "`dt`"
-    # "`constants`", "`init`"
+    "`times`", "`t`", "`dt`"
   ),
   Decription = c(
+    "Vector with simulation times",
     "Current time in the ODE",
     "Time step of the simulation"
-    # "Constant parameters of the model",
-    # "Initial values of stocks"
   ),
   Use.case = c(
+    "Use in equations, e.g. pulse(times, 5, width = dt)",
     "Use in equations, e.g. input(t)",
-    "Use in equations, e.g. pulse(5, width = dt)"
-    # "Use in `ensemble()`",
-    # "Use in `ensemble()`"
+    "Use in equations, e.g. pulse(times, 5, width = dt)"
   )
 )
 

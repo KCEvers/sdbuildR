@@ -11,17 +11,17 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
   # Get variable names
   var_names <- get_model_var(sfm)
 
-  sfm[["model"]][["variables"]] <- lapply(
-    sfm[["model"]][["variables"]],
+  sfm[["model"]][["variables"]][c("stock", "flow", "constant", "aux")] <- lapply(
+    sfm[["model"]][["variables"]][c("stock", "flow", "constant", "aux")],
     function(x) {
       lapply(x, function(y) {
-        if (is_defined(y[["eqn"]])) {
-          out <- convert_equations_julia(sfm, y[["type"]], y[["name"]],
+        # if (is_defined(y[["eqn"]])) {
+          out <- convert_equations_julia(y[["type"]], y[["name"]],
             y[["eqn"]], var_names,
             regex_units = regex_units
           )
           y <- utils::modifyList(y, out)
-        }
+        # }
         return(y)
       })
     }
@@ -36,9 +36,8 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
       x[["eqn_julia"]] <- x[["eqn"]]
     }
 
-    out <- convert_equations_julia(sfm, "macro", "macro", x[["eqn_julia"]], var_names,
-      regex_units = regex_units
-    )
+    out <- convert_equations_julia("macro", "macro", x[["eqn_julia"]],
+                                   var_names, regex_units = regex_units)
     x <- utils::modifyList(x, out)
 
     return(x)
@@ -59,7 +58,7 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
 #' @importFrom rlang .data
 #' @noRd
 #'
-convert_equations_julia <- function(sfm, type, name, eqn, var_names, regex_units) {
+convert_equations_julia <- function(type, name, eqn, var_names, regex_units) {
   if (.sdbuildR_env[["P"]][["debug"]]) {
     # message("")
     # message(type)
@@ -163,7 +162,7 @@ convert_equations_julia <- function(sfm, type, name, eqn, var_names, regex_units
     eqn <- clean_unit_in_u(eqn, regex_units)
 
     # Units: replace u("") with u""
-    eqn <- stringr::str_replace_all(eqn, "\\bu\\([\"|'](.*?)[\"|']\\)", "u\"\\1\"")
+    eqn <- stringr::str_replace_all(eqn, "(?:^|(?<=\\W))u\\([\"|'](.*?)[\"|']\\)", "u\"\\1\"")
 
     # # # If it is a multi-line statement, surround by brackets in case they aren't macros
     # # eqn = trimws(eqn)
@@ -215,11 +214,6 @@ get_range_digits <- function(eqn, var_names) {
 
 
 
-# eqn <- "1e+09 + a"
-# eqn <- "1e-09 + a"
-# eqn <- ".01e09 + a + .03e-02"
-
-
 #' Replace digits with floats in string
 #'
 #' @inheritParams convert_equations_IM
@@ -241,34 +235,6 @@ replace_digits_with_floats <- function(eqn, var_names) {
 }
 
 
-# replace_range_Julia = function(eqn, var_names) {
-#
-#   # ** to do
-#
-#
-#   paired_idxs = get_range_all_pairs(eqn, var_names, add_custom = "seq()", type = "seq")
-#   paired_idxs
-#
-#   # Split eqn with indices from paired_idxs
-#   # The default third argument for seq() in R is by, but in Julia it is length
-#
-#   bracket_arg = stringr::str_sub(eqn, idx_func$start_bracket + 1, idx_func$end - 1)
-#   arg = parse_args(bracket_arg, var_names)
-#
-#
-#   stringr::str_replace_all(., ", by", ", step")
-#   stringr::str_replace_all(., ", length.out", ", length")
-#
-#
-#
-#
-#   # Replace range, e.g. range(0, 10, 2) -> 0:2:10
-#   eqn = stringr::str_replace_all(eqn, "range\\((.*?), (.*?), (.*?)\\)", "\\1:\\3:\\2")
-#
-#   return(eqn)
-#
-# }
-
 
 
 #' Translate R operators to Julia
@@ -280,12 +246,13 @@ replace_digits_with_floats <- function(eqn, var_names) {
 #'
 replace_op_julia <- function(eqn, var_names) {
   # Define logical operators in R and replacements in Julia
-  logical_op_words <- c("TRUE" = "true", "FALSE" = "false", "T" = "true", "F" = "false", "NULL" = "nothing", "NA" = "missing")
+  logical_op_words <- c("TRUE" = "true", "FALSE" = "false", "T" = "true",
+                        "F" = "false", "NULL" = "nothing", "NA" = "missing")
   # Cannot be preceded or followed by a letter
-  names(logical_op_words) <- paste0("\\b", stringr::str_escape(names(logical_op_words)), "\\b")
+  names(logical_op_words) <- paste0("(?:^|(?<=\\W))",
+                                    stringr::str_escape(names(logical_op_words)), "(?=(?:\\W|$))")
 
-
-  # **to do: 1 is not true in Julia
+  # **To do: 1 is not true in Julia
 
   logical_op_signs <- c(
     # Default: broadcast operations # Add spaces everywhere to clear confusion with floats
@@ -378,7 +345,7 @@ replace_op_julia <- function(eqn, var_names) {
 #' @returns Modified dataframe
 #' @noRd
 #'
-find_round <- function(df, round_brackets, eqn, var_names) {
+find_round_brackets <- function(df, round_brackets, eqn, var_names) {
   statements <- c("if", "else if", "for", "while", "function")
   if (df[["statement"]] %in% c(statements, toupper(statements))) {
     matching <- round_brackets[match(df[["end"]], round_brackets[["start"]]), ]
@@ -420,7 +387,7 @@ find_round <- function(df, round_brackets, eqn, var_names) {
 #' @returns Modified dataframe
 #' @noRd
 #'
-find_curly <- function(df, paired_idxs) {
+find_curly_brackets <- function(df, paired_idxs) {
   statements <- c("if", "else if", "for", "while", "function")
   if (df[["statement"]] %in% c(statements, toupper(statements))) {
     matching <- paired_idxs[which(paired_idxs[["start"]] > df[["end_round"]])[1], ]
@@ -509,18 +476,18 @@ convert_all_statements_julia <- function(eqn, var_names) {
         # Step 2: Add row numbers as 'id' column
         df_min_rows[["id"]] <- seq_len(nrow(df_min_rows))
 
-        # Step 3: Apply find_round function to each row
+        # Step 3: Apply find_round_brackets function to each row
         df_with_round <- do.call(rbind, lapply(seq_len(nrow(df_min_rows)), function(i) {
           row_data <- df_min_rows[i, ]
-          result <- find_round(row_data, round_brackets, eqn, var_names)
+          result <- find_round_brackets(row_data, round_brackets, eqn, var_names)
           result[["id"]] <- i # Preserve the id
           result
         }))
 
-        # Step 4: Apply find_curly function to each row
+        # Step 4: Apply find_curly_brackets function to each row
         df_statements <- do.call(rbind, lapply(seq_len(nrow(df_with_round)), function(i) {
           row_data <- df_with_round[i, ]
-          result <- find_curly(row_data, paired_idxs)
+          result <- find_curly_brackets(row_data, paired_idxs)
           result[["id"]] <- i # Preserve the id
           result
         }))
@@ -539,9 +506,6 @@ convert_all_statements_julia <- function(eqn, var_names) {
           lead_statement,
           NA
         )
-
-
-        df_statements
 
         if (nrow(df_statements) == 0) {
           done <- TRUE
@@ -731,7 +695,6 @@ get_syntax_julia <- function() {
   # Custom function to replace each (nested) function; necessary because regex in stringr unfortunately doesn't seem to handle nested functions
   conv_df <- matrix(
     c(
-
       # Statistics
       "min", "min", "syntax1", "", "", FALSE,
       "max", "max", "syntax1", "", "", FALSE,
@@ -739,7 +702,7 @@ get_syntax_julia <- function() {
       "pmax", "max", "syntax1", "", "", FALSE,
       "mean", "Statistics.mean", "syntax1", "", "", FALSE,
       "median", "Statistics.median", "syntax1", "", "", FALSE,
-      "prod", "prod", "syntax1", "", "", FALSE, # ** to do: na.rm!
+      "prod", "prod", "syntax1", "", "", FALSE,
       "sum", "sum", "syntax1", "", "", FALSE,
       "sd", "Statistics.std", "syntax1", "", "", FALSE,
       "cor", "Statistics.cor", "syntax1", "", "", FALSE,
@@ -892,16 +855,16 @@ get_syntax_julia <- function() {
       "convert_u", "convert_u", "syntax1", "", "", TRUE,
       "drop_u", "Unitful.ustrip", "syntax1", "", "", TRUE,
 
-      # step() is already an existing function in Julia, so we use make_step() instead
-      "step", "make_step", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", FALSE,
-      "pulse", "pulse", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", FALSE,
-      "ramp", "ramp", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["time_units_name"]]), "", FALSE,
-      "seasonal", "seasonal", "syntax1", paste0(.sdbuildR_env[["P"]][["times_name"]], ", ", .sdbuildR_env[["P"]][["timestep_name"]]), "", FALSE,
+      # step() is already an existing function in Julia, so we use make_step() instead, as well as for the others for consistency
+      "step", "make_step", "syntax1", .sdbuildR_env[["P"]][["time_units_name"]], "", FALSE,
+      "pulse", "make_pulse", "syntax1", .sdbuildR_env[["P"]][["time_units_name"]], "", FALSE,
+      "ramp", "make_ramp", "syntax1", .sdbuildR_env[["P"]][["time_units_name"]], "", FALSE,
+      "seasonal", "make_seasonal", "syntax1", .sdbuildR_env[["P"]][["timestep_name"]], "", FALSE,
       "length_IM", "length", "syntax1", "", "", FALSE,
-      "delay", "retrieve_delay", "delay", "", "", FALSE,
-      "past", "retrieve_past", "past", "", "", FALSE,
-      "delayN", "compute_delayN", "delayN", "", "", FALSE,
-      "smoothN", "compute_smoothN", "smoothN", "", "", FALSE,
+      # "delay", "retrieve_delay", "delay", "", "", FALSE,
+      # "past", "retrieve_past", "past", "", "", FALSE,
+      # "delayN", "compute_delayN", "delayN", "", "", FALSE,
+      # "smoothN", "compute_smoothN", "smoothN", "", "", FALSE,
 
       # Random Number Functions (13)
       "runif", "rand", "syntaxD", "Distributions.Uniform", "", FALSE,
@@ -1111,11 +1074,6 @@ get_syntax_julia <- function() {
   # Convert to dataframe
   conv_df <- as.data.frame(conv_df, stringsAsFactors = FALSE)
 
-  conv_df
-
-  # **to do: add optionally that someone uses Base::
-
-
   # Create syntax_df by copying conv_df
   syntax_df <- conv_df
 
@@ -1123,13 +1081,13 @@ get_syntax_julia <- function() {
   syntax_df[["R_first_iter"]] <- syntax_df[["R"]]
   syntax_df[["R_regex_first_iter"]] <- ifelse(
     syntax_df[["syntax"]] == "syntax0",
-    paste0("(?<!\\.)\\b", syntax_df[["R"]], "\\b"),
+    paste0("(?<!\\.)\\b", syntax_df[["R"]], "(?=(?:\\W|$))"),
     paste0("(?<!\\.)\\b", syntax_df[["R"]], "\\(")
   )
   syntax_df[["R"]] <- paste0(syntax_df[["R"]], "_replace")
   syntax_df[["R_regex"]] <- ifelse(
     syntax_df[["syntax"]] == "syntax0",
-    paste0("(?<!\\.)\\b", syntax_df[["R"]], "\\b"),
+    paste0("(?<!\\.)\\b", syntax_df[["R"]], "(?=(?:\\W|$))"),
     paste0("(?<!\\.)\\b", syntax_df[["R"]], "\\(")
   )
 
@@ -1148,11 +1106,18 @@ get_syntax_julia <- function() {
 convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
   add_Rcode <- list(func = list())
 
-  if (grepl("[[:alpha:]]", eqn)) {
-    # Dataframe with regular expressions for each built-in Insight Maker function
-    out <- get_syntax_julia()
-    syntax_df <- out[["syntax_df"]]
-    conv_df <- out[["conv_df"]]
+  # Check if equation contains letters and opening and closing brackets
+  # (all translated R functions have brackets)
+  if (grepl("[[:alpha:]]", eqn) && grepl("\\(", eqn) && grepl("\\)", eqn)) {
+
+    # Dataframe with regular expressions for each built-in R function
+    # out <- get_syntax_julia()
+    # syntax_df <- out[["syntax_df"]]
+    # conv_df <- out[["conv_df"]]
+    # rm(out)
+
+    syntax_df <- syntax_julia[["syntax_df"]]
+    conv_df <- syntax_julia[["conv_df"]]
 
     # Preparation for first iteration
     done <- FALSE
@@ -1160,6 +1125,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
     R_regex <- syntax_df[["R_regex_first_iter"]]
 
     while (!done) {
+
       # Remove those matches that are in quotation marks or names
       idxs_exclude <- get_seq_exclude(eqn, var_names)
 
@@ -1182,7 +1148,8 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
       })
 
       # Remove NULL entries
-      idx_df <- idx_df[!vapply(idx_df, is.null, logical(1))]
+      idx_keep <- !vapply(idx_df, is.null, logical(1))
+      idx_df <- idx_df[idx_keep]
 
       if (length(idx_df) == 0) {
         done <- TRUE
@@ -1207,11 +1174,16 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
         )
 
         for (j in rev(seq_len(nrow(idx_df)))) {
-          stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) <- idx_df[j, ][["R_regex"]] #|>
+          stringr::str_sub(eqn, idx_df[j, "start"], idx_df[j, "end"]) <- idx_df[j, ][["R_regex"]]
         }
       }
 
       if (i == 1) {
+
+        # Switch from R_regex_first_iter to R_regex
+        # Also only keep those functions that were detected on the first iteration.
+        # No new functions to be translated will be added.
+        syntax_df <- syntax_df[idx_keep, , drop = FALSE]
         R_regex <- syntax_df[["R_regex"]]
         i <- i + 1
         # Stop first iteration
@@ -1292,13 +1264,15 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           )
         } else if (idx_func[["syntax"]] == "delay") {
           if (type %in% c("stock", "gf", "constant", "macro")) {
-            stop(paste0("Adjust equation of ", name, ": delay() cannot be used for a ", type, "."))
+            stop(paste0("Adjust equation of ", name,
+                        ": delay() cannot be used for a ", type, "."))
           }
 
           # Check arguments
           arg[2] <- trimws(arg[2])
           if (arg[2] == "0" || arg[2] == "0.0" || arg[2] == "0L") {
-            stop(paste0("Adjust equation of ", name, ": the delay length in delay() must be greater than 0."))
+            stop(paste0("Adjust equation of ", name,
+                        ": the delay length in delay() must be greater than 0."))
           }
 
           func_name <- paste0(name, .sdbuildR_env[["P"]][["delay_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
@@ -1325,13 +1299,15 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           )
         } else if (idx_func[["syntax"]] == "past") {
           if (type %in% c("stock", "gf", "constant", "macro")) {
-            stop(paste0("Adjust equation of ", name, ": past() cannot be used for a ", type, "."))
+            stop(paste0("Adjust equation of ", name,
+                        ": past() cannot be used for a ", type, "."))
           }
 
           # Check arguments
           arg[2] <- trimws(arg[2])
           if (arg[2] == "0" || arg[2] == "0.0" || arg[2] == "0L") {
-            stop(paste0("Adjust equation of ", name, ": the past interval in past() must be greater than 0."))
+            stop(paste0("Adjust equation of ", name,
+                        ": the past interval in past() must be greater than 0."))
           }
 
           arg2 <- ifelse(length(arg) > 1, arg[2], "nothing")
@@ -1354,17 +1330,20 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           )
         } else if (idx_func[["syntax"]] == "delayN") {
           if (type %in% c("stock", "gf", "constant", "macro")) {
-            stop(paste0("Adjust equation of ", name, ": delayN() cannot be used for a ", type, "."))
+            stop(paste0("Adjust equation of ", name,
+                        ": delayN() cannot be used for a ", type, "."))
           }
 
           # Check arguments
           arg[2] <- trimws(arg[2])
           if (arg[2] == "0" || arg[2] == "0.0" || arg[2] == "0L") {
-            stop(paste0("Adjust equation of ", name, ": the delay length in delayN() must be greater than 0."))
+            stop(paste0("Adjust equation of ", name,
+                        ": the delay length in delayN() must be greater than 0."))
           }
 
           if (arg[3] == "0" || arg[3] == "0.0" || arg[3] == "0L") {
-            stop(paste0("Adjust equation of ", name, ": the delay order in delayN() must be greater than 0."))
+            stop(paste0("Adjust equation of ", name,
+                        ": the delay order in delayN() must be greater than 0."))
           }
 
           arg4 <- ifelse(length(arg) > 3, arg[4], arg[1])
@@ -1404,18 +1383,21 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           )
         } else if (idx_func[["syntax"]] == "smoothN") {
           if (type %in% c("stock", "gf", "constant", "macro")) {
-            stop(paste0("Adjust equation of ", name, ": smoothN() cannot be used for a ", type, "."))
+            stop(paste0("Adjust equation of ", name,
+                        ": smoothN() cannot be used for a ", type, "."))
           }
 
           # Check arguments
           arg[2] <- trimws(arg[2])
           if (arg[2] == "0" || arg[2] == "0.0" || arg[2] == "0L") {
-            stop(paste0("Adjust equation of ", name, ": the smoothing time in smoothN() must be greater than 0."))
+            stop(paste0("Adjust equation of ", name,
+                        ": the smoothing time in smoothN() must be greater than 0."))
           }
 
           arg[3] <- trimws(arg[3])
           if (arg[3] == "0" || arg[3] == "0.0" || arg[3] == "0L") {
-            stop(paste0("Adjust equation of ", name, ": the smoothing order in smoothN() must be greater than 0."))
+            stop(paste0("Adjust equation of ", name,
+                        ": the smoothing order in smoothN() must be greater than 0."))
           }
 
           arg4 <- ifelse(length(arg) > 3, arg[4], arg[1])
@@ -1426,7 +1408,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           replacement <- paste0(func_name, .sdbuildR_env[["P"]][["outflow_suffix"]])
           setup <- paste0(
             "setup_smoothN(", arg4, ", ", arg[2], ", ", arg[3],
-            # ", \"", func_name, "\")")
             # Symbols are faster
             ", :", func_name, ")"
           )
@@ -1490,142 +1471,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
 }
 
 
-
-
-
-#' Sort arguments in function call according to default order
-#'
-#' @param arg Vector with arguments in strings
-#' @param func_name String with name of R function
-#' @param default_arg Either NULL or named list of default arguments
-#' @inheritParams convert_builtin_functions_julia
-#'
-#' @noRd
-#' @returns List with named and sorted arguments
-#'
-sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
-  # If default arguments are not provided, assume func_name is an R function
-  if (is.null(default_arg)) {
-    # Find default arguments of R function
-    # Assume Julia and R arguments are the same, with the same order
-    default_arg <- do.call(formals, list(func_name)) |> as.list()
-    varargs <- any(names(default_arg) == "...")
-    default_arg <- default_arg[names(default_arg) != "..."] # Remove ellipsis
-
-    # formals(seq) is empty for some reason
-    if (func_name == "seq") {
-      default_arg <- list(
-        "from" = "1.0", "to" = "1.0", "by" = NULL,
-        "length.out" = NULL, "along.with" = NULL
-      )
-    } else if (func_name == "seq_along") {
-      default_arg <- list("along.with" = "NULL")
-    } else if (func_name == "seq_len") {
-      default_arg <- list("length.out" = "1.0")
-    }
-
-    # default_arg_Julia = JuliaCall::julia_eval(sprintf("using Distributions; params(%s())", Julia_func))
-  }
-
-  # Find names and values of arguments
-  contains_name <- stringr::str_detect(arg, "=")
-  arg_split <- stringr::str_split_fixed(arg, "=", n = 2)
-  names_arg <- trimws(ifelse(contains_name, arg_split[, 1], NA))
-  values_arg <- trimws(ifelse(contains_name, arg_split[, 2], arg_split[, 1]))
-
-  # For some functions, there are no default arguments, so there is no need to sort them
-  if (length(default_arg) == 0) {
-    arg_R <- stats::setNames(values_arg, names_arg)
-  } else {
-    # Check whether all argument names are in the allowed argument names in case of no dots argument (...)
-    idx <- !names_arg %in% names(default_arg) & !is.na(names_arg)
-    if (!varargs & any(idx)) {
-      stop(paste0(
-        "Argument",
-        ifelse(sum(idx) > 1, "s ", " "),
-        paste0(names_arg[idx], collapse = ", "),
-        ifelse(sum(idx) > 1, " are", " is"),
-        " not allowed for function ", func_name, "(). Allowed arguments: ",
-        paste0(names(default_arg), collapse = ", "), "."
-      ))
-    }
-
-    # Check if there are too many arguments
-    if (!varargs & length(arg) > length(default_arg)) {
-      stop(paste0(
-        "Too many arguments for function ", func_name, "(). Allowed arguments: ",
-        paste0(names(default_arg), collapse = ", "), "."
-      ))
-    }
-
-    # Add names to unnamed arguments; note that R can mix named and default arguments, e.g. runif(max = 10, 20, min = 1). Julia cannot if they're not keyword arguments!
-    idx <- which(!contains_name & nzchar(values_arg)) # Find unnamed arguments which have values
-    standard_order <- names(default_arg)
-    if (length(idx) > 0 && length(standard_order) > 0) {
-      new_names <- setdiff(standard_order, stats::na.omit(names_arg)) # names which are missing from the passed argument names
-      names_arg[idx] <- new_names[seq_along(idx)] # Assign new names to unnamed arguments; only select as many as there are unnamed arguments
-    }
-
-
-    # Check for missing obligatory arguments
-    # obligatory arguments without a default (class == "name" or is.symbol, e.g. n in formals(rnorm) is a symbol)
-    obligatory_args <- unlist(lapply(default_arg, is.symbol))
-    idx <- !names(default_arg[obligatory_args]) %in% names_arg
-
-    if (any(idx)) {
-      stop(paste0(
-        "Obligatory argument",
-        ifelse(sum(idx) > 1, "s ", " "),
-        paste0(names(default_arg[obligatory_args])[idx], collapse = ", "),
-        ifelse(sum(idx) > 1, " are", " is"),
-        " missing for function ", func_name, "()."
-      ))
-    }
-
-    # Overwrite default arguments with specified arguments & remove NULL arguments
-    default_arg_list <- default_arg[!obligatory_args | unlist(lapply(default_arg, is.null))]
-    arg_R <- utils::modifyList(default_arg_list, as.list(stats::setNames(values_arg, names_arg)))
-
-    # Sort order of arguments according to default order
-    order_arg <- c(names(default_arg), setdiff(names(arg_R), names(default_arg)))
-    arg_R <- arg_R[order_arg]
-
-    # Check if any of the arguments are calls - these will need to be evaluated
-    if (any(vapply(arg_R, class, character(1)) == "call")) {
-      arg_R_num <- lapply(arg_R, function(x) {
-        if (!is.call(x)) {
-          if (!grepl("'|\"", x) & !is.na(suppressWarnings(as.numeric(x)))) {
-            x <- as.numeric(x)
-          }
-        }
-        return(x)
-      })
-
-      # Parse in case of default arguments like scale = 1/rate
-      for (name in names(arg_R)) {
-        if (is.language(arg_R[[name]]) && !is.name(arg_R[[name]])) {
-          # Evaluate the expression in the context of merged_args
-          env <- list2env(arg_R_num, parent = baseenv())
-          # arg_R[[name]] <- eval(arg_R_correct_class[[name]], envir = env)
-
-          # Substitute values into the expression
-          arg_R[[name]] <- deparse(eval(bquote(substitute(.(arg_R[[name]]), env))))
-        }
-      }
-    }
-
-    # Ensure digits become floats for Julia
-    for (name in names(arg_R)) {
-      if (!is.null(arg_R[[name]])) {
-        arg_R[[name]] <- replace_digits_with_floats(arg_R[[name]], var_names)
-      }
-    }
-  }
-
-  arg_R <- lapply(arg_R, as.character)
-
-  return(arg_R)
-}
 
 
 

@@ -4,12 +4,12 @@
 \alias{url_to_IM}
 \title{Extract Insight Maker model XML string from URL}
 \usage{
-url_to_IM(URL, filepath_IM)
+url_to_IM(URL, file)
 }
 \arguments{
 \item{URL}{String with URL to an Insight Maker model}
 
-\item{filepath_IM}{String with file path to an Insight Maker model with suffix .InsightMaker}
+\item{file}{String with file path to an Insight Maker model with suffix .InsightMaker}
 }
 \value{
 String with Insight Maker model
