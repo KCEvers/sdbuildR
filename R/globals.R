@@ -12,7 +12,7 @@ if (!exists(".sdbuildR_env")) {
     insightmaker_version = 38,
     jl_required_version = "1.11",
     jl_pkg_name = "SystemDynamicsBuildR",
-    jl_pkg_version = "0.2.3",
+    jl_pkg_version = "0.2.4",
     model_setup_name = "model_setup",
     macro_name = "macro",
     initial_value_name = "init",
