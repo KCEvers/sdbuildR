@@ -81,7 +81,6 @@ sfm <- build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
 sfm <- sim_specs(sfm, save_at = 1, save_from = 100)
 
 # Run ensemble simulation with 100 simulations
-use_julia()
 sims <- ensemble(sfm, n = 100)
 plot(sims)
 

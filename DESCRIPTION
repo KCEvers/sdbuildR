@@ -1,6 +1,7 @@
 Package: sdbuildR
 Title: Easily Build and Simulate Stock-and-Flow Models
 Version: 0.0.0.9000
+Maintainer: Kyra Caitlin Evers <kyra.c.evers@gmail.com> 
 Authors@R: 
     person("Kyra Caitlin", "Evers", "", "kyra.c.evers@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-6890-3482", ROR = "04dkp9463"))

@@ -55,7 +55,6 @@ simulate_R <- function(sfm,
     },
     error = function(e) {
       warning("\nAn error occurred while running the R script.")
-      warning(e[["message"]])
       list(
         success = FALSE,
         error_message = e[["message"]], script = script

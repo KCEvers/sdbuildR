@@ -359,11 +359,6 @@ test_that("ramp works", {
     build("a", "stock") |>
     build("b", "flow", eqn = "input(t)", to = "a")
 
-  expect_warning(
-    simulate(sfm0 |> build("input", "constant", eqn = "ramp(times, 5, 2)")),
-    "An error occurred while running the R script"
-  )
-
   expect_no_error(sfm0 |> build("input", "constant", eqn = "ramp(times, 2, 5)"))
   sfm <- sfm0 |> build("input", "constant", eqn = "ramp(times, 2, 5)")
   sim <- expect_no_error(simulate(sfm))

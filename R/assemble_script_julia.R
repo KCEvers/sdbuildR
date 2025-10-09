@@ -92,7 +92,6 @@ simulate_julia <- function(sfm,
     },
     error = function(e) {
       warning("\nAn error occurred while running the Julia script.")
-      warning(e[["message"]])
       list(
         success = FALSE, error_message = e[["message"]], script = script
       ) |>

@@ -19,11 +19,11 @@ julia_init_ok <- function(){
   julia_cmd <- "isdefined(Main, :Unitful)"
   unitful_loaded <- JuliaConnectoR::juliaEval(julia_cmd)
 
-  # julia_cmd <- "using Pkg; Pkg.Types.read_project(Pkg.project().path).name"
-  # project_name <- JuliaConnectoR::juliaEval(julia_cmd)
-  # print("project_name")
-  # print(project_name)
-  #
+  julia_cmd <- "using Pkg; Pkg.Types.read_project(Pkg.project().path).name"
+  project_name <- JuliaConnectoR::juliaEval(julia_cmd)
+  print("project_name")
+  print(project_name)
+
   # project_name2 <- JuliaConnectoR::juliaEval('
   #   using Pkg, TOML
   #   project_dict = TOML.parsefile(Pkg.project().path)
@@ -32,9 +32,9 @@ julia_init_ok <- function(){
   # print("project_name2")
   # print(project_name2)
 
-  # Check name of active project
-  julia_cmd <- "basename(dirname(dirname(Base.active_project())))"
-  active_project <- JuliaConnectoR::juliaEval(julia_cmd)
+  # # Check name of active project
+  # julia_cmd <- "basename(dirname(dirname(Base.active_project())))"
+  # active_project <- JuliaConnectoR::juliaEval(julia_cmd)
 
   # Check init variable exists
   julia_cmd <- paste0("isdefined(Main, :", .sdbuildR_env[["P"]][["init_sdbuildR"]], ")")
@@ -49,7 +49,8 @@ julia_init_ok <- function(){
 
   # return(unitful_loaded && active_project == "sdbuildR" && isTRUE(init_sdbuildR))
   # Careful, devtools::check()'s project name is "sdbuildR.check"
-  return(unitful_loaded && grepl("sdbuildR", active_project) && isTRUE(init_sdbuildR))
+  # return(unitful_loaded && grepl("sdbuildR", active_project) && isTRUE(init_sdbuildR))
+  return(unitful_loaded && project_name == "sdbuildR" && isTRUE(init_sdbuildR))
 }
 
 

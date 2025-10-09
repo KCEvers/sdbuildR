@@ -75,11 +75,11 @@ test_that("downloading and simulating Insight Maker models works", {
 test_that("translating Insight Maker models works (cran)", {
 
   # Get path to the cran folder
-  cran_folder <- test_path("testdata", "insightmaker", "cran")
+  folder <- test_path("testdata", "insightmaker", "cran")
 
   # Get all .InsightMaker files in the folder
   model_files <- list.files(
-    path = cran_folder,
+    path = folder,
     pattern = "\\.InsightMaker$",
     full.names = TRUE
   )
@@ -130,6 +130,11 @@ test_that("translating Insight Maker models works (validation)", {
 
   # Get path to the cran folder
   folder <- test_path("testdata", "insightmaker", "validation")
+
+  print("folder")
+  print(folder)
+
+  print(list.files(path = test_path("testdata", "insightmaker"), include.dirs = TRUE))
 
   skip_if_not(dir.exists(folder), "Validation test files not available")
 

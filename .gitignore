@@ -10,5 +10,5 @@ paper/
 notes/
 /Meta/
 docs
-/tests/testthat/testdata/insightmaker_models/delay
-/tests/testthat/testdata/insightmaker_models/fix
+/tests/testthat/testdata/insightmaker/delay$
+/tests/testthat/testdata/insightmaker/fix$
