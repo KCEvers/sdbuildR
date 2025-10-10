@@ -12,6 +12,10 @@ Dataframe with units in Julia
 \description{
 \code{get_units()} yields a dataframe with all standard units in Julia's Unitful package and added custom units by sdbuildR.
 }
+\examples{
+get_units()
+
+}
 \seealso{
 Other units: 
 \code{\link{convert_u}()},

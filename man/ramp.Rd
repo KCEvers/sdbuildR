@@ -16,7 +16,7 @@ ramp(times, start, finish, height = 1)
 \item{height}{End height of ramp, defaults to 1}
 }
 \value{
-Interpolation function
+Ramp interpolation function
 }
 \description{
 Create a ramp function that increases linearly from 0 to a specified height at a specified start time, and stays at this height after the specified end time.

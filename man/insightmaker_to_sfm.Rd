@@ -19,7 +19,7 @@ insightmaker_to_sfm(
 
 \item{keep_nonnegative_flow}{If TRUE, keeps original non-negativity setting of flows. Defaults to TRUE.}
 
-\item{keep_nonnegative_stock}{If TRUE, keeps original non-negativity setting of stocks Defaults to TRUE.}
+\item{keep_nonnegative_stock}{If TRUE, keeps original non-negativity setting of stocks Defaults to FALSE.}
 
 \item{keep_solver}{If TRUE, keep the ODE solver as it is. If FALSE, switch to Euler integration in case of non-negative stocks to reproduce the Insight Maker data exactly. Defaults to FALSE.}
 }

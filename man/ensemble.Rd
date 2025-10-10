@@ -35,7 +35,7 @@ ensemble(
 
 \item{keep_nonnegative_flow}{If TRUE, keeps original non-negativity setting of flows. Defaults to TRUE.}
 
-\item{keep_nonnegative_stock}{If TRUE, keeps original non-negativity setting of stocks Defaults to TRUE.}
+\item{keep_nonnegative_stock}{If TRUE, keeps original non-negativity setting of stocks Defaults to FALSE.}
 
 \item{keep_unit}{If TRUE, keeps units of variables. Defaults to TRUE.}
 
@@ -68,69 +68,70 @@ To run large simulations, it is recommended to limit the output size by saving f
 If you do not see any variation within a condition of the ensemble (i.e. the confidence bands are virtually non-existent), there are likely no random elements in your model. Without these, there can be no variability in the model. Try specifying a random initial condition or adding randomness to other model elements.
 }
 \examples{
-\dontshow{if (not_on_cran()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-# Load example and set simulation language to Julia
-sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
+# Ensemble simulations require Julia
+if (JuliaConnectoR::juliaSetupOk()) {
+  # Load example and set simulation language to Julia
+  sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
 
-# Set random initial conditions
-sfm <- build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
+  # Set random initial conditions
+  sfm <- build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
 
-# For ensemble simulations, it is highly recommended to reduce the
-# returned output. For example, to save only every 1 time units and discard
-# the first 100 time units, use:
-sfm <- sim_specs(sfm, save_at = 1, save_from = 100)
+  # For ensemble simulations, it is highly recommended to reduce the
+  # returned output. For example, to save only every 1 time units and discard
+  # the first 100 time units, use:
+  sfm <- sim_specs(sfm, save_at = 1, save_from = 100)
 
-# Run ensemble simulation with 100 simulations
-sims <- ensemble(sfm, n = 100)
-plot(sims)
+  # Run ensemble simulation with 100 simulations
+  sims <- ensemble(sfm, n = 100)
+  plot(sims)
 
-# Plot individual trajectories
-sims <- ensemble(sfm, n = 10, return_sims = TRUE)
-plot(sims, type = "sims")
+  # Plot individual trajectories
+  sims <- ensemble(sfm, n = 10, return_sims = TRUE)
+  plot(sims, type = "sims")
 
-# Specify which trajectories to plot
-plot(sims, type = "sims", i = 1)
+  # Specify which trajectories to plot
+  plot(sims, type = "sims", i = 1)
 
-# Plot the median with lighter individual trajectories
-plot(sims, central_tendency = "median", type = "sims", alpha = 0.1)
+  # Plot the median with lighter individual trajectories
+  plot(sims, central_tendency = "median", type = "sims", alpha = 0.1)
 
-# Ensembles can also be run with exact values for the initial conditions
-# and parameters. Below, we vary the initial values of the predator and the
-# birth rate of the predators (delta). We generate a hunderd samples per
-# condition. By default, the parameters are crossed, meaning that all
-# combinations of the parameters are run.
-sims <- ensemble(sfm,
-  n = 50,
-  range = list("predator" = c(10, 50), "delta" = c(.025, .05))
-)
-
-plot(sims)
-
-# By default, a maximum of nine conditions is plotted.
-# Plot specific conditions:
-plot(sims, j = c(1, 3), nrows = 1)
-
-# Generate a non-crossed design, where the length of each range needs to be
-# equal:
-sims <- ensemble(sfm,
-  n = 10, cross = FALSE,
-  range = list(
-    "predator" = c(10, 20, 30),
-    "delta" = c(.020, .025, .03)
+  # Ensembles can also be run with exact values for the initial conditions
+  # and parameters. Below, we vary the initial values of the predator and the
+  # birth rate of the predators (delta). We generate a hunderd samples per
+  # condition. By default, the parameters are crossed, meaning that all
+  # combinations of the parameters are run.
+  sims <- ensemble(sfm,
+    n = 50,
+    range = list("predator" = c(10, 50), "delta" = c(.025, .05))
   )
-)
-plot(sims, nrows = 3)
 
-# Run simulation in parallel
-use_threads(4)
-sims <- ensemble(sfm, n = 10)
+  plot(sims)
 
-# Stop using threads
-use_threads(stop = TRUE)
+  # By default, a maximum of nine conditions is plotted.
+  # Plot specific conditions:
+  plot(sims, j = c(1, 3), nrows = 1)
 
-# Close Julia
-use_julia(stop = TRUE)
-\dontshow{\}) # examplesIf}
+  # Generate a non-crossed design, where the length of each range needs to be
+  # equal:
+  sims <- ensemble(sfm,
+    n = 10, cross = FALSE,
+    range = list(
+      "predator" = c(10, 20, 30),
+      "delta" = c(.020, .025, .03)
+    )
+  )
+  plot(sims, nrows = 3)
+
+  # Run simulation in parallel
+  use_threads(4)
+  sims <- ensemble(sfm, n = 10)
+
+  # Stop using threads
+  use_threads(stop = TRUE)
+
+  # Close Julia
+  use_julia(stop = TRUE)
+}
 }
 \seealso{
 \code{\link[=use_threads]{use_threads()}}, \code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=sim_specs]{sim_specs()}}, \code{\link[=use_julia]{use_julia()}}

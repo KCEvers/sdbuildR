@@ -6,7 +6,7 @@
 #'
 #' @export
 #' @family internal
-#' @examplesIf has_internet()
+#' @examples
 #' has_internet()
 #'
 has_internet <- function() {
@@ -238,6 +238,11 @@ clean_type <- function(type) {
 #' @return Translated names
 #' @export
 #' @family internal
+#' @examples
+#' sfm <- xmile("predator_prey")
+#' # As the variable name "predator" is already taken, clean_name() will create
+#' # an unique name
+#' clean_name("predator", as.data.frame(sfm)[["name"]]) # "predator_1"
 #'
 clean_name <- function(new, existing, protected = c()) {
   # Define protected names: these cannot be used as variable names
@@ -652,7 +657,6 @@ get_seq_exclude <- function(eqn,
                             var_names = NULL,
                             type = c("quot", "names"),
                             names_with_brackets = FALSE) {
-
   # When var_names includes "", then everything is included in the sequence to exclude -> remove ""
   if (!is.null(var_names)) {
     var_names <- var_names[var_names != ""]
@@ -710,4 +714,3 @@ get_words <- function(eqn) {
 
   return(idxs_word)
 }
-

@@ -403,7 +403,6 @@ prep_equations_variables <- function(sfm, keep_nonnegative_flow) {
   sfm[["model"]][["variables"]][["gf"]] <- lapply(
     sfm[["model"]][["variables"]][["gf"]],
     function(x) {
-
       if (is_defined(x[["xpts"]])) {
         if (inherits(x[["xpts"]], "numeric")) {
           xpts_str <- paste0("c(", paste0(as.character(x[["xpts"]]), collapse = ", "), ")")
@@ -753,7 +752,9 @@ compile_run_ode <- function(sfm, nonneg_stocks) {
       sfm[["sim_specs"]][["save_at"]], ")\n",
       # Create new time vector\n",
 
-      .sdbuildR_env[["P"]][["sim_df_name"]], " = ", .sdbuildR_env[["P"]][["saveat_func"]], "(", .sdbuildR_env[["P"]][["sim_df_name"]], ", 'time', new_times)\n"
+      .sdbuildR_env[["P"]][["sim_df_name"]], " = ",
+      .sdbuildR_env[["P"]][["saveat_func"]], "(",
+      .sdbuildR_env[["P"]][["sim_df_name"]], ", 'time', new_times)\n"
     )
   }
 

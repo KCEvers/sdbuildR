@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# sdbuildR: Easily Build and Simulate Stock-and-Flow Models in R
+# sdbuildR: Easily Build, Simulate, and Visualise Stock-and-Flow Models in R
 
 <!-- badges: start -->
 
@@ -44,7 +44,13 @@ All package capabilities are described in the vignettes:
 
 ## Installation
 
-You can install the development version of sdbuildR like so:
+The release version can be installed from CRAN:
+
+``` r
+install.packages("sdbuildR")
+```
+
+The development version can be installed from GitHub:
 
 ``` r
 if (!require("remotes")) install.packages("remotes")
@@ -82,19 +88,19 @@ sdbuildR is heavily based on common System Dynamics software such as
 [Vensim](https://vensim.com/), [Powersim](https://powersim.com/),
 [Stella](https://www.iseesystems.com/), and [Insight
 Maker](https://insightmaker.com/). To translate xmile models to R, see
-the R package [readsdr](https://github.com/jandraor/readsdr). To build
-stock-and-flow models with the R package
-[deSolve](https://cran.r-project.org/web/packages/deSolve/index.html),
-the book [System Dynamics Modeling with
+the R package [readsdr](https://CRAN.R-project.org/package=readsdr). To
+build stock-and-flow models with the R package
+[deSolve](https://CRAN.R-project.org/package=deSolve), the book [System
+Dynamics Modeling with
 R](https://link.springer.com/book/10.1007/978-3-319-34043-2) by Jim
 Duggan will prove useful. In Python, stock-and-flow models are supported
-by [PySD](https://pysd.readthedocs.io/en/master/).
+by [PySD](https://doi.org/10.21105/joss.04329).
 
 ## Troubleshooting
 
 sdbuildR is under active development. While thoroughly tested, the
 package may have bugs, particularly in complex model translations. We
-encourage users to report issues on GitHub
-(<https://github.com/KCEvers/sdbuildR/issues>) - your input helps the
-package improve! Use `debugger()` to diagnose model errors, and use the
-vignettes for guidance.
+encourage users to report [issues on
+GitHub](https://github.com/KCEvers/sdbuildR/issues) - your input helps
+the package improve! Use `debugger()` to diagnose model errors, and use
+the vignettes for guidance.

@@ -20,25 +20,27 @@ model_units(sfm, name, eqn = "1", doc = "", erase = FALSE, change_name = NULL)
 \item{change_name}{New name for model unit. Defaults to NULL to indicate no change.}
 }
 \value{
-The modified stock-and-flow object with the specified unit(s) added or removed.
+Modified stock-and-flow object with updated custom units.
 }
 \description{
 A large library of units already exists, but you may want to define your own custom units. Use \code{model_units()} to add, change, or erase custom units from a stock-and-flow model. Custom units may be new base units, or may be defined in terms of other (custom) units. See \code{?u()} for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
 }
 \examples{
-sfm <- xmile("Crielaard2022")
-sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
+# Units are only supported with Julia
+if (JuliaConnectoR::juliaSetupOk()) {
+  sfm <- xmile("Crielaard2022")
+  sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
 
-# You may also use words rather than symbols for the unit definition.
-# The following modifies the unit BMI:
-sfm <- model_units(sfm, "BMI", eqn = "kilogram/meters^2")
+  # You may also use words rather than symbols for the unit definition.
+  # The following modifies the unit BMI:
+  sfm <- model_units(sfm, "BMI", eqn = "kilogram/meters^2")
 
-# Remove unit:
-sfm <- model_units(sfm, "BMI", erase = TRUE)
+  # Remove unit:
+  sfm <- model_units(sfm, "BMI", erase = TRUE)
 
-# Unit names may be changed to be syntactically valid and avoid overlap:
-sfm <- model_units(xmile(), "C0^2")
-
+  # Unit names may be changed to be syntactically valid and avoid overlap:
+  sfm <- model_units(xmile(), "C0^2")
+}
 }
 \seealso{
 \code{\link[=unit_prefixes]{unit_prefixes()}}

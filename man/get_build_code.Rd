@@ -18,6 +18,7 @@ Create R code to rebuild an existing stock-and-flow model. This may help to unde
 \examples{
 sfm <- xmile("SIR")
 get_build_code(sfm)
+
 }
 \seealso{
 Other build: 

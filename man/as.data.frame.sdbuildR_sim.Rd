@@ -26,7 +26,12 @@ Convert simulation results to a dataframe. The first column is time, followed by
 \examples{
 sfm <- xmile("SIR")
 sim <- simulate(sfm)
-head(as.data.frame(sim))
+df <- as.data.frame(sim)
+head(df)
+
+# Get results in wide format
+df_wide <- as.data.frame(sim, direction = "wide")
+head(df_wide)
 
 }
 \seealso{

@@ -112,6 +112,7 @@ test_that("logistic works", {
   )
 
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   sim <- expect_no_error(simulate(sfm0 |> sim_specs(language = "Julia")))
   df <- as.data.frame(sim)
@@ -132,7 +133,6 @@ test_that("logistic works", {
 
 
 test_that("step works", {
-
   times <- seq(0, 10, by = .1)
 
   expect_error(step(), "argument \"start\" is missing, with no default")
@@ -184,6 +184,7 @@ test_that("step works", {
 
 test_that("step works (Julia)", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # Set-up basic sfm
   sfm0 <- xmile() |>
@@ -247,8 +248,10 @@ test_that("pulse works", {
   expect_error(pulse(times, 5, 1, 0), "The width of the pulse cannot be equal to or less than 0")
   expect_warning(pulse(times, -10), "Start of pulse before beginning of simulation time")
   expect_warning(pulse(times, 11), "Start of pulse after end of simulation time")
-  expect_warning(pulse(times, 5, 1, 10, 10),
-                 "width \\(10\\) >= repeat_interval \\(10\\) creates a continuous pulse")
+  expect_warning(
+    pulse(times, 5, 1, 10, 10),
+    "width \\(10\\) >= repeat_interval \\(10\\) creates a continuous pulse"
+  )
 
   # Set-up basic sfm
   sfm0 <- xmile() |>
@@ -267,7 +270,7 @@ test_that("pulse works", {
 
   # Forgetting times
   sfm <- expect_error(sfm0 |> build("input", "constant",
-                                       eqn = "pulse(10)"
+    eqn = "pulse(10)"
   ), "Obligatory argument start is missing for function pulse")
 
   # Passing a NULL argument
@@ -301,6 +304,7 @@ test_that("pulse works", {
 
 test_that("pulse works (Julia)", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # Set-up basic sfm
   sfm0 <- xmile() |>
@@ -377,6 +381,7 @@ test_that("ramp works", {
 
 test_that("ramp works (Julia)", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # Set-up basic sfm
   sfm0 <- xmile() |>
@@ -435,6 +440,7 @@ test_that("seasonal works", {
 
 test_that("seasonal works (Julia)", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # Set-up basic sfm
   sfm0 <- xmile() |>
@@ -461,4 +467,3 @@ test_that("seasonal works (Julia)", {
   sim <- expect_no_error(simulate(sfm |> sim_specs(language = "Julia")))
   expect_no_error(plot(sim, add_constants = TRUE))
 })
-

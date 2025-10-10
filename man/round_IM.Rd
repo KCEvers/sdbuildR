@@ -17,9 +17,6 @@ Rounded value
 \description{
 R rounds .5 to 0, whereas Insight Maker rounds .5 to 1. This function is the equivalent of Insight Maker's Round() function.
 }
-\details{
-Source: https://stackoverflow.com/questions/12688717/round-up-from-5/12688836#12688836
-}
 \examples{
 round_IM(.5) # 1
 round(.5) # 0

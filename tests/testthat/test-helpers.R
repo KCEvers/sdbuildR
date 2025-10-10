@@ -1,7 +1,8 @@
 test_that("parse_args() works", {
-  expect_equal(parse_args("a, c(b, d), c"),
-               c("a", "c(b, d)", "c"))
-
+  expect_equal(
+    parse_args("a, c(b, d), c"),
+    c("a", "c(b, d)", "c")
+  )
 })
 
 
@@ -83,7 +84,6 @@ test_that("get_names() works", {
 
 
 test_that("get_range_names() works", {
-
   expect_equal(
     get_range_names("[a]", "a", names_with_brackets = FALSE),
     data.frame(start = 2, end = 2, name = "a")
@@ -114,7 +114,7 @@ test_that("get_range_names() works", {
   expect_equal(
     get_range_names("[a] + [a]", "a", names_with_brackets = TRUE),
     data.frame(start = c(1, 7), end = c(3, 9), name = c("a", "a"))
-    )
+  )
 
   # Special characters in names
   expect_equal(
@@ -159,7 +159,4 @@ test_that("get_range_names() works", {
     get_range_names("[a1] + no + [a2]", c("a1", "a2"), names_with_brackets = TRUE),
     data.frame(start = c(1, 13), end = c(4, 16), name = c("a1", "a2"))
   )
-
-
 })
-

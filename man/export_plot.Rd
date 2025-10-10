@@ -4,12 +4,12 @@
 \alias{export_plot}
 \title{Save plot to a file}
 \usage{
-export_plot(pl, filepath, width = 3, height = 4, units = "cm", dpi = 300)
+export_plot(pl, file, width = 3, height = 4, units = "cm", dpi = 300)
 }
 \arguments{
 \item{pl}{Plot object.}
 
-\item{filepath}{File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. If no file extension is specified, it will default to png.}
+\item{file}{File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. If no file extension is specified, it will default to png.}
 
 \item{width}{Width of image in units.}
 
@@ -19,23 +19,34 @@ export_plot(pl, filepath, width = 3, height = 4, units = "cm", dpi = 300)
 
 \item{dpi}{Resolution of image. Only used if units is not "px".}
 }
+\value{
+Returns \code{NULL} invisibly.
+}
 \description{
-Save a plot of a stock-and-flow diagram or a simulation to a specified filepath.
+Save a plot of a stock-and-flow diagram or a simulation to a specified file path.
 }
 \examples{
-sfm <- xmile("SIR")
-filepath <- tempfile(fileext = ".png")
-export_plot(plot(sfm), filepath)
 
-# Remove plot
-file.remove(filepath)
+if (require("DiagrammeRsvg", quietly = TRUE) &
+  require("rsvg", quietly = TRUE)) {
+  sfm <- xmile("SIR")
+  file <- tempfile(fileext = ".png")
+  export_plot(plot(sfm), file)
 
+  # Remove plot
+  file.remove(file)
+}
 \dontshow{if (not_on_cran() & interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-sim <- simulate(sfm)
-export_plot(plot(sim), filepath)
 
-# Remove plot
-file.remove(filepath)
+if (require("htmlwidgets", quietly = TRUE) &
+  require("webshot2", quietly = TRUE)) {
+  #     # Requires Chrome to save plotly plot:
+  sim <- simulate(sfm)
+  export_plot(plot(sim), file)
+
+  # Remove plot
+  file.remove(file)
+}
 \dontshow{\}) # examplesIf}
 }
 \seealso{

@@ -123,10 +123,14 @@ test_that("sim_specs() works", {
   expect_equal(sfm$sim_specs$save_from, "100.0")
 
   # warning for large dt
-  expect_warning(xmile() |> sim_specs(dt = 2),
-                 "Detected use of large timestep dt = 2\\. This will likely lead to inaccuracies in the simulation")
-  expect_warning(xmile() |> sim_specs(dt = .5),
-                 "Detected use of large timestep dt = 0.5\\. This will likely lead to inaccuracies in the simulation")
+  expect_warning(
+    xmile() |> sim_specs(dt = 2),
+    "Detected use of large timestep dt = 2\\. This will likely lead to inaccuracies in the simulation"
+  )
+  expect_warning(
+    xmile() |> sim_specs(dt = .5),
+    "Detected use of large timestep dt = 0.5\\. This will likely lead to inaccuracies in the simulation"
+  )
 
   # Check that all time units are correctly converted
   sfm <- xmile()
@@ -348,19 +352,19 @@ test_that("change_name and change_type in build()", {
   sfm <- xmile() |> build("a", "aux")
 
   expect_no_error(expect_no_warning(expect_no_message(sfm |>
-                                                        build("a", change_type = "flow", from = "b"))))
+    build("a", change_type = "flow", from = "b"))))
 
   # Check that label is retained
   sfm <- sfm |> build("a", change_type = "flow", label = "B")
   expect_equal(sfm$model$variables$flow$a$label, "B")
 
   # Check that source is updated with change_name
-  sfm <- xmile() |> build("a", "gf", xpts = 1, ypts = 1, source = "b") |>
+  sfm <- xmile() |>
+    build("a", "gf", xpts = 1, ypts = 1, source = "b") |>
     build("b", "stock") |>
     build("b", change_name = "c")
 
   expect_equal(sfm$model$variables$gf$a$source, "c")
-
 })
 
 
@@ -405,7 +409,6 @@ test_that("erase in build() works", {
   sfm <- build(sfm, "gf", "gf", xpts = 1, ypts = 1, source = "y") |>
     build("y", erase = TRUE)
   expect_equal(sfm$model$variables$gf$gf$source, NULL)
-
 })
 
 
@@ -615,8 +618,10 @@ test_that("ensure_length() works", {
   # Check that error is thrown when length(arg) != length(target)
   eqn <- c("1", "2", "3")
   name <- c("a")
-  expect_error(ensure_length(eqn, name),
-               "The length of eqn = 1, 2, 3 must be either 1 or equal to the length of name = a")
+  expect_error(
+    ensure_length(eqn, name),
+    "The length of eqn = 1, 2, 3 must be either 1 or equal to the length of name = a"
+  )
 
   # Should work when length(arg) == length(target)
   eqn <- c("1", "2", "3")
@@ -1077,8 +1082,8 @@ test_that("graphical functions are created with correct properties", {
 
   # Basic graphical function
   sfm <- build(sfm, "lookup1", "gf",
-               xpts = c(0, 5, 10),
-               ypts = c(0, 10, 20)
+    xpts = c(0, 5, 10),
+    ypts = c(0, 10, 20)
   )
 
   defaults <- as.list(formals(build))
@@ -1117,8 +1122,8 @@ test_that("graphical functions reject mismatched xpts and ypts lengths", {
 
   expect_error(
     build(sfm, "bad_gf", "gf",
-          xpts = c(0, 5, 10),
-          ypts = c(0, 10)
+      xpts = c(0, 5, 10),
+      ypts = c(0, 10)
     ),
     "length of xpts must match that of ypts"
   )
@@ -1129,17 +1134,17 @@ test_that("graphical functions support different interpolation and extrapolation
 
   # Linear interpolation
   sfm <- build(sfm, "linear_gf", "gf",
-               xpts = c(0, 10),
-               ypts = c(0, 100),
-               interpolation = "linear"
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    interpolation = "linear"
   )
   expect_equal(sfm$model$variables$gf$linear_gf$interpolation, "linear")
 
   # Constant interpolation
   sfm <- build(sfm, "constant_gf", "gf",
-               xpts = c(0, 10),
-               ypts = c(0, 100),
-               interpolation = "constant"
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    interpolation = "constant"
   )
   expect_equal(sfm$model$variables$gf$constant_gf$interpolation, "constant")
 
@@ -1147,34 +1152,34 @@ test_that("graphical functions support different interpolation and extrapolation
 
   # Nearest extrapolation
   sfm <- build(sfm, "nearest_gf", "gf",
-               xpts = c(0, 10),
-               ypts = c(0, 100),
-               extrapolation = "nearest"
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    extrapolation = "nearest"
   )
   expect_equal(sfm$model$variables$gf$nearest_gf$extrapolation, "nearest")
 
   # NA extrapolation
   sfm <- build(sfm, "na_gf", "gf",
-               xpts = c(0, 10),
-               ypts = c(0, 100),
-               extrapolation = "NA"
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    extrapolation = "NA"
   )
   expect_equal(sfm$model$variables$gf$na_gf$extrapolation, "NA")
 
   expect_error(
     build(sfm, "bad_interp", "gf",
-          xpts = c(0, 10),
-          ypts = c(0, 100),
-          interpolation = "invalid"
+      xpts = c(0, 10),
+      ypts = c(0, 100),
+      interpolation = "invalid"
     ),
     "interpolation must be 'linear' or 'constant'"
   )
 
   expect_error(
     build(sfm, "bad_extrap", "gf",
-          xpts = c(0, 10),
-          ypts = c(0, 100),
-          extrapolation = "invalid"
+      xpts = c(0, 10),
+      ypts = c(0, 100),
+      extrapolation = "invalid"
     ),
     "extrapolation must be either 'nearest' or 'NA'"
   )
@@ -1186,9 +1191,9 @@ test_that("graphical functions accept source parameter", {
   sfm <- build(sfm, "stock1", "stock", eqn = 10)
 
   sfm <- build(sfm, "lookup_with_source", "gf",
-               xpts = c(0, 10),
-               ypts = c(0, 100),
-               source = "stock1"
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    source = "stock1"
   )
 
   expect_equal(sfm$model$variables$gf$lookup_with_source$source, "stock1")
@@ -1199,7 +1204,6 @@ test_that("graphical functions accept source parameter", {
   sfm <- build(sfm, "lookup_with_source", source = "stock2")
 
   expect_error(simulate(sfm), "The variable 'stock2' is referenced in lookup_with_source\\$source but hasn't been defined")
-
 })
 
 test_that("graphical functions reject multiple sources", {
@@ -1207,9 +1211,9 @@ test_that("graphical functions reject multiple sources", {
 
   expect_error(
     build(sfm, "multi_source", "gf",
-          xpts = c(0, 10),
-          ypts = c(0, 100),
-          source = c("var1", "var2")
+      xpts = c(0, 10),
+      ypts = c(0, 100),
+      source = c("var1", "var2")
     ),
     "source must be a single value"
   )
@@ -1221,8 +1225,8 @@ test_that("graphical functions don't support vectorized building", {
 
   expect_error(
     build(sfm, c("gf1", "gf2"), "gf",
-          xpts = c(0, 10),
-          ypts = c(0, 100)
+      xpts = c(0, 10),
+      ypts = c(0, 100)
     ),
     "Vectorized building is not supported for graphical functions"
   )
@@ -1232,8 +1236,8 @@ test_that("graphical functions handle character string input for pts", {
   sfm <- xmile()
 
   sfm <- build(sfm, "string_gf", "gf",
-               xpts = "c(0, 5, 10)",
-               ypts = "c(0, 10, 20)"
+    xpts = "c(0, 5, 10)",
+    ypts = "c(0, 10, 20)"
   )
 
   expect_equal(sfm$model$variables$gf$string_gf$xpts, "c(0, 5, 10)")
@@ -1243,10 +1247,10 @@ test_that("graphical functions handle character string input for pts", {
 test_that("prep_equations_variables generates correct approxfun for gf", {
   sfm <- xmile()
   sfm <- build(sfm, "test_gf", "gf",
-               xpts = c(0, 5, 10),
-               ypts = c(0, 50, 100),
-               interpolation = "linear",
-               extrapolation = "nearest"
+    xpts = c(0, 5, 10),
+    ypts = c(0, 50, 100),
+    interpolation = "linear",
+    extrapolation = "nearest"
   )
 
   sfm <- prep_equations_variables(sfm, keep_nonnegative_flow = TRUE)
@@ -1263,9 +1267,9 @@ test_that("prep_equations_variables generates correct approxfun for gf", {
 test_that("prep_equations_variables handles NA extrapolation correctly", {
   sfm <- xmile()
   sfm <- build(sfm, "na_extrap_gf", "gf",
-               xpts = c(0, 10),
-               ypts = c(0, 100),
-               extrapolation = "NA"
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    extrapolation = "NA"
   )
 
   sfm <- prep_equations_variables(sfm, keep_nonnegative_flow = TRUE)
@@ -1277,9 +1281,9 @@ test_that("prep_equations_variables handles NA extrapolation correctly", {
 test_that("prep_equations_variables handles constant interpolation", {
   sfm <- xmile()
   sfm <- build(sfm, "const_gf", "gf",
-               xpts = c(0, 10),
-               ypts = c(0, 100),
-               interpolation = "constant"
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    interpolation = "constant"
   )
 
   sfm <- prep_equations_variables(sfm, keep_nonnegative_flow = TRUE)
@@ -1292,45 +1296,44 @@ test_that("graphical functions work with units", {
   sfm <- xmile()
 
   sfm <- build(sfm, "gf_with_units", "gf",
-               xpts = c(0, 10),
-               ypts = c(0, 100),
-               units = "meters"
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    units = "meters"
   )
 
   expect_true("units" %in% names(sfm$model$variables$gf$gf_with_units))
 
-  sfm <- prep_equations_variables_julia(sfm, keep_nonnegative_flow = TRUE,
-                                        keep_unit = TRUE)
+  sfm <- prep_equations_variables_julia(sfm,
+    keep_nonnegative_flow = TRUE,
+    keep_unit = TRUE
+  )
 
   eqn_str <- sfm$model$variables$gf$gf_with_units$eqn_str
   expect_true(grepl("\\[0, 100\\] \\.\\* u\"m\"", eqn_str))
-
 })
 
 test_that("graphical functions can be modified", {
   sfm <- xmile()
 
   sfm <- build(sfm, "modify_gf", "gf",
-               xpts = c(0, 10),
-               ypts = c(0, 100)
+    xpts = c(0, 10),
+    ypts = c(0, 100)
   )
 
   # Modify interpolation
   sfm <- build(sfm, "modify_gf",
-               interpolation = "constant"
+    interpolation = "constant"
   )
 
   expect_equal(sfm$model$variables$gf$modify_gf$interpolation, "constant")
 
   sfm <- build(sfm, "modify_gf",
-               xpts = c(10, 20)
+    xpts = c(10, 20)
   )
 
   expect_equal(sfm$model$variables$gf$modify_gf$xpts, "c(10, 20)")
 
   expect_error(build(sfm, "modify_gf",
-                     xpts = c(10, 20, 30)
+    xpts = c(10, 20, 30)
   ), "For graphical functions, the length of xpts must match that of ypts")
 })
-
-

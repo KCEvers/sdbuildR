@@ -24,16 +24,19 @@ test_that("find_dependencies works", {
   expect_equal(dep[["Infected"]], character(0))
   expect_equal(dep[["Beta"]], c("Effective_Contact_Rate", "Total_Population"))
 
-  expect_equal(sort(names(dep)),
-               sort(as.data.frame(sfm)[["name"]]))
+  expect_equal(
+    sort(names(dep)),
+    sort(as.data.frame(sfm)[["name"]])
+  )
 
   dep_rev <- find_dependencies(sfm, reverse = TRUE)
   expect_equal(dep_rev[["Infected"]], c("Lambda", "Recovery_Rate"))
   expect_equal(dep_rev[["Beta"]], "Lambda")
 
-  expect_equal(sort(names(dep_rev)),
-               sort(as.data.frame(sfm)[["name"]]))
-
+  expect_equal(
+    sort(names(dep_rev)),
+    sort(as.data.frame(sfm)[["name"]])
+  )
 })
 
 
@@ -48,7 +51,7 @@ test_that("get_build_code() works", {
     if (s == "Crielaard2022") {
       sfm <- sfm |>
         build(c("Food_intake", "Hunger", "Compensatory_behaviour"),
-              eqn = c(.5, .3, .1)
+          eqn = c(.5, .3, .1)
         )
     }
 
@@ -74,9 +77,9 @@ test_that("save_at works", {
   expect_equal(unique(round(diff(sort(unique(df[["time"]]))), 4)), 1)
 
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
   sfm <- sfm |> sim_specs(language = "Julia")
   sim <- simulate(sfm)
   df <- as.data.frame(sim)
   expect_equal(unique(round(diff(sort(unique(df[["time"]]))), 4)), 1)
 })
-

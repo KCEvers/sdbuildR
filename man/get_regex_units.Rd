@@ -15,6 +15,10 @@ Named vector with regular expressions as names and units as entries
 \description{
 Get regular expressions for units in Julia
 }
+\examples{
+get_regex_units()
+
+}
 \seealso{
 Other units: 
 \code{\link{convert_u}()},

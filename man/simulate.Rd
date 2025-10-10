@@ -19,7 +19,7 @@ simulate(
 
 \item{keep_nonnegative_flow}{If TRUE, keeps original non-negativity setting of flows. Defaults to TRUE.}
 
-\item{keep_nonnegative_stock}{If TRUE, keeps original non-negativity setting of stocks Defaults to TRUE.}
+\item{keep_nonnegative_stock}{If TRUE, keeps original non-negativity setting of stocks Defaults to FALSE.}
 
 \item{keep_unit}{If TRUE, keeps units of variables. Defaults to TRUE.}
 
@@ -53,15 +53,15 @@ plot(sim)
 sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim, add_constants = TRUE)
 
-\dontshow{if (not_on_cran()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-# Use Julia for models with units or delay functions
-sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
-sim <- simulate(sfm)
-plot(sim)
+if (JuliaConnectoR::juliaSetupOk()) {
+  # Use Julia for models with units or delay functions
+  sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
+  sim <- simulate(sfm)
+  plot(sim)
 
-# Close Julia session
-use_julia(stop = TRUE)
-\dontshow{\}) # examplesIf}
+  # Close Julia session
+  use_julia(stop = TRUE)
+}
 }
 \seealso{
 \code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=debugger]{debugger()}}, \code{\link[=sim_specs]{sim_specs()}}, \code{\link[=use_julia]{use_julia()}}

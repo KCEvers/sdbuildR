@@ -12,11 +12,20 @@ use_threads(n = parallel::detectCores() - 1, stop = FALSE)
 \item{stop}{Stop using threaded ensemble simulations. Defaults to FALSE.}
 }
 \description{
-Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS.
+Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS. Note that this does not affect regular simulations with \code{simulate()}.
 }
 \examples{
-use_threads(n = 4)
-use_threads(stop = TRUE)
+if (JuliaConnectoR::juliaSetupOk()) {
+  # Use Julia with 4 threads
+  use_julia()
+  use_threads(n = 4)
+
+  # Stop using threads
+  use_threads(stop = TRUE)
+
+  # Stop using Julia
+  use_julia(stop = TRUE)
+}
 }
 \seealso{
 \code{\link[=ensemble]{ensemble()}}, \code{\link[=use_julia]{use_julia()}}

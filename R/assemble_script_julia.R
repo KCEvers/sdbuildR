@@ -619,7 +619,6 @@ prep_equations_variables_julia <- function(sfm, keep_unit, keep_nonnegative_flow
   sfm[["model"]][["variables"]][["gf"]] <- lapply(
     sfm[["model"]][["variables"]][["gf"]],
     function(x) {
-
       if (is_defined(x[["xpts"]]) & is_defined(x[["ypts"]])) {
         # Check whether xpts is defined as numeric or string
         if (inherits(x[["xpts"]], "numeric")) {
@@ -737,12 +736,14 @@ prep_equations_variables_julia <- function(sfm, keep_unit, keep_nonnegative_flow
         ifelse(is_defined(x[["to"]]), paste0(" to ", x[["to"]]), ""),
         x[["name"]],
         ifelse(keep_unit & x[["units"]] != "1",
-               paste0(.sdbuildR_env[["P"]][["convert_u_func"]], "("), ""),
+          paste0(.sdbuildR_env[["P"]][["convert_u_func"]], "("), ""
+        ),
         ifelse(x[["non_negative"]] & keep_nonnegative_flow, "nonnegative(", ""),
         x[["eqn_julia"]],
         ifelse(x[["non_negative"]] & keep_nonnegative_flow, ")", ""),
         ifelse(keep_unit & x[["units"]] != "1",
-               paste0(", u\"", x[["units"]], "\")"), "")
+          paste0(", u\"", x[["units"]], "\")"), ""
+        )
       )
 
       if (!is.null(x[["preceding_eqn"]])) {
@@ -1073,8 +1074,11 @@ compile_static_eqn_julia <- function(sfm, ensemble_pars, ordering, intermediarie
       .sdbuildR_env[["P"]][["intermediary_names"]], " = ",
       .sdbuildR_env[["P"]][["intermediary_names"]],
       ifelse(nzchar(init_idx),
-             paste0(", ", .sdbuildR_env[["P"]][["delay_idx_name"]], " = ",
-                    .sdbuildR_env[["P"]][["delay_idx_name"]]), ""),
+        paste0(
+          ", ", .sdbuildR_env[["P"]][["delay_idx_name"]], " = ",
+          .sdbuildR_env[["P"]][["delay_idx_name"]]
+        ), ""
+      ),
       ")\n",
       "end\n"
     )
@@ -1091,7 +1095,6 @@ compile_static_eqn_julia <- function(sfm, ensemble_pars, ordering, intermediarie
 #' @noRd
 #'
 prep_stock_change_julia <- function(sfm, keep_unit) {
-
   # Add temporary property to sum change in stocks
   stock_names <- names(sfm[["model"]][["variables"]][["stock"]])
   sfm[["model"]][["variables"]][["stock"]] <- lapply(
@@ -1142,8 +1145,7 @@ prep_stock_change_julia <- function(sfm, keep_unit) {
             x[["name"]], ")/",
             .sdbuildR_env[["P"]][["time_units_name"]],
             # Units need to be stripped again because init with units can give problems
-            ") ./ Unitful.unit.(",  x[["name"]], ")"
-
+            ") ./ Unitful.unit.(", x[["name"]], ")"
           )
         }
       }
@@ -1179,7 +1181,6 @@ compile_ode_julia <- function(sfm, ensemble_pars, ordering, intermediaries,
                               prep_script, static_eqn,
                               keep_nonnegative_stock, keep_unit,
                               only_stocks) {
-
   # Auxiliary equations (dynamic auxiliaries)
   aux_eqn <- lapply(sfm[["model"]][["variables"]][["aux"]], `[[`, "eqn_str")
 
@@ -1209,18 +1210,21 @@ compile_ode_julia <- function(sfm, ensemble_pars, ordering, intermediaries,
 
   # Add units to stocks
   add_stock_units <- ""
-  if (keep_unit){
+  if (keep_unit) {
     # For each stock that has a unit, add
     stock_names <- names(sfm[["model"]][["variables"]][["stock"]])
     stock_units <- lapply(sfm[["model"]][["variables"]][["stock"]], `[[`, "units")
-    idx = stock_units != "1"
-    if (any(idx)){
-      add_stock_units <- paste0("\n\n\t# Assign units to stocks\n\t",
-                                paste0(paste0(stock_names[idx], " = ",
-                                       stock_names[idx], " .* u\"",
-                                       stock_units[idx], "\""), collapse = "\n\t"), "\n")
+    idx <- stock_units != "1"
+    if (any(idx)) {
+      add_stock_units <- paste0(
+        "\n\n\t# Assign units to stocks\n\t",
+        paste0(paste0(
+          stock_names[idx], " = ",
+          stock_names[idx], " .* u\"",
+          stock_units[idx], "\""
+        ), collapse = "\n\t"), "\n"
+      )
     }
-
   }
 
   # Non-negative stocks
@@ -1255,8 +1259,8 @@ compile_ode_julia <- function(sfm, ensemble_pars, ordering, intermediaries,
 
   # Names of changing Stocks, e.g. dR for stock R
   stock_changes_names <- unname(unlist(
-    lapply(sfm[["model"]][["variables"]][["stock"]],  `[[`, "sum_name")
-    ))
+    lapply(sfm[["model"]][["variables"]][["stock"]], `[[`, "sum_name")
+  ))
 
   # If delayN() and smoothN() were used, state has to be unpacked differently
   delayN_smoothN <- get_delayN_smoothN(sfm)
@@ -1282,8 +1286,10 @@ compile_ode_julia <- function(sfm, ensemble_pars, ordering, intermediaries,
 
     unpack_state_str <- paste0(unpack_nondelayN, "\n\t", paste0(unpack_delayN, collapse = "\n\t"))
   } else {
-    unpack_state_str <- paste0(paste0(names(stock_change), collapse = ", "),
-                               ", = ", .sdbuildR_env[["P"]][["state_name"]])
+    unpack_state_str <- paste0(
+      paste0(names(stock_change), collapse = ", "),
+      ", = ", .sdbuildR_env[["P"]][["state_name"]]
+    )
   }
 
   # Compile
@@ -1465,9 +1471,7 @@ compile_run_ode_julia <- function(sfm,
       .sdbuildR_env[["P"]][["parameter_name"]],
       ")\n\n",
 
-
       # Callback in ensemble
-      # https://discourse.julialang.org/t/savingcallback-when-using-ensemble-simulations/88483/5
       ifelse(!only_stocks, paste0(
         "\n\n# Set up intermediaries for saving in callback\n",
         .sdbuildR_env[["P"]][["intermediaries"]],

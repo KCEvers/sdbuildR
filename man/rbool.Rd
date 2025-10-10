@@ -10,7 +10,7 @@ rbool(p)
 \item{p}{Probability of TRUE, numerical value between 0 and 1}
 }
 \value{
-Boolean
+Logical value
 }
 \description{
 Equivalent of RandBoolean() in Insight Maker

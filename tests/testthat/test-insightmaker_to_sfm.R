@@ -1,12 +1,27 @@
 test_that("downloading and simulating Insight Maker models works", {
-
   # Requires internet
   testthat::skip_on_cran()
 
   URL <- "https:"
+
+  expect_error(
+    insightmaker_to_sfm(),
+    "Either URL or file needs to be specified"
+  )
+
   expect_error(
     insightmaker_to_sfm(URL = URL),
     "This is not a URL to an Insight Maker model"
+  )
+
+  expect_error(
+    insightmaker_to_sfm(file = "test.InsightMaker"),
+    "Your file refers to a file that does not exist"
+  )
+
+  expect_error(
+    insightmaker_to_sfm(file = "test.InsightMaker2"),
+    "Your file does not have the file extension \\.InsightMaker"
   )
 
   expect_error(
@@ -15,6 +30,8 @@ test_that("downloading and simulating Insight Maker models works", {
   )
 
   sfm_list <- list()
+
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   URL <- "https://insightmaker.com/insight/3xgsvC7QKgPktHWZuXyGAl/Clone-of-Global-Climate-Change"
   sfm_list[[1]] <- sfm <- expect_no_error(insightmaker_to_sfm(URL = URL))
@@ -68,12 +85,10 @@ test_that("downloading and simulating Insight Maker models works", {
     expect_equal(sim$success, TRUE)
     expect_equal(nrow(sim$df) > 0, TRUE)
   })
-
 })
 
 
 test_that("translating Insight Maker models works (cran)", {
-
   # Get path to the cran folder
   folder <- test_path("testdata", "insightmaker", "cran")
 
@@ -85,69 +100,7 @@ test_that("translating Insight Maker models works (cran)", {
   )
 
   for (file in model_files) {
-
-    print(basename(file))
-    sfm <- expect_no_error({
-      # Suppress potential warnings about old Insight Maker version
-      # or large dt
-      suppressWarnings({
-      insightmaker_to_sfm(
-          file = file,
-          keep_nonnegative_flow = TRUE,
-          keep_nonnegative_stock = TRUE,
-          keep_solver = TRUE
-      )
-      })
-    })
-
-    df <- expect_no_error(as.data.frame(sfm))
-    expect_equal(nrow(df) > 0, TRUE)
-    expect_true(all(
-      c(
-        "eqn",
-        "eqn_insightmaker",
-        "eqn_julia",
-        "name_insightmaker",
-        "units_insightmaker",
-        "id_insightmaker"
-      ) %in% names(df)
-    ))
-    expect_no_error(expect_no_warning(expect_no_message(plot(sfm))))
-    sim <- expect_no_error(simulate(sfm |> sim_specs(dt = 0.01, save_at = 1),
-                                    only_stocks = FALSE))
-    expect_equal(sim$success, TRUE)
-    expect_equal(nrow(sim$df) > 0, TRUE)
-    expect_no_error(expect_no_warning(expect_no_message(plot(sim))))
-  }
-
-})
-
-
-
-test_that("translating Insight Maker models works (validation)", {
-
-  skip_on_cran()
-
-  # Get path to the cran folder
-  folder <- test_path("testdata", "insightmaker", "validation")
-
-  print("folder")
-  print(folder)
-
-  print(list.files(path = test_path("testdata", "insightmaker"), include.dirs = TRUE))
-
-  skip_if_not(dir.exists(folder), "Validation test files not available")
-
-  # Get all .InsightMaker files in the folder
-  model_files <- list.files(
-    path = folder,
-    pattern = "\\.InsightMaker$",
-    full.names = TRUE
-  )
-
-  for (file in model_files) {
-
-    print(basename(file))
+    # print(basename(file))
     sfm <- expect_no_error({
       # Suppress potential warnings about old Insight Maker version
       # or large dt
@@ -175,19 +128,75 @@ test_that("translating Insight Maker models works (validation)", {
     ))
     expect_no_error(expect_no_warning(expect_no_message(plot(sfm))))
     sim <- expect_no_error(simulate(sfm |> sim_specs(dt = 0.01, save_at = 1),
-                                    only_stocks = FALSE))
+      only_stocks = FALSE
+    ))
     expect_equal(sim$success, TRUE)
     expect_equal(nrow(sim$df) > 0, TRUE)
     expect_no_error(expect_no_warning(expect_no_message(plot(sim))))
   }
-
 })
 
 
-# test_that("translating Insight Maker models works (full)", {
-#
-#   skip_on_cran()
-#
+
+test_that("translating Insight Maker models works (validation)", {
+  skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+
+  # Get path to the cran folder
+  folder <- test_path("testdata", "insightmaker", "validation")
+
+  # print("folder")
+  # print(folder)
+  # print(list.files(path = test_path("testdata", "insightmaker"), include.dirs = TRUE))
+
+  skip_if_not(dir.exists(folder), "Validation test files not available")
+
+  # Get all .InsightMaker files in the folder
+  model_files <- list.files(
+    path = folder,
+    pattern = "\\.InsightMaker$",
+    full.names = TRUE
+  )
+
+  use_julia()
+  for (file in model_files) {
+    # print(basename(file))
+    sfm <- expect_no_error({
+      # Suppress potential warnings about old Insight Maker version
+      # or large dt
+      suppressWarnings({
+        insightmaker_to_sfm(
+          file = file,
+          keep_nonnegative_flow = TRUE,
+          keep_nonnegative_stock = TRUE,
+          keep_solver = TRUE
+        )
+      })
+    })
+
+    df <- expect_no_error(as.data.frame(sfm))
+    expect_equal(nrow(df) > 0, TRUE)
+    expect_true(all(
+      c(
+        "eqn",
+        "eqn_insightmaker",
+        "eqn_julia",
+        "name_insightmaker",
+        "units_insightmaker",
+        "id_insightmaker"
+      ) %in% names(df)
+    ))
+    expect_no_error(expect_no_warning(expect_no_message(plot(sfm))))
+    sim <- expect_no_error(simulate(sfm |> sim_specs(dt = 0.01, save_at = 1),
+      only_stocks = FALSE
+    ))
+    expect_equal(sim$success, TRUE)
+    expect_equal(nrow(sim$df) > 0, TRUE)
+    expect_no_error(expect_no_warning(expect_no_message(plot(sim))))
+  }
+})
+
+
 #   # model_list = c(
 #   #   # 'A_Business_Model', # unit # delay
 #   #                'A_Simple_National_Income_Macroeconomic_Model_Continuous_Time',
@@ -300,62 +309,3 @@ test_that("translating Insight Maker models works (validation)", {
 #   #                'Z504_Market_and_Price_System_Zoo_3',
 #   #                'Z605_Miniworld'
 #   #                )
-#
-#   # Get path to the cran folder
-#   validation_folder <- test_path("testdata", "insightmaker", "validation")
-#
-#   # Get all .InsightMaker files in the folder
-#   model_files <- list.files(
-#     path = validation_folder,
-#     pattern = "\\.InsightMaker$",
-#     full.names = TRUE
-#   )
-#
-#   use_julia()
-#   for (file in model_files) {
-#     # print(s)
-#     # file <- test_path("testdata",
-#     #                   "insightmaker_models",
-#     #                   "validation",
-#     #                   paste0(s, ".InsightMaker"))
-#
-#     print(system.time({
-#       # sfm <- expect_no_error(insightmaker_to_sfm(file = file))
-#
-#       sfm <- expect_no_error(
-#         insightmaker_to_sfm(
-#           file = file,
-#           keep_nonnegative_flow = TRUE,
-#           keep_nonnegative_stock = TRUE,
-#           keep_solver = TRUE
-#         )
-#       )
-#     }))
-#
-#
-#     df <- expect_no_error(as.data.frame(sfm))
-#     print(df[, c("type", "name", "eqn")])
-#     expect_equal(nrow(df) > 0, TRUE)
-#     expect_true(all(
-#       c(
-#         "eqn",
-#         "eqn_insightmaker",
-#         "eqn_julia",
-#         "name_insightmaker",
-#         "units_insightmaker",
-#         "id_insightmaker"
-#       ) %in% names(df)
-#     ))
-#     expect_no_error(expect_no_warning(expect_no_message(plot(sfm))))
-#     print(system.time({
-#       sim <- expect_no_error(simulate(sfm |> sim_specs(dt = 0.01, save_at = 1), only_stocks = FALSE))
-#       expect_equal(sim$success, TRUE)
-#       expect_equal(nrow(sim$df) > 0, TRUE)
-#       expect_no_error(expect_no_warning(expect_no_message(plot(sim))))
-#
-#     }))
-#
-#   }
-#
-#
-# })

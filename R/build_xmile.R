@@ -19,7 +19,7 @@
 #' \describe{
 #'  \item{header}{Meta-information about model. A list containing arguments listed in [header()].}
 #'  \item{sim_specs}{Simulation specifications. A list containing arguments listed in [sim_specs()].}
-#'  \item{model}{Model variables. A nested list containing arguments listed in [build()].}
+#'  \item{model}{Model variables, grouped under the variable types stock, flow, aux (auxiliaries), constant, and gf (graphical functions). Each variable contains arguments as listed in [build()].}
 #'  \item{macro}{Global variable or functions. A list containing arguments listed in [macro()].}
 #'  \item{model_units}{Custom model units. A list containing arguments listed in [model_units()].}
 #'  }
@@ -133,7 +133,12 @@ get_flow_df <- function(sfm) {
 #' @examples
 #' sfm <- xmile("SIR")
 #' sim <- simulate(sfm)
-#' head(as.data.frame(sim))
+#' df <- as.data.frame(sim)
+#' head(df)
+#'
+#' # Get results in wide format
+#' df_wide <- as.data.frame(sim, direction = "wide")
+#' head(df_wide)
 #'
 as.data.frame.sdbuildR_sim <- function(x,
                                        row.names = NULL, optional = FALSE,
@@ -455,26 +460,28 @@ switch_list <- function(x) {
 #' @param erase If TRUE, remove model unit from the model. Defaults to FALSE.
 #' @param change_name New name for model unit. Defaults to NULL to indicate no change.
 #'
-#' @return The modified stock-and-flow object with the specified unit(s) added or removed.
+#' @return Modified stock-and-flow object with updated custom units.
 #'
 #' @export
 #' @family units
 #' @seealso [unit_prefixes()]
 #'
 #' @examples
-#' sfm <- xmile("Crielaard2022")
-#' sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
+#' # Units are only supported with Julia
+#' if (JuliaConnectoR::juliaSetupOk()) {
+#'   sfm <- xmile("Crielaard2022")
+#'   sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
 #'
-#' # You may also use words rather than symbols for the unit definition.
-#' # The following modifies the unit BMI:
-#' sfm <- model_units(sfm, "BMI", eqn = "kilogram/meters^2")
+#'   # You may also use words rather than symbols for the unit definition.
+#'   # The following modifies the unit BMI:
+#'   sfm <- model_units(sfm, "BMI", eqn = "kilogram/meters^2")
 #'
-#' # Remove unit:
-#' sfm <- model_units(sfm, "BMI", erase = TRUE)
+#'   # Remove unit:
+#'   sfm <- model_units(sfm, "BMI", erase = TRUE)
 #'
-#' # Unit names may be changed to be syntactically valid and avoid overlap:
-#' sfm <- model_units(xmile(), "C0^2")
-#'
+#'   # Unit names may be changed to be syntactically valid and avoid overlap:
+#'   sfm <- model_units(xmile(), "C0^2")
+#' }
 model_units <- function(sfm, name, eqn = "1", doc = "",
                         erase = FALSE, change_name = NULL) {
   # Basic check
@@ -676,7 +683,7 @@ model_units <- function(sfm, name, eqn = "1", doc = "",
 #' @param change_name New name for macro (optional). Defaults to NULL to indicate no change.
 #' @param erase If TRUE, remove macro from the model. Defaults to FALSE.
 #'
-#' @return Updated stock-and-flow model
+#' @return Modified stock-and-flow object with updated macros.
 #' @family build
 #' @export
 #'
@@ -825,8 +832,9 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
         # Assign name already to convert functions correctly
         x <- paste0(name[i], " = ", eqn[i])
 
-        convert_equations_julia(type = "macro", name = name[i], eqn = x,
-                                var_names = var_names,
+        convert_equations_julia(
+          type = "macro", name = name[i], eqn = x,
+          var_names = var_names,
           regex_units = regex_units
         )[["eqn_julia"]]
         # No need to save $func because delay family cannot be used for macros
@@ -871,7 +879,7 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
 #' @param doi DOI associated with the model. Defaults to "".
 #' @param ... Optional other entries to add to the header.
 #'
-#' @return Updated stock-and-flow model.
+#' @return Modified stock-and-flow object with an updated header.
 #' @family build
 #' @export
 #'
@@ -927,7 +935,7 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' @param time_units Simulation time unit, e.g. 's' (second). Defaults to "s".
 #' @param language Coding language in which to simulate model. Either "R" or "Julia". Julia is necessary for using units or delay functions. Defaults to "R".
 #'
-#' @return Updated stock-and-flow model with new simulation specifications
+#' @return Modified stock-and-flow object with updated simulation specifications.
 #' @family simulate
 #' @seealso [solvers()]
 #' @export
@@ -953,9 +961,10 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' sfm <- sim_specs(sfm, seed = 1) |>
 #'   build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
 #'
-#' # Change the simulation language to Julia to use units
-#' sfm <- sim_specs(sfm, language = "Julia")
-#'
+#' if (JuliaConnectoR::juliaSetupOk()) {
+#'   # Change the simulation language to Julia to use units
+#'   sfm <- sim_specs(sfm, language = "Julia")
+#' }
 sim_specs <- function(sfm,
                       method = "euler",
                       start = "0.0",
@@ -1003,7 +1012,6 @@ sim_specs <- function(sfm,
       if (dt > .1) {
         # warning(paste0("dt = ", dt, " is larger than 0.1! This will likely lead to inaccuracies in the simulation. To reduce the size of the simulaton dataframe, use save_at = ", dt, ", and keep dt to a smaller value. To simulate in discrete time, set dt = 1."))
         warning(paste0("Detected use of large timestep dt = ", dt, ". This will likely lead to inaccuracies in the simulation. Run sim_specs(sfm, save_at = ", dt, ") to reduce the size of the simulaton dataframe, and keep dt to a smaller value."))
-
       }
     }
   }
@@ -1338,7 +1346,7 @@ report_name_change <- function(old_names, new_names) {
 #' @param doc Description of variable. Defaults to "".
 #' @param df Dataframe with variable properties to add and/or modify.
 #'
-#' @return Updated stock-and-flow model.
+#' @return Modified stock-and-flow object.
 #' @seealso [xmile()]
 #' @family build
 #' @export
@@ -1509,7 +1517,6 @@ build <- function(sfm, name, type,
 
     # Find corresponding building block
     type <- names_df[match(name, names_df[["name"]]), "type"]
-
   } else if (!missing(type)) {
     type <- clean_type(type)
 
@@ -1675,7 +1682,7 @@ build <- function(sfm, name, type,
       stop("xpts must be specified for graphical functions!")
     } else if (!idx_exist & is.null(ypts) & !is.null(xpts)) {
       stop("ypts must be specified for graphical functions!")
-    } else if (idx_exist){
+    } else if (idx_exist) {
       # xpts and ypts are obligatory arguments for gf
       # If variable already exists, find xpts and ypts to ensure later
       # modifications still create valid gf
@@ -1688,7 +1695,6 @@ build <- function(sfm, name, type,
     }
 
     if (!is.null(xpts) & !is.null(ypts)) {
-
       # Split xpts and ypts temporarily to check length
       if (inherits(xpts, "character")) {
         xpts <- trimws(xpts)
@@ -1711,7 +1717,9 @@ build <- function(sfm, name, type,
         stop(paste0(
           "For graphical functions, the length of xpts must match that of ypts.\n",
           paste0("The length of xpts is ", length(xpts),
-                 "; the length of ypts is ", length(ypts), ".", collapse = "\n")
+            "; the length of ypts is ", length(ypts), ".",
+            collapse = "\n"
+          )
         ))
       }
 
@@ -1968,8 +1976,10 @@ build <- function(sfm, name, type,
 
   # Add elements to model (in for-loop, as otherwise not all elements are added)
   for (i in seq_along(name)) {
-    sfm[["model"]][["variables"]] <- utils::modifyList(sfm[["model"]][["variables"]],
-                                                       new_element[i])
+    sfm[["model"]][["variables"]] <- utils::modifyList(
+      sfm[["model"]][["variables"]],
+      new_element[i]
+    )
   }
 
   sfm <- validate_xmile(sfm)
@@ -2087,7 +2097,7 @@ get_building_block_prop <- function() {
 #' @inheritParams build
 #' @param quietly If TRUE, don't print problems. Defaults to FALSE.
 #'
-#' @returns Logical value indicating whether any problems were detected.
+#' @returns If quietly = FALSE, list with problems and potential problems.
 #' @family build
 #' @export
 #'
@@ -2347,7 +2357,8 @@ static_depend_on_dyn <- function(sfm) {
 #'
 as.data.frame.sdbuildR_xmile <- function(x,
                                          row.names = NULL, optional = FALSE,
-                                         type = NULL, name = NULL, properties = NULL, ...) {
+                                         type = NULL, name = NULL,
+                                         properties = NULL, ...) {
   check_xmile(x)
   sfm <- x
 
@@ -2517,7 +2528,7 @@ as.data.frame.sdbuildR_xmile <- function(x,
 #' @param object Stock-and-flow model of class sdbuildR_xmile
 #' @inheritParams plot.sdbuildR_xmile
 #'
-#' @return NULL
+#' @return Summary object of class summary.sdbuildR_xmile
 #' @family build
 #' @export
 #' @seealso [build()]
@@ -2581,7 +2592,7 @@ summary.sdbuildR_xmile <- function(object, ...) {
 #' @param x A summary object of class "summary.sdbuildR_xmile"
 #' @param ... Additional arguments (unused)
 #'
-#' @return Invisibly returns the input object
+#' @return Invisibly returns the summary object of class summary.sdbuildR_xmile
 #' @export
 #' @family build
 print.summary.sdbuildR_xmile <- function(x, ...) {
@@ -2664,7 +2675,7 @@ print.summary.sdbuildR_xmile <- function(x, ...) {
       paste0(", save_at = ", x$simulation$save_at)
     ),
     ifelse(x$simulation$save_from == x$simulation$start, "",
-           paste0(", save_from = ", x$simulation$save_at)
+      paste0(", save_from = ", x$simulation$save_at)
     )
   ))
 

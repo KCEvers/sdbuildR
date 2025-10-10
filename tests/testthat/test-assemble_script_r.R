@@ -107,8 +107,10 @@ test_that("simulate with different components works", {
 test_that("equations that refer to the variable itself throw error", {
   sfm <- xmile() %>%
     build("E", "stock", eqn = "E")
-  expect_error(simulate(sfm),
-               "Please define these missing variables or correct any spelling mistakes")
+  expect_error(
+    simulate(sfm),
+    "Please define these missing variables or correct any spelling mistakes"
+  )
 })
 
 

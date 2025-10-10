@@ -281,7 +281,7 @@ clean_unit <- function(x, regex_units, ignore_case = FALSE,
   if (x == "1") {
     x_new <- x
     x_parts <- stats::setNames(x, x)
-  } else if (tolower(x) %in% c("unitless", "dimensionless", "dmnl", "no units", "no unit")){
+  } else if (tolower(x) %in% c("unitless", "dimensionless", "dmnl", "no units", "no unit")) {
     x_new <- "1"
     x_parts <- stats::setNames(x_new, x)
   } else {
@@ -451,6 +451,8 @@ find_unit_strings <- function(sfm) {
 #' @returns Dataframe with units in Julia
 #' @family units
 #' @export
+#' @examples
+#' get_units()
 #'
 get_units <- function() {
   units_df <- matrix(
@@ -635,6 +637,9 @@ get_units <- function() {
 #'
 #' @family units
 #' @export
+#' @examples
+#' get_regex_time_units()
+#'
 get_regex_time_units <- function() {
   # Get units dataframe and only keep time units
   units_df <- get_units()
@@ -748,6 +753,9 @@ unit_prefixes <- function() {
 #'
 #' @family units
 #' @export
+#' @examples
+#' get_regex_units()
+#'
 get_regex_units <- function(sfm = NULL) {
   # Get units dataframe
   units_df <- get_units()

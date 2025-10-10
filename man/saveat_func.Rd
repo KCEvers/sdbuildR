@@ -7,7 +7,7 @@
 saveat_func(df, time_col, new_times)
 }
 \arguments{
-\item{df}{Dataframe}
+\item{df}{Dataframe in wide format}
 
 \item{time_col}{Name of the time column}
 
@@ -19,10 +19,30 @@ Dataframe with new times and interpolated values
 \description{
 Internal function used to save the dataframe at specific times in case save_at is not equal to dt in the simulation specifications.
 }
+\examples{
+# Recommended: Use save_at in sim_specs() to downsample simulations
+sfm <- xmile("SIR") |> sim_specs(dt = 0.01, save_at = 1)
+sim <- simulate(sfm)
+df <- as.data.frame(sim)
+nrow(df) # Returns only times at intervals of 1
+head(df)
+
+# The saveat_func() is the underlying function used by save_at
+# Direct use is not recommended, but shown here for completeness:
+sfm <- sfm |> sim_specs(save_at = 0.01)
+sim <- simulate(sfm)
+df <- as.data.frame(sim)
+nrow(df) # Many more rows
+
+# Manual downsampling (not recommended - use save_at instead)
+new_times <- seq(min(df$time), max(df$time), by = 1)
+df_wide <- as.data.frame(sim, direction = "wide")
+df_manual <- saveat_func(df_wide, "time", new_times)
+nrow(df_manual)
+}
 \seealso{
 Other internal: 
 \code{\link{clean_name}()},
-\code{\link{compare_sim}()},
 \code{\link{has_internet}()},
 \code{\link{nonnegative}()},
 \code{\link{not_on_cran}()}

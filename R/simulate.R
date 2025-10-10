@@ -23,7 +23,8 @@
 #' @family simulate
 #' @seealso [build()], [xmile()], [debugger()], [sim_specs()], [use_julia()]
 #'
-#' @examples sfm <- xmile("SIR")
+#' @examples
+#' sfm <- xmile("SIR")
 #' sim <- simulate(sfm)
 #' plot(sim)
 #'
@@ -31,15 +32,15 @@
 #' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim, add_constants = TRUE)
 #'
-#' @examplesIf not_on_cran()
-#' # Use Julia for models with units or delay functions
-#' sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
-#' sim <- simulate(sfm)
-#' plot(sim)
+#' if (JuliaConnectoR::juliaSetupOk()) {
+#'   # Use Julia for models with units or delay functions
+#'   sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
+#'   sim <- simulate(sfm)
+#'   plot(sim)
 #'
-#' # Close Julia session
-#' use_julia(stop = TRUE)
-#'
+#'   # Close Julia session
+#'   use_julia(stop = TRUE)
+#' }
 simulate <- function(sfm,
                      keep_nonnegative_flow = TRUE,
                      keep_nonnegative_stock = FALSE,
@@ -317,7 +318,7 @@ find_newly_defined_var <- function(eqn) {
 #' @inheritParams build
 #' @param reverse If FALSE, list for each variable X which variables Y it depends on for its equation definition. If TRUE, don't show dependencies but dependents. This reverses the dependencies, such that for each variable X, it lists what other variables Y depend on X.
 #'
-#' @return Vector of dependencies (variable names in equation)
+#' @return List, with for each model variable what other variables it depends on, or if reverse = TRUE, which variables depend on it
 #' @family build
 #' @export
 #'
@@ -533,8 +534,7 @@ order_equations <- function(sfm, print_msg = TRUE) {
 #' @param tolerance Numeric; tolerance for comparing values. Defaults to 0.00001.
 #'
 #' @returns List with comparison results
-#' @export
-#' @family internal
+#' @noRd
 #'
 compare_sim <- function(sim1, sim2, tolerance = .00001) {
   if (sim1[["success"]] & !sim2[["success"]]) {
@@ -657,69 +657,71 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 #' @family simulate
 #' @seealso [use_threads()], [build()], [xmile()], [sim_specs()], [use_julia()]
 #'
-#' @examplesIf not_on_cran()
-#' # Load example and set simulation language to Julia
-#' sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
+#' @examples
+#' # Ensemble simulations require Julia
+#' if (JuliaConnectoR::juliaSetupOk()) {
+#'   # Load example and set simulation language to Julia
+#'   sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
 #'
-#' # Set random initial conditions
-#' sfm <- build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
+#'   # Set random initial conditions
+#'   sfm <- build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
 #'
-#' # For ensemble simulations, it is highly recommended to reduce the
-#' # returned output. For example, to save only every 1 time units and discard
-#' # the first 100 time units, use:
-#' sfm <- sim_specs(sfm, save_at = 1, save_from = 100)
+#'   # For ensemble simulations, it is highly recommended to reduce the
+#'   # returned output. For example, to save only every 1 time units and discard
+#'   # the first 100 time units, use:
+#'   sfm <- sim_specs(sfm, save_at = 1, save_from = 100)
 #'
-#' # Run ensemble simulation with 100 simulations
-#' sims <- ensemble(sfm, n = 100)
-#' plot(sims)
+#'   # Run ensemble simulation with 100 simulations
+#'   sims <- ensemble(sfm, n = 100)
+#'   plot(sims)
 #'
-#' # Plot individual trajectories
-#' sims <- ensemble(sfm, n = 10, return_sims = TRUE)
-#' plot(sims, type = "sims")
+#'   # Plot individual trajectories
+#'   sims <- ensemble(sfm, n = 10, return_sims = TRUE)
+#'   plot(sims, type = "sims")
 #'
-#' # Specify which trajectories to plot
-#' plot(sims, type = "sims", i = 1)
+#'   # Specify which trajectories to plot
+#'   plot(sims, type = "sims", i = 1)
 #'
-#' # Plot the median with lighter individual trajectories
-#' plot(sims, central_tendency = "median", type = "sims", alpha = 0.1)
+#'   # Plot the median with lighter individual trajectories
+#'   plot(sims, central_tendency = "median", type = "sims", alpha = 0.1)
 #'
-#' # Ensembles can also be run with exact values for the initial conditions
-#' # and parameters. Below, we vary the initial values of the predator and the
-#' # birth rate of the predators (delta). We generate a hunderd samples per
-#' # condition. By default, the parameters are crossed, meaning that all
-#' # combinations of the parameters are run.
-#' sims <- ensemble(sfm,
-#'   n = 50,
-#'   range = list("predator" = c(10, 50), "delta" = c(.025, .05))
-#' )
-#'
-#' plot(sims)
-#'
-#' # By default, a maximum of nine conditions is plotted.
-#' # Plot specific conditions:
-#' plot(sims, j = c(1, 3), nrows = 1)
-#'
-#' # Generate a non-crossed design, where the length of each range needs to be
-#' # equal:
-#' sims <- ensemble(sfm,
-#'   n = 10, cross = FALSE,
-#'   range = list(
-#'     "predator" = c(10, 20, 30),
-#'     "delta" = c(.020, .025, .03)
+#'   # Ensembles can also be run with exact values for the initial conditions
+#'   # and parameters. Below, we vary the initial values of the predator and the
+#'   # birth rate of the predators (delta). We generate a hunderd samples per
+#'   # condition. By default, the parameters are crossed, meaning that all
+#'   # combinations of the parameters are run.
+#'   sims <- ensemble(sfm,
+#'     n = 50,
+#'     range = list("predator" = c(10, 50), "delta" = c(.025, .05))
 #'   )
-#' )
-#' plot(sims, nrows = 3)
 #'
-#' # Run simulation in parallel
-#' use_threads(4)
-#' sims <- ensemble(sfm, n = 10)
+#'   plot(sims)
 #'
-#' # Stop using threads
-#' use_threads(stop = TRUE)
+#'   # By default, a maximum of nine conditions is plotted.
+#'   # Plot specific conditions:
+#'   plot(sims, j = c(1, 3), nrows = 1)
 #'
-#' # Close Julia
-#' use_julia(stop = TRUE)
+#'   # Generate a non-crossed design, where the length of each range needs to be
+#'   # equal:
+#'   sims <- ensemble(sfm,
+#'     n = 10, cross = FALSE,
+#'     range = list(
+#'       "predator" = c(10, 20, 30),
+#'       "delta" = c(.020, .025, .03)
+#'     )
+#'   )
+#'   plot(sims, nrows = 3)
 #'
+#'   # Run simulation in parallel
+#'   use_threads(4)
+#'   sims <- ensemble(sfm, n = 10)
+#'
+#'   # Stop using threads
+#'   use_threads(stop = TRUE)
+#'
+#'   # Close Julia
+#'   use_julia(stop = TRUE)
+#' }
 ensemble <- function(sfm,
                      n = 10,
                      return_sims = FALSE,
@@ -858,7 +860,6 @@ ensemble <- function(sfm,
     return_sims = return_sims,
     range = range, cross = cross
   )
-
 
   old_threads <- .sdbuildR_env[["prev_JULIA_NUM_THREADS"]]
 
@@ -1012,7 +1013,7 @@ ensemble <- function(sfm,
 
 #' Set up threaded ensemble simulations
 #'
-#' Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS.
+#' Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS. Note that this does not affect regular simulations with `simulate()`.
 #'
 #' @param n Number of Julia threads to use. Defaults to parallel::detectCores() - 1. If set to a value higher than the number of available cores minus 1, it will be set to the number of available cores minus 1.
 #' @param stop Stop using threaded ensemble simulations. Defaults to FALSE.
@@ -1023,8 +1024,17 @@ ensemble <- function(sfm,
 #' @export
 #'
 #' @examples
-#' use_threads(n = 4)
-#' use_threads(stop = TRUE)
+#' if (JuliaConnectoR::juliaSetupOk()) {
+#'   # Use Julia with 4 threads
+#'   use_julia()
+#'   use_threads(n = 4)
+#'
+#'   # Stop using threads
+#'   use_threads(stop = TRUE)
+#'
+#'   # Stop using Julia
+#'   use_julia(stop = TRUE)
+#' }
 use_threads <- function(n = parallel::detectCores() - 1, stop = FALSE) {
   if (!is.numeric(n)) {
     stop("n must be a number!")
@@ -1043,9 +1053,11 @@ use_threads <- function(n = parallel::detectCores() - 1, stop = FALSE) {
   } else {
     # Set number of Julia threads to use
     if (n > (parallel::detectCores() - 1)) {
-      warning("n is set to ", n,
-              ", which is higher than the number of available cores minus 1. Setting it to ",
-              parallel::detectCores() - 1, ".")
+      warning(
+        "n is set to ", n,
+        ", which is higher than the number of available cores minus 1. Setting it to ",
+        parallel::detectCores() - 1, "."
+      )
       n <- parallel::detectCores() - 1
     }
 
@@ -1072,6 +1084,7 @@ use_threads <- function(n = parallel::detectCores() - 1, stop = FALSE) {
 #' @examples
 #' sfm <- xmile("SIR")
 #' get_build_code(sfm)
+#'
 get_build_code <- function(sfm) {
   check_xmile(sfm)
 
@@ -1115,16 +1128,30 @@ get_build_code <- function(sfm) {
   # Header string
   h <- sfm[["header"]]
   defaults_header <- formals(header)
-  defaults_header <- defaults_header[!names(defaults_header) %in% c("sfm", "created", "...")]
+  defaults_header <- defaults_header[!names(defaults_header) %in%
+    c("sfm", "created", "...")]
 
   # Find which elements in h are identical to those in defaults_header
   h <- h[vapply(names(h), function(name) {
-    !name %in% names(defaults_header) || !identical(h[[name]], defaults_header[[name]])
+    !name %in% names(defaults_header) || !identical(
+      h[[name]],
+      defaults_header[[name]]
+    )
   }, logical(1))]
 
-  h <- lapply(h, function(z) if (is.character(z) | inherits(z, "POSIXt")) paste0("\"", z, "\"") else z)
+  h <- lapply(h, function(z) {
+    if (is.character(z) |
+      inherits(z, "POSIXt")) {
+      paste0("\"", z, "\"")
+    } else {
+      z
+    }
+  })
 
-  header_str <- paste0(" |>\n\t\theader(", paste0(names(h), " = ", unname(h), collapse = ", "), ")")
+  header_str <- paste0(
+    " |>\n\t\theader(",
+    paste0(names(h), " = ", unname(h), collapse = ", "), ")"
+  )
 
   # Variables
   if (length(unlist(sfm[["model"]][["variables"]])) > 0) {
@@ -1159,13 +1186,9 @@ get_build_code <- function(sfm) {
         paste0(
           "build(",
           paste0(names(z), " = ", unname(z),
-                 collapse = ", "
+            collapse = ", "
           ), ")"
         )
-        # sprintf("build('%s', '%s'%s)",
-        #         y[["name"]], y[["type"]], ifelse(length(z) > 0,
-        #                                          paste0(", ", paste0(names(z), " = ", unname(z),
-        #                                                              collapse = ", ")), "") )
       })
     })
     var_str <- var_str[lengths(var_str) > 0]
@@ -1174,7 +1197,10 @@ get_build_code <- function(sfm) {
     var_str <- ""
   }
 
-  script <- sprintf("sfm = xmile()%s%s%s%s%s", sim_specs_str, header_str, var_str, macro_str, model_units_str)
+  script <- sprintf(
+    "sfm = xmile()%s%s%s%s%s", sim_specs_str,
+    header_str, var_str, macro_str, model_units_str
+  )
 
   # Format code
   if (requireNamespace("styler", quietly = TRUE)) {
@@ -1185,7 +1211,7 @@ get_build_code <- function(sfm) {
     script <- tryCatch(
       {
         suppressWarnings(suppressMessages(
-          script <- styler::style_text(script)
+          styler::style_text(script)
         ))
       },
       error = function(e) {
@@ -1206,5 +1232,3 @@ get_build_code <- function(sfm) {
 
   return(script)
 }
-
-

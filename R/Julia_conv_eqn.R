@@ -16,11 +16,11 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
     function(x) {
       lapply(x, function(y) {
         # if (is_defined(y[["eqn"]])) {
-          out <- convert_equations_julia(y[["type"]], y[["name"]],
-            y[["eqn"]], var_names,
-            regex_units = regex_units
-          )
-          y <- utils::modifyList(y, out)
+        out <- convert_equations_julia(y[["type"]], y[["name"]],
+          y[["eqn"]], var_names,
+          regex_units = regex_units
+        )
+        y <- utils::modifyList(y, out)
         # }
         return(y)
       })
@@ -37,7 +37,9 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
     }
 
     out <- convert_equations_julia("macro", "macro", x[["eqn_julia"]],
-                                   var_names, regex_units = regex_units)
+      var_names,
+      regex_units = regex_units
+    )
     x <- utils::modifyList(x, out)
 
     return(x)
@@ -124,7 +126,6 @@ convert_equations_julia <- function(type, name, eqn, var_names, regex_units) {
       # Ensure integers are floats
       # Julia can throw InexactError errors in case e.g. an initial condition is defined as an integer
       replace_digits_with_floats(var_names)
-
 
     # # Destructuring assignment, e.g. x, y <- {a, b}
     # **to do
@@ -246,11 +247,15 @@ replace_digits_with_floats <- function(eqn, var_names) {
 #'
 replace_op_julia <- function(eqn, var_names) {
   # Define logical operators in R and replacements in Julia
-  logical_op_words <- c("TRUE" = "true", "FALSE" = "false", "T" = "true",
-                        "F" = "false", "NULL" = "nothing", "NA" = "missing")
+  logical_op_words <- c(
+    "TRUE" = "true", "FALSE" = "false", "T" = "true",
+    "F" = "false", "NULL" = "nothing", "NA" = "missing"
+  )
   # Cannot be preceded or followed by a letter
-  names(logical_op_words) <- paste0("(?:^|(?<=\\W))",
-                                    stringr::str_escape(names(logical_op_words)), "(?=(?:\\W|$))")
+  names(logical_op_words) <- paste0(
+    "(?:^|(?<=\\W))",
+    stringr::str_escape(names(logical_op_words)), "(?=(?:\\W|$))"
+  )
 
   # **To do: 1 is not true in Julia
 
@@ -410,15 +415,6 @@ find_curly_brackets <- function(df, paired_idxs) {
 #'
 convert_all_statements_julia <- function(eqn, var_names) {
   eqn_old <- eqn
-
-
-  # ** to do: R's local() is equivalent to Julia's let end I believe
-  # result <- local({
-  #   set.seed(1)
-  #   v <- rnorm(10, 0, 1)
-  #   min(v)
-  # })
-
 
   # If curly brackets surround entire eqn, replace and surround with begin ... end
   if (stringr::str_sub(eqn, 1, 1) == "{" & stringr::str_sub(eqn, nchar(eqn), nchar(eqn)) == "}") {
@@ -689,9 +685,6 @@ create_default_arg <- function(arg) {
 #' @noRd
 #' @return Dataframe
 get_syntax_julia <- function() {
-  # https://www.johnmyleswhite.com/notebook/2012/04/09/comparing-julia-and-rs-vocabularies/
-  # https://docs.julialang.org/en/v1/manual/noteworthy-differences/
-
   # Custom function to replace each (nested) function; necessary because regex in stringr unfortunately doesn't seem to handle nested functions
   conv_df <- matrix(
     c(
@@ -716,22 +709,6 @@ get_syntax_julia <- function() {
       "seq_len", "range", "syntax_seq", "", "", FALSE,
       "sample", "StatsBase.sample", "syntax_sample", "", "", FALSE,
       "sample.int", "StatsBase.sample", "syntax_sample", "", "", FALSE,
-
-
-      # ** mad()
-      # Statistics.median(abs.(A .- Statistics.median(A)))
-
-
-      # **to do: "seq"; Julia:
-      # range(start, stop, length)
-      # range(start, stop; length, step)
-      # range(start; length, stop, step)
-      # range(;start, length, stop, step)
-
-      # "shuffle", "", "syntax1", "", "" , TRUE,
-
-
-      # ** to do: cummax, cummin
       "cumsum", "cumsum", "syntax1", "", "", FALSE,
       "cumprod", "cumprod", "syntax1", "", "", FALSE,
       "diff", "diff", "syntax1", "", "", FALSE,
@@ -755,7 +732,6 @@ get_syntax_julia <- function() {
 
       # Find
       # "which", "findall", "syntax1", "", "",
-
       # findmax(arr): Returns (max_value, index).
       # findmin(arr): Returns (min_value, index).
 
@@ -790,35 +766,18 @@ get_syntax_julia <- function() {
       "Filter", "filter", "syntax1", "", "", TRUE,
       "which", "findall", "syntax1", "", "", FALSE,
       "class", "typeof", "syntax1", "", "", FALSE,
-
-      # **
-      # "pracma::logspace", "logrange", "syntax1", "", "",
-      # "isTRUE", "", "syntax1", "", "",
-      # "isFALSE", "", "syntax1", "", "",
-
-
-      # "", "isapprox", "syntax1", "", "",
-      #
-      # # String manipulation
+      # String manipulation
       "grep", "match", "syntax1", "", "", FALSE,
       "strsplit", "split", "syntax1", "", "", FALSE,
       "paste0", "join", "syntax1", "", "", FALSE,
       "toupper", "uppercase", "syntax1", "", "", TRUE,
       "tolower", "lowercase", "syntax1", "", "", TRUE,
       "stringr::str_to_title", "uppercasefirst", "syntax1", "", "", TRUE,
-
-
-      # "sprintf", "", "syntax1", "", "",
-      # "paste", "", "syntax1", "", "",
-      # "paste0", "", "syntax1", "", "",
-
       # Sets
-      # to do: Julia's isdisjoint, issubset, issetequal.
       "union", "union", "syntax1", "", "", FALSE,
       "intersect", "intersect", "syntax1", "", "", FALSE,
       "setdiff", "setdiff", "syntax1", "", "", FALSE,
       "setequal", "setequal", "syntax1", "", "", FALSE,
-
       # is....()
       "rlang::is_empty", "isempty", "syntax1", "", "", FALSE,
       "all", "all", "syntax1", "", "", FALSE,
@@ -826,36 +785,23 @@ get_syntax_julia <- function() {
       "is.infinite", "isinf", "syntax1", "", "", TRUE,
       "is.finite", "isfinite", "syntax1", "", "", TRUE,
       "is.nan", "ismissing", "syntax1", "", "", TRUE,
-
       # https://docs.julialang.org/en/v1/base/collections
       # Julia: indexin, sortperm, findfirst
       "sort", "sort", "syntax1", "", "", FALSE,
-
-
       # Complex numbers
       "Re", "real", "syntax1", "", "", TRUE,
       "Im", "imag", "syntax1", "", "", TRUE,
       "Mod", "", "syntax1", "", "", TRUE,
       "Arg", "", "syntax1", "", "", TRUE,
       "Conj", "conj", "syntax1", "", "", TRUE,
-
-      # as.complex(x, ...)
-      # is.complex(x)
-      # Re(z)
-      # Im(z)
-      # Mod(z)
-      # Arg(z)
-      # Conj(z)
-      # imag, reim, complex, isreal, Real.
-
       # Custom functions
       "logistic", "logistic", "syntax1", "", "", TRUE,
       "logit", "logit", "syntax1", "", "", TRUE,
       "expit", "expit", "syntax1", "", "", TRUE,
       "convert_u", "convert_u", "syntax1", "", "", TRUE,
       "drop_u", "Unitful.ustrip", "syntax1", "", "", TRUE,
-
-      # step() is already an existing function in Julia, so we use make_step() instead, as well as for the others for consistency
+      # step() is already an existing function in Julia, so we use make_step()
+      # instead, as well as for the others for consistency
       "step", "make_step", "syntax1", .sdbuildR_env[["P"]][["time_units_name"]], "", FALSE,
       "pulse", "make_pulse", "syntax1", .sdbuildR_env[["P"]][["time_units_name"]], "", FALSE,
       "ramp", "make_ramp", "syntax1", .sdbuildR_env[["P"]][["time_units_name"]], "", FALSE,
@@ -865,7 +811,6 @@ get_syntax_julia <- function() {
       # "past", "retrieve_past", "past", "", "", FALSE,
       # "delayN", "compute_delayN", "delayN", "", "", FALSE,
       # "smoothN", "compute_smoothN", "smoothN", "", "", FALSE,
-
       # Random Number Functions (13)
       "runif", "rand", "syntaxD", "Distributions.Uniform", "", FALSE,
       "rnorm", "rand", "syntaxD", "Distributions.Normal", "", FALSE,
@@ -893,8 +838,6 @@ get_syntax_julia <- function() {
       # "rtukey", "rand", "syntaxD", "Distributions.", "", FALSE,
       "rdist", "rdist", "syntax1", "", "", FALSE,
       "set.seed", "Random.seed!", "syntax1", "", "", FALSE,
-
-
       # Statistical Distributions (20)
       "punif", "Distributions.cdf.", "syntaxD", "Distributions.Uniform", "", FALSE,
       "dunif", "Distributions.pdf.", "syntaxD", "Distributions.Uniform", "", FALSE,
@@ -942,131 +885,10 @@ get_syntax_julia <- function() {
       "ppois", "Distributions.cdf.", "syntaxD", "Distributions.Poisson", "", FALSE,
       "dpois", "Distributions.pdf.", "syntaxD", "Distributions.Poisson", "", FALSE,
       "qpois", "Distributions.quantile.", "syntaxD", "Distributions.Poisson", "", FALSE,
-
-
-      # Complete replacements
+      # Complete replacements (syntax0)
       "next", "continue", "syntax0", "", "", FALSE,
       "stop", "error", "syntax0", "", "", FALSE
     ),
-
-
-
-    # http://adv-r.had.co.nz/Vocabulary.html
-    # str
-    #
-    # # Important operators and assignment
-    # %in%, match
-    # =, <-, <<-
-    #   $, [, [[, head, tail, subset
-    #           with
-    #           assign, get
-    #
-    #           # Comparison
-    #           all.equal, identical
-    #           !=, ==, >, >=, <, <=
-    #             is.na, complete.cases
-    #           is.finite
-    #
-    #           # Basic math
-    #           *, +, -, /, ^, %%, %/%
-
-    #         signif
-    #
-    #           rle
-    #
-    #           # Functions to do with functions
-    #           missing
-    #           on.exit
-    #           return, invisible
-    #
-    #           # Logical & sets
-    #           &, |, !, xor
-    #           which
-    #
-    #           # Vectors and matrices
-    #           c, matrix
-    #           # automatic coercion rules character > numeric > logical
-    #           length, dim, ncol, nrow
-    #           cbind, rbind
-    #           names, colnames, rownames
-    #           sweep
-    #           as.matrix, data.matrix
-    #
-    #           # Making vectors
-    #           c
-    #           rep, rep_len
-    #           seq, seq_len, seq_along
-    #           sample
-    #           choose, factorial, combn
-    #           (is/as).(character/numeric/logical/...)
-    #
-    #           # Lists & data.frames
-    #           list, unlist
-    #           data.frame, as.data.frame
-    #           split
-    #           expand.grid
-    #
-    #           # Control flow
-    #           if, &&, || (short circuiting)
-    #           for, while
-    #           next, break
-    #           switch
-    #
-    #           # Apply & friends
-    #           lapply, sapply, vapply
-    #           apply
-    #           tapply
-    #           replicate
-    #
-    #           # Date time
-    #           ISOdate, ISOdatetime, strftime, strptime, date
-    #           difftime
-    #           julian, months, quarters, weekdays
-    #           library(lubridate)
-    #
-    #           # Character manipulation
-    #           grep, agrep
-    #           gsub
-    #           strsplit
-    #           chartr
-    #           substr
-    #           paste
-    #           trimws
-    #           library(stringr)
-    #
-    #           # Factors
-    #           factor, levels, nlevels
-    #           reorder, relevel
-    #           cut, findInterval
-    #           interaction
-    #           options(stringsAsFactors = FALSE)
-    #
-    #           # Array manipulation
-    #           array
-    #           dim
-    #           dimnames
-    #           aperm
-    #           library(abind)
-    #
-    #           # Ordering and tabulating
-    #           duplicated, unique
-    #           merge
-    #           order, rank, quantile
-    #           table, ftable
-    #
-    #
-    #
-    #           # Random variables
-    #           (q, p, d, r) * (beta, binom, cauchy, chisq, exp, f, gamma, geom,
-    #                           hyper, lnorm, logis, multinom, nbinom, norm, pois, signrank, t,
-    #                           unif, weibull, wilcox, birthday, tukey)
-    #
-    #           # Matrix algebra
-    #           crossprod, tcrossprod
-    #           eigen, qr, svd
-    #           %*%, %o%, outer
-    #           rcond
-    #           solve
     ncol = 6, byrow = TRUE,
     dimnames = list(NULL, c("R", "julia", "syntax", "add_first_arg", "add_second_arg", "add_broadcast"))
   )
@@ -1109,13 +931,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
   # Check if equation contains letters and opening and closing brackets
   # (all translated R functions have brackets)
   if (grepl("[[:alpha:]]", eqn) && grepl("\\(", eqn) && grepl("\\)", eqn)) {
-
     # Dataframe with regular expressions for each built-in R function
-    # out <- get_syntax_julia()
-    # syntax_df <- out[["syntax_df"]]
-    # conv_df <- out[["conv_df"]]
-    # rm(out)
-
     syntax_df <- syntax_julia[["syntax_df"]]
     conv_df <- syntax_julia[["conv_df"]]
 
@@ -1125,7 +941,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
     R_regex <- syntax_df[["R_regex_first_iter"]]
 
     while (!done) {
-
       # Remove those matches that are in quotation marks or names
       idxs_exclude <- get_seq_exclude(eqn, var_names)
 
@@ -1158,7 +973,10 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
 
       idx_df <- do.call(rbind, idx_df)
 
-      if (nrow(idx_df) > 0) idx_df <- idx_df[!(idx_df[["start"]] %in% idxs_exclude | idx_df[["end"]] %in% idxs_exclude), ]
+      if (nrow(idx_df) > 0) {
+        idx_df <- idx_df[!(idx_df[["start"]] %in% idxs_exclude |
+          idx_df[["end"]] %in% idxs_exclude), ]
+      }
 
       if (nrow(idx_df) == 0) {
         done <- TRUE
@@ -1179,7 +997,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
       }
 
       if (i == 1) {
-
         # Switch from R_regex_first_iter to R_regex
         # Also only keep those functions that were detected on the first iteration.
         # No new functions to be translated will be added.
@@ -1264,15 +1081,19 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           )
         } else if (idx_func[["syntax"]] == "delay") {
           if (type %in% c("stock", "gf", "constant", "macro")) {
-            stop(paste0("Adjust equation of ", name,
-                        ": delay() cannot be used for a ", type, "."))
+            stop(paste0(
+              "Adjust equation of ", name,
+              ": delay() cannot be used for a ", type, "."
+            ))
           }
 
           # Check arguments
           arg[2] <- trimws(arg[2])
           if (arg[2] == "0" || arg[2] == "0.0" || arg[2] == "0L") {
-            stop(paste0("Adjust equation of ", name,
-                        ": the delay length in delay() must be greater than 0."))
+            stop(paste0(
+              "Adjust equation of ", name,
+              ": the delay length in delay() must be greater than 0."
+            ))
           }
 
           func_name <- paste0(name, .sdbuildR_env[["P"]][["delay_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
@@ -1299,15 +1120,19 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           )
         } else if (idx_func[["syntax"]] == "past") {
           if (type %in% c("stock", "gf", "constant", "macro")) {
-            stop(paste0("Adjust equation of ", name,
-                        ": past() cannot be used for a ", type, "."))
+            stop(paste0(
+              "Adjust equation of ", name,
+              ": past() cannot be used for a ", type, "."
+            ))
           }
 
           # Check arguments
           arg[2] <- trimws(arg[2])
           if (arg[2] == "0" || arg[2] == "0.0" || arg[2] == "0L") {
-            stop(paste0("Adjust equation of ", name,
-                        ": the past interval in past() must be greater than 0."))
+            stop(paste0(
+              "Adjust equation of ", name,
+              ": the past interval in past() must be greater than 0."
+            ))
           }
 
           arg2 <- ifelse(length(arg) > 1, arg[2], "nothing")
@@ -1330,20 +1155,26 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           )
         } else if (idx_func[["syntax"]] == "delayN") {
           if (type %in% c("stock", "gf", "constant", "macro")) {
-            stop(paste0("Adjust equation of ", name,
-                        ": delayN() cannot be used for a ", type, "."))
+            stop(paste0(
+              "Adjust equation of ", name,
+              ": delayN() cannot be used for a ", type, "."
+            ))
           }
 
           # Check arguments
           arg[2] <- trimws(arg[2])
           if (arg[2] == "0" || arg[2] == "0.0" || arg[2] == "0L") {
-            stop(paste0("Adjust equation of ", name,
-                        ": the delay length in delayN() must be greater than 0."))
+            stop(paste0(
+              "Adjust equation of ", name,
+              ": the delay length in delayN() must be greater than 0."
+            ))
           }
 
           if (arg[3] == "0" || arg[3] == "0.0" || arg[3] == "0L") {
-            stop(paste0("Adjust equation of ", name,
-                        ": the delay order in delayN() must be greater than 0."))
+            stop(paste0(
+              "Adjust equation of ", name,
+              ": the delay order in delayN() must be greater than 0."
+            ))
           }
 
           arg4 <- ifelse(length(arg) > 3, arg[4], arg[1])
@@ -1383,21 +1214,27 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
           )
         } else if (idx_func[["syntax"]] == "smoothN") {
           if (type %in% c("stock", "gf", "constant", "macro")) {
-            stop(paste0("Adjust equation of ", name,
-                        ": smoothN() cannot be used for a ", type, "."))
+            stop(paste0(
+              "Adjust equation of ", name,
+              ": smoothN() cannot be used for a ", type, "."
+            ))
           }
 
           # Check arguments
           arg[2] <- trimws(arg[2])
           if (arg[2] == "0" || arg[2] == "0.0" || arg[2] == "0L") {
-            stop(paste0("Adjust equation of ", name,
-                        ": the smoothing time in smoothN() must be greater than 0."))
+            stop(paste0(
+              "Adjust equation of ", name,
+              ": the smoothing time in smoothN() must be greater than 0."
+            ))
           }
 
           arg[3] <- trimws(arg[3])
           if (arg[3] == "0" || arg[3] == "0.0" || arg[3] == "0L") {
-            stop(paste0("Adjust equation of ", name,
-                        ": the smoothing order in smoothN() must be greater than 0."))
+            stop(paste0(
+              "Adjust equation of ", name,
+              ": the smoothing order in smoothN() must be greater than 0."
+            ))
           }
 
           arg4 <- ifelse(length(arg) > 3, arg[4], arg[1])
@@ -1583,7 +1420,8 @@ conv_seq <- function(arg, R_func, julia_func) {
     julia_str <- paste0(julia_func, "(1.0, ", arg[["length.out"]], ")")
   } else {
     # If nothing is specified, specify by
-    if (!is_defined(arg[["by"]]) && !is_defined(arg[["length.out"]]) && !is_defined(arg[["along.with"]])) {
+    if (!is_defined(arg[["by"]]) && !is_defined(arg[["length.out"]]) &&
+      !is_defined(arg[["along.with"]])) {
       arg[["by"]] <- "1.0" # Default value for by
     }
 
@@ -1594,7 +1432,8 @@ conv_seq <- function(arg, R_func, julia_func) {
       )
     } else if (is_defined(arg[["length.out"]])) {
       # Julia throws an error in this case
-      if (as.numeric(arg[["length.out"]]) == 1 & as.numeric(arg[["from"]]) != as.numeric(arg[["to"]])) {
+      if (as.numeric(arg[["length.out"]]) == 1 &
+        as.numeric(arg[["from"]]) != as.numeric(arg[["to"]])) {
         julia_str <- arg[["from"]]
       } else {
         # length.out should be an integer

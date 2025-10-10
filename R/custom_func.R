@@ -2,8 +2,6 @@
 #'
 #' R rounds .5 to 0, whereas Insight Maker rounds .5 to 1. This function is the equivalent of Insight Maker's Round() function.
 #'
-#' Source: https://stackoverflow.com/questions/12688717/round-up-from-5/12688836#12688836
-#'
 #' @param x Value
 #' @param digits Number of digits; optional, defaults to 0
 #'
@@ -30,7 +28,7 @@ round_IM <- function(x, digits = 0) {
 #'
 #' @param p Probability, numerical value between 0 and 1
 #'
-#' @return Logit
+#' @return Numerical value
 #' @family custom
 #' @export
 #'
@@ -65,7 +63,7 @@ expit <- function(x) {
 #'
 #' @param p Probability of TRUE, numerical value between 0 and 1
 #'
-#' @return Boolean
+#' @return Logical value
 #' @family custom
 #' @export
 #'
@@ -101,7 +99,7 @@ rdist <- function(a, b) {
 #' @param haystack Vector or string to search through
 #' @param needle Value to search for
 #'
-#' @return Index
+#' @return Index, integer
 #' @family custom
 #' @export
 #'
@@ -160,7 +158,7 @@ length_IM <- function(x) {
 #' @param haystack Vector or string to search through
 #' @param needle Value to search for
 #'
-#' @return Boolean
+#' @return Logical value
 #' @family custom
 #' @export
 #'
@@ -190,7 +188,7 @@ contains_IM <- function(haystack, needle) {
 #' @param height End height of ramp, defaults to 1
 #'
 #' @export
-#' @return Interpolation function
+#' @return Ramp interpolation function
 #' @family input
 #' @seealso [step()], [pulse()], [seasonal()]
 #' @examples
@@ -223,14 +221,14 @@ ramp <- function(times, start, finish, height = 1) {
     warning("Start of ramp before beginning of simulation time.")
   }
 
-  if (start > times[length(times)]){
+  if (start > times[length(times)]) {
     warning("Start of ramp after end of simulation time.")
 
     # In this case, no need to compute signal
     signal <- data.frame(times = times[c(1, length(times))], y = c(0, 0))
     input <- stats::approxfun(signal, rule = 2, method = "constant")
     return(input)
-  } else if (finish < times[1]){
+  } else if (finish < times[1]) {
     warning("End of ramp before beginning of simulation time.")
 
     # In this case, no need to compute signal
@@ -275,7 +273,7 @@ ramp <- function(times, start, finish, height = 1) {
 #' @param repeat_interval Interval at which to repeat pulse. Defaults to NULL to indicate no repetition.
 #'
 #' @export
-#' @return Interpolation function
+#' @return Pulse interpolation function
 #' @seealso [step()], [ramp()], [seasonal()]
 #' @family input
 #' @examples
@@ -310,7 +308,7 @@ pulse <- function(times, start, height = 1, width = 1, repeat_interval = NULL) {
     warning("Start of pulse before beginning of simulation time.")
   }
 
-  if (start > times[length(times)]){
+  if (start > times[length(times)]) {
     warning("Start of pulse after end of simulation time.")
 
     # In this case, no need to compute signal
@@ -318,7 +316,6 @@ pulse <- function(times, start, height = 1, width = 1, repeat_interval = NULL) {
     input <- stats::approxfun(signal, rule = 2, method = "constant")
     return(input)
   }
-
 
   # Define time and indices of pulses
   if (is.null(repeat_interval)) {
@@ -330,7 +327,7 @@ pulse <- function(times, start, height = 1, width = 1, repeat_interval = NULL) {
     start_ts <- seq(start, times[length(times)], by = repeat_interval)
 
     # When width is equal or greater than repeat interval, it's basically continuously 1
-    if (width >= repeat_interval){
+    if (width >= repeat_interval) {
       warning("width (", width, ") >= repeat_interval (", repeat_interval, ") creates a continuous pulse.")
 
       signal <- data.frame(times = start_ts, y = height)
@@ -350,8 +347,10 @@ pulse <- function(times, start, height = 1, width = 1, repeat_interval = NULL) {
   # If pulse does not cover end of signal, add a zero at the end
   # (I don't fully understand why this is necessary, but otherwise it gives incorrect results with repeat_interval <= 0 in Julia, so for consistency's sake)
   if (max(signal[["times"]]) < times[length(times)]) {
-    signal <- rbind(signal,
-                    data.frame(times = times[length(times)], y = 0))
+    signal <- rbind(
+      signal,
+      data.frame(times = times[length(times)], y = 0)
+    )
   }
 
   signal <- signal[order(signal[["times"]]), ]
@@ -375,7 +374,7 @@ pulse <- function(times, start, height = 1, width = 1, repeat_interval = NULL) {
 #' @param height Height of step, defaults to 1
 #'
 #' @export
-#' @return Interpolation function
+#' @return Step interpolation function
 #' @seealso [ramp()], [pulse()], [seasonal()]
 #' @family input
 #' @examples
@@ -400,12 +399,11 @@ pulse <- function(times, start, height = 1, width = 1, repeat_interval = NULL) {
 #' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 step <- function(times, start, height = 1) {
-
   if (start < times[1]) {
     warning("Start of step before beginning of simulation time.")
   }
 
-  if (start > times[length(times)]){
+  if (start > times[length(times)]) {
     warning("Start of step after end of simulation time.")
 
     # In this case, no need to compute signal
@@ -442,7 +440,7 @@ step <- function(times, start, height = 1) {
 #' @param period Duration of wave in simulation time units. Defaults to 1.
 #' @param shift Timing of wave peak in simulation time units. Defaults to 0.
 #'
-#' @return Seasonal wave
+#' @return Seasonal interpolation function
 #' @family input
 #' @seealso [step()], [pulse()], [ramp()]
 #' @export
@@ -584,14 +582,33 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
 #'
 #' Internal function used to save the dataframe at specific times in case save_at is not equal to dt in the simulation specifications.
 #'
-#' @param df Dataframe
+#' @param df Dataframe in wide format
 #' @param time_col Name of the time column
 #' @param new_times Vector of new times to save the dataframe at
 #'
 #' @returns Dataframe with new times and interpolated values
 #' @family internal
 #' @export
+#' @examples
+#' # Recommended: Use save_at in sim_specs() to downsample simulations
+#' sfm <- xmile("SIR") |> sim_specs(dt = 0.01, save_at = 1)
+#' sim <- simulate(sfm)
+#' df <- as.data.frame(sim)
+#' nrow(df) # Returns only times at intervals of 1
+#' head(df)
 #'
+#' # The saveat_func() is the underlying function used by save_at
+#' # Direct use is not recommended, but shown here for completeness:
+#' sfm <- sfm |> sim_specs(save_at = 0.01)
+#' sim <- simulate(sfm)
+#' df <- as.data.frame(sim)
+#' nrow(df) # Many more rows
+#'
+#' # Manual downsampling (not recommended - use save_at instead)
+#' new_times <- seq(min(df$time), max(df$time), by = 1)
+#' df_wide <- as.data.frame(sim, direction = "wide")
+#' df_manual <- saveat_func(df_wide, "time", new_times)
+#' nrow(df_manual)
 saveat_func <- function(df, time_col, new_times) {
   # Extract the time column (first column)
   time <- df[[time_col]]

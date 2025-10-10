@@ -66,7 +66,7 @@ build(
 \item{df}{Dataframe with variable properties to add and/or modify.}
 }
 \value{
-Updated stock-and-flow model.
+Modified stock-and-flow object.
 }
 \description{
 Add, change, or erase variables in a stock-and-flow model. Variables may be stocks, flows, constants, auxiliaries, or graphical functions.

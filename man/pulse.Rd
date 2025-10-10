@@ -18,7 +18,7 @@ pulse(times, start, height = 1, width = 1, repeat_interval = NULL)
 \item{repeat_interval}{Interval at which to repeat pulse. Defaults to NULL to indicate no repetition.}
 }
 \value{
-Interpolation function
+Pulse interpolation function
 }
 \description{
 Create a pulse function that jumps from zero to a specified height at a specified time, and returns to zero after a specified width. The pulse can be repeated at regular intervals.

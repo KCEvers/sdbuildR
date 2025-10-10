@@ -66,7 +66,7 @@
 \item{...}{Optional parameters}
 }
 \value{
-Plot of ensemble simulation.
+Plot object with ensemble simulation
 }
 \description{
 Visualize ensemble simulation results of a stock-and-flow model. Either summary statistics or individual trajectories can be plotted. When multiple conditions j are specified, a grid of subplots is plotted. See \code{ensemble()} for examples.

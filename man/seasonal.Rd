@@ -14,7 +14,7 @@ seasonal(times, period = 1, shift = 0)
 \item{shift}{Timing of wave peak in simulation time units. Defaults to 0.}
 }
 \value{
-Seasonal wave
+Seasonal interpolation function
 }
 \description{
 Create a seasonal wave function that oscillates between -1 and 1, with a specified period and shift. The wave peaks at the specified shift time.

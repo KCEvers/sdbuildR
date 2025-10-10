@@ -17,7 +17,6 @@ convert_equations_IM <- function(type,
                                  eqn,
                                  var_names,
                                  regex_units) {
-
   if (.sdbuildR_env[["P"]][["debug"]]) {
     message("")
     # message(type)
@@ -391,15 +390,20 @@ replace_op_IM <- function(eqn, var_names) {
 
   # Find indices of logical operators
   idxs_logical_op <- stringr::str_locate_all(eqn, stringr::regex(names(logical_op),
-                                                                 ignore_case = TRUE))
+    ignore_case = TRUE
+  ))
 
   if (length(unlist(idxs_logical_op)) > 0) {
     # Get match and replacement
     df_logical_op <- as.data.frame(do.call(rbind, idxs_logical_op))
-    df_logical_op[["match"]] <- stringr::str_sub(eqn, df_logical_op[["start"]],
-                                                 df_logical_op[["end"]])
-    df_logical_op[["replacement"]] <- rep(unname(logical_op),
-                                          vapply(idxs_logical_op, nrow, numeric(1)))
+    df_logical_op[["match"]] <- stringr::str_sub(
+      eqn, df_logical_op[["start"]],
+      df_logical_op[["end"]]
+    )
+    df_logical_op[["replacement"]] <- rep(
+      unname(logical_op),
+      vapply(idxs_logical_op, nrow, numeric(1))
+    )
     df_logical_op <- df_logical_op[order(df_logical_op[["start"]]), ]
 
     # Remove those that are in quotation marks or names
@@ -486,8 +490,10 @@ convert_statement <- function(line, var_names) {
   }
 
   # Remove then (might not only be in if and else if, but also in a separate line)
-  equation <- stringr::str_replace(equation,
-                                   stringr::regex("(?:^|(?<=\\W))then(?=(?:\\W|$))", ignore_case = TRUE), "")
+  equation <- stringr::str_replace(
+    equation,
+    stringr::regex("(?:^|(?<=\\W))then(?=(?:\\W|$))", ignore_case = TRUE), ""
+  )
 
   # To find statements (e.g. for, if), extract first and second word
   words <- get_words(equation)
@@ -662,8 +668,10 @@ convert_all_statements <- function(eqn, var_names) {
   # Insight Maker doesn't require users to specify an Else-statement in If ... Else If ... End If -> if no condition evaluates to TRUE, the output is zero. Add "Else\n0\n" in these lines.
   # Find all if end if
   formula_split <- stringr::str_split(eqn, "\n")[[1]]
-  idx_end_if <- which(stringr::str_detect(formula_split,
-                                          stringr::regex("(?:^|(?<=\\W))end if(?=(?:\\W|$))", ignore_case = TRUE)))
+  idx_end_if <- which(stringr::str_detect(
+    formula_split,
+    stringr::regex("(?:^|(?<=\\W))end if(?=(?:\\W|$))", ignore_case = TRUE)
+  ))
 
   # For each end if, check whether first preceding line with "Then" or "Else" or "If"
   for (i in idx_end_if) {
@@ -1174,15 +1182,19 @@ get_syntax_IM <- function() {
   syntax_df_unsupp <- conv_df[conv_df[["syntax"]] %in% c("syntax4", "syntax5"), ,
     drop = FALSE
   ]
-  syntax_df_unsupp[["insightmaker_regex"]] <- paste0("(?:^|(?<=\\W))",
-                                            stringr::str_escape(syntax_df_unsupp[["insightmaker"]]),
-                                            "\\(")
+  syntax_df_unsupp[["insightmaker_regex"]] <- paste0(
+    "(?:^|(?<=\\W))",
+    stringr::str_escape(syntax_df_unsupp[["insightmaker"]]),
+    "\\("
+  )
 
   # Create additional rows for those that do not need brackets
   additional_rows <- syntax_df_unsupp[!as.logical(syntax_df_unsupp[["needs_brackets"]]), ]
   if (nrow(additional_rows) > 0) {
-    additional_rows[["insightmaker_regex"]] <- paste0("(?:^|(?<=\\W))",
-                                                      stringr::str_escape(additional_rows[["insightmaker"]]), "(?=(?:\\W|$))")
+    additional_rows[["insightmaker_regex"]] <- paste0(
+      "(?:^|(?<=\\W))",
+      stringr::str_escape(additional_rows[["insightmaker"]]), "(?=(?:\\W|$))"
+    )
     additional_rows[["syntax"]] <- paste0(additional_rows[["syntax"]], "b")
 
     # Combine rows
@@ -1207,22 +1219,16 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
   add_Rcode_list <- add_Rcode <- list()
 
   if (grepl("[[:alpha:]]", eqn)) {
-
     # Dataframe with regular expressions for each built-in Insight Maker function
-    # out <- get_syntax_IM()
-    # syntax_df <- out[["syntax_df"]]
-    # syntax_df_unsupp <- out[["syntax_df_unsupp"]] # Unsupported functions
-    # rm(out)
-
     syntax_df <- syntax_IM[["syntax_df"]]
     syntax_df_unsupp <- syntax_IM[["syntax_df_unsupp"]] # Unsupported functions
 
     done <- FALSE
     i <- 1
-    # IM_regex <- syntax_df[["insightmaker_regex_first_iter"]]
     ignore_case_arg <- TRUE
     IM_regex <- stringr::regex(syntax_df[["insightmaker_regex_first_iter"]],
-                               ignore_case = ignore_case_arg)
+      ignore_case = ignore_case_arg
+    )
 
     while (!done) {
       # idx_df <- lapply(seq_along(IM_regex), function(i) {
@@ -1261,8 +1267,10 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
       rep_syntax_df <- syntax_df[idx_keep, ]
       rep_syntax_df <- rep_syntax_df[rep(seq_len(nrow(rep_syntax_df)), nrow_per_idx[idx_keep]), ]
 
-      idx_df <- dplyr::bind_cols(rep_syntax_df,
-                                 as.data.frame(do.call(rbind, idx_df)))
+      idx_df <- dplyr::bind_cols(
+        rep_syntax_df,
+        as.data.frame(do.call(rbind, idx_df))
+      )
 
       # Double matches in case of functions that don't need brackets, e.g. Days() -> select one with longest end, as we want to match Days() over Days
       idx_df <- idx_df[order(idx_df[["insightmaker"]], idx_df[["start"]], -idx_df[["end"]]), ]
@@ -1280,8 +1288,10 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
         idx_df[["insightmaker_regex"]] <- stringr::str_replace_all(
           idx_df[["insightmaker_regex"]],
           # Remove regex characters
-          stringr::fixed(c("(?:^|(?<=\\W))" = "", "(?=(?:\\W|$))" = "",
-                           "\\b" = "", "\\(" = "(", "\\)" = ")"))
+          stringr::fixed(c(
+            "(?:^|(?<=\\W))" = "", "(?=(?:\\W|$))" = "",
+            "\\b" = "", "\\(" = "(", "\\)" = ")"
+          ))
         )
 
         for (j in rev(seq_len(nrow(idx_df)))) {
@@ -1298,7 +1308,8 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
         syntax_df <- syntax_df[idx_keep, , drop = FALSE]
         # IM_regex <- syntax_df[["insightmaker_regex"]]
         IM_regex <- stringr::regex(syntax_df[["insightmaker_regex"]],
-                                   ignore_case = ignore_case_arg)
+          ignore_case = ignore_case_arg
+        )
         i <- i + 1
         # Stop first iteration
         next
@@ -1471,7 +1482,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 
     # Remove those matches that are in quotation marks or names
     idxs_exclude <- get_seq_exclude(eqn, var_names, names_with_brackets = TRUE)
-    if (!is.null(idxs_exclude)){
+    if (!is.null(idxs_exclude)) {
       eqn_no_names <- paste0(eqn_split[-idxs_exclude], collapse = "")
     } else {
       eqn_no_names <- paste0(eqn_split, collapse = "")
@@ -1479,7 +1490,9 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 
     # Syntax 4: Agent-based functions, which are not translated but flagged
     syntax4 <- syntax_df_unsupp[
-      syntax_df_unsupp[["syntax"]] %in% c("syntax4", "syntax4b"), , drop = FALSE]
+      syntax_df_unsupp[["syntax"]] %in% c("syntax4", "syntax4b"), ,
+      drop = FALSE
+    ]
     idx_ABM <- stringr::str_detect(eqn_no_names, syntax4[["insightmaker_regex"]])
 
     if (any(idx_ABM)) {
@@ -1492,7 +1505,9 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 
     # Syntax 5: Unsupported Insight Maker functions
     syntax5 <- syntax_df_unsupp[
-      syntax_df_unsupp[["syntax"]] %in% c("syntax5", "syntax5b"), , drop = FALSE]
+      syntax_df_unsupp[["syntax"]] %in% c("syntax5", "syntax5b"), ,
+      drop = FALSE
+    ]
     idx5 <- stringr::str_detect(eqn_no_names, syntax5[["insightmaker_regex"]])
 
     if (any(idx5)) {

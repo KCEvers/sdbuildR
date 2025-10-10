@@ -3,7 +3,9 @@
 #' @return Logical value
 #' @noRd
 julia_setup_ok <- function() {
-  isTRUE(.sdbuildR_env[["jl_init"]]) && !is.null(.sdbuildR_env[["JULIA_BINDIR"]])
+  JuliaConnectoR::juliaSetupOk() &&
+    isTRUE(.sdbuildR_env[["jl_init"]]) &&
+    !is.null(.sdbuildR_env[["JULIA_BINDIR"]])
 }
 
 
@@ -13,16 +15,13 @@ julia_setup_ok <- function() {
 #'
 #' @return Logical value
 #' @noRd
-julia_init_ok <- function(){
-
+julia_init_ok <- function() {
   # Check if Unitful was loaded (as an example package that needs to be loaded)
   julia_cmd <- "isdefined(Main, :Unitful)"
   unitful_loaded <- JuliaConnectoR::juliaEval(julia_cmd)
 
   julia_cmd <- "using Pkg; Pkg.Types.read_project(Pkg.project().path).name"
   project_name <- JuliaConnectoR::juliaEval(julia_cmd)
-  print("project_name")
-  print(project_name)
 
   # project_name2 <- JuliaConnectoR::juliaEval('
   #   using Pkg, TOML
@@ -40,16 +39,6 @@ julia_init_ok <- function(){
   julia_cmd <- paste0("isdefined(Main, :", .sdbuildR_env[["P"]][["init_sdbuildR"]], ")")
   init_sdbuildR <- JuliaConnectoR::juliaEval(julia_cmd)
 
-  # print("unitful_loaded")
-  # print(unitful_loaded)
-  # print("active_project")
-  # print(active_project)
-  # print("init_sdbuildR")
-  # print(init_sdbuildR)
-
-  # return(unitful_loaded && active_project == "sdbuildR" && isTRUE(init_sdbuildR))
-  # Careful, devtools::check()'s project name is "sdbuildR.check"
-  # return(unitful_loaded && grepl("sdbuildR", active_project) && isTRUE(init_sdbuildR))
   return(unitful_loaded && project_name == "sdbuildR" && isTRUE(init_sdbuildR))
 }
 
@@ -57,22 +46,21 @@ julia_init_ok <- function(){
 
 #' Set up Julia environment
 #'
-#' Create Julia environment to simulate stock-and-flow models. `use_julia()` looks for a Julia installation, and will install Julia as well as some required packages if not found. A Julia environment is created in the inst directory of the sdbuildR package.
+#' Create Julia environment to simulate stock-and-flow models. `use_julia()` looks for a Julia installation, and if found, will set up a Julia project enviroment. In most cases, this will require installing some packages. The Julia project environment is located in the inst directory of the sdbuildR package ("Project.toml").
 #'
-#' Keep in mind that the installation can take around 5-15 minutes. In every R session, `use_julia()` needs to be run once (which is done automatically in simulate()), which can take around 30 seconds.
+#' Keep in mind that the installation can take around 5-20 minutes. In every R session, `use_julia()` needs to be run once (which is done automatically in `simulate()`), which can take around 30 seconds.
 #'
 #' @param stop If TRUE, stop active Julia session. Defaults to FALSE.
 #' @param JULIA_HOME Path to Julia installation. Defaults to NULL to locate Julia automatically.
 #' @param force If TRUE, force Julia setup to execute again.
 #'
-#' @return NULL
+#' @return Returns `NULL` invisibly.
 #' @export
 #' @family simulate
 #'
 #' @examples
-#' if (FALSE) {
-#'   # Start Julia session
-#'   # or install Julia and set up environment (first time use)
+#' if (JuliaConnectoR::juliaSetupOk()) {
+#'   # Start Julia session or set up environment (first time use)
 #'   use_julia()
 #'
 #'   # Stop Julia session
@@ -82,10 +70,16 @@ use_julia <- function(
     stop = FALSE,
     JULIA_HOME = NULL,
     force = FALSE) {
-
   if (stop) {
-    .sdbuildR_env[["jl_init"]] <- FALSE
-    JuliaConnectoR::stopJulia()
+    # Check whether a session is active
+    if (!julia_setup_ok()) {
+      message("No active Julia session found.")
+    } else {
+      .sdbuildR_env[["jl_init"]] <- FALSE
+      JuliaConnectoR::stopJulia()
+
+      message("Julia session closed.")
+    }
     return(invisible())
   }
 
@@ -179,7 +173,6 @@ use_julia <- function(
 
       # Run initialization
       run_init()
-
     },
     warning = function(w) {
       if (grepl(
@@ -187,22 +180,19 @@ use_julia <- function(
         conditionMessage(w)
       )) {
         # Ensure Julia environment was correctly initialized for sdbuildR
-        if (!julia_init_ok()){
-
+        if (!julia_init_ok()) {
           use_julia(stop = TRUE)
           JuliaConnectoR::startJuliaServer()
 
           # Run initialization
           run_init()
         }
-
       }
     }
   )
 
   # Set global option of initialization
   if (!julia_init_ok()) {
-
     # Try one more time
     use_julia(stop = TRUE)
     JuliaConnectoR::startJuliaServer()
@@ -212,13 +202,12 @@ use_julia <- function(
   }
 
   if (!julia_init_ok()) {
-      stop("Setup of Julia environment FAILED!")
+    stop("Setup of Julia environment FAILED!")
   } else {
     .sdbuildR_env[["jl_init"]] <- TRUE
   }
 
   return(invisible())
-
 }
 
 
@@ -285,7 +274,6 @@ run_init <- function() {
 #' @noRd
 #'
 install_sdbuildR_jl_pkg <- function() {
-
   # Check if SystemDynamicsBuildR is in environment packages
   pkg_in_project <- JuliaConnectoR::juliaEval(
     paste0(
@@ -302,7 +290,6 @@ install_sdbuildR_jl_pkg <- function() {
     install <- TRUE
     update <- FALSE
   } else {
-
     install <- update <- FALSE
 
     # Check whether version is up to date

@@ -1,16 +1,21 @@
-#' Extract Insight Maker model XML string from URL
+#' Extract Insight Maker model from URL
 #'
-#' For internal use; use `insightmaker_to_sfm()` to import an Insight Maker model.
+#' Create XML string from Insight Maker URL. For internal use; use `insightmaker_to_sfm()` to import an Insight Maker model.
 #'
 #' @param URL String with URL to an Insight Maker model
-#' @param file String with file path to an Insight Maker model with suffix .InsightMaker
+#' @param file If specified, file path to save Insight Maker model to. If NULL, do not save model.
 #'
-#' @return String with Insight Maker model
+#' @return XML string with Insight Maker model
 #' @seealso [insightmaker_to_sfm()]
 #' @export
 #' @family insightmaker
+#' @examplesIf has_internet()
+#' xml <- url_to_IM(
+#'   URL =
+#'     "https://insightmaker.com/insight/43tz1nvUgbIiIOGSGtzIzj/Romeo-Juliet"
+#' )
 #'
-url_to_IM <- function(URL, file) {
+url_to_IM <- function(URL, file = NULL) {
   # Read URL
   url_data <- rvest::read_html(URL)
 
@@ -27,8 +32,9 @@ url_to_IM <- function(URL, file) {
   # Keep script with certain keywords
   script_model <- as.character(
     script_texts[stringr::str_detect(
-    rvest::html_text(script_texts, trim = TRUE), "model_id") & stringr::str_detect(rvest::html_text(script_texts, trim = TRUE), "model_title")]
-    )
+      rvest::html_text(script_texts, trim = TRUE), "model_id"
+    ) & stringr::str_detect(rvest::html_text(script_texts, trim = TRUE), "model_title")]
+  )
 
   # Extract part of interest
   xml_str <- stringr::str_match_all(
@@ -51,8 +57,10 @@ url_to_IM <- function(URL, file) {
     )[, 2]
   }, character(1)) |> as.list()
   header_str <- sprintf("<header> %s </header>", paste0(names(header_info),
-                                                        "=\"",
-                                                        unname(textutils::HTMLencode(header_info, encode.only = c("&", "<", ">"))), "\"", collapse = ", "))
+    "=\"",
+    unname(textutils::HTMLencode(header_info, encode.only = c("&", "<", ">"))), "\"",
+    collapse = ", "
+  ))
 
   # Insert header in xml_str
   idx_root <- stringr::str_locate(xml_str, "<root>")
@@ -74,10 +82,7 @@ url_to_IM <- function(URL, file) {
     file <- NULL
   }
 
-  return(list(
-    xml_file = xml_file,
-    file = file
-  ))
+  return(xml_file)
 }
 
 
@@ -89,7 +94,6 @@ url_to_IM <- function(URL, file) {
 #' @noRd
 #'
 IM_to_xmile <- function(xml_file) {
-
   # Get the children nodes
   children <- xml2::xml_children(xml_file)
   if (xml2::xml_name(children) == "root") {
@@ -668,7 +672,6 @@ replace_names_IM <- function(string, original, replacement, with_brackets = TRUE
 #' @noRd
 #'
 clean_units_IM <- function(sfm, regex_units) {
-
   # Get names of all model elements
   var_names <- get_model_var(sfm)
 
@@ -767,9 +770,8 @@ clean_units_IM <- function(sfm, regex_units) {
 
   # Define function to clean units contained in curly brackets
   clean_units_curly <- function(x, regex_units) {
-
     # First check if there are any curly brackets
-    if (!grepl("\\{", x)){
+    if (!grepl("\\{", x)) {
       return(x)
     }
 
@@ -1220,12 +1222,12 @@ split_macros_IM <- function(sfm) {
 #' @noRd
 #'
 convert_equations_IM_wrapper <- function(sfm, regex_units) {
-
   # Convert each equation and create list of model elements to add
   var_names <- get_model_var(sfm)
 
   unlist_vars <- unlist(unname(sfm[["model"]][["variables"]][c("stock", "aux", "flow")]),
-                        recursive = FALSE)
+    recursive = FALSE
+  )
 
 
   # add_model_elements1 <- lapply(unlist_vars, function(x) {
@@ -1380,11 +1382,13 @@ split_aux_wrapper <- function(sfm) {
 
   sfm[["model"]][["variables"]][["constant"]] <- sfm[["model"]][["variables"]][["aux"]][constants]
   sfm[["model"]][["variables"]][["aux"]][constants] <- NULL
-  sfm[["model"]][["variables"]][["constant"]] <- lapply(sfm[["model"]][["variables"]][["constant"]],
-                                                        function(x) {
-    x[["type"]] <- "constant"
-    return(x)
-  })
+  sfm[["model"]][["variables"]][["constant"]] <- lapply(
+    sfm[["model"]][["variables"]][["constant"]],
+    function(x) {
+      x[["type"]] <- "constant"
+      return(x)
+    }
+  )
 
   sfm <- validate_xmile(sfm)
 

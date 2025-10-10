@@ -12,7 +12,7 @@
 \item{...}{Additional arguments (unused)}
 }
 \value{
-Invisibly returns the input object
+Invisibly returns the summary object of class summary.sdbuildR_xmile
 }
 \description{
 Print method for summary.sdbuildR_xmile

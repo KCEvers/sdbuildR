@@ -12,7 +12,7 @@ indexof(haystack, needle)
 \item{needle}{Value to search for}
 }
 \value{
-Index
+Index, integer
 }
 \description{
 Equivalent of .IndexOf() in Insight Maker

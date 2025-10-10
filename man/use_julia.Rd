@@ -13,16 +13,18 @@ use_julia(stop = FALSE, JULIA_HOME = NULL, force = FALSE)
 
 \item{force}{If TRUE, force Julia setup to execute again.}
 }
+\value{
+Returns \code{NULL} invisibly.
+}
 \description{
-Create Julia environment to simulate stock-and-flow models. \code{use_julia()} looks for a Julia installation, and will install Julia as well as some required packages if not found. A Julia environment is created in the inst directory of the sdbuildR package.
+Create Julia environment to simulate stock-and-flow models. \code{use_julia()} looks for a Julia installation, and if found, will set up a Julia project enviroment. In most cases, this will require installing some packages. The Julia project environment is located in the inst directory of the sdbuildR package ("Project.toml").
 }
 \details{
-Keep in mind that the installation can take around 5-15 minutes. In every R session, \code{use_julia()} needs to be run once (which is done automatically in simulate()), which can take around 30 seconds.
+Keep in mind that the installation can take around 5-20 minutes. In every R session, \code{use_julia()} needs to be run once (which is done automatically in \code{simulate()}), which can take around 30 seconds.
 }
 \examples{
-if (FALSE) {
-  # Start Julia session
-  # or install Julia and set up environment (first time use)
+if (JuliaConnectoR::juliaSetupOk()) {
+  # Start Julia session or set up environment (first time use)
   use_julia()
 
   # Stop Julia session

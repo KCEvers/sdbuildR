@@ -1,5 +1,6 @@
 test_that("ensemble works", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # If you already have random elements in the model, no need to specify what to vary
   sfm <- xmile("Crielaard2022") |> sim_specs(
@@ -84,12 +85,16 @@ test_that("ensemble works", {
   expect_no_error(plot(sims, j = 1))
   expect_error(plot(sims, type = "NA"), "type must be one of 'summary' or 'sims")
   expect_error(plot(sims, j = c(3, 6, 9)), "There is only one condition\\. Set j = 1")
-  expect_message(plot(sims, i = nr_sims - 1),
-                 "i is not used when type = 'summary'\\. Set type = 'sims' to plot individual trajectories")
+  expect_message(
+    plot(sims, i = nr_sims - 1),
+    "i is not used when type = 'summary'\\. Set type = 'sims' to plot individual trajectories"
+  )
   expect_no_error(plot(sims, type = "sims", i = nr_sims - 1))
   expect_no_error(plot(sims, central_tendency = "median"))
-  expect_error(plot(sims, central_tendency = "medians"),
-               "central_tendency must be 'mean', 'median', or FALSE")
+  expect_error(
+    plot(sims, central_tendency = "medians"),
+    "central_tendency must be 'mean', 'median', or FALSE"
+  )
 
 
   # Message printed
@@ -134,6 +139,7 @@ test_that("ensemble works", {
 
 test_that("plotting ensemble also works with singular time point", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # If you already have random elements in the model, no need to specify what to vary
   sfm <- xmile("predator_prey") |>
@@ -160,6 +166,7 @@ test_that("plotting ensemble also works with singular time point", {
 
 test_that("ensemble works with specified range", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # If you already have random elements in the model, no need to specify what to vary
   sfm <- xmile("Crielaard2022") |> sim_specs(
@@ -270,6 +277,7 @@ test_that("ensemble works with specified range", {
 
 test_that("ensemble works with units", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # Test ensemble with model with units
   sfm <- xmile("coffee_cup") |>
@@ -295,6 +303,7 @@ test_that("ensemble works with units", {
 
 test_that("ensemble works with NA", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # Combine varying initial condition and parameters
   sfm <- xmile("predator_prey") |>
@@ -333,6 +342,7 @@ test_that("ensemble works with NA", {
 
 test_that("ensemble: order of range parameters", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # In an earlier version, the order of the range parameters was not preserved
   sfm <- xmile() |>
@@ -378,6 +388,7 @@ test_that("ensemble: order of range parameters", {
 
 test_that("ensemble works with interpolation function", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   sfm <- xmile("logistic_model") |>
     sim_specs(

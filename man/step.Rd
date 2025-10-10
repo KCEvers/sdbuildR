@@ -14,7 +14,7 @@ step(times, start, height = 1)
 \item{height}{Height of step, defaults to 1}
 }
 \value{
-Interpolation function
+Step interpolation function
 }
 \description{
 Create a step function that jumps from zero to a specified height at a specified time, and remains at that height until the end of the simulation time.

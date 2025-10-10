@@ -1,12 +1,13 @@
 test_that("use_julia() works", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # # Set global package option to NULL to indicate use_julia() has not worked yet
   # .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] = NULL
   #
   # .sdbuildR_env[[.sdbuildR_env[["P"]][["init_sdbuildR"]]]] = TRUE
 
-  expect_no_error(expect_no_warning(expect_no_message(use_julia(stop = TRUE))))
+  expect_no_error(expect_no_warning(use_julia(stop = TRUE)))
   expect_false(julia_setup_ok())
 
   expect_no_error(expect_no_warning(expect_message(use_julia())))

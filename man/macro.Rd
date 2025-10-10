@@ -20,7 +20,7 @@ macro(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = FALSE)
 \item{erase}{If TRUE, remove macro from the model. Defaults to FALSE.}
 }
 \value{
-Updated stock-and-flow model
+Modified stock-and-flow object with updated macros.
 }
 \description{
 Macros are global variables or functions that can be used throughout your stock-and-flow model. \code{macro()} adds, changes, or erases a macro.
