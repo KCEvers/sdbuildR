@@ -19,9 +19,15 @@ Translated names
 \description{
 Clean variable name(s) to create syntactically valid, unique names for use in R and Julia.
 }
+\examples{
+sfm <- xmile("predator_prey")
+# As the variable name "predator" is already taken, clean_name() will create
+# an unique name
+clean_name("predator", as.data.frame(sfm)[["name"]]) # "predator_1"
+
+}
 \seealso{
 Other internal: 
-\code{\link{compare_sim}()},
 \code{\link{has_internet}()},
 \code{\link{nonnegative}()},
 \code{\link{not_on_cran}()},

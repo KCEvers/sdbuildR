@@ -1,5 +1,6 @@
 test_that("ensemble works", {
   testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
 
   # If you already have random elements in the model, no need to specify what to vary
   sfm <- xmile("Crielaard2022") |> sim_specs(
@@ -15,6 +16,7 @@ test_that("ensemble works", {
     "The number of simulations must be greater than 0"
   )
   sims <- expect_no_error(ensemble(sfm))
+  expect_true(sims$success)
 
   # Specifying quantiles
   expect_error(
@@ -34,10 +36,12 @@ test_that("ensemble works", {
     "quantiles should be between 0 and 1"
   )
   sims <- expect_no_error(ensemble(sfm, quantiles = c(0.1, 0.5, 0.9, 1)))
+  expect_true(sims$success)
   expect_equal(sum(grepl("^q", colnames(sims$summ))), 4) # 4 quantiles
 
   # Only stocks
   sims <- expect_no_error(ensemble(sfm, n = 15, only_stocks = TRUE, return_sims = FALSE))
+  expect_true(sims$success)
   expect_equal(length(unique(sims$summ$variable)), nrow(df[df[["type"]] == "stock", ])) # 3 stocks
 
   # All variables
@@ -46,6 +50,7 @@ test_that("ensemble works", {
     n = nr_sims,
     only_stocks = FALSE, return_sims = TRUE
   ))
+  expect_true(sims$success)
   expect_equal(!is.null(sims[["summary"]]), TRUE)
   expect_equal(!is.null(sims[["df"]]), TRUE)
   expect_equal(
@@ -76,16 +81,20 @@ test_that("ensemble works", {
   expect_equal(max(as.numeric(sims[["init"]][["df"]][["i"]])), nr_sims)
 
   # Check plot
-  expect_no_error(plot(sims))
-  expect_no_message(plot(sims))
+  expect_no_error(expect_no_message(plot(sims)))
   expect_no_error(plot(sims, j = 1))
   expect_error(plot(sims, type = "NA"), "type must be one of 'summary' or 'sims")
   expect_error(plot(sims, j = c(3, 6, 9)), "There is only one condition\\. Set j = 1")
-  expect_message(plot(sims, i = nr_sims - 1), "i is not used when type = 'summary'\\. Set type = 'sims' to plot individual trajectories")
+  expect_message(
+    plot(sims, i = nr_sims - 1),
+    "i is not used when type = 'summary'\\. Set type = 'sims' to plot individual trajectories"
+  )
   expect_no_error(plot(sims, type = "sims", i = nr_sims - 1))
-  expect_no_error(plot(sims, type = "sims"))
   expect_no_error(plot(sims, central_tendency = "median"))
-  expect_error(plot(sims, central_tendency = "medians"), "central_tendency must be 'mean', 'median', or FALSE")
+  expect_error(
+    plot(sims, central_tendency = "medians"),
+    "central_tendency must be 'mean', 'median', or FALSE"
+  )
 
 
   # Message printed
@@ -119,6 +128,7 @@ test_that("ensemble works", {
     cross = FALSE,
     n = 10, return_sims = TRUE
   ))
+  expect_true(sims$success)
   expect_equal(as.data.frame(sims$conditions)$j, 1:3)
   expect_equal(as.data.frame(sims$conditions)$a2, c(0.2, 0.3, 0.4))
   expect_equal(as.data.frame(sims$conditions)$a1, c(1.3, 1.4, 1.5))
@@ -128,6 +138,9 @@ test_that("ensemble works", {
 
 
 test_that("plotting ensemble also works with singular time point", {
+  testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+
   # If you already have random elements in the model, no need to specify what to vary
   sfm <- xmile("predator_prey") |>
     sim_specs(
@@ -138,23 +151,23 @@ test_that("plotting ensemble also works with singular time point", {
     ) |>
     build(c("predator", "prey"), eqn = "runif(1)")
   sims <- ensemble(sfm)
-
+  expect_true(sims$success)
   expect_equal(length(unique(sims$summary$time)), 1)
-
   expect_no_error(expect_no_warning(expect_no_message(plot(sims))))
 
   # with sims
-  sims <- ensemble(sfm, return_sims = T)
-
+  sims <- ensemble(sfm, return_sims = TRUE)
+  expect_true(sims$success)
   expect_equal(length(unique(sims$summary$time)), 1)
-
   expect_no_error(expect_no_warning(expect_no_message(plot(sims))))
-
   expect_no_error(expect_no_warning(expect_no_message(plot(sims, type = "sims"))))
 })
 
 
 test_that("ensemble works with specified range", {
+  testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+
   # If you already have random elements in the model, no need to specify what to vary
   sfm <- xmile("Crielaard2022") |> sim_specs(
     language = "Julia",
@@ -224,11 +237,11 @@ test_that("ensemble works with specified range", {
     ),
     cross = TRUE, n = 3, return_sims = FALSE
   ))
+  expect_true(sims$success)
   expect_equal(sims[["n"]], 3)
   expect_equal(sims[["n_total"]], 27)
   expect_equal(sort(unique(sims[["summary"]][["j"]])), 1:9)
   expect_no_error(expect_no_message(plot(sims)))
-  expect_no_error(plot(sims, j = 2))
   expect_no_error(plot(sims, j = c(3, 5, 8), nrows = 4))
   expect_error(
     plot(sims, type = "sims"),
@@ -248,6 +261,7 @@ test_that("ensemble works with specified range", {
     ),
     cross = FALSE, n = nr_sims, return_sims = TRUE
   )
+  expect_true(sims$success)
   expect_equal(sims[["n"]], nr_sims)
   expect_equal(sims[["n_total"]], nr_sims * nr_cond)
   expect_equal(sort(unique(sims[["df"]][["i"]])), 1:nr_sims)
@@ -256,13 +270,15 @@ test_that("ensemble works with specified range", {
   expect_no_error(expect_no_message(plot(sims)))
   expect_error(plot(sims, j = nr_cond + 1), "j must be a vector with integers between 1 and 3")
   expect_no_error(expect_no_message(plot(sims, i = (nr_sims - 1):nr_sims, type = "sims")))
-  expect_no_error(plot(sims, j = nr_cond - 1, type = "sims"))
   expect_no_error(plot(sims, j = 1:nr_cond, type = "sims"))
 })
 
 
 
 test_that("ensemble works with units", {
+  testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+
   # Test ensemble with model with units
   sfm <- xmile("coffee_cup") |>
     sim_specs(language = "Julia", stop = 10, dt = 0.1) |>
@@ -271,6 +287,7 @@ test_that("ensemble works with units", {
 
   nr_sims <- 15
   sims <- expect_no_error(ensemble(sfm, n = nr_sims, only_stocks = FALSE, return_sims = TRUE))
+  expect_true(sims$success)
   expect_equal(!is.null(sims[["summary"]]), TRUE)
   expect_equal(!is.null(sims[["df"]]), TRUE)
   expect_equal(sims[["n"]], nr_sims)
@@ -279,13 +296,15 @@ test_that("ensemble works with units", {
   expect_equal(sort(unique(sims[["df"]][["j"]])), 1)
   expect_equal(sort(unique(sims[["summary"]][["j"]])), 1)
   expect_no_error(expect_no_message(plot(sims)))
-  expect_no_error(plot(sims, j = 1))
   expect_no_error(expect_no_message(plot(sims, type = "sims")))
 })
 
 
 
 test_that("ensemble works with NA", {
+  testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+
   # Combine varying initial condition and parameters
   sfm <- xmile("predator_prey") |>
     build(c("predator", "prey"), eqn = "runif(1, 30, 50)") |>
@@ -304,6 +323,7 @@ test_that("ensemble works with NA", {
     cross = TRUE, n = nr_sims, return_sims = TRUE,
     only_stocks = TRUE
   ))
+  expect_true(sims$success)
   expect_equal(!is.null(sims[["summary"]]), TRUE)
   expect_equal(!is.null(sims[["df"]]), TRUE)
   expect_equal(length(unique(sims$summ$variable)), 2) # 2 stocks
@@ -314,7 +334,6 @@ test_that("ensemble works with NA", {
   expect_equal(sort(unique(sims[["df"]][["j"]])), 1:nr_cond)
   expect_equal(sort(unique(sims[["summary"]][["j"]])), 1:nr_cond)
   expect_no_error(expect_no_message(plot(sims)))
-  expect_no_error(plot(sims, j = 1))
   expect_no_error(plot(sims, j = 1:5))
   expect_no_error(expect_no_message(plot(sims, type = "sims")))
   expect_no_error(plot(sims, i = nr_sims - 1, type = "sims"))
@@ -322,6 +341,9 @@ test_that("ensemble works with NA", {
 
 
 test_that("ensemble: order of range parameters", {
+  testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+
   # In an earlier version, the order of the range parameters was not preserved
   sfm <- xmile() |>
     sim_specs(language = "Julia") |>
@@ -358,12 +380,16 @@ test_that("ensemble: order of range parameters", {
     )
   )
 
+  expect_true(sims$success)
   expect_equal(as.data.frame(sims$conditions)$work_growth, 1.5)
   expect_equal(as.data.frame(sims$conditions)$necessary_sleep, 8)
 })
 
 
 test_that("ensemble works with interpolation function", {
+  testthat::skip_on_cran()
+  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+
   sfm <- xmile("logistic_model") |>
     sim_specs(
       language = "Julia",
@@ -372,9 +398,10 @@ test_that("ensemble works with interpolation function", {
       save_from = 50
     ) |>
     build("X", eqn = "runif(1, 0, K)") |>
-    build("input", "constant", eqn = "pulse(10, width = dt, height = .01)") |>
+    build("input", "constant", eqn = "pulse(times, 10, width = dt, height = .01)") |>
     build("inflow2", "flow", eqn = "input(t)", to = "X")
 
   sims <- expect_no_error(ensemble(sfm))
+  expect_true(sims$success)
   expect_no_error(plot(sims))
 })

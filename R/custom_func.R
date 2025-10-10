@@ -1,8 +1,6 @@
-#' Equivalent of Insight Maker's Round() function to R
+#' Round Half-Up (as in Insight Maker)
 #'
-#' This function ensures that rounding in R matches rounding in Insight Maker. R base's round() rounds .5 to 0, whereas round_IM() rounds .5 to 1.
-#'
-#' Source: https://stackoverflow.com/questions/12688717/round-up-from-5/12688836#12688836
+#' R rounds .5 to 0, whereas Insight Maker rounds .5 to 1. This function is the equivalent of Insight Maker's Round() function.
 #'
 #' @param x Value
 #' @param digits Number of digits; optional, defaults to 0
@@ -13,7 +11,11 @@
 #'
 #' @examples
 #' round_IM(.5) # 1
-#' round_IM(-.5) # 0
+#' round(.5) # 0
+#' round_IM(-0.5) # 0
+#' round(-0.5) # 0
+#' round_IM(1.5) # 2
+#' round(1.5) # 2
 round_IM <- function(x, digits = 0) {
   return(ifelse(x %% 1 == 0.5 | x %% 1 == -0.5,
     ceiling(x),
@@ -26,7 +28,7 @@ round_IM <- function(x, digits = 0) {
 #'
 #' @param p Probability, numerical value between 0 and 1
 #'
-#' @return Logit
+#' @return Numerical value
 #' @family custom
 #' @export
 #'
@@ -61,7 +63,7 @@ expit <- function(x) {
 #'
 #' @param p Probability of TRUE, numerical value between 0 and 1
 #'
-#' @return Boolean
+#' @return Logical value
 #' @family custom
 #' @export
 #'
@@ -97,7 +99,7 @@ rdist <- function(a, b) {
 #' @param haystack Vector or string to search through
 #' @param needle Value to search for
 #'
-#' @return Index
+#' @return Index, integer
 #' @family custom
 #' @export
 #'
@@ -156,7 +158,7 @@ length_IM <- function(x) {
 #' @param haystack Vector or string to search through
 #' @param needle Value to search for
 #'
-#' @return Boolean
+#' @return Logical value
 #' @family custom
 #' @export
 #'
@@ -180,19 +182,21 @@ contains_IM <- function(haystack, needle) {
 #'
 #' Equivalent of Ramp() in Insight Maker
 #'
+#' @param times Vector of simulation times
 #' @param start Start time of ramp
 #' @param finish End time of ramp
 #' @param height End height of ramp, defaults to 1
 #'
 #' @export
-#' @return Interpolation function
+#' @return Ramp interpolation function
 #' @family input
 #' @seealso [step()], [pulse()], [seasonal()]
 #' @examples
 #' # Create a simple model with a ramp function
 #' sfm <- xmile() |>
 #'   build("a", "stock") |>
-#'   build("input", "constant", eqn = "ramp(20, 30, 3)") |>
+#'   # Specify the global variable "times" as simulation times
+#'   build("input", "constant", eqn = "ramp(times, 20, 30, 3)") |>
 #'   build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
 #' \dontshow{
@@ -203,14 +207,34 @@ contains_IM <- function(haystack, needle) {
 #' plot(sim)
 #'
 #' # To create a decreasing ramp, set the height to a negative value
-#' sfm <- build(sfm, "input", eqn = "ramp(20, 30, -3)")
+#' sfm <- build(sfm, "input", eqn = "ramp(times, 20, 30, -3)")
 #'
 #' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
-ramp <- function(start, finish, height = 1) {
+ramp <- function(times, start, finish, height = 1) {
   if (finish < start) {
     stop("The finish time of the ramp cannot be before the start time. To specify a decreasing ramp, set the height to a negative value.")
+  }
+
+  if (start < times[1]) {
+    warning("Start of ramp before beginning of simulation time.")
+  }
+
+  if (start > times[length(times)]) {
+    warning("Start of ramp after end of simulation time.")
+
+    # In this case, no need to compute signal
+    signal <- data.frame(times = times[c(1, length(times))], y = c(0, 0))
+    input <- stats::approxfun(signal, rule = 2, method = "constant")
+    return(input)
+  } else if (finish < times[1]) {
+    warning("End of ramp before beginning of simulation time.")
+
+    # In this case, no need to compute signal
+    signal <- data.frame(times = times[c(1, length(times))], y = c(height, height))
+    input <- stats::approxfun(signal, rule = 2, method = "constant")
+    return(input)
   }
 
   # Create dataframe with signal
@@ -220,8 +244,8 @@ ramp <- function(start, finish, height = 1) {
   )
 
   # If the ramp is after the start of signal, add a zero at the start
-  if (min(start) > .sdbuildR_env[["times"]][1]) {
-    signal <- rbind(data.frame(times = .sdbuildR_env[["times"]][1], y = 0), signal)
+  if (start > times[1]) {
+    signal <- rbind(data.frame(times = times[1], y = 0), signal)
   }
 
   # # If the ramp ends before the end of the signal, add height of ramp at the end
@@ -242,13 +266,14 @@ ramp <- function(start, finish, height = 1) {
 #'
 #' Equivalent of Pulse() in Insight Maker
 #'
+#' @param times Vector of simulation times
 #' @param start Start time of pulse in simulation time units.
 #' @param height Height of pulse. Defaults to 1.
 #' @param width Width of pulse in simulation time units. This cannot be equal to or less than 0. To indicate an instantaneous pulse, specify the simulation step size.
 #' @param repeat_interval Interval at which to repeat pulse. Defaults to NULL to indicate no repetition.
 #'
 #' @export
-#' @return Interpolation function
+#' @return Pulse interpolation function
 #' @seealso [step()], [ramp()], [seasonal()]
 #' @family input
 #' @examples
@@ -257,7 +282,8 @@ ramp <- function(start, finish, height = 1) {
 #' # with a width of 1, and does not repeat
 #' sfm <- xmile() |>
 #'   build("a", "stock") |>
-#'   build("input", "constant", eqn = "pulse(5, 2, 1)") |>
+#'   # Specify the global variable "times" as simulation times
+#'   build("input", "constant", eqn = "pulse(times, 5, 2, 1)") |>
 #'   build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
 #' \dontshow{
@@ -268,40 +294,63 @@ ramp <- function(start, finish, height = 1) {
 #' plot(sim)
 #'
 #' # Create a pulse that repeats every 5 time units
-#' sfm <- build(sfm, "input", eqn = "pulse(5, 2, 1, 5)")
+#' sfm <- build(sfm, "input", eqn = "pulse(times, 5, 2, 1, 5)")
 #'
 #' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
-pulse <- function(start, height = 1, width = 1, repeat_interval = NULL) {
+pulse <- function(times, start, height = 1, width = 1, repeat_interval = NULL) {
   if (width <= 0) {
-    stop(paste0("The width of the pulse cannot be equal to or less than 0; to indicate an 'instantaneous' pulse, specify the simulation step size (", .sdbuildR_env[["P"]][["timestep_name"]], ")"))
+    stop(paste0("The width of the pulse cannot be equal to or less than 0. To indicate an 'instantaneous' pulse, specify the simulation step size (", .sdbuildR_env[["P"]][["timestep_name"]], ")."))
+  }
+
+  if (start < times[1]) {
+    warning("Start of pulse before beginning of simulation time.")
+  }
+
+  if (start > times[length(times)]) {
+    warning("Start of pulse after end of simulation time.")
+
+    # In this case, no need to compute signal
+    signal <- data.frame(times = times[c(1, length(times))], y = c(0, 0))
+    input <- stats::approxfun(signal, rule = 2, method = "constant")
+    return(input)
   }
 
   # Define time and indices of pulses
-  start_ts <- seq(start, .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])],
-    # If the number of repeat is NULL, ensure no repeats
-    by = ifelse(is.null(repeat_interval),
-      .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])] + 1,
-      repeat_interval
+  if (is.null(repeat_interval)) {
+    signal <- rbind(
+      data.frame(times = start, y = height),
+      data.frame(times = start + width, y = 0)
     )
-  )
-  end_ts <- start_ts + width
+  } else {
+    start_ts <- seq(start, times[length(times)], by = repeat_interval)
 
-  signal <- rbind(
-    data.frame(times = start_ts, y = height),
-    data.frame(times = end_ts, y = 0)
-  )
+    # When width is equal or greater than repeat interval, it's basically continuously 1
+    if (width >= repeat_interval) {
+      warning("width (", width, ") >= repeat_interval (", repeat_interval, ") creates a continuous pulse.")
+
+      signal <- data.frame(times = start_ts, y = height)
+    } else {
+      signal <- rbind(
+        data.frame(times = start_ts, y = height),
+        data.frame(times = start_ts + width, y = 0)
+      )
+    }
+  }
 
   # If pulse is after the start of signal, add a zero at the start
-  if (min(start_ts) > .sdbuildR_env[["times"]][1]) {
-    signal <- rbind(signal, data.frame(times = .sdbuildR_env[["times"]][1], y = 0))
+  if (start > times[1]) {
+    signal <- rbind(signal, data.frame(times = times[1], y = 0))
   }
 
   # If pulse does not cover end of signal, add a zero at the end
   # (I don't fully understand why this is necessary, but otherwise it gives incorrect results with repeat_interval <= 0 in Julia, so for consistency's sake)
-  if (max(end_ts) < .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])]) {
-    signal <- rbind(signal, data.frame(times = .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])], y = 0))
+  if (max(signal[["times"]]) < times[length(times)]) {
+    signal <- rbind(
+      signal,
+      data.frame(times = times[length(times)], y = 0)
+    )
   }
 
   signal <- signal[order(signal[["times"]]), ]
@@ -320,11 +369,12 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL) {
 #'
 #' Equivalent of Step() in Insight Maker
 #'
+#' @param times Vector of simulation times
 #' @param start Start time of step
 #' @param height Height of step, defaults to 1
 #'
 #' @export
-#' @return Interpolation function
+#' @return Step interpolation function
 #' @seealso [ramp()], [pulse()], [seasonal()]
 #' @family input
 #' @examples
@@ -332,7 +382,8 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL) {
 #' # that jumps at time 50 to a height of 5
 #' sfm <- xmile() |>
 #'   build("a", "stock") |>
-#'   build("input", "constant", eqn = "step(50, 5)") |>
+#'   # Specify the global variable "times" as simulation times
+#'   build("input", "constant", eqn = "step(times, 50, 5)") |>
 #'   build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
 #' \dontshow{
@@ -343,16 +394,34 @@ pulse <- function(start, height = 1, width = 1, repeat_interval = NULL) {
 #' plot(sim)
 #'
 #' # Negative heights are also possible
-#' sfm <- build(sfm, "input", eqn = "step(50, -10)")
+#' sfm <- build(sfm, "input", eqn = "step(times, 50, -10)")
 #'
 #' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
-step <- function(start, height = 1) {
-  # Create dataframe with signal
-  signal <- data.frame(times = c(start, .sdbuildR_env[["times"]][length(.sdbuildR_env[["times"]])]), y = c(height, height))
+step <- function(times, start, height = 1) {
+  if (start < times[1]) {
+    warning("Start of step before beginning of simulation time.")
+  }
 
-  if (start > .sdbuildR_env[["times"]][1]) {
-    signal <- rbind(data.frame(times = .sdbuildR_env[["times"]][1], y = 0), signal)
+  if (start > times[length(times)]) {
+    warning("Start of step after end of simulation time.")
+
+    # In this case, no need to compute signal
+    signal <- data.frame(times = times[c(1, length(times))], y = c(0, 0))
+    input <- stats::approxfun(signal, rule = 2, method = "constant")
+    return(input)
+  }
+
+  # Create dataframe with signal
+  signal <- data.frame(times = start, y = height)
+
+  # In rare cases, the start is the same time as the end of times, so add in if()
+  if (start != times[length(times)]) {
+    signal <- rbind(data.frame(times = times[length(times)], y = height), signal)
+  }
+
+  if (start >= times[1]) {
+    signal <- rbind(data.frame(times = times[1], y = 0), signal)
   }
 
   # Create linear approximation function
@@ -367,10 +436,11 @@ step <- function(start, height = 1) {
 #'
 #' Equivalent of Seasonal() in Insight Maker
 #'
+#' @param times Vector of simulation times
 #' @param period Duration of wave in simulation time units. Defaults to 1.
 #' @param shift Timing of wave peak in simulation time units. Defaults to 0.
 #'
-#' @return Seasonal wave
+#' @return Seasonal interpolation function
 #' @family input
 #' @seealso [step()], [pulse()], [ramp()]
 #' @export
@@ -379,20 +449,21 @@ step <- function(start, height = 1) {
 #' # Create a simple model with a seasonal wave
 #' sfm <- xmile() |>
 #'   build("a", "stock") |>
-#'   build("input", "constant", eqn = "seasonal(10, 0)") |>
+#'   # Specify the global variable "times" as simulation times
+#'   build("input", "constant", eqn = "seasonal(times, 10, 0)") |>
 #'   build("inflow", "flow", eqn = "input(t)", to = "a")
 #'
 #' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim)
 #'
-seasonal <- function(period = 1, shift = 0) {
+seasonal <- function(times, period = 1, shift = 0) {
   if (period <= 0) {
     stop("The period of the seasonal wave must be greater than 0.")
   }
 
   # Create linear approximation function - define wave in advance so that the period and shift argument do not need to be kept
-  signal <- cos(2 * pi * (.sdbuildR_env[["times"]] - shift) / period)
-  input <- stats::approxfun(x = .sdbuildR_env[["times"]], y = signal, rule = 2, method = "linear")
+  signal <- cos(2 * pi * (times - shift) / period)
+  input <- stats::approxfun(x = times, y = signal, rule = 2, method = "linear")
   return(input)
 }
 
@@ -511,14 +582,33 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
 #'
 #' Internal function used to save the dataframe at specific times in case save_at is not equal to dt in the simulation specifications.
 #'
-#' @param df Dataframe
+#' @param df Dataframe in wide format
 #' @param time_col Name of the time column
 #' @param new_times Vector of new times to save the dataframe at
 #'
 #' @returns Dataframe with new times and interpolated values
 #' @family internal
 #' @export
+#' @examples
+#' # Recommended: Use save_at in sim_specs() to downsample simulations
+#' sfm <- xmile("SIR") |> sim_specs(dt = 0.01, save_at = 1)
+#' sim <- simulate(sfm)
+#' df <- as.data.frame(sim)
+#' nrow(df) # Returns only times at intervals of 1
+#' head(df)
 #'
+#' # The saveat_func() is the underlying function used by save_at
+#' # Direct use is not recommended, but shown here for completeness:
+#' sfm <- sfm |> sim_specs(save_at = 0.01)
+#' sim <- simulate(sfm)
+#' df <- as.data.frame(sim)
+#' nrow(df) # Many more rows
+#'
+#' # Manual downsampling (not recommended - use save_at instead)
+#' new_times <- seq(min(df$time), max(df$time), by = 1)
+#' df_wide <- as.data.frame(sim, direction = "wide")
+#' df_manual <- saveat_func(df_wide, "time", new_times)
+#' nrow(df_manual)
 saveat_func <- function(df, time_col, new_times) {
   # Extract the time column (first column)
   time <- df[[time_col]]

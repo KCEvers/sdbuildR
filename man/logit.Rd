@@ -10,7 +10,7 @@ logit(p)
 \item{p}{Probability, numerical value between 0 and 1}
 }
 \value{
-Logit
+Numerical value
 }
 \description{
 Logit function

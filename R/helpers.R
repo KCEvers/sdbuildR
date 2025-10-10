@@ -6,7 +6,7 @@
 #'
 #' @export
 #' @family internal
-#' @examplesIf has_internet()
+#' @examples
 #' has_internet()
 #'
 has_internet <- function() {
@@ -208,6 +208,10 @@ clean_language <- function(language) {
 #' @returns Cleaned string or vector
 #' @noRd
 clean_type <- function(type) {
+  if (!(all(is.character(type)))) {
+    stop("type must be a character!")
+  }
+
   type <- Filter(nzchar, trimws(tolower(type)))
 
   # Allow for use of auxiliary instead of aux
@@ -234,6 +238,11 @@ clean_type <- function(type) {
 #' @return Translated names
 #' @export
 #' @family internal
+#' @examples
+#' sfm <- xmile("predator_prey")
+#' # As the variable name "predator" is already taken, clean_name() will create
+#' # an unique name
+#' clean_name("predator", as.data.frame(sfm)[["name"]]) # "predator_1"
 #'
 clean_name <- function(new, existing, protected = c()) {
   # Define protected names: these cannot be used as variable names
@@ -256,7 +265,7 @@ clean_name <- function(new, existing, protected = c()) {
     get_exported_functions("sdbuildR"),
 
     # Add Julia custom function names
-    names(get_func_julia()),
+    names(julia_func()),
 
     # These are variables in the ode and cannot be model element names
     unname(unlist(.sdbuildR_env[["P"]][names(.sdbuildR_env[["P"]]) %in% c(
@@ -409,4 +418,299 @@ safe_convert <- function(x, target_class) {
   } else {
     return(result)
   }
+}
+
+
+
+
+#' Split arguments to function by comma
+#'
+#' @param bracket_arg String with arguments, excluding surrounding brackets
+#'
+#' @return Vector with arguments
+#' @noRd
+#'
+parse_args <- function(bracket_arg) {
+  # Split arguments by comma; in order to not split arguments which contain a comma (e.g. c(1,2,3)), find all brackets and quotation marks, and don't include commas within these
+
+  # Find indices of commas
+  idxs_commas <- unname(stringr::str_locate_all(bracket_arg, ",")[[1]][, 1])
+
+  # If there's no commas, there's only one argument
+  if (length(idxs_commas) == 0) {
+    args <- bracket_arg
+  } else {
+    # Create sequence of indices between brackets/quotation marks, and check whether comma is between them
+    paired_idxs <- get_range_all_pairs(bracket_arg, var_names = NULL)
+    paired_idxs_seq <- unlist(mapply(seq, paired_idxs[["start"]], paired_idxs[["end"]], SIMPLIFY = FALSE))
+
+    idxs_commas <- idxs_commas[!idxs_commas %in% paired_idxs_seq]
+
+    # Only keep commas which are not between brackets
+    # Start and end positions based on indices
+    starts <- c(1, idxs_commas + 1)
+    ends <- c(idxs_commas - 1, stringr::str_length(bracket_arg))
+
+    # Split bracket argument by indices
+    args <- mapply(stringr::str_sub, bracket_arg, starts, ends) |>
+      trimws() |>
+      unname()
+  }
+
+  return(args)
+}
+
+
+
+
+#' Sort arguments in function call according to default order
+#'
+#' @param arg Vector with arguments in strings
+#' @param func_name String with name of R function
+#' @param default_arg Either NULL or named list of default arguments
+#' @inheritParams convert_builtin_functions_julia
+#'
+#' @noRd
+#' @returns List with named and sorted arguments
+#'
+sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
+  # If default arguments are not provided, assume func_name is an R function
+  if (is.null(default_arg)) {
+    # Find default arguments of R function
+    # Assume Julia and R arguments are the same, with the same order
+    default_arg <- do.call(formals, list(func_name)) |> as.list()
+    varargs <- any(names(default_arg) == "...")
+    default_arg <- default_arg[names(default_arg) != "..."] # Remove ellipsis
+
+    # formals(seq) is empty for some reason
+    if (func_name == "seq") {
+      default_arg <- list(
+        "from" = "1.0", "to" = "1.0", "by" = NULL,
+        "length.out" = NULL, "along.with" = NULL
+      )
+    } else if (func_name == "seq_along") {
+      default_arg <- list("along.with" = "NULL")
+    } else if (func_name == "seq_len") {
+      default_arg <- list("length.out" = "1.0")
+    }
+
+    # default_arg_Julia = JuliaCall::julia_eval(sprintf("using Distributions; params(%s())", Julia_func))
+  }
+
+  # Find names and values of arguments
+  contains_name <- stringr::str_detect(arg, "=")
+  arg_split <- stringr::str_split_fixed(arg, "=", n = 2)
+  names_arg <- trimws(ifelse(contains_name, arg_split[, 1], NA))
+  values_arg <- trimws(ifelse(contains_name, arg_split[, 2], arg_split[, 1]))
+
+  # For some functions, there are no default arguments, so there is no need to sort them
+  if (length(default_arg) == 0) {
+    arg_R <- stats::setNames(values_arg, names_arg)
+  } else {
+    # Check whether all argument names are in the allowed argument names in case of no dots argument (...)
+    idx <- !names_arg %in% names(default_arg) & !is.na(names_arg)
+    if (!varargs & any(idx)) {
+      stop(paste0(
+        "Argument",
+        ifelse(sum(idx) > 1, "s ", " "),
+        paste0(names_arg[idx], collapse = ", "),
+        ifelse(sum(idx) > 1, " are", " is"),
+        " not allowed for function ", func_name, "(). Allowed arguments: ",
+        paste0(names(default_arg), collapse = ", "), "."
+      ))
+    }
+
+    # Check if there are too many arguments
+    if (!varargs & length(arg) > length(default_arg)) {
+      stop(paste0(
+        "Too many arguments for function ", func_name, "(). Allowed arguments: ",
+        paste0(names(default_arg), collapse = ", "), "."
+      ))
+    }
+
+    # Add names to unnamed arguments; note that R can mix named and default arguments, e.g. runif(max = 10, 20, min = 1). Julia cannot if they're not keyword arguments!
+    idx <- which(!contains_name & nzchar(values_arg)) # Find unnamed arguments which have values
+    standard_order <- names(default_arg)
+    if (length(idx) > 0 && length(standard_order) > 0) {
+      new_names <- setdiff(standard_order, stats::na.omit(names_arg)) # names which are missing from the passed argument names
+      names_arg[idx] <- new_names[seq_along(idx)] # Assign new names to unnamed arguments; only select as many as there are unnamed arguments
+    }
+
+
+    # Check for missing obligatory arguments
+    # obligatory arguments without a default (class == "name" or is.symbol, e.g. n in formals(rnorm) is a symbol)
+    obligatory_args <- unlist(lapply(default_arg, is.symbol))
+    idx <- !names(default_arg[obligatory_args]) %in% names_arg
+
+    if (any(idx)) {
+      stop(paste0(
+        "Obligatory argument",
+        ifelse(sum(idx) > 1, "s ", " "),
+        paste0(names(default_arg[obligatory_args])[idx], collapse = ", "),
+        ifelse(sum(idx) > 1, " are", " is"),
+        " missing for function ", func_name, "()."
+      ))
+    }
+
+    # Overwrite default arguments with specified arguments & remove NULL arguments
+    default_arg_list <- default_arg[!obligatory_args | unlist(lapply(default_arg, is.null))]
+    arg_R <- utils::modifyList(default_arg_list, as.list(stats::setNames(values_arg, names_arg)))
+
+    # Sort order of arguments according to default order
+    order_arg <- c(names(default_arg), setdiff(names(arg_R), names(default_arg)))
+    arg_R <- arg_R[order_arg]
+
+    # Check if any of the arguments are calls - these will need to be evaluated
+    if (any(vapply(arg_R, class, character(1)) == "call")) {
+      arg_R_num <- lapply(arg_R, function(x) {
+        if (!is.call(x)) {
+          if (!grepl("'|\"", x) & !is.na(suppressWarnings(as.numeric(x)))) {
+            x <- as.numeric(x)
+          }
+        }
+        return(x)
+      })
+
+      # Parse in case of default arguments like scale = 1/rate
+      for (name in names(arg_R)) {
+        if (is.language(arg_R[[name]]) && !is.name(arg_R[[name]])) {
+          # Evaluate the expression in the context of merged_args
+          env <- list2env(arg_R_num, parent = baseenv())
+          # arg_R[[name]] <- eval(arg_R_correct_class[[name]], envir = env)
+
+          # Substitute values into the expression
+          arg_R[[name]] <- deparse(eval(bquote(substitute(.(arg_R[[name]]), env))))
+        }
+      }
+    }
+
+    # Ensure digits become floats for Julia
+    for (name in names(arg_R)) {
+      if (!is.null(arg_R[[name]])) {
+        arg_R[[name]] <- replace_digits_with_floats(arg_R[[name]], var_names)
+      }
+    }
+  }
+
+  arg_R <- lapply(arg_R, as.character)
+
+  return(arg_R)
+}
+
+
+
+
+#' Get start and end indices of each name
+#'
+#' @param var_names Vector with variable names
+#' @param names_with_brackets Boolean; whether to add square bracket around the variable names
+#' @inheritParams convert_equations_IM
+#'
+#' @return Dataframe with start and end indices of each name
+#' @noRd
+#'
+get_range_names <- function(eqn, var_names, names_with_brackets = FALSE) {
+  idxs_df <- data.frame()
+
+  if (length(var_names) > 0) {
+    # Save original names
+    original_names <- var_names
+
+    # If names are surrounded by square brackets, add these to the names
+    if (names_with_brackets) {
+      var_names <- paste0("[", var_names, "]")
+    }
+
+    # Add surrounding word boundaries and escape special characters
+    # R_names <- paste0("\\b", stringr::str_escape(var_names), "\\b")
+    # \\b doesn't match beginning or end of string; \W is non-wodr character; ?: is non-capture group
+    R_names <- paste0("(?:^|(?<=\\W))", stringr::str_escape(var_names), "(?=(?:\\W|$))")
+    idxs_names <- stringr::str_locate_all(eqn, R_names)
+
+    if (length(unlist(idxs_names)) > 0) {
+      # Create indices dataframe with detected variable names
+      idxs_df <- as.data.frame(do.call(rbind, idxs_names))
+      idxs_df[["name"]] <- rep(original_names, vapply(idxs_names, nrow, numeric(1)))
+
+      # Remove matches in characters
+      idxs_exclude <- get_seq_exclude(eqn, type = "quot", names_with_brackets = names_with_brackets)
+
+      if (nrow(idxs_df) > 0) idxs_df <- idxs_df[!(idxs_df[["start"]] %in% idxs_exclude | idxs_df[["end"]] %in% idxs_exclude), ]
+    }
+  }
+
+  return(idxs_df)
+}
+
+
+
+#' Get sequence of indices of to exclude
+#'
+#' @inheritParams convert_equations_IM
+#' @inheritParams get_range_all_pairs
+#' @inheritParams get_range_names
+#'
+#' @return Sequence of indices
+#' @noRd
+#'
+get_seq_exclude <- function(eqn,
+                            var_names = NULL,
+                            type = c("quot", "names"),
+                            names_with_brackets = FALSE) {
+  # When var_names includes "", then everything is included in the sequence to exclude -> remove ""
+  if (!is.null(var_names)) {
+    var_names <- var_names[var_names != ""]
+    if (length(var_names) == 0) var_names <- NULL
+  }
+
+  pair_quotation_marks <- data.frame()
+  pair_names <- data.frame()
+
+  if ("quot" %in% type) {
+    # Get start and end indices of paired ''
+    pair_quotation_marks <- get_range_quot(eqn)
+    if (nrow(pair_quotation_marks) > 0) pair_quotation_marks[["type"]] <- "quot"
+  }
+
+  if ("names" %in% type) {
+    # Get start and end indices of variable names
+    pair_names <- get_range_names(eqn, var_names, names_with_brackets = names_with_brackets)
+    if (nrow(pair_names) > 0) pair_names[["type"]] <- "names"
+  }
+
+  comb <- dplyr::bind_rows(pair_quotation_marks, pair_names)
+
+  # Create sequence
+  if (nrow(comb) > 0) {
+    paired_seq <- lapply(seq_len(nrow(comb)), function(i) {
+      seq(comb[i, ][["start"]], comb[i, ][["end"]])
+    }) |>
+      unlist() |>
+      unique() |>
+      sort()
+  } else {
+    paired_seq <- c()
+  }
+
+  return(paired_seq)
+}
+
+
+
+
+
+#' Extract start and end indices of all words
+#'
+#' @inheritParams convert_equations_IM
+#'
+#' @return Dataframe with start and end indices of all words as well as extracted words
+#' @noRd
+#'
+get_words <- function(eqn) {
+  # An existing function stringr::word() extracts words but treats e.g. "return(a)" as one word
+  idxs_word <- stringr::str_locate_all(eqn, "([a-zA-Z_\\.0-9]+)")[[1]] |> as.data.frame()
+
+  if (nrow(idxs_word) > 0) idxs_word[["word"]] <- stringr::str_sub(eqn, idxs_word[["start"]], idxs_word[["end"]])
+
+  return(idxs_word)
 }

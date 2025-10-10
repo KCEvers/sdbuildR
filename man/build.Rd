@@ -66,7 +66,7 @@ build(
 \item{df}{Dataframe with variable properties to add and/or modify.}
 }
 \value{
-Updated stock-and-flow model.
+Modified stock-and-flow object.
 }
 \description{
 Add, change, or erase variables in a stock-and-flow model. Variables may be stocks, flows, constants, auxiliaries, or graphical functions.
@@ -98,7 +98,7 @@ The obligatory properties of an auxiliary are "name", "type", and "eqn". Optiona
 \section{Graphical functions}{
  Graphical functions, also known as table or lookup functions, are interpolation functions used to define the desired output (y) for a specified input (x). They are defined by a set of x- and y-domain points, which are used to create a piecewise linear function. The interpolation method defines the behavior of the graphical function between x-points ("constant" to return the value of the previous x-point, "linear" to linearly interpolate between defined x-points), and the extrapolation method defines the behavior outside of the x-points ("NA" to return NA values outside of defined x-points, "nearest" to return the value of the closest x-point).
 
-The obligatory properties of an auxiliary are "name", "type", "xpts", and "ypts". "xpts" and "ypts" must be of the same length. Optional additional properties are "units", "label", "doc", "source", "interpolation", "extrapolation".
+The obligatory properties of a graphical function are "name", "type", "xpts", and "ypts". "xpts" and "ypts" must be of the same length. Optional additional properties are "units", "label", "doc", "source", "interpolation", "extrapolation".
 }
 
 \examples{

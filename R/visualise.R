@@ -1,37 +1,43 @@
 #' Save plot to a file
 #'
-#' Save a plot of a stock-and-flow diagram or a simulation to a specified filepath.
+#' Save a plot of a stock-and-flow diagram or a simulation to a specified file path.
 #'
 #' @param pl Plot object.
-#' @param filepath Filepath to save plot to.
+#' @param file File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. If no file extension is specified, it will default to png.
 #' @param width Width of image in units.
 #' @param height Height of image in units.
 #' @param units Units in which width and heigth are specified. Either "cm", "in", or "px".
 #' @param dpi Resolution of image. Only used if units is not "px".
 #'
-#' @returns NULL
+#' @returns Returns `NULL` invisibly.
 #' @export
 #' @family simulate
 #'
 #' @examples
-#' sfm <- xmile("SIR")
-#' filepath <- tempfile(fileext = ".png")
-#' export_plot(plot(sfm), filepath)
 #'
-#' # Remove plot
-#' file.remove(filepath)
+#' if (require("DiagrammeRsvg", quietly = TRUE) &
+#'   require("rsvg", quietly = TRUE)) {
+#'   sfm <- xmile("SIR")
+#'   file <- tempfile(fileext = ".png")
+#'   export_plot(plot(sfm), file)
 #'
+#'   # Remove plot
+#'   file.remove(file)
+#' }
 #' @examplesIf not_on_cran() & interactive()
-# # Requires Chrome to save plotly plot:
-#' sim <- simulate(sfm)
-#' export_plot(plot(sim), filepath)
 #'
-#' # Remove plot
-#' file.remove(filepath)
+#' if (require("htmlwidgets", quietly = TRUE) &
+#'   require("webshot2", quietly = TRUE)) {
+#'   #     # Requires Chrome to save plotly plot:
+#'   sim <- simulate(sfm)
+#'   export_plot(plot(sim), file)
 #'
-export_plot <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi = 300) {
+#'   # Remove plot
+#'   file.remove(file)
+#' }
+export_plot <- function(pl, file, width = 3, height = 4, units = "cm", dpi = 300) {
   # Auto-detect format
-  format <- tolower(tools::file_ext(filepath))
+  format <- tolower(tools::file_ext(file))
 
   # Convert dimensions to pixels
   if (units == "in") {
@@ -44,24 +50,32 @@ export_plot <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi =
 
   if ("grViz" %in% class(pl)) {
     if (!nzchar(format)) {
-      stop("No file extension specified! Choose one of png, pdf, svg, ps, eps, webp.")
+      # stop("No file extension specified! Choose one of png, pdf, svg, ps, eps, webp.")
+      # Default to png
+      format <- "png"
+      file <- paste0(file, ".", format)
     }
 
-    export_diagram(pl, filepath, format,
+    export_diagram(pl, file, format,
       width = width, height = height
     )
   } else if ("plotly" %in% class(pl)) {
     if (!nzchar(format)) {
-      stop("No file extension specified! Choose one of png, pdf, jpg, jpeg, webp.")
+      # stop("No file extension specified! Choose one of png, pdf, jpg, jpeg, webp.")
+      # Default to png
+      format <- "png"
+      file <- paste0(file, ".", format)
     }
 
-    export_plotly(pl, filepath,
+    export_plotly(pl, file,
       format = format,
       width = width, height = height
     )
   } else {
-    stop("export_plot does not support pl of class ", class(pl))
+    stop("export_plot does not support plot object of class ", class(pl))
   }
+
+  return(invisible())
 }
 
 
@@ -70,10 +84,10 @@ export_plot <- function(pl, filepath, width = 3, height = 4, units = "cm", dpi =
 #' @inheritParams export_plot
 #' @param format Output format.
 #'
-#' @returns NULL
+#' @returns Returns `NULL` invisibly.
 #' @noRd
 #'
-export_diagram <- function(pl, filepath, format, width, height) {
+export_diagram <- function(pl, file, format, width, height) {
   if (!requireNamespace("rsvg", quietly = TRUE)) {
     stop("rsvg needs to be installed!")
   }
@@ -85,17 +99,17 @@ export_diagram <- function(pl, filepath, format, width, height) {
   temp <- charToRaw(DiagrammeRsvg::export_svg(pl))
 
   if (format == "webp") {
-    rsvg::rsvg_webp(temp, filepath, width = width, height = height)
+    rsvg::rsvg_webp(temp, file, width = width, height = height)
   } else if (format == "png") {
-    rsvg::rsvg_png(temp, filepath, width = width, height = height)
+    rsvg::rsvg_png(temp, file, width = width, height = height)
   } else if (format == "pdf") {
-    rsvg::rsvg_pdf(temp, filepath, width = width, height = height)
+    rsvg::rsvg_pdf(temp, file, width = width, height = height)
   } else if (format == "svg") {
-    rsvg::rsvg_svg(temp, filepath, width = width, height = height)
+    rsvg::rsvg_svg(temp, file, width = width, height = height)
   } else if (format == "ps") {
-    rsvg::rsvg_ps(temp, filepath, width = width, height = height)
+    rsvg::rsvg_ps(temp, file, width = width, height = height)
   } else if (format == "eps") {
-    rsvg::rsvg_eps(temp, filepath, width = width, height = height)
+    rsvg::rsvg_eps(temp, file, width = width, height = height)
   } else {
     stop("format ", format, " not supported")
   }
@@ -110,10 +124,10 @@ export_diagram <- function(pl, filepath, format, width, height) {
 #' @inheritParams export_plot
 #' @param format Output format.
 #'
-#' @returns NULL
+#' @returns Returns `NULL` invisibly.
 #' @noRd
 #'
-export_plotly <- function(pl, filepath, format, width, height) {
+export_plotly <- function(pl, file, format, width, height) {
   if (!requireNamespace("htmlwidgets", quietly = TRUE)) {
     stop("htmlwidgets needs to be installed!")
   }
@@ -129,7 +143,7 @@ export_plotly <- function(pl, filepath, format, width, height) {
   # Set webshot2 parameters based on format
   webshot_params <- list(
     url = temp_html,
-    file = filepath,
+    file = file,
     vwidth = width,
     vheight = height,
     delay = 1,
@@ -636,10 +650,7 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
         ]
       }
     }
-  } # else {
-  #   constants_in_vars = FALSE
-  # }
-
+  }
 
   # Add constants
   if (add_constants) {
@@ -900,95 +911,75 @@ plot.sdbuildR_sim <- function(x,
   df_nonhighlight <- out[["df_nonhighlight"]]
   colors <- out[["colors"]]
 
-  if (requireNamespace("plotly", quietly = TRUE)) {
-    x_col <- "time"
+  x_col <- "time"
 
-    # Initialize plotly object
-    pl <- plotly::plot_ly()
+  # Initialize plotly object
+  pl <- plotly::plot_ly()
 
-    # Add traces for non-stock variables (visible = "legendonly")
-    if (length(nonhighlight_names) > 0) {
-      pl <- plotly::add_trace(pl,
-        data = df_nonhighlight,
-        x = ~ get(x_col),
-        y = ~value,
-        color = ~variable,
-        legendgroup = ~variable,
-        showlegend = showlegend,
-        colors = colors,
-        type = "scatter",
-        mode = "lines",
-        visible = "legendonly"
-      )
-    }
-
-    # Add traces for stock variables (visible = TRUE)
-    if (length(highlight_names) > 0) {
-      pl <- plotly::add_trace(pl,
-        data = df_highlight,
-        x = ~ get(x_col),
-        y = ~value,
-        color = ~variable,
-        legendgroup = ~variable,
-        showlegend = showlegend,
-        type = "scatter",
-        mode = "lines",
-        colors = colors,
-        visible = TRUE
-      )
-    }
-
-    # Customize layout
-    pl <- plotly::layout(pl,
-      # As the most important things are at the top, reverse the trace order
-      legend = list(
-        traceorder = "reversed",
-        font = list(size = ceiling(font_size * .85))
-      ),
-      title = main,
-      xaxis = list(title = xlab, font = list(size = font_size)),
-      yaxis = list(title = ylab, font = list(size = font_size)),
-      font = list(family = font_family, size = font_size),
-      margin = list(t = 50, b = 50, l = 50, r = 50) # Increase top margin to 100 pixels
+  # Add traces for non-stock variables (visible = "legendonly")
+  if (length(nonhighlight_names) > 0) {
+    pl <- plotly::add_trace(pl,
+      data = df_nonhighlight,
+      x = ~ get(x_col),
+      y = ~value,
+      color = ~variable,
+      legendgroup = ~variable,
+      showlegend = showlegend,
+      colors = colors,
+      type = "scatter",
+      mode = "lines",
+      visible = "legendonly"
     )
-
-    # If there is only one trace, legend doesn't show
-    if (showlegend & (length(highlight_names) + length(nonhighlight_names)) == 1) {
-      pl <- plotly::layout(pl, showlegend = TRUE)
-    }
-
-    # Set x-axis limits if specified
-    if ("xlim" %in% names(dots)) {
-      pl <- plotly::layout(pl,
-        xaxis = list(range = dots[["xlim"]])
-      )
-    }
-
-    if ("ylim" %in% names(dots)) {
-      pl <- plotly::layout(pl,
-        yaxis = list(range = dots[["ylim"]])
-      )
-    }
-  } else {
-    message("No installation of plotly found, reverting to base R...")
-
-    # Fallback to base R plotting
-    plot(x[["df"]][["time"]], x[["df"]][[highlight_names[1]]],
-      type = "l", col = "blue", lwd = 2,
-      xlab = xlab, ylab = ylab,
-      main = main
-    )
-
-    for (var in highlight_names[-1]) {
-      graphics::lines(x[["df"]][["time"]], x[["df"]][[var]], lwd = 2)
-    }
-
-    if (length(nonhighlight_names) > 0) {
-      for (var in nonhighlight_names) {
-        graphics::lines(x[["df"]][["time"]], x[["df"]][[var]], lwd = 2, lty = 2)
-      }
-    }
   }
+
+  # Add traces for stock variables (visible = TRUE)
+  if (length(highlight_names) > 0) {
+    pl <- plotly::add_trace(pl,
+      data = df_highlight,
+      x = ~ get(x_col),
+      y = ~value,
+      color = ~variable,
+      legendgroup = ~variable,
+      showlegend = showlegend,
+      type = "scatter",
+      mode = "lines",
+      colors = colors,
+      visible = TRUE
+    )
+  }
+
+  # Customize layout
+  pl <- plotly::layout(pl,
+    # As the most important things are at the top, reverse the trace order
+    legend = list(
+      traceorder = "reversed",
+      font = list(size = ceiling(font_size * .85))
+    ),
+    title = main,
+    xaxis = list(title = xlab, font = list(size = font_size)),
+    yaxis = list(title = ylab, font = list(size = font_size)),
+    font = list(family = font_family, size = font_size),
+    margin = list(t = 50, b = 50, l = 50, r = 50) # Increase top margin to 100 pixels
+  )
+
+  # If there is only one trace, legend doesn't show
+  if (showlegend & (length(highlight_names) + length(nonhighlight_names)) == 1) {
+    pl <- plotly::layout(pl, showlegend = TRUE)
+  }
+
+  # Set x-axis limits if specified
+  if ("xlim" %in% names(dots)) {
+    pl <- plotly::layout(pl,
+      xaxis = list(range = dots[["xlim"]])
+    )
+  }
+
+  if ("ylim" %in% names(dots)) {
+    pl <- plotly::layout(pl,
+      yaxis = list(range = dots[["ylim"]])
+    )
+  }
+
 
   return(pl)
 }
@@ -1020,7 +1011,7 @@ plot.sdbuildR_sim <- function(x,
 #' @param ... Optional parameters
 #' @inheritParams plot.sdbuildR_sim
 #'
-#' @return Plot of ensemble simulation.
+#' @return Plot object with ensemble simulation
 #' @export
 #' @family simulate
 #' @seealso [ensemble()]
@@ -1064,10 +1055,6 @@ plot.sdbuildR_ensemble <- function(x,
 
   if (!is.logical(j_labels)) {
     stop("j_labels must be TRUE or FALSE!")
-  }
-
-  if (!requireNamespace("plotly", quietly = TRUE)) {
-    stop("plotly is not installed!")
   }
 
   # Check type

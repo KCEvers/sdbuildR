@@ -12,6 +12,10 @@ Named vector with regular expressions as names and units as entries
 \description{
 Get regular expressions for time units in Julia
 }
+\examples{
+get_regex_time_units()
+
+}
 \seealso{
 Other units: 
 \code{\link{convert_u}()},

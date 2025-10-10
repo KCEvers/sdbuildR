@@ -19,7 +19,7 @@ on \href{https://docs.oasis-open.org/xmile/xmile/v1.0/os/xmile-v1.0-os.html}{XML
 \describe{
 \item{header}{Meta-information about model. A list containing arguments listed in \code{\link[=header]{header()}}.}
 \item{sim_specs}{Simulation specifications. A list containing arguments listed in \code{\link[=sim_specs]{sim_specs()}}.}
-\item{model}{Model variables. A nested list containing arguments listed in \code{\link[=build]{build()}}.}
+\item{model}{Model variables, grouped under the variable types stock, flow, aux (auxiliaries), constant, and gf (graphical functions). Each variable contains arguments as listed in \code{\link[=build]{build()}}.}
 \item{macro}{Global variable or functions. A list containing arguments listed in \code{\link[=macro]{macro()}}.}
 \item{model_units}{Custom model units. A list containing arguments listed in \code{\link[=model_units]{model_units()}}.}
 }

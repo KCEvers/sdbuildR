@@ -2,20 +2,28 @@
 % Please edit documentation in R/insightmaker_conv.R
 \name{url_to_IM}
 \alias{url_to_IM}
-\title{Extract Insight Maker model XML string from URL}
+\title{Extract Insight Maker model from URL}
 \usage{
-url_to_IM(URL, filepath_IM)
+url_to_IM(URL, file = NULL)
 }
 \arguments{
 \item{URL}{String with URL to an Insight Maker model}
 
-\item{filepath_IM}{String with file path to an Insight Maker model with suffix .InsightMaker}
+\item{file}{If specified, file path to save Insight Maker model to. If NULL, do not save model.}
 }
 \value{
-String with Insight Maker model
+XML string with Insight Maker model
 }
 \description{
-For internal use; use \code{insightmaker_to_sfm()} to import an Insight Maker model.
+Create XML string from Insight Maker URL. For internal use; use \code{insightmaker_to_sfm()} to import an Insight Maker model.
+}
+\examples{
+\dontshow{if (has_internet()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+xml <- url_to_IM(
+  URL =
+    "https://insightmaker.com/insight/43tz1nvUgbIiIOGSGtzIzj/Romeo-Juliet"
+)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=insightmaker_to_sfm]{insightmaker_to_sfm()}}

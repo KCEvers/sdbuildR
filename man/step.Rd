@@ -4,15 +4,17 @@
 \alias{step}
 \title{Create step function}
 \usage{
-step(start, height = 1)
+step(times, start, height = 1)
 }
 \arguments{
+\item{times}{Vector of simulation times}
+
 \item{start}{Start time of step}
 
 \item{height}{Height of step, defaults to 1}
 }
 \value{
-Interpolation function
+Step interpolation function
 }
 \description{
 Create a step function that jumps from zero to a specified height at a specified time, and remains at that height until the end of the simulation time.
@@ -25,7 +27,8 @@ Equivalent of Step() in Insight Maker
 # that jumps at time 50 to a height of 5
 sfm <- xmile() |>
   build("a", "stock") |>
-  build("input", "constant", eqn = "step(50, 5)") |>
+  # Specify the global variable "times" as simulation times
+  build("input", "constant", eqn = "step(times, 50, 5)") |>
   build("inflow", "flow", eqn = "input(t)", to = "a")
 
 \dontshow{
@@ -36,7 +39,7 @@ sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim)
 
 # Negative heights are also possible
-sfm <- build(sfm, "input", eqn = "step(50, -10)")
+sfm <- build(sfm, "input", eqn = "step(times, 50, -10)")
 
 sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim)

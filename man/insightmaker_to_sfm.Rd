@@ -6,7 +6,7 @@
 \usage{
 insightmaker_to_sfm(
   URL,
-  filepath_IM,
+  file,
   keep_nonnegative_flow = TRUE,
   keep_nonnegative_stock = FALSE,
   keep_solver = FALSE
@@ -15,11 +15,11 @@ insightmaker_to_sfm(
 \arguments{
 \item{URL}{URL to Insight Maker model. Character.}
 
-\item{filepath_IM}{File path to Insight Maker model. Only used if URL is not specified. Needs to be a character with suffix .InsightMaker.}
+\item{file}{File path to Insight Maker model. Only used if URL is not specified. Needs to be a character with suffix .InsightMaker.}
 
 \item{keep_nonnegative_flow}{If TRUE, keeps original non-negativity setting of flows. Defaults to TRUE.}
 
-\item{keep_nonnegative_stock}{If TRUE, keeps original non-negativity setting of stocks Defaults to TRUE.}
+\item{keep_nonnegative_stock}{If TRUE, keeps original non-negativity setting of stocks Defaults to FALSE.}
 
 \item{keep_solver}{If TRUE, keep the ODE solver as it is. If FALSE, switch to Euler integration in case of non-negative stocks to reproduce the Insight Maker data exactly. Defaults to FALSE.}
 }

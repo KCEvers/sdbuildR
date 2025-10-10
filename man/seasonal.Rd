@@ -4,15 +4,17 @@
 \alias{seasonal}
 \title{Create a seasonal wave function}
 \usage{
-seasonal(period = 1, shift = 0)
+seasonal(times, period = 1, shift = 0)
 }
 \arguments{
+\item{times}{Vector of simulation times}
+
 \item{period}{Duration of wave in simulation time units. Defaults to 1.}
 
 \item{shift}{Timing of wave peak in simulation time units. Defaults to 0.}
 }
 \value{
-Seasonal wave
+Seasonal interpolation function
 }
 \description{
 Create a seasonal wave function that oscillates between -1 and 1, with a specified period and shift. The wave peaks at the specified shift time.
@@ -24,7 +26,8 @@ Equivalent of Seasonal() in Insight Maker
 # Create a simple model with a seasonal wave
 sfm <- xmile() |>
   build("a", "stock") |>
-  build("input", "constant", eqn = "seasonal(10, 0)") |>
+  # Specify the global variable "times" as simulation times
+  build("input", "constant", eqn = "seasonal(times, 10, 0)") |>
   build("inflow", "flow", eqn = "input(t)", to = "a")
 
 sim <- simulate(sfm, only_stocks = FALSE)

@@ -64,7 +64,15 @@ Sys.getenv("JULIA_BINDIR")
 JuliaConnectoR::juliaSetupOk()
 ```
 
-If both `Sys.which("julia")` and `Sys.getenv("JULIA_BINDIR")` return an empty string (`""`), you'll need to add Julia to your PATH. If the Julia installation can be found, you can skip to step 6.
+If both `Sys.which("julia")` and `Sys.getenv("JULIA_BINDIR")` return an empty string (`""`), you'll need to add Julia to your PATH. If the Julia installation can be found, try to start a Julia session:
+
+```{r eval=FALSE}
+# Verify JuliaConnectoR can start Julia
+JuliaConnectoR::startJuliaServer()
+JuliaConnectoR::stopJulia()
+```
+
+If this runs successfully, you can skip to step 6. If this throws an error, go to the next step.
 
 ## Step 3: Find your Julia installation path
 
@@ -176,6 +184,14 @@ JuliaConnectoR::juliaSetupOk()
 ```
 
 If `Sys.which("julia")` returns a path and `juliaSetupOk()` returns `TRUE`, R can find your Julia installation!
+
+Check whether a Julia session can be started from R:
+
+```{r eval=FALSE}
+# Verify JuliaConnectoR can start Julia
+JuliaConnectoR::startJuliaServer()
+JuliaConnectoR::stopJulia()
+```
 
 ## Troubleshooting
 

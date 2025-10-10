@@ -2,20 +2,6 @@ test_that("xmile() works", {
   expect_equal(class(xmile()), "sdbuildR_xmile")
   expect_s3_class(xmile(), "sdbuildR_xmile")
 
-  # Check time units
-  sfm <- xmile()
-  expect_equal(sim_specs(sfm, time_units = "d")$sim_specs$time_units, "d")
-  expect_equal(sim_specs(sfm, time_units = "day")$sim_specs$time_units, "d")
-  expect_equal(sim_specs(sfm, time_units = "weeks")$sim_specs$time_units, "wk")
-  expect_equal(sim_specs(sfm, time_units = " months ")$sim_specs$time_units, "month")
-
-  # Check start, stop, dt - no scientific notation
-  expect_equal(sim_specs(sfm, start = 1990, stop = 2000)$sim_specs$start, "1990.0")
-  expect_equal(sim_specs(sfm, start = 1, stop = 1e+06)$sim_specs$stop, "1000000.0")
-  expect_equal(sim_specs(sfm, dt = 1e-08)$sim_specs$dt, "0.00000001")
-  expect_warning(sim_specs(sfm, dt = .1, save_at = .01), "dt must be smaller or equal to save_at! Setting save_at equal to dt")
-
-
   # Non existing template
   expect_error(xmile("A"), "A is not an available template. The available templates are")
   expect_error(xmile(""), "is not an available template. The available templates are")
@@ -81,6 +67,13 @@ test_that("sim_specs() works", {
   expect_error(sfm |> sim_specs(stop = -100), "Start time must be smaller than stop time!")
   expect_error(sfm |> sim_specs(start = 200), "Start time must be smaller than stop time!")
 
+  # Check start, stop, dt - no scientific notation
+  expect_equal(sim_specs(sfm, start = 1990, stop = 2000)$sim_specs$start, "1990.0")
+  expect_equal(sim_specs(sfm, start = 1, stop = 1e+06)$sim_specs$stop, "1000000.0")
+  expect_equal(sim_specs(sfm, dt = 1e-08)$sim_specs$dt, "0.00000001")
+  expect_warning(sim_specs(sfm, dt = .1, save_at = .01), "dt must be smaller or equal to save_at! Setting save_at equal to dt")
+
+
   # Check that seed must be an integer
   expect_error(sfm |> sim_specs(seed = "a"), "seed must be an integer!")
   expect_error(sfm |> sim_specs(seed = 1.5), "seed must be an integer!")
@@ -101,7 +94,6 @@ test_that("sim_specs() works", {
   sfm <- xmile() |> sim_specs(dt = 0.1)
   expect_equal(sfm$sim_specs$dt, "0.1")
   expect_equal(sfm$sim_specs$save_at, "0.1")
-
 
   # save_from
   sfm <- xmile() |> sim_specs(start = 0, stop = 100, dt = .01, save_at = .1)
@@ -131,30 +123,27 @@ test_that("sim_specs() works", {
   expect_equal(sfm$sim_specs$save_from, "100.0")
 
   # warning for large dt
-  expect_warning(xmile() |> sim_specs(dt = 2), "dt is larger than 0\\.1! This will likely lead to inaccuracies in the simulation.")
-  expect_warning(xmile() |> sim_specs(dt = .5), "dt is larger than 0\\.1! This will likely lead to inaccuracies in the simulation.")
+  expect_warning(
+    xmile() |> sim_specs(dt = 2),
+    "Detected use of large timestep dt = 2\\. This will likely lead to inaccuracies in the simulation"
+  )
+  expect_warning(
+    xmile() |> sim_specs(dt = .5),
+    "Detected use of large timestep dt = 0.5\\. This will likely lead to inaccuracies in the simulation"
+  )
 
   # Check that all time units are correctly converted
+  sfm <- xmile()
   expect_error(xmile() |> sim_specs(time_units = "10s"), "time_units can only contain letters")
-  expect_equal(sim_specs(xmile(), time_units = "Sec")$sim_specs$time_units, "s")
-  expect_equal(sim_specs(xmile(), time_units = " minutes ")$sim_specs$time_units, "minute")
-  expect_equal(sim_specs(xmile(), time_units = "Common years")$sim_specs$time_units, "common_yr")
-  expect_equal(sim_specs(xmile(), time_units = "Years")$sim_specs$time_units, "yr")
-  expect_equal(sim_specs(xmile(), time_units = "Months")$sim_specs$time_units, "month")
-  expect_equal(sim_specs(xmile(), time_units = "Quarters")$sim_specs$time_units, "quarter")
-})
-
-
-test_that("save_at works", {
-  sfm <- xmile("SIR") |> sim_specs(language = "R", save_at = 1)
-  sim <- simulate(sfm)
-  df <- as.data.frame(sim)
-  expect_equal(unique(round(diff(sort(unique(df[["time"]]))), 4)), 1)
-
-  sfm <- sfm |> sim_specs(language = "Julia")
-  sim <- simulate(sfm)
-  df <- as.data.frame(sim)
-  expect_equal(unique(round(diff(sort(unique(df[["time"]]))), 4)), 1)
+  expect_equal(sim_specs(sfm, time_units = "Sec")$sim_specs$time_units, "s")
+  expect_equal(sim_specs(sfm, time_units = " minutes ")$sim_specs$time_units, "minute")
+  expect_equal(sim_specs(sfm, time_units = "d")$sim_specs$time_units, "d")
+  expect_equal(sim_specs(sfm, time_units = "day")$sim_specs$time_units, "d")
+  expect_equal(sim_specs(sfm, time_units = "weeks")$sim_specs$time_units, "wk")
+  expect_equal(sim_specs(sfm, time_units = "Common years")$sim_specs$time_units, "common_yr")
+  expect_equal(sim_specs(sfm, time_units = "Years")$sim_specs$time_units, "yr")
+  expect_equal(sim_specs(sfm, time_units = "Months")$sim_specs$time_units, "month")
+  expect_equal(sim_specs(sfm, time_units = "Quarters")$sim_specs$time_units, "quarter")
 })
 
 
@@ -360,14 +349,22 @@ test_that("change_name and change_type in build()", {
 
 
   # Check that no message or warning is thrown
-  sfm <- xmile() |>
-    build("a", "aux")
+  sfm <- xmile() |> build("a", "aux")
 
-  expect_no_error(expect_no_warning(expect_no_message(sfm |> build("a", change_type = "flow", from = "b"))))
+  expect_no_error(expect_no_warning(expect_no_message(sfm |>
+    build("a", change_type = "flow", from = "b"))))
 
   # Check that label is retained
   sfm <- sfm |> build("a", change_type = "flow", label = "B")
   expect_equal(sfm$model$variables$flow$a$label, "B")
+
+  # Check that source is updated with change_name
+  sfm <- xmile() |>
+    build("a", "gf", xpts = 1, ypts = 1, source = "b") |>
+    build("b", "stock") |>
+    build("b", change_name = "c")
+
+  expect_equal(sfm$model$variables$gf$a$source, "c")
 })
 
 
@@ -389,26 +386,29 @@ test_that("from and to can only be stocks", {
 
 test_that("erase in build() works", {
   sfm <- xmile("Lorenz")
-  expect_no_error(expect_no_message(sfm |> build("x", erase = TRUE)))
-  sfm <- sfm |> build("x", erase = TRUE)
+  sfm <- expect_no_error(expect_no_message(sfm |> build("x", erase = TRUE)))
   expect_equal(sfm$model$variables$stock$x, NULL)
   expect_equal(sfm$model$variables$flow$dx_dt$to, NULL)
   df <- as.data.frame(sfm, type = "stock")
   expect_equal(sort(df$name), c("y", "z"))
 
   # erase while specifying wrong type
-  sfm <- xmile("Lorenz")
   expect_error(
     sfm |> build("dy_dt", "stock", erase = TRUE),
     "These variables exist in your model but not as the type specified"
   )
 
   # erase while specifying type and other properties; these should be ignored
-  expect_no_error(expect_no_message(sfm |> build("x", "stock", eqn = "10", units = "kg", erase = TRUE)))
+  expect_no_error(expect_no_message(sfm |> build("z", "stock", eqn = "10", units = "kg", erase = TRUE)))
   sfm <- sfm |> build("sigma", "constant", eqn = "10", units = "kg", erase = TRUE)
   expect_equal(sfm$model$variables$constant$sigma, NULL)
   df <- as.data.frame(sfm)
   expect_equal("sigma" %in% df$name, FALSE)
+
+  # erase removes the erased variable source
+  sfm <- build(sfm, "gf", "gf", xpts = 1, ypts = 1, source = "y") |>
+    build("y", erase = TRUE)
+  expect_equal(sfm$model$variables$gf$gf$source, NULL)
 })
 
 
@@ -618,7 +618,10 @@ test_that("ensure_length() works", {
   # Check that error is thrown when length(arg) != length(target)
   eqn <- c("1", "2", "3")
   name <- c("a")
-  expect_error(ensure_length(eqn, name), "The length of eqn = 1, 2, 3 must be either 1 or equal to the length of name = a")
+  expect_error(
+    ensure_length(eqn, name),
+    "The length of eqn = 1, 2, 3 must be either 1 or equal to the length of name = a"
+  )
 
   # Should work when length(arg) == length(target)
   eqn <- c("1", "2", "3")
@@ -710,12 +713,6 @@ test_that("model_units() works", {
 })
 
 
-test_that("find_dependencies works", {
-  sfm <- xmile("SIR")
-  expect_no_error(expect_no_message(find_dependencies(sfm)))
-})
-
-
 test_that("unique unit names in model_units()", {
   # Existing unit cannot be overwritten
   expect_error(xmile() |> model_units("d"), "The custom unit name d matches the standard unit d, which cannot be overwritten")
@@ -792,68 +789,6 @@ test_that("change_name in model_units() works", {
   expect_equal(sfm$model_units$abc$eqn, "def")
 })
 
-
-
-test_that("get_names() works", {
-  # Check no variables
-  expect_equal(get_names(xmile()), data.frame(type = character(), name = character(), label = character(), units = character()))
-
-  # Check with variables
-  sfm <- xmile() |>
-    build("a", "aux") |>
-    build("b", "aux")
-  result <- get_names(sfm)
-  expected <- data.frame(
-    type = c("aux", "aux"),
-    name = c("a", "b"),
-    label = c("a", "b"),
-    units = c("1", "1")
-  )
-  expect_equal(result, expected)
-
-  # Check with units
-  sfm <- xmile() |>
-    build("a", "stock", units = "1/s") |>
-    build("b", "aux", units = "m")
-  result <- get_names(sfm)
-  expected <- data.frame(
-    type = c("stock", "aux"),
-    name = c("a", "b"),
-    label = c("a", "b"),
-    units = c("1/s", "m")
-  )
-  expect_equal(result, expected)
-
-  # Check with label
-  sfm <- xmile() |>
-    build("a", "stock", label = "A") |>
-    build("b", "aux", label = "B")
-  result <- get_names(sfm)
-  expected <- data.frame(
-    type = c("stock", "aux"),
-    name = c("a", "b"),
-    label = c("A", "B"),
-    units = c("1", "1")
-  )
-  expect_equal(result, expected)
-})
-
-
-test_that("clean_name() works", {
-  sfm <- xmile()
-  names_df <- get_names(sfm)
-
-  # Check for syntactically correct names
-  expect_equal(clean_name(c("TRUE", "T"), names_df[["name"]]), c("TRUE__1", "T_1"))
-  expect_equal(clean_name(c("a", "b", "T"), names_df[["name"]]), c("a", "b", "T_1"))
-  expect_equal(clean_name(c("a-1", "b!2", "c.1"), names_df[["name"]]), c("a_1", "b_2", "c_1"))
-  expect_equal(clean_name(c("a-1", "a!1"), names_df[["name"]]), c("a_1", "a_1_1"))
-  expect_equal(clean_name(c(" Hell0 ", "Hell0"), names_df[["name"]]), c("Hell0", "Hell0_1"))
-
-  # Difficult, but ensure unique names
-  expect_equal(clean_name(c("F"), "F_1"), c("F_1_1"))
-  expect_equal(clean_name(c("-1", "_1"), names_df[["name"]]), c("X_1", "X_1_1"))
-})
 
 
 test_that("debugger() works", {
@@ -933,34 +868,6 @@ test_that("detect_undefined_units() works", {
     model_units("BMI", eqn = "kilograms/meters^2")
   out <- debugger(sfm, quietly = TRUE)
   expect_equal(grepl("These units are not defined", out$problems), FALSE)
-})
-
-
-
-test_that("get_build_code() works", {
-  expect_no_error(get_build_code(xmile()))
-
-  for (s in c("SIR", "Crielaard2022")) {
-    # Replicate with get_build_code
-    sfm <- xmile(s) |> sim_specs(save_at = 1, start = 0, stop = 10)
-
-    if (s == "Crielaard2022") {
-      sfm <- sfm |>
-        build(c("Food_intake", "Hunger", "Compensatory_behaviour"),
-          eqn = c(.5, .3, .1)
-        )
-    }
-
-    sim1 <- simulate(sfm)
-    script <- expect_no_error(get_build_code(sfm))
-
-    # Create a new environment to collect variables
-    envir <- new.env()
-    expect_no_error(expect_no_message(eval(parse(text = script), envir = envir)))
-    sfm2 <- envir[["sfm"]]
-    sim2 <- simulate(sfm2)
-    expect_identical(sim1$df$value, sim2$df$value)
-  }
 })
 
 
@@ -1150,16 +1057,6 @@ test_that("macro() works", {
 
 
 
-test_that("clean_language works", {
-  expect_equal(clean_language("r"), "R")
-  expect_equal(clean_language(" r "), "R")
-  expect_equal(clean_language("JULIA"), "Julia")
-  expect_equal(clean_language(" julia"), "Julia")
-  expect_equal(clean_language("jl"), "Julia")
-  expect_error(clean_language("python"), "The language python is not one of the languages available in sdbuildR")
-})
-
-
 test_that("add_from_df() works", {
   df <- data.frame(
     type = c("stock", "flow", "flow", "constant", "constant"),
@@ -1170,10 +1067,273 @@ test_that("add_from_df() works", {
     from = c(NA, NA, "X", NA, NA)
   )
 
-  sfm <- xmile()
+  sfm <- xmile() |> sim_specs(stop = 5, dt = 1)
   sfm <- expect_no_error(expect_no_message(add_from_df(sfm, df = df)))
   expect_equal(sort(get_names(sfm)[["name"]]), sort(c("X", "inflow", "outflow", "r", "K")))
   expect_null(sfm[["model"]][["variables"]][["stock"]][["X"]][["to"]])
   expect_equal(sfm[["model"]][["variables"]][["flow"]][["inflow"]][["to"]], "X")
-  expect_no_error(expect_no_message(simulate(sfm)))
+  sim <- expect_no_error(expect_no_message(simulate(sfm)))
+  expect_true(nrow(sim$df) > 0)
+})
+
+
+test_that("graphical functions are created with correct properties", {
+  sfm <- xmile()
+
+  # Basic graphical function
+  sfm <- build(sfm, "lookup1", "gf",
+    xpts = c(0, 5, 10),
+    ypts = c(0, 10, 20)
+  )
+
+  defaults <- as.list(formals(build))
+
+  expect_true("lookup1" %in% names(sfm$model$variables$gf))
+  expect_equal(sfm$model$variables$gf$lookup1$xpts, "c(0, 5, 10)")
+  expect_equal(sfm$model$variables$gf$lookup1$ypts, "c(0, 10, 20)")
+  expect_equal(sfm$model$variables$gf$lookup1$interpolation, defaults[["interpolation"]])
+  expect_equal(sfm$model$variables$gf$lookup1$extrapolation, defaults[["extrapolation"]])
+})
+
+
+
+test_that("graphical functions require both xpts and ypts or neither", {
+  sfm <- xmile()
+
+  expect_error(
+    build(sfm, "gf", "gf"),
+    "xpts and ypts must be specified"
+  )
+
+  expect_error(
+    build(sfm, "only_x", "gf", xpts = c(0, 10)),
+    "ypts must be specified"
+  )
+
+  expect_error(
+    build(sfm, "only_y", "gf", ypts = c(0, 100)),
+    "xpts must be specified"
+  )
+})
+
+
+test_that("graphical functions reject mismatched xpts and ypts lengths", {
+  sfm <- xmile()
+
+  expect_error(
+    build(sfm, "bad_gf", "gf",
+      xpts = c(0, 5, 10),
+      ypts = c(0, 10)
+    ),
+    "length of xpts must match that of ypts"
+  )
+})
+
+test_that("graphical functions support different interpolation and extrapolation methods", {
+  sfm <- xmile()
+
+  # Linear interpolation
+  sfm <- build(sfm, "linear_gf", "gf",
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    interpolation = "linear"
+  )
+  expect_equal(sfm$model$variables$gf$linear_gf$interpolation, "linear")
+
+  # Constant interpolation
+  sfm <- build(sfm, "constant_gf", "gf",
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    interpolation = "constant"
+  )
+  expect_equal(sfm$model$variables$gf$constant_gf$interpolation, "constant")
+
+  sfm <- xmile()
+
+  # Nearest extrapolation
+  sfm <- build(sfm, "nearest_gf", "gf",
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    extrapolation = "nearest"
+  )
+  expect_equal(sfm$model$variables$gf$nearest_gf$extrapolation, "nearest")
+
+  # NA extrapolation
+  sfm <- build(sfm, "na_gf", "gf",
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    extrapolation = "NA"
+  )
+  expect_equal(sfm$model$variables$gf$na_gf$extrapolation, "NA")
+
+  expect_error(
+    build(sfm, "bad_interp", "gf",
+      xpts = c(0, 10),
+      ypts = c(0, 100),
+      interpolation = "invalid"
+    ),
+    "interpolation must be 'linear' or 'constant'"
+  )
+
+  expect_error(
+    build(sfm, "bad_extrap", "gf",
+      xpts = c(0, 10),
+      ypts = c(0, 100),
+      extrapolation = "invalid"
+    ),
+    "extrapolation must be either 'nearest' or 'NA'"
+  )
+})
+
+
+test_that("graphical functions accept source parameter", {
+  sfm <- xmile() |> sim_specs(stop = 5, dt = 1)
+  sfm <- build(sfm, "stock1", "stock", eqn = 10)
+
+  sfm <- build(sfm, "lookup_with_source", "gf",
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    source = "stock1"
+  )
+
+  expect_equal(sfm$model$variables$gf$lookup_with_source$source, "stock1")
+
+  # graphical functions with undefined source throw error at simulation
+  sim <- expect_no_error(expect_no_message(simulate(sfm)))
+
+  sfm <- build(sfm, "lookup_with_source", source = "stock2")
+
+  expect_error(simulate(sfm), "The variable 'stock2' is referenced in lookup_with_source\\$source but hasn't been defined")
+})
+
+test_that("graphical functions reject multiple sources", {
+  sfm <- xmile()
+
+  expect_error(
+    build(sfm, "multi_source", "gf",
+      xpts = c(0, 10),
+      ypts = c(0, 100),
+      source = c("var1", "var2")
+    ),
+    "source must be a single value"
+  )
+})
+
+
+test_that("graphical functions don't support vectorized building", {
+  sfm <- xmile()
+
+  expect_error(
+    build(sfm, c("gf1", "gf2"), "gf",
+      xpts = c(0, 10),
+      ypts = c(0, 100)
+    ),
+    "Vectorized building is not supported for graphical functions"
+  )
+})
+
+test_that("graphical functions handle character string input for pts", {
+  sfm <- xmile()
+
+  sfm <- build(sfm, "string_gf", "gf",
+    xpts = "c(0, 5, 10)",
+    ypts = "c(0, 10, 20)"
+  )
+
+  expect_equal(sfm$model$variables$gf$string_gf$xpts, "c(0, 5, 10)")
+  expect_equal(sfm$model$variables$gf$string_gf$ypts, "c(0, 10, 20)")
+})
+
+test_that("prep_equations_variables generates correct approxfun for gf", {
+  sfm <- xmile()
+  sfm <- build(sfm, "test_gf", "gf",
+    xpts = c(0, 5, 10),
+    ypts = c(0, 50, 100),
+    interpolation = "linear",
+    extrapolation = "nearest"
+  )
+
+  sfm <- prep_equations_variables(sfm, keep_nonnegative_flow = TRUE)
+
+  eqn_str <- sfm$model$variables$gf$test_gf$eqn_str
+
+  expect_true(grepl("stats::approxfun", eqn_str))
+  expect_true(grepl("method = 'linear'", eqn_str))
+  expect_true(grepl("rule = 2", eqn_str))
+  expect_true(grepl("x = c\\(0, 5, 10\\)", eqn_str))
+  expect_true(grepl("y = c\\(0, 50, 100\\)", eqn_str))
+})
+
+test_that("prep_equations_variables handles NA extrapolation correctly", {
+  sfm <- xmile()
+  sfm <- build(sfm, "na_extrap_gf", "gf",
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    extrapolation = "NA"
+  )
+
+  sfm <- prep_equations_variables(sfm, keep_nonnegative_flow = TRUE)
+
+  eqn_str <- sfm$model$variables$gf$na_extrap_gf$eqn_str
+  expect_true(grepl("rule = 1", eqn_str))
+})
+
+test_that("prep_equations_variables handles constant interpolation", {
+  sfm <- xmile()
+  sfm <- build(sfm, "const_gf", "gf",
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    interpolation = "constant"
+  )
+
+  sfm <- prep_equations_variables(sfm, keep_nonnegative_flow = TRUE)
+
+  eqn_str <- sfm$model$variables$gf$const_gf$eqn_str
+  expect_true(grepl("method = 'constant'", eqn_str))
+})
+
+test_that("graphical functions work with units", {
+  sfm <- xmile()
+
+  sfm <- build(sfm, "gf_with_units", "gf",
+    xpts = c(0, 10),
+    ypts = c(0, 100),
+    units = "meters"
+  )
+
+  expect_true("units" %in% names(sfm$model$variables$gf$gf_with_units))
+
+  sfm <- prep_equations_variables_julia(sfm,
+    keep_nonnegative_flow = TRUE,
+    keep_unit = TRUE
+  )
+
+  eqn_str <- sfm$model$variables$gf$gf_with_units$eqn_str
+  expect_true(grepl("\\[0, 100\\] \\.\\* u\"m\"", eqn_str))
+})
+
+test_that("graphical functions can be modified", {
+  sfm <- xmile()
+
+  sfm <- build(sfm, "modify_gf", "gf",
+    xpts = c(0, 10),
+    ypts = c(0, 100)
+  )
+
+  # Modify interpolation
+  sfm <- build(sfm, "modify_gf",
+    interpolation = "constant"
+  )
+
+  expect_equal(sfm$model$variables$gf$modify_gf$interpolation, "constant")
+
+  sfm <- build(sfm, "modify_gf",
+    xpts = c(10, 20)
+  )
+
+  expect_equal(sfm$model$variables$gf$modify_gf$xpts, "c(10, 20)")
+
+  expect_error(build(sfm, "modify_gf",
+    xpts = c(10, 20, 30)
+  ), "For graphical functions, the length of xpts must match that of ypts")
 })

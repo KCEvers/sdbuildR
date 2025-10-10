@@ -10,3 +10,6 @@ paper/
 notes/
 /Meta/
 docs
+tests/testthat/testdata/insightmaker/delay
+tests/testthat/testdata/insightmaker/fix
+^cran-comments\.md$

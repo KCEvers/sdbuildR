@@ -12,7 +12,7 @@ contains_IM(haystack, needle)
 \item{needle}{Value to search for}
 }
 \value{
-Boolean
+Logical value
 }
 \description{
 Equivalent of .Contains() in Insight Maker

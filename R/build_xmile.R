@@ -19,7 +19,7 @@
 #' \describe{
 #'  \item{header}{Meta-information about model. A list containing arguments listed in [header()].}
 #'  \item{sim_specs}{Simulation specifications. A list containing arguments listed in [sim_specs()].}
-#'  \item{model}{Model variables. A nested list containing arguments listed in [build()].}
+#'  \item{model}{Model variables, grouped under the variable types stock, flow, aux (auxiliaries), constant, and gf (graphical functions). Each variable contains arguments as listed in [build()].}
 #'  \item{macro}{Global variable or functions. A list containing arguments listed in [macro()].}
 #'  \item{model_units}{Custom model units. A list containing arguments listed in [model_units()].}
 #'  }
@@ -133,7 +133,12 @@ get_flow_df <- function(sfm) {
 #' @examples
 #' sfm <- xmile("SIR")
 #' sim <- simulate(sfm)
-#' head(as.data.frame(sim))
+#' df <- as.data.frame(sim)
+#' head(df)
+#'
+#' # Get results in wide format
+#' df_wide <- as.data.frame(sim, direction = "wide")
+#' head(df_wide)
 #'
 as.data.frame.sdbuildR_sim <- function(x,
                                        row.names = NULL, optional = FALSE,
@@ -455,26 +460,28 @@ switch_list <- function(x) {
 #' @param erase If TRUE, remove model unit from the model. Defaults to FALSE.
 #' @param change_name New name for model unit. Defaults to NULL to indicate no change.
 #'
-#' @return The modified stock-and-flow object with the specified unit(s) added or removed.
+#' @return Modified stock-and-flow object with updated custom units.
 #'
 #' @export
 #' @family units
 #' @seealso [unit_prefixes()]
 #'
 #' @examples
-#' sfm <- xmile("Crielaard2022")
-#' sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
+#' # Units are only supported with Julia
+#' if (JuliaConnectoR::juliaSetupOk()) {
+#'   sfm <- xmile("Crielaard2022")
+#'   sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
 #'
-#' # You may also use words rather than symbols for the unit definition.
-#' # The following modifies the unit BMI:
-#' sfm <- model_units(sfm, "BMI", eqn = "kilogram/meters^2")
+#'   # You may also use words rather than symbols for the unit definition.
+#'   # The following modifies the unit BMI:
+#'   sfm <- model_units(sfm, "BMI", eqn = "kilogram/meters^2")
 #'
-#' # Remove unit:
-#' sfm <- model_units(sfm, "BMI", erase = TRUE)
+#'   # Remove unit:
+#'   sfm <- model_units(sfm, "BMI", erase = TRUE)
 #'
-#' # Unit names may be changed to be syntactically valid and avoid overlap:
-#' sfm <- model_units(xmile(), "C0^2")
-#'
+#'   # Unit names may be changed to be syntactically valid and avoid overlap:
+#'   sfm <- model_units(xmile(), "C0^2")
+#' }
 model_units <- function(sfm, name, eqn = "1", doc = "",
                         erase = FALSE, change_name = NULL) {
   # Basic check
@@ -612,8 +619,8 @@ model_units <- function(sfm, name, eqn = "1", doc = "",
 
                 # If equation changed, redo Julia translation
                 if (old_eqn != x[["eqn"]]) {
-                  x[["eqn_julia"]] <- convert_equations_julia(sfm, x[["type"]],
-                    x[["name"]], x[["eqn"]],
+                  x[["eqn_julia"]] <- convert_equations_julia(
+                    x[["type"]], x[["name"]], x[["eqn"]],
                     var_names,
                     regex_units = dict
                   )
@@ -676,7 +683,7 @@ model_units <- function(sfm, name, eqn = "1", doc = "",
 #' @param change_name New name for macro (optional). Defaults to NULL to indicate no change.
 #' @param erase If TRUE, remove macro from the model. Defaults to FALSE.
 #'
-#' @return Updated stock-and-flow model
+#' @return Modified stock-and-flow object with updated macros.
 #' @family build
 #' @export
 #'
@@ -825,8 +832,9 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
         # Assign name already to convert functions correctly
         x <- paste0(name[i], " = ", eqn[i])
 
-        convert_equations_julia(sfm,
-          type = "macro", name = name[i], eqn = x, var_names = var_names,
+        convert_equations_julia(
+          type = "macro", name = name[i], eqn = x,
+          var_names = var_names,
           regex_units = regex_units
         )[["eqn_julia"]]
         # No need to save $func because delay family cannot be used for macros
@@ -871,7 +879,7 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
 #' @param doi DOI associated with the model. Defaults to "".
 #' @param ... Optional other entries to add to the header.
 #'
-#' @return Updated stock-and-flow model.
+#' @return Modified stock-and-flow object with an updated header.
 #' @family build
 #' @export
 #'
@@ -927,7 +935,7 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' @param time_units Simulation time unit, e.g. 's' (second). Defaults to "s".
 #' @param language Coding language in which to simulate model. Either "R" or "Julia". Julia is necessary for using units or delay functions. Defaults to "R".
 #'
-#' @return Updated stock-and-flow model with new simulation specifications
+#' @return Modified stock-and-flow object with updated simulation specifications.
 #' @family simulate
 #' @seealso [solvers()]
 #' @export
@@ -953,9 +961,10 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' sfm <- sim_specs(sfm, seed = 1) |>
 #'   build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
 #'
-#' # Change the simulation language to Julia to use units
-#' sfm <- sim_specs(sfm, language = "Julia")
-#'
+#' if (JuliaConnectoR::juliaSetupOk()) {
+#'   # Change the simulation language to Julia to use units
+#'   sfm <- sim_specs(sfm, language = "Julia")
+#' }
 sim_specs <- function(sfm,
                       method = "euler",
                       start = "0.0",
@@ -1001,7 +1010,8 @@ sim_specs <- function(sfm,
 
     if (dt != 1) {
       if (dt > .1) {
-        warning(paste0("dt is larger than 0.1! This will likely lead to inaccuracies in the simulation. To reduce the size of the simulaton dataframe, use save_at = ", dt, ", and keep dt to a smaller value. To simulate in discrete time, set dt = 1."))
+        # warning(paste0("dt = ", dt, " is larger than 0.1! This will likely lead to inaccuracies in the simulation. To reduce the size of the simulaton dataframe, use save_at = ", dt, ", and keep dt to a smaller value. To simulate in discrete time, set dt = 1."))
+        warning(paste0("Detected use of large timestep dt = ", dt, ". This will likely lead to inaccuracies in the simulation. Run sim_specs(sfm, save_at = ", dt, ") to reduce the size of the simulaton dataframe, and keep dt to a smaller value."))
       }
     }
   }
@@ -1314,7 +1324,7 @@ report_name_change <- function(old_names, new_names) {
 #'
 #' @section Graphical functions: Graphical functions, also known as table or lookup functions, are interpolation functions used to define the desired output (y) for a specified input (x). They are defined by a set of x- and y-domain points, which are used to create a piecewise linear function. The interpolation method defines the behavior of the graphical function between x-points ("constant" to return the value of the previous x-point, "linear" to linearly interpolate between defined x-points), and the extrapolation method defines the behavior outside of the x-points ("NA" to return NA values outside of defined x-points, "nearest" to return the value of the closest x-point).
 #'
-#' The obligatory properties of an auxiliary are "name", "type", "xpts", and "ypts". "xpts" and "ypts" must be of the same length. Optional additional properties are "units", "label", "doc", "source", "interpolation", "extrapolation".
+#' The obligatory properties of a graphical function are "name", "type", "xpts", and "ypts". "xpts" and "ypts" must be of the same length. Optional additional properties are "units", "label", "doc", "source", "interpolation", "extrapolation".
 #'
 #' @param sfm Stock-and-flow model, object of class sdbuildR_xmile.
 #' @param name Variable name. Character vector.
@@ -1336,7 +1346,7 @@ report_name_change <- function(old_names, new_names) {
 #' @param doc Description of variable. Defaults to "".
 #' @param df Dataframe with variable properties to add and/or modify.
 #'
-#' @return Updated stock-and-flow model.
+#' @return Modified stock-and-flow object.
 #' @seealso [xmile()]
 #' @family build
 #' @export
@@ -1663,45 +1673,61 @@ build <- function(sfm, name, type,
   # Graphical functions
   if (any(type == "gf")) {
     if (length(name) != 1) {
-      stop("Vectorized building is not supported for graphical functions. Please ony specify one graphical function at a time.")
+      stop("Vectorized building is not supported for graphical functions.\nPlease build one graphical function at a time.")
     }
 
-    if (is.null(xpts) & !is.null(ypts)) {
+    if (!idx_exist & is.null(xpts) & is.null(ypts)) {
+      stop("xpts and ypts must be specified for graphical functions!")
+    } else if (!idx_exist & is.null(xpts) & !is.null(ypts)) {
       stop("xpts must be specified for graphical functions!")
-    }
+    } else if (!idx_exist & is.null(ypts) & !is.null(xpts)) {
+      stop("ypts must be specified for graphical functions!")
+    } else if (idx_exist) {
+      # xpts and ypts are obligatory arguments for gf
+      # If variable already exists, find xpts and ypts to ensure later
+      # modifications still create valid gf
 
-    if (is.null(ypts) & !is.null(xpts)) {
-      stop(" ypts must be specified for graphical functions!")
+      if (is.null(xpts) & !is.null(ypts)) {
+        xpts <- sfm[["model"]][["variables"]][["gf"]][[name]][["xpts"]]
+      } else if (is.null(ypts) & !is.null(xpts)) {
+        ypts <- sfm[["model"]][["variables"]][["gf"]][[name]][["ypts"]]
+      }
     }
 
     if (!is.null(xpts) & !is.null(ypts)) {
       # Split xpts and ypts temporarily to check length
       if (inherits(xpts, "character")) {
+        xpts <- trimws(xpts)
+        xpts <- gsub("^c\\(", "", xpts)
+        xpts <- gsub("\\)$", "", xpts)
         xpts <- strsplit(xpts, ",")[[1]]
-        xpts[1] <- gsub("^c\\(", "", xpts[1])
-        xpts[length(xpts)] <- gsub("\\)$", "", xpts[length(xpts)])
+        xpts <- trimws(xpts)
       }
 
       if (inherits(ypts, "character")) {
+        ypts <- trimws(ypts)
+        ypts <- gsub("^c\\(", "", ypts)
+        ypts <- gsub("\\)$", "", ypts)
         ypts <- strsplit(ypts, ",")[[1]]
-        ypts[1] <- gsub("^c\\(", "", ypts[1])
-        ypts[length(ypts)] <- gsub("\\)$", "", ypts[length(ypts)])
+        ypts <- trimws(ypts)
       }
 
       if (length(xpts) != length(ypts)) {
         # Ensure length of xpts and ypts for graphical functions is the same
         stop(paste0(
           "For graphical functions, the length of xpts must match that of ypts.\n",
-          paste0("The length of xpts is ", length(xpts), "; the length of ypts is ", length(ypts), collapse = "\n")
+          paste0("The length of xpts is ", length(xpts),
+            "; the length of ypts is ", length(ypts), ".",
+            collapse = "\n"
+          )
         ))
       }
 
-
-      if (!inherits(xpts, "character")) {
+      if (length(xpts) > 1) {
         xpts <- paste0("c(", paste0(xpts, collapse = ", "), ")")
       }
 
-      if (!inherits(ypts, "character")) {
+      if (length(ypts) > 1) {
         ypts <- paste0("c(", paste0(ypts, collapse = ", "), ")")
       }
     }
@@ -1758,7 +1784,7 @@ build <- function(sfm, name, type,
       }
     }
 
-    # Replace references to name with change_name everywhere (eqn, from, to)
+    # Replace references to name with change_name everywhere (eqn, from, to, source)
     sfm[["model"]][["variables"]] <- lapply(sfm[["model"]][["variables"]], function(y) {
       lapply(y, function(x) {
         if (is_defined(x[["eqn"]])) {
@@ -1788,6 +1814,9 @@ build <- function(sfm, name, type,
         }
         if (is_defined(x[["to"]])) {
           if (x[["to"]] == name) x[["to"]] <- change_name
+        }
+        if (is_defined(x[["source"]])) {
+          if (x[["source"]] == name) x[["source"]] <- change_name
         }
         return(x)
       })
@@ -1870,7 +1899,7 @@ build <- function(sfm, name, type,
 
     # Convert to julia - note that with delay() and past(), an intermediary property is added; with delayN() and smoothN(), a func property (nested list) is added
     eqn_julia <- lapply(seq_along(name), function(i) {
-      convert_equations_julia(sfm, type[i], name[i], eqn[i], var_names,
+      convert_equations_julia(type[i], name[i], eqn[i], var_names,
         regex_units = regex_units
       )
     }) |> unname()
@@ -1892,7 +1921,7 @@ build <- function(sfm, name, type,
       units[!nzchar(units)] <- "1"
     }
 
-    # Units are not supported well in R, so translate to julia directly
+    # Units are not supported well in R, so translate to Julia directly
     units <- vapply(units, function(x) {
       clean_unit(x, regex_units)
     }, character(1), USE.NAMES = FALSE)
@@ -1947,7 +1976,10 @@ build <- function(sfm, name, type,
 
   # Add elements to model (in for-loop, as otherwise not all elements are added)
   for (i in seq_along(name)) {
-    sfm[["model"]][["variables"]] <- utils::modifyList(sfm[["model"]][["variables"]], new_element[i])
+    sfm[["model"]][["variables"]] <- utils::modifyList(
+      sfm[["model"]][["variables"]],
+      new_element[i]
+    )
   }
 
   sfm <- validate_xmile(sfm)
@@ -2043,155 +2075,6 @@ get_building_block_prop <- function() {
 
 
 
-#' Generate code to build stock-and-flow model
-#'
-#' Create R code to rebuild an existing stock-and-flow model. This may help to understand how a model is built, or to modify an existing one.
-#'
-#' @inheritParams build
-#'
-#' @return String with code to build stock-and-flow model from scratch.
-#' @family build
-#' @export
-#'
-#' @examples
-#' sfm <- xmile("SIR")
-#' get_build_code(sfm)
-get_build_code <- function(sfm) {
-  check_xmile(sfm)
-
-  # Simulation specifications - careful here. If a default is 100.0, this will be turned into 100. Need to have character defaults to preserve digits.
-  sim_specs_list <- sfm[["sim_specs"]]
-  sim_specs_list <- lapply(sim_specs_list, function(z) if (is.character(z)) paste0("\"", z, "\"") else z)
-  sim_specs_str <- paste0(names(sim_specs_list), " = ", unname(sim_specs_list), collapse = ", ")
-  sim_specs_str <- paste0(" |>\n\t\tsim_specs(", sim_specs_str, ")")
-
-  # Model units
-  if (length(sfm[["model_units"]]) > 0) {
-    model_units_str <- lapply(sfm[["model_units"]], function(x) {
-      x <- lapply(x, function(z) if (is.character(z)) paste0("\"", z, "\"") else z)
-
-
-      sprintf("model_units(%s)", paste0(names(x), " = ", unname(x), collapse = ", "))
-    }) |>
-      unlist() |>
-      paste0(collapse = "|>\n\t\t")
-    model_units_str <- paste0(" |>\n\t\t", model_units_str)
-  } else {
-    model_units_str <- ""
-  }
-
-  # Macros
-  if (length(sfm[["macro"]]) > 0) {
-    macro_str <- lapply(sfm[["macro"]], function(x) {
-      # Remove properties containing "_julia"
-      x[grepl("_julia", names(x))] <- NULL
-
-      x <- lapply(x, function(z) if (is.character(z)) paste0("\"", z, "\"") else z)
-      sprintf("macro(%s)", paste0(names(x), " = ", unname(x), collapse = ", "))
-    }) |>
-      unlist() |>
-      paste0(collapse = "|>\n\t\t")
-    macro_str <- paste0(" |>\n\t\t", macro_str)
-  } else {
-    macro_str <- ""
-  }
-
-  # Header string
-  h <- sfm[["header"]]
-  defaults_header <- formals(header)
-  defaults_header <- defaults_header[!names(defaults_header) %in% c("sfm", "created", "...")]
-
-  # Find which elements in h are identical to those in defaults_header
-  h <- h[vapply(names(h), function(name) {
-    !name %in% names(defaults_header) || !identical(h[[name]], defaults_header[[name]])
-  }, logical(1))]
-
-  h <- lapply(h, function(z) if (is.character(z) | inherits(z, "POSIXt")) paste0("\"", z, "\"") else z)
-
-  header_str <- paste0(" |>\n\t\theader(", paste0(names(h), " = ", unname(h), collapse = ", "), ")")
-
-  # Variables
-  if (length(unlist(sfm[["model"]][["variables"]])) > 0) {
-    defaults <- formals(build)
-    defaults <- defaults[!names(defaults) %in% c("sfm", "name", "type", "label", "...")]
-
-    # Get properties per building block
-    keep_prop <- get_building_block_prop()
-
-
-    var_str <- lapply(sfm[["model"]][["variables"]], function(x) {
-      lapply(x, function(y) {
-        z <- y
-        z[["func"]] <- NULL
-
-        # Remove properties containing "_julia"
-        z[grepl("_julia", names(z))] <- NULL
-
-        # Find which elements in h are identical to those in defaults_header
-        z <- z[vapply(names(z), function(name) {
-          !name %in% names(defaults) || !identical(z[[name]], defaults[[name]])
-        }, logical(1))]
-
-        # Order z according to default
-        order_names <- intersect(keep_prop[[z[["type"]]]], names(z))
-        z <- z[order_names]
-
-        z <- lapply(z, function(a) {
-          ifelse(is.character(a), paste0("\"", a, "\""), a)
-        })
-
-        paste0(
-          "build(",
-          paste0(names(z), " = ", unname(z),
-            collapse = ", "
-          ), ")"
-        )
-        # sprintf("build('%s', '%s'%s)",
-        #         y[["name"]], y[["type"]], ifelse(length(z) > 0,
-        #                                          paste0(", ", paste0(names(z), " = ", unname(z),
-        #                                                              collapse = ", ")), "") )
-      })
-    })
-    var_str <- var_str[lengths(var_str) > 0]
-    var_str <- paste0(" |>\n\t\t", paste0(unlist(var_str), collapse = " |>\n\t\t"))
-  } else {
-    var_str <- ""
-  }
-
-  script <- sprintf("sfm = xmile()%s%s%s%s%s", sim_specs_str, header_str, var_str, macro_str, model_units_str)
-
-  # Format code
-  if (requireNamespace("styler", quietly = TRUE)) {
-    # Temporarily set option
-    old_option <- getOption("styler.colored_print.vertical")
-    options(styler.colored_print.vertical = FALSE)
-
-    script <- tryCatch(
-      {
-        suppressWarnings(suppressMessages(
-          script <- styler::style_text(script)
-        ))
-      },
-      error = function(e) {
-        return(script)
-      }
-    )
-
-    on.exit({
-      if (is.null(old_option)) {
-        options(styler.colored_print.vertical = NULL)
-      } else {
-        options(styler.colored_print.vertical = old_option)
-      }
-    })
-  } else {
-    message("The code will not be formatted as styler is not installed. Install styler or wrap the script in cat().")
-  }
-
-  return(script)
-}
-
-
 
 #' Debug stock-and-flow model
 #'
@@ -2214,7 +2097,7 @@ get_build_code <- function(sfm) {
 #' @inheritParams build
 #' @param quietly If TRUE, don't print problems. Defaults to FALSE.
 #'
-#' @returns Logical value indicating whether any problems were detected.
+#' @returns If quietly = FALSE, list with problems and potential problems.
 #' @family build
 #' @export
 #'
@@ -2474,7 +2357,8 @@ static_depend_on_dyn <- function(sfm) {
 #'
 as.data.frame.sdbuildR_xmile <- function(x,
                                          row.names = NULL, optional = FALSE,
-                                         type = NULL, name = NULL, properties = NULL, ...) {
+                                         type = NULL, name = NULL,
+                                         properties = NULL, ...) {
   check_xmile(x)
   sfm <- x
 
@@ -2644,7 +2528,7 @@ as.data.frame.sdbuildR_xmile <- function(x,
 #' @param object Stock-and-flow model of class sdbuildR_xmile
 #' @inheritParams plot.sdbuildR_xmile
 #'
-#' @return NULL
+#' @return Summary object of class summary.sdbuildR_xmile
 #' @family build
 #' @export
 #' @seealso [build()]
@@ -2690,6 +2574,7 @@ summary.sdbuildR_xmile <- function(object, ...) {
       stop = object[["sim_specs"]][["stop"]],
       dt = object[["sim_specs"]][["dt"]],
       save_at = object[["sim_specs"]][["save_at"]],
+      save_from = object[["sim_specs"]][["save_from"]],
       time_units = matched_time_unit,
       method = object[["sim_specs"]][["method"]],
       seed = object[["sim_specs"]][["seed"]],
@@ -2707,7 +2592,7 @@ summary.sdbuildR_xmile <- function(object, ...) {
 #' @param x A summary object of class "summary.sdbuildR_xmile"
 #' @param ... Additional arguments (unused)
 #'
-#' @return Invisibly returns the input object
+#' @return Invisibly returns the summary object of class summary.sdbuildR_xmile
 #' @export
 #' @family build
 print.summary.sdbuildR_xmile <- function(x, ...) {
@@ -2783,11 +2668,14 @@ print.summary.sdbuildR_xmile <- function(x, ...) {
 
   # Print simulation specifications
   cat(sprintf(
-    "\nSimulation time: %s to %s %s (dt = %s%s)\n",
+    "\nSimulation time: %s to %s %s (dt = %s%s%s)\n",
     x$simulation$start, x$simulation$stop, x$simulation$time_units,
     x$simulation$dt,
     ifelse(x$simulation$save_at == x$simulation$dt, "",
       paste0(", save_at = ", x$simulation$save_at)
+    ),
+    ifelse(x$simulation$save_from == x$simulation$start, "",
+      paste0(", save_from = ", x$simulation$save_at)
     )
   ))
 

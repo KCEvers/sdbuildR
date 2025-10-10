@@ -11,6 +11,9 @@
 
 \item{...}{Optional arguments}
 }
+\value{
+Summary object of class summary.sdbuildR_xmile
+}
 \description{
 Print summary of stock-and-flow model, including number of stocks, flows, constants, auxiliaries, graphical functions, macros, custom model units, and use of delay functions. Also prints simulation specifications.
 }

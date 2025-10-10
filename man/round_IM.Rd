@@ -2,7 +2,7 @@
 % Please edit documentation in R/custom_func.R
 \name{round_IM}
 \alias{round_IM}
-\title{Equivalent of Insight Maker's Round() function to R}
+\title{Round Half-Up (as in Insight Maker)}
 \usage{
 round_IM(x, digits = 0)
 }
@@ -15,14 +15,15 @@ round_IM(x, digits = 0)
 Rounded value
 }
 \description{
-This function ensures that rounding in R matches rounding in Insight Maker. R base's round() rounds .5 to 0, whereas round_IM() rounds .5 to 1.
-}
-\details{
-Source: https://stackoverflow.com/questions/12688717/round-up-from-5/12688836#12688836
+R rounds .5 to 0, whereas Insight Maker rounds .5 to 1. This function is the equivalent of Insight Maker's Round() function.
 }
 \examples{
 round_IM(.5) # 1
-round_IM(-.5) # 0
+round(.5) # 0
+round_IM(-0.5) # 0
+round(-0.5) # 0
+round_IM(1.5) # 2
+round(1.5) # 2
 }
 \seealso{
 Other custom: 

@@ -385,17 +385,25 @@ replace_op_IM <- function(eqn, var_names) {
     "e" = "exp(1)"
   )
   # Operator words cannot be preceded or followed by a letter
-  names(logical_op) <- paste0("\\b", names(logical_op), "\\b")
+  names(logical_op) <- paste0("(?:^|(?<=\\W))", names(logical_op), "(?=(?:\\W|$))")
   logical_op <- c(logical_op, c("(?<!=|<|>)=(?!=)" = "==", "<>" = "!="))
 
   # Find indices of logical operators
-  idxs_logical_op <- stringr::str_locate_all(eqn, stringr::regex(names(logical_op), ignore_case = TRUE))
+  idxs_logical_op <- stringr::str_locate_all(eqn, stringr::regex(names(logical_op),
+    ignore_case = TRUE
+  ))
 
   if (length(unlist(idxs_logical_op)) > 0) {
     # Get match and replacement
     df_logical_op <- as.data.frame(do.call(rbind, idxs_logical_op))
-    df_logical_op[["match"]] <- stringr::str_sub(eqn, df_logical_op[["start"]], df_logical_op[["end"]])
-    df_logical_op[["replacement"]] <- rep(unname(logical_op), vapply(idxs_logical_op, nrow, numeric(1)))
+    df_logical_op[["match"]] <- stringr::str_sub(
+      eqn, df_logical_op[["start"]],
+      df_logical_op[["end"]]
+    )
+    df_logical_op[["replacement"]] <- rep(
+      unname(logical_op),
+      vapply(idxs_logical_op, nrow, numeric(1))
+    )
     df_logical_op <- df_logical_op[order(df_logical_op[["start"]]), ]
 
     # Remove those that are in quotation marks or names
@@ -453,23 +461,6 @@ replace_op_IM <- function(eqn, var_names) {
 
 
 
-#' Extract start and end indices of all words
-#'
-#' @inheritParams convert_equations_IM
-#'
-#' @return Dataframe with start and end indices of all words as well as extracted words
-#' @noRd
-#'
-get_words <- function(eqn) {
-  # An existing function stringr::word() extracts words but treats e.g. "return(a)" as one word
-  idxs_word <- stringr::str_locate_all(eqn, "([a-zA-Z_\\.0-9]+)")[[1]] |> as.data.frame()
-
-  if (nrow(idxs_word) > 0) idxs_word[["word"]] <- stringr::str_sub(eqn, idxs_word[["start"]], idxs_word[["end"]])
-
-  return(idxs_word)
-}
-
-
 #' Convert statement syntax from Insight Maker to R
 #'
 #' @param line String with line of code
@@ -499,8 +490,10 @@ convert_statement <- function(line, var_names) {
   }
 
   # Remove then (might not only be in if and else if, but also in a separate line)
-  equation <- stringr::str_replace(equation, stringr::regex("\\bthen\\b", ignore_case = TRUE), "")
-
+  equation <- stringr::str_replace(
+    equation,
+    stringr::regex("(?:^|(?<=\\W))then(?=(?:\\W|$))", ignore_case = TRUE), ""
+  )
 
   # To find statements (e.g. for, if), extract first and second word
   words <- get_words(equation)
@@ -675,7 +668,10 @@ convert_all_statements <- function(eqn, var_names) {
   # Insight Maker doesn't require users to specify an Else-statement in If ... Else If ... End If -> if no condition evaluates to TRUE, the output is zero. Add "Else\n0\n" in these lines.
   # Find all if end if
   formula_split <- stringr::str_split(eqn, "\n")[[1]]
-  idx_end_if <- which(stringr::str_detect(formula_split, stringr::regex("\\bend if\\b", ignore_case = TRUE)))
+  idx_end_if <- which(stringr::str_detect(
+    formula_split,
+    stringr::regex("(?:^|(?<=\\W))end if(?=(?:\\W|$))", ignore_case = TRUE)
+  ))
 
   # For each end if, check whether first preceding line with "Then" or "Else" or "If"
   for (i in idx_end_if) {
@@ -684,7 +680,7 @@ convert_all_statements <- function(eqn, var_names) {
       function(x) {
         idx <- which(stringr::str_detect(
           formula_split[seq_len(i - 1)],
-          stringr::regex(sprintf("\\b%s\\b", x),
+          stringr::regex(sprintf("(?:^|(?<=\\W))%s(?=(?:\\W|$))", x),
             ignore_case = TRUE
           )
         ))
@@ -963,102 +959,6 @@ get_range_all_pairs <- function(eqn, var_names,
 
 
 
-#' Get sequence of indices of to exclude
-#'
-#' @inheritParams convert_equations_IM
-#' @inheritParams get_range_all_pairs
-#' @inheritParams get_range_names
-#'
-#' @return Sequence of indices
-#' @noRd
-#'
-get_seq_exclude <- function(eqn,
-                            var_names = NULL,
-                            type = c("quot", "names"),
-                            names_with_brackets = FALSE) {
-  # When var_names includes "", then everything is included in the sequence to exclude -> remove ""
-  if (!is.null(var_names)) {
-    var_names <- var_names[var_names != ""]
-    if (length(var_names) == 0) var_names <- NULL
-  }
-
-  pair_quotation_marks <- data.frame()
-  pair_names <- data.frame()
-
-  if ("quot" %in% type) {
-    # Get start and end indices of paired ''
-    pair_quotation_marks <- get_range_quot(eqn)
-    if (nrow(pair_quotation_marks) > 0) pair_quotation_marks[["type"]] <- "quot"
-  }
-
-  if ("names" %in% type) {
-    # Get start and end indices of variable names
-    pair_names <- get_range_names(eqn, var_names, names_with_brackets = names_with_brackets)
-    if (nrow(pair_names) > 0) pair_names[["type"]] <- "names"
-  }
-
-  comb <- dplyr::bind_rows(pair_quotation_marks, pair_names)
-
-  # Create sequence
-  if (nrow(comb) > 0) {
-    paired_seq <- lapply(seq_len(nrow(comb)), function(i) {
-      seq(comb[i, ][["start"]], comb[i, ][["end"]])
-    }) |>
-      unlist() |>
-      unique() |>
-      sort()
-  } else {
-    paired_seq <- c()
-  }
-
-  return(paired_seq)
-}
-
-
-
-
-
-#' Get start and end indices of each name
-#'
-#' @param var_names Vector with variable names
-#' @param names_with_brackets Boolean; whether to add square bracket around the variable names
-#' @inheritParams convert_equations_IM
-#'
-#' @return Dataframe with start and end indices of each name
-#' @noRd
-#'
-get_range_names <- function(eqn, var_names, names_with_brackets = FALSE) {
-  idxs_df <- data.frame()
-
-  if (length(var_names) > 0) {
-    # Save original names
-    original_names <- var_names
-
-    # If names are surrounded by square brackets, add these to the names
-    if (names_with_brackets) {
-      var_names <- paste0("[", var_names, "]")
-    }
-
-    # Add surrounding word boundaries and escape special characters
-    R_names <- paste0("\\b", stringr::str_escape(var_names), "\\b")
-    idxs_names <- stringr::str_locate_all(eqn, R_names)
-
-    if (length(unlist(idxs_names)) > 0) {
-      # Create indices dataframe with detected variable names
-      idxs_df <- as.data.frame(do.call(rbind, idxs_names))
-      idxs_df[["name"]] <- rep(original_names, vapply(idxs_names, nrow, numeric(1)))
-
-      # Remove matches in characters
-      idxs_exclude <- get_seq_exclude(eqn, type = "quot", names_with_brackets = names_with_brackets)
-
-      if (nrow(idxs_df) > 0) idxs_df <- idxs_df[!(idxs_df[["start"]] %in% idxs_exclude | idxs_df[["end"]] %in% idxs_exclude), ]
-    }
-  }
-
-  return(idxs_df)
-}
-
-
 #' Get regular expressions for built-in Insight Maker functions
 #'
 #' @return Dataframe
@@ -1165,8 +1065,8 @@ get_syntax_IM <- function() {
       # "IMFILTER", "conv_IMFILTER", "syntax3", FALSE, TRUE, "",
       # General Functions (6)
       "IfThenElse", "ifelse", "syntax1", FALSE, TRUE, "",
-      "Pause", "", "syntax5", FALSE, TRUE, "", # no R equivalent
-      "Stop", "stop", "syntax5", FALSE, TRUE, "",
+      "Pause", "", "syntax5", FALSE, FALSE, "", # no R equivalent
+      "Stop", "stop", "syntax5", FALSE, FALSE, "",
       # Syntax 3
       "Unitless", "drop_u", "syntax1", FALSE, TRUE, "",
       "PastValues", "conv_past_values", "syntax5", FALSE, TRUE, "",
@@ -1204,32 +1104,32 @@ get_syntax_IM <- function() {
       "TimeEnd", paste0(.sdbuildR_env[["P"]][["times_name"]], "[2]"), "syntax0", FALSE, FALSE, "",
       "TimeLength", paste0("(", .sdbuildR_env[["P"]][["times_name"]], "[2] - ", .sdbuildR_env[["P"]][["times_name"]], "[1])"), "syntax0", FALSE, FALSE, "",
       # For agent-based modelling functions, issue a warning that these will not be translated
-      ".FindAll()", "", "syntax4", FALSE, TRUE, "",
-      ".FindState(", "", "syntax4", FALSE, TRUE, "",
-      ".FindNotState(", "", "syntax4", FALSE, TRUE, "",
-      ".FindIndex(", "", "syntax4", FALSE, TRUE, "",
-      ".FindNearby(", "", "syntax4", FALSE, TRUE, "",
-      ".FindNearest(", "", "syntax4", FALSE, TRUE, "",
-      ".FindFurthest(", "", "syntax4", FALSE, TRUE, "",
-      ".Value(", "", "syntax4", FALSE, TRUE, "",
-      ".SetValue(", "", "syntax4", FALSE, TRUE, "",
-      ".Location()", "", "syntax4", FALSE, TRUE, "",
-      ".Index()", "", "syntax4", FALSE, TRUE, "",
-      ".Location(", "", "syntax4", FALSE, TRUE, "",
-      ".SetLocation(", "", "syntax4", FALSE, TRUE, "",
-      "Distance(", "", "syntax4", FALSE, TRUE, "",
-      ".Move(", "", "syntax4", FALSE, TRUE, "",
-      ".MoveTowards(", "", "syntax4", FALSE, TRUE, "",
-      ".Connected()", "", "syntax4", FALSE, TRUE, "",
-      ".Connect(", "", "syntax4", FALSE, TRUE, "",
-      ".Unconnect(", "", "syntax4", FALSE, TRUE, "",
-      ".ConnectionWeight(", "", "syntax4", FALSE, TRUE, "",
-      ".SetConnectionWeight(", "", "syntax4", FALSE, TRUE, "",
-      ".PopulationSize()", "", "syntax4", FALSE, TRUE, "",
-      ".Add(", "", "syntax4", FALSE, TRUE, "",
-      ".Remove()", "", "syntax4", FALSE, TRUE, "",
-      "Width(", "", "syntax4", FALSE, TRUE, "",
-      "Height(", "", "syntax4", FALSE, TRUE, ""
+      ".FindAll", "", "syntax4", FALSE, TRUE, "",
+      ".FindState", "", "syntax4", FALSE, TRUE, "",
+      ".FindNotState", "", "syntax4", FALSE, TRUE, "",
+      ".FindIndex", "", "syntax4", FALSE, TRUE, "",
+      ".FindNearby", "", "syntax4", FALSE, TRUE, "",
+      ".FindNearest", "", "syntax4", FALSE, TRUE, "",
+      ".FindFurthest", "", "syntax4", FALSE, TRUE, "",
+      ".Value", "", "syntax4", FALSE, TRUE, "",
+      ".SetValue", "", "syntax4", FALSE, TRUE, "",
+      ".Location", "", "syntax4", FALSE, TRUE, "",
+      ".Index", "", "syntax4", FALSE, TRUE, "",
+      ".Location", "", "syntax4", FALSE, TRUE, "",
+      ".SetLocation", "", "syntax4", FALSE, TRUE, "",
+      "Distance", "", "syntax4", FALSE, TRUE, "",
+      ".Move", "", "syntax4", FALSE, TRUE, "",
+      ".MoveTowards", "", "syntax4", FALSE, TRUE, "",
+      ".Connected", "", "syntax4", FALSE, TRUE, "",
+      ".Connect", "", "syntax4", FALSE, TRUE, "",
+      ".Unconnect", "", "syntax4", FALSE, TRUE, "",
+      ".ConnectionWeight", "", "syntax4", FALSE, TRUE, "",
+      ".SetConnectionWeight", "", "syntax4", FALSE, TRUE, "",
+      ".PopulationSize", "", "syntax4", FALSE, TRUE, "",
+      ".Add", "", "syntax4", FALSE, TRUE, "",
+      ".Remove", "", "syntax4", FALSE, TRUE, "",
+      "Width", "", "syntax4", FALSE, TRUE, "",
+      "Height", "", "syntax4", FALSE, TRUE, ""
     ),
     ncol = 6, byrow = TRUE,
     dimnames = list(NULL, c(
@@ -1249,13 +1149,13 @@ get_syntax_IM <- function() {
   df[["insightmaker_first_iter"]] <- df[["insightmaker"]]
   df[["insightmaker_regex_first_iter"]] <- ifelse(
     df[["syntax"]] %in% c("syntax0", "syntax1", "syntax3"),
-    paste0("\\b", df[["insightmaker"]], "\\("),
+    paste0("(?:^|(?<=\\W))", df[["insightmaker"]], "\\("),
     paste0("\\.", df[["insightmaker"]], "\\(")
   )
   df[["insightmaker"]] <- paste0(df[["insightmaker"]], "_replace")
   df[["insightmaker_regex"]] <- ifelse(
     df[["syntax"]] %in% c("syntax0", "syntax1", "syntax3"),
-    paste0("\\b", df[["insightmaker"]], "\\("),
+    paste0("(?:^|(?<=\\W))", df[["insightmaker"]], "\\("),
     paste0("\\.", df[["insightmaker"]], "\\(")
   )
 
@@ -1264,9 +1164,9 @@ get_syntax_IM <- function() {
     !as.logical(conv_df[["needs_brackets"]]), ]
   if (nrow(additional_rows) > 0) {
     additional_rows[["insightmaker_first_iter"]] <- additional_rows[["insightmaker"]]
-    additional_rows[["insightmaker_regex_first_iter"]] <- paste0("\\b", additional_rows[["insightmaker"]], "\\b")
+    additional_rows[["insightmaker_regex_first_iter"]] <- paste0("(?:^|(?<=\\W))", additional_rows[["insightmaker"]], "(?=(?:\\W|$))")
     additional_rows[["insightmaker"]] <- paste0(additional_rows[["insightmaker"]], "_replace")
-    additional_rows[["insightmaker_regex"]] <- paste0("\\b", additional_rows[["insightmaker"]], "\\b")
+    additional_rows[["insightmaker_regex"]] <- paste0("(?:^|(?<=\\W))", additional_rows[["insightmaker"]], "(?=(?:\\W|$))")
     additional_rows[["syntax"]] <- paste0(additional_rows[["syntax"]], "b")
 
     # Combine rows
@@ -1278,7 +1178,30 @@ get_syntax_IM <- function() {
   # Reset row names
   rownames(syntax_df) <- NULL
 
-  return(list(syntax_df = syntax_df, conv_df = conv_df))
+  # Unsupported functions
+  syntax_df_unsupp <- conv_df[conv_df[["syntax"]] %in% c("syntax4", "syntax5"), ,
+    drop = FALSE
+  ]
+  syntax_df_unsupp[["insightmaker_regex"]] <- paste0(
+    "(?:^|(?<=\\W))",
+    stringr::str_escape(syntax_df_unsupp[["insightmaker"]]),
+    "\\("
+  )
+
+  # Create additional rows for those that do not need brackets
+  additional_rows <- syntax_df_unsupp[!as.logical(syntax_df_unsupp[["needs_brackets"]]), ]
+  if (nrow(additional_rows) > 0) {
+    additional_rows[["insightmaker_regex"]] <- paste0(
+      "(?:^|(?<=\\W))",
+      stringr::str_escape(additional_rows[["insightmaker"]]), "(?=(?:\\W|$))"
+    )
+    additional_rows[["syntax"]] <- paste0(additional_rows[["syntax"]], "b")
+
+    # Combine rows
+    syntax_df_unsupp <- rbind(syntax_df_unsupp, additional_rows)
+  }
+
+  return(list(syntax_df = syntax_df, syntax_df_unsupp = syntax_df_unsupp))
 }
 
 
@@ -1297,49 +1220,57 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 
   if (grepl("[[:alpha:]]", eqn)) {
     # Dataframe with regular expressions for each built-in Insight Maker function
-    out <- get_syntax_IM()
-    syntax_df <- out[["syntax_df"]]
-
-    # Separate unsupported functions from supported functions
-    conv_df <- out[["conv_df"]]
-    conv_df_unsupp <- conv_df[conv_df[["syntax"]] %in% c("syntax4", "syntax5"), ,
-      drop = FALSE
-    ]
-    conv_df <- conv_df[!conv_df[["syntax"]] %in% c("syntax4", "syntax5"), ,
-      drop = FALSE
-    ]
+    syntax_df <- syntax_IM[["syntax_df"]]
+    syntax_df_unsupp <- syntax_IM[["syntax_df_unsupp"]] # Unsupported functions
 
     done <- FALSE
     i <- 1
-    IM_regex <- syntax_df[["insightmaker_regex_first_iter"]]
     ignore_case_arg <- TRUE
+    IM_regex <- stringr::regex(syntax_df[["insightmaker_regex_first_iter"]],
+      ignore_case = ignore_case_arg
+    )
 
     while (!done) {
-      idx_df <- lapply(seq_along(IM_regex), function(i) {
-        matches <- gregexpr(IM_regex[i], eqn, ignore.case = ignore_case_arg)[[1]]
+      # idx_df <- lapply(seq_along(IM_regex), function(i) {
+      #   matches <- gregexpr(IM_regex[i], eqn, ignore.case = ignore_case_arg)[[1]]
+      #
+      #   if (matches[1] == -1) {
+      #     return(NULL)
+      #   } else {
+      #     dplyr::bind_cols(
+      #       syntax_df[i, ],
+      #       data.frame(
+      #         start = as.integer(matches),
+      #         end = as.integer(matches + attr(matches, "match.length") - 1)
+      #       )
+      #     )
+      #   }
+      # })
+      #
+      #
+      # # Remove NULL entries
+      # idx_keep <- !vapply(idx_df, is.null, logical(1))
+      # idx_df <- idx_df[idx_keep]
 
-        if (matches[1] == -1) {
-          return(NULL)
-        } else {
-          dplyr::bind_cols(
-            syntax_df[i, ],
-            data.frame(
-              start = as.integer(matches),
-              end = as.integer(matches + attr(matches, "match.length") - 1)
-            )
-          )
-        }
-      })
+      idx_df <- stringr::str_locate_all(eqn, IM_regex)
 
       # Remove NULL entries
-      idx_df <- idx_df[!vapply(idx_df, is.null, logical(1))]
+      nrow_per_idx <- vapply(idx_df, nrow, integer(1))
+      idx_keep <- nrow_per_idx > 0
+      idx_df <- idx_df[idx_keep]
 
       if (length(idx_df) == 0) {
         done <- TRUE
         next
       }
 
-      idx_df <- as.data.frame(do.call(rbind, idx_df))
+      rep_syntax_df <- syntax_df[idx_keep, ]
+      rep_syntax_df <- rep_syntax_df[rep(seq_len(nrow(rep_syntax_df)), nrow_per_idx[idx_keep]), ]
+
+      idx_df <- dplyr::bind_cols(
+        rep_syntax_df,
+        as.data.frame(do.call(rbind, idx_df))
+      )
 
       # Double matches in case of functions that don't need brackets, e.g. Days() -> select one with longest end, as we want to match Days() over Days
       idx_df <- idx_df[order(idx_df[["insightmaker"]], idx_df[["start"]], -idx_df[["end"]]), ]
@@ -1356,7 +1287,11 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
         idx_df <- idx_df[order(idx_df[["start"]]), ]
         idx_df[["insightmaker_regex"]] <- stringr::str_replace_all(
           idx_df[["insightmaker_regex"]],
-          stringr::fixed(c("\\b" = "", "\\(" = "(", "\\)" = ")"))
+          # Remove regex characters
+          stringr::fixed(c(
+            "(?:^|(?<=\\W))" = "", "(?=(?:\\W|$))" = "",
+            "\\b" = "", "\\(" = "(", "\\)" = ")"
+          ))
         )
 
         for (j in rev(seq_len(nrow(idx_df)))) {
@@ -1366,7 +1301,15 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 
       if (i == 1) {
         ignore_case_arg <- FALSE
-        IM_regex <- syntax_df[["insightmaker_regex"]]
+
+        # Switch from insightmaker_regex_first_iter to insightmaker_regex
+        # Also only keep those functions that were detected on the first iteration.
+        # No new functions to be translated will be added.
+        syntax_df <- syntax_df[idx_keep, , drop = FALSE]
+        # IM_regex <- syntax_df[["insightmaker_regex"]]
+        IM_regex <- stringr::regex(syntax_df[["insightmaker_regex"]],
+          ignore_case = ignore_case_arg
+        )
         i <- i + 1
         # Stop first iteration
         next
@@ -1534,34 +1477,45 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
     }
     add_Rcode <- add_Rcode_list
 
+    # Check for unsupported functions
+    eqn_split <- strsplit(eqn, "")[[1]]
+
+    # Remove those matches that are in quotation marks or names
+    idxs_exclude <- get_seq_exclude(eqn, var_names, names_with_brackets = TRUE)
+    if (!is.null(idxs_exclude)) {
+      eqn_no_names <- paste0(eqn_split[-idxs_exclude], collapse = "")
+    } else {
+      eqn_no_names <- paste0(eqn_split, collapse = "")
+    }
+
     # Syntax 4: Agent-based functions, which are not translated but flagged
-    syntax4 <- conv_df_unsupp[
-      conv_df_unsupp[["syntax"]] == "syntax4",
-      "insightmaker"
+    syntax4 <- syntax_df_unsupp[
+      syntax_df_unsupp[["syntax"]] %in% c("syntax4", "syntax4b"), ,
+      drop = FALSE
     ]
-    idx_ABM <- stringr::str_detect(eqn, stringr::fixed(syntax4))
+    idx_ABM <- stringr::str_detect(eqn_no_names, syntax4[["insightmaker_regex"]])
 
     if (any(idx_ABM)) {
       message(
         "Agent-Based Modelling functions were detected in equation of ",
         name, ", and won't be translated: "
       )
-      message(paste0(syntax4[idx_ABM], ")"))
+      message(paste0(syntax4[idx_ABM, "insightmaker"], ")"))
     }
 
     # Syntax 5: Unsupported Insight Maker functions
-    syntax5 <- conv_df_unsupp[
-      conv_df_unsupp[["syntax"]] == "syntax5",
-      "insightmaker"
+    syntax5 <- syntax_df_unsupp[
+      syntax_df_unsupp[["syntax"]] %in% c("syntax5", "syntax5b"), ,
+      drop = FALSE
     ]
-    idx5 <- stringr::str_detect(eqn, stringr::fixed(syntax5))
+    idx5 <- stringr::str_detect(eqn_no_names, syntax5[["insightmaker_regex"]])
 
     if (any(idx5)) {
       message(
         "Unsupported Insight Maker functions were detected in equation of ",
         name, ", and won't be translated: "
       )
-      message(paste0(syntax5[idx5], ")"))
+      message(paste0(syntax5[idx5, "insightmaker"], collapse = ", "))
     }
   }
 
@@ -1569,45 +1523,6 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 }
 
 
-
-
-
-#' Split arguments to function by comma
-#'
-#' @param bracket_arg String with arguments, excluding surrounding brackets
-#'
-#' @return Vector with arguments
-#' @noRd
-#'
-parse_args <- function(bracket_arg) {
-  # Split arguments by comma; in order to not split arguments which contain a comma (e.g. c(1,2,3)), find all brackets and quotation marks, and don't include commas within these
-
-  # Find indices of commas
-  idxs_commas <- unname(stringr::str_locate_all(bracket_arg, ",")[[1]][, 1])
-
-  # If there's no commas, there's only one argument
-  if (length(idxs_commas) == 0) {
-    args <- bracket_arg
-  } else {
-    # Create sequence of indices between brackets/quotation marks, and check whether comma is between them
-    paired_idxs <- get_range_all_pairs(bracket_arg, var_names = NULL)
-    paired_idxs_seq <- unlist(mapply(seq, paired_idxs[["start"]], paired_idxs[["end"]], SIMPLIFY = FALSE))
-
-    idxs_commas <- idxs_commas[!idxs_commas %in% paired_idxs_seq]
-
-    # Only keep commas which are not between brackets
-    # Start and end positions based on indices
-    starts <- c(1, idxs_commas + 1)
-    ends <- c(idxs_commas - 1, stringr::str_length(bracket_arg))
-
-    # Split bracket argument by indices
-    args <- mapply(stringr::str_sub, bracket_arg, starts, ends) |>
-      trimws() |>
-      unname()
-  }
-
-  return(args)
-}
 
 
 
@@ -1858,7 +1773,8 @@ conv_step <- function(func, arg, match_idx, name, # Default settings of Insight 
 
   # Function definition to put at beginning of script
   func_def_str <- sprintf(
-    "step(start = %s, height = %s)",
+    "step(%s, start = %s, height = %s)",
+    .sdbuildR_env[["P"]][["times_name"]],
     start_t_step,
     h_step
   )
@@ -1916,7 +1832,8 @@ conv_pulse <- function(func,
 
   # Function definition to put at beginning of script
   func_def_str <- sprintf(
-    "pulse(start = %s(%s, %s), height = %s, width = %s, repeat_interval = %s)",
+    "pulse(%s, start = %s(%s, %s), height = %s, width = %s, repeat_interval = %s)",
+    .sdbuildR_env[["P"]][["times_name"]],
     .sdbuildR_env[["P"]][["convert_u_func"]],
     start_t_pulse, .sdbuildR_env[["P"]][["time_units_name"]],
     h_pulse,
@@ -1961,7 +1878,8 @@ conv_ramp <- function(func, arg, match_idx, name, # Default settings of Insight 
 
   # Function definition to put at beginning of script
   func_def_str <- sprintf(
-    "ramp(start = %s(%s, %s), finish = %s(%s, %s), height = %s)",
+    "ramp(%s, start = %s(%s, %s), finish = %s(%s, %s), height = %s)",
+    .sdbuildR_env[["P"]][["times_name"]],
     .sdbuildR_env[["P"]][["convert_u_func"]],
     start_t_ramp, .sdbuildR_env[["P"]][["time_units_name"]],
     .sdbuildR_env[["P"]][["convert_u_func"]],
@@ -2011,7 +1929,8 @@ conv_seasonal <- function(func, arg, match_idx, name,
 
   # Function definition to put at beginning of script
   func_def_str <- sprintf(
-    "seasonal(%s, %s)",
+    "seasonal(%s, %s, %s)",
+    .sdbuildR_env[["P"]][["times_name"]],
     period, shift
   )
   add_Rcode <- list(aux = list(list(

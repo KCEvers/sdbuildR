@@ -36,7 +36,7 @@ header(
 \item{...}{Optional other entries to add to the header.}
 }
 \value{
-Updated stock-and-flow model.
+Modified stock-and-flow object with an updated header.
 }
 \description{
 The header of a stock-and-flow model contains metadata about the model, such as the name, author, and version. Modify the header of an existing model with standard or custom properties.
