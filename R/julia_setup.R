@@ -70,6 +70,7 @@ use_julia <- function(
     stop = FALSE,
     JULIA_HOME = NULL,
     force = FALSE) {
+
   if (stop) {
     # Check whether a session is active
     if (!julia_setup_ok()) {
