@@ -55,7 +55,7 @@
 
 
 <dl><dt id="arg-df">df<a class="anchor" aria-label="anchor" href="#arg-df"></a></dt>
-<dd><p>Dataframe</p></dd>
+<dd><p>Dataframe in wide format</p></dd>
 
 
 <dt id="arg-time-col">time_col<a class="anchor" aria-label="anchor" href="#arg-time-col"></a></dt>
@@ -74,12 +74,44 @@
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other internal:
 <code><a href="clean_name.html">clean_name</a>()</code>,
-<code><a href="compare_sim.html">compare_sim</a>()</code>,
 <code><a href="has_internet.html">has_internet</a>()</code>,
 <code><a href="nonnegative.html">nonnegative</a>()</code>,
 <code><a href="not_on_cran.html">not_on_cran</a>()</code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Recommended: Use save_at in sim_specs() to downsample simulations</span></span></span>
+<span class="r-in"><span><span class="va">sfm</span> <span class="op">&lt;-</span> <span class="fu"><a href="xmile.html">xmile</a></span><span class="op">(</span><span class="st">"SIR"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="sim_specs.html">sim_specs</a></span><span class="op">(</span>dt <span class="op">=</span> <span class="fl">0.01</span>, save_at <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate.html">simulate</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="co"># Returns only times at intervals of 1</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 63</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   time variable       value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1    0 Infected    1.000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2    1 Infected    4.431808</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3    2 Infected   19.636874</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4    3 Infected   86.929468</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5    4 Infected  383.273923</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6    5 Infected 1660.347298</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The saveat_func() is the underlying function used by save_at</span></span></span>
+<span class="r-in"><span><span class="co"># Direct use is not recommended, but shown here for completeness:</span></span></span>
+<span class="r-in"><span><span class="va">sfm</span> <span class="op">&lt;-</span> <span class="va">sfm</span> <span class="op">|&gt;</span> <span class="fu"><a href="sim_specs.html">sim_specs</a></span><span class="op">(</span>save_at <span class="op">=</span> <span class="fl">0.01</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate.html">simulate</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="co"># Many more rows</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 6003</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Manual downsampling (not recommended - use save_at instead)</span></span></span>
+<span class="r-in"><span><span class="va">new_times</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">time</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">time</span><span class="op">)</span>, by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sim</span>, direction <span class="op">=</span> <span class="st">"wide"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_manual</span> <span class="op">&lt;-</span> <span class="fu">saveat_func</span><span class="op">(</span><span class="va">df_wide</span>, <span class="st">"time"</span>, <span class="va">new_times</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df_manual</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 21</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

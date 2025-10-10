@@ -73,13 +73,22 @@
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other internal:
-<code><a href="compare_sim.html">compare_sim</a>()</code>,
 <code><a href="has_internet.html">has_internet</a>()</code>,
 <code><a href="nonnegative.html">nonnegative</a>()</code>,
 <code><a href="not_on_cran.html">not_on_cran</a>()</code>,
 <code><a href="saveat_func.html">saveat_func</a>()</code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">sfm</span> <span class="op">&lt;-</span> <span class="fu"><a href="xmile.html">xmile</a></span><span class="op">(</span><span class="st">"predator_prey"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># As the variable name "predator" is already taken, clean_name() will create</span></span></span>
+<span class="r-in"><span><span class="co"># an unique name</span></span></span>
+<span class="r-in"><span><span class="fu">clean_name</span><span class="op">(</span><span class="st">"predator"</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span><span class="op">[[</span><span class="st">"name"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> <span class="co"># "predator_1"</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "predator_1"</span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

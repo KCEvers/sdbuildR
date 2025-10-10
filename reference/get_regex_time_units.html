@@ -66,6 +66,50 @@
 <code><a href="unit_prefixes.html">unit_prefixes</a>()</code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">get_regex_time_units</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          ^[S|s]econd[s]?$          ^[M|m]inute[s]?$            ^[H|h]our[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       "s"                  "minute"                      "hr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             ^[D|d]ay[s]?$            ^[W|w]eek[s]?$            ^[Y|y]ear[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       "d"                      "wk"                      "yr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     ^[C|c]ommon year[s]?$  ^[C|c]ommon quarter[s]?$    ^[C|c]ommon month[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               "common_yr"          "common_quarter"            "common_month" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         ^[Q|q]uarter[s]?$           ^[M|m]onth[s]?$ ^[Y|y]otta[S|s]econd[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 "quarter"                   "month"                      "Ys" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ^[Z|z]etta[S|s]econd[s]?$   ^[E|e]xa[S|s]econd[s]?$  ^[P|p]eta[S|s]econd[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      "Zs"                      "Es"                      "Ps" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  ^[T|t]era[S|s]econd[s]?$  ^[G|g]iga[S|s]econd[s]?$  ^[M|m]ega[S|s]econd[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      "Ts"                      "Gs"                      "Ms" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  ^[K|k]ilo[S|s]econd[s]?$ ^[H|h]ecto[S|s]econd[s]?$  ^[D|d]eka[S|s]econd[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      "ks"                      "hs"                     "das" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  ^[D|d]eci[S|s]econd[s]?$ ^[C|c]enti[S|s]econd[s]?$ ^[M|m]illi[S|s]econd[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      "ds"                      "cs"                      "ms" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ^[M|m]icro[S|s]econd[s]?$  ^[N|n]ano[S|s]econd[s]?$  ^[P|p]ico[S|s]econd[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                "\\u03BCs"                      "ns"                      "ps" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ^[F|f]emto[S|s]econd[s]?$  ^[A|a]tto[S|s]econd[s]?$ ^[Z|z]epto[S|s]econd[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      "fs"                      "as"                      "zs" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ^[Y|y]octo[S|s]econd[s]?$   ^[Y|y]otta[Y|y]ear[s]?$   ^[Z|z]etta[Y|y]ear[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      "ys"                     "Yyr"                     "Zyr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     ^[E|e]xa[Y|y]ear[s]?$    ^[P|p]eta[Y|y]ear[s]?$    ^[T|t]era[Y|y]ear[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     "Eyr"                     "Pyr"                     "Tyr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    ^[G|g]iga[Y|y]ear[s]?$    ^[M|m]ega[Y|y]ear[s]?$    ^[K|k]ilo[Y|y]ear[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     "Gyr"                     "Myr"                     "kyr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ^[H|h]ecto[Y|y]ear[s]?$    ^[D|d]eka[Y|y]ear[s]?$    ^[D|d]eci[Y|y]ear[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     "hyr"                    "dayr"                     "dyr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ^[C|c]enti[Y|y]ear[s]?$   ^[M|m]illi[Y|y]ear[s]?$   ^[M|m]icro[Y|y]ear[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     "cyr"                     "myr"               "\\u03BCyr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    ^[N|n]ano[Y|y]ear[s]?$    ^[P|p]ico[Y|y]ear[s]?$   ^[F|f]emto[Y|y]ear[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     "nyr"                     "pyr"                     "fyr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    ^[A|a]tto[Y|y]ear[s]?$   ^[Z|z]epto[Y|y]ear[s]?$   ^[Y|y]octo[Y|y]ear[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     "ayr"                     "zyr"                     "yyr" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 ^[S|s]ec$                 ^[M|m]in$    ^[C|c]ommon month[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       "s"                  "minute"            "common_month" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  ^[C|c]ommon quarter[s]?$     ^[C|c]ommon year[s]?$ </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          "common_quarter"               "common_yr" </span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

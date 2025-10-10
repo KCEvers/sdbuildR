@@ -66,6 +66,492 @@
 <code><a href="unit_prefixes.html">unit_prefixes</a>()</code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">get_units</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        description                                                                                                                                                                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [1,] "The meter, the SI base unit of length."                                                                                                                                                                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [2,] "The second, the SI base unit of time."                                                                                                                                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [3,] "The ampere, the SI base unit of electric current."                                                                                                                                                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [4,] "The kelvin, the SI base unit of thermodynamic temperature."                                                                                                                                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [5,] "The candela, the SI base unit of luminous intensity."                                                                                                                                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [6,] "The gram, the SI base unit for weight."                                                                                                                                                                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [7,] "The mole, the SI base unit for amount of substance."                                                                                                                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [8,] "The steradian, a unit of spherical angle. There are 4pi sr in a sphere."                                                                                                                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [9,] "The radian, a unit of angle. There are 2pi rad in a circle."                                                                                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [10,] "The degree, a unit of angle. There are 360 degrees in a circle."                                                                                                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [11,] "The hertz, an SI unit of frequency, defined as 1 s^-1."                                                                                                                                                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [12,] "The newton, an SI unit of force, defined as 1 kg * m / s^2."                                                                                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [13,] "The pascal, an SI unit of pressure, defined as 1 N / m^2."                                                                                                                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [14,] "The joule, an SI unit of energy, defined as 1 N * m."                                                                                                                                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [15,] "The watt, an SI unit of power, defined as 1 J / s."                                                                                                                                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [16,] "The coulomb, an SI unit of electric charge, defined as 1 A * s."                                                                                                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [17,] "The volt, an SI unit of electric potential, defined as 1 W / A."                                                                                                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [18,] "The ohm, an SI unit of electrical resistance, defined as 1 V / A."                                                                                                                                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [19,] "The siemens, an SI unit of electrical conductance, defined as 1 Ohm^-1"                                                                                                                                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [20,] "The farad, an SI unit of electrical capacitance, defined as 1 s^4 * A^2 / (kg * m^2)."                                                                                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [21,] "The henry, an SI unit of electrical inductance, defined as 1 J / A^2."                                                                                                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [22,] "The tesla, an SI unit of magnetic B-field strength, defined as 1 kg / (A * s^2)."                                                                                                                           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [23,] "The weber, an SI unit of magnetic flux, defined as 1 kg * m^2 / (A * s^2)."                                                                                                                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [24,] "The lumen, an SI unit of luminous flux, defined as 1 cd * sr."                                                                                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [25,] "The lux, an SI unit of illuminance, defined as 1 lm / m^2."                                                                                                                                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [26,] "The becquerel, an SI unit of radioactivity, defined as 1 nuclear decay per s."                                                                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [27,] "The gray, an SI unit of ionizing radiation dose, defined as the absorption of 1 J per kg of matter."                                                                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [28,] "The sievert, an SI unit of the biological effect of an ionizing radiation dose."                                                                                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [29,] "The katal, an SI unit of catalytic activity, defined as 1 mol of catalyzed"                                                                                                                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [30,] "Percent, a unit meaning parts per hundred. Printed as \"%\"."                                                                                                                                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [31,] "Permille, a unit meaning parts per thousand. Printed as %"                                                                                                                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [32,] "Permyriad, a unit meaning parts per ten thousand."                                                                                                                                                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [33,] "Percentmille, a unit meaning parts per hundred thousand."                                                                                                                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [34,] "Permillion, a unit meaning parts per million."                                                                                                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [35,] "Perbillion, a unit meaning parts per billion (in the short-scale sense), i.e., 10^-9."                                                                                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [36,] "Pertrillion, a unit meaning parts per trillion (in the short-scale sense), i.e., 10^-12."                                                                                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [37,] "Perquadrillion, a unit meaning parts per quadrillion (in the short-scale sense), i.e., 10^-15."                                                                                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [38,] "The degree Celsius, an SI unit of temperature, defined such that 0 degrees C = 273.15 K."                                                                                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [39,] "The minute, a unit of time defined as 60 s. The full name `minute` is used instead of the symbol `min` to avoid confusion with the Julia function `min`."                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [40,] "The hour, a unit of time defined as 60 minutes."                                                                                                                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [41,] "The day, a unit of time defined as 24 hr."                                                                                                                                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [42,] "The week, a unit of time, defined as 7 d."                                                                                                                                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [43,] "The year, a unit of time, defined as 365.25 d."                                                                                                                                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [44,] "Revolutions per second, a unit of rotational speed, defined as 2pi rad / s."                                                                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [45,] "Revolutions per minute, a unit of rotational speed, defined as 2pi rad / minute."                                                                                                                           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [46,] "The are, a metric unit of area, defined as 100 m^2."                                                                                                                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [47,] "The hectare, a metric unit of area, defined as 100 a."                                                                                                                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [48,] "The barn, a metric unit of area, defined as 100 fm^2."                                                                                                                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [49,] "The liter, a metric unit of volume, defined as 1000 cm^3."                                                                                                                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [50,] "A unit for measuring molar concentration, equal to 1 mol/L."                                                                                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [51,] "A quantity equal to the elementary charge, the charge of a single electron, with a value of exactly 1.602,176,634 * 10^-19 C. The letter `q` is used instead of `e` to avoid confusion with Euler's number."</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [52,] "The electron-volt, a unit of energy, defined as q*V."                                                                                                                                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [53,] "A unit for convenience in angular frequency, equal to 2pi Hz."                                                                                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [54,] "The bar, a metric unit of pressure, defined as 100 kPa."                                                                                                                                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [55,] "The standard atmosphere, a unit of pressure, defined as 101,325 Pa."                                                                                                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [56,] "The torr, a unit of pressure, defined as 1/760 atm."                                                                                                                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [57,] "A quantity representing the speed of light in a vacuum, defined as exactly 2.997,924,58 * 10^8 m/s."                                                                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [58,] "The speed of light in a vacuum, a unit of speed, defined as exactly 2.997,924,58 * 10^8 m/s."                                                                                                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [59,] "A quantity representing the vacuum permeability constant, defined as 4pi * 10^-7 H / m."                                                                                                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [60,] "A quantity representing the vacuum permittivity constant, defined as 1 / (mu0 * c^2)."                                                                                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [61,] "A quantity representing the impedance of free space, a constant defined as mu0 * c."                                                                                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [62,] "A quantity representing the universal gravitational constant, equal to 6.674,30 * 10^-11 m^3 / (kg * s^2) (the CODATA 2018 recommended value)."                                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [63,] "A quantity representing the nominal acceleration due to gravity in a vacuum near the surface of the earth, defined by standard to be exactly 9.806,65 m / s^2."                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [64,] "A quantity representing Planck's constant, defined as exactly 6.626,070,15 * 10^-34 J * s."                                                                                                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [65,] "A quantity representing the reduced Planck constant, defined as h / 2pi."                                                                                                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [66,] "A quantity representing the superconducting magnetic flux quantum, defined as h / (2 * q)."                                                                                                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [67,] "A quantity representing the rest mass of an electron, equal to 9.109,383,7015 * 10^-31 kg (the CODATA 2018 recommended value)."                                                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [68,] "A quantity representing the rest mass of a neutron, equal to 1.674,927,498,04 * 10^-27 kg (the CODATA 2018 recommended value)."                                                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [69,] "A quantity representing the rest mass of a proton, equal to 1.672,621,923,69 * 10^-27 kg (the CODATA 2018 recommended value)."                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [70,] "A quantity representing the Bohr magneton, equal to q * hbar / (2 * me)."                                                                                                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [71,] "A quantity representing Avogadro's constant, defined as exactly 6.022,140,76 * 10^23 / mol."                                                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [72,] "A quantity representing the Boltzmann constant, defined as exactly 1.380,649 * 10^-23 J / K."                                                                                                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [73,] "A quantity representing the molar gas constant, defined as Na * k."                                                                                                                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [74,] "A quantity representing the Stefan-Boltzmann constant, defined as pi^2 * k^4 / (60 * hbar^3 * c^2)."                                                                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [75,] "A quantity representing the Rydberg constant, equal to 1.097,373,156,8160 * 10^-7 / m (the CODATA 2018 recommended value)."                                                                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [76,] "The unified atomic mass unit, or dalton, a unit of mass defined as 1/12 the mass of an unbound neutral atom of carbon-12, equal to 1.660,539,066,60 * 10^-27 kg (the CODATA 2018 recommended value)."       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [77,] "The nominal acceleration due to gravity in a vacuum near the surface of the earth, a unit of acceleration, defined by standard to be exactly 9.806,65 m / s^2."                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [78,] "The gal, a CGS unit of acceleration, defined as 1 cm / s^2."                                                                                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [79,] "The dyne, a CGS unit of force, defined as 1 g * cm / s^2."                                                                                                                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [80,] "The erg, a CGS unit of energy, defined as 1 dyn * cm."                                                                                                                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [81,] "The barye, a CGS unit of pressure, defined as 1 dyn / cm^2."                                                                                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [82,] "The poise, a CGS unit of dynamic viscosity, defined as 1 dyn * s / cm^2."                                                                                                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [83,] "The stokes, a CGS unit of kinematic viscosity, defined as 1 cm^2 / s."                                                                                                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [84,] "The gauss, a CGS unit of magnetic B-field strength, defined as 1 Mx / cm^2."                                                                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [85,] "The oersted, a CGS unit of magnetic H-field strength, defined as 1000 A / (4pi * m)."                                                                                                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [86,] "The maxwell, a CGS unit of magnetic flux, defined as 1 Gauss * cm^2."                                                                                                                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [87,] "The inch, a US customary unit of length defined as 2.54 cm."                                                                                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [88,] "The mil, a US customary unit of length defined as 1/1000 inch."                                                                                                                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [89,] "The foot, a US customary unit of length defined as 12 inch."                                                                                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [90,] "The yard, a US customary unit of length defined as 3 ft."                                                                                                                                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [91,] "The mile, a US customary unit of length defined as 1760 yd."                                                                                                                                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [92,] "The angstrom, a metric unit of length defined as 1/10 nm."                                                                                                                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [93,] "The acre, a US customary unit of area defined as 4840 yd^2"                                                                                                                                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [94,] "The rankine, a US customary unit of temperature defined as 5/9 K."                                                                                                                                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [95,] "The degree Fahrenheit, a US customary unit of temperature, defined such that 0 degrees F = 459.67 Ra."                                                                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [96,] "The pound-mass, a US customary unit of mass defined as exactly 0.453,592,37 kg."                                                                                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [97,] "The ounce, a US customary unit of mass defined as 1/16 lb."                                                                                                                                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [98,] "The slug, a US customary unit of mass defined as 1 lbf * s^2 / ft."                                                                                                                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [99,] "The dram, a US customary unit of mass defined as 1/16 oz."                                                                                                                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [100,] "The grain, a US customary unit of mass defined as 1/7000 lb."                                                                                                                                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [101,] "The pound-force, a US customary unit of force defined as 1 lb * ge."                                                                                                                                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [102,] "The calorie, a unit of energy defined as exactly 4.184 J."                                                                                                                                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [103,] "The British thermal unit, a US customary unit of heat defined by ISO 31-4 as exactly 1055.06 J."                                                                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [104,] "Pounds per square inch, a US customary unit of pressure defined as 1 lbf / inch^2."                                                                                                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [105,] "The common year, a unit of time, defined as 365 d."                                                                                                                                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [106,] "The common quarter, a unit of time, defined as 365/4 d."                                                                                                                                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [107,] "The common month, a unit of time, defined as 365/12 d."                                                                                                                                                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [108,] "The quarter, a unit of time, defined as 1/4yr."                                                                                                                                                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [109,] "The month, a unit of time, defined as 1/12yr."                                                                                                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [110,] "The US fluid ounce, to measure liquids"                                                                                                                                                                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [111,] "The US liquid quart, unit of capacity"                                                                                                                                                                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [112,] "The tonne, a metric unit of mass"                                                                                                                                                                           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [113,] "The US short ton"                                                                                                                                                                                           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [114,] "The US gallon, a unit of volume"                                                                                                                                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [115,] "The atom, used in chemistry to quantify microscopic particles"                                                                                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [116,] "The molecule, used in scientific models to count chemical entities"                                                                                                                                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [117,] "The euro, the official currency of the Eurozone"                                                                                                                                                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [118,] "The dollar, the currency of the United States"                                                                                                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [119,] "The pound, the currency of the United Kingdom"                                                                                                                                                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        name                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [1,] "m"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [2,] "s"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [3,] "A"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [4,] "K"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [5,] "cd"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [6,] "g"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [7,] "mol"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [8,] "sr"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [9,] "rad"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [10,] "deg"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [11,] "Hz"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [12,] "N"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [13,] "Pa"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [14,] "J"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [15,] "W"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [16,] "C"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [17,] "V"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [18,] "Ohm"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [19,] "S"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [20,] "FALSE"                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [21,] "H"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [22,] "T"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [23,] "Wb"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [24,] "lm"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [25,] "lx"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [26,] "Bq"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [27,] "Gy"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [28,] "Sv"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [29,] "kat"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [30,] "%"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [31,] "permille"                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [32,] "pertenthousand"                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [33,] "pcm"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [34,] "ppm"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [35,] "ppb"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [36,] "ppt"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [37,] "ppq"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [38,] "degC"                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [39,] "minute"                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [40,] "hr"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [41,] "d"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [42,] "wk"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [43,] "yr"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [44,] "rps"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [45,] "rpm"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [46,] "a"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [47,] "ha"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [48,] "b"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [49,] "L"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [50,] "M"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [51,] "q"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [52,] "eV"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [53,] "AngHertz"                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [54,] "bar"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [55,] "atm"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [56,] "Torr"                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [57,] "c0"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [58,] "c"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [59,] "magnetic_constant"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [60,] "electric_constant"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [61,] "Z0"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [62,] "G"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [63,] "gn"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [64,] "h"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [65,] "reduced_Planck_constant"              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [66,] "superconducting_magnetic_flux_quantum"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [67,] "me"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [68,] "mn"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [69,] "mp"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [70,] "Bohr_magneton"                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [71,] "Na"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [72,] "k"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [73,] "R"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [74,] "Stefan_Boltzmann_constant"            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [75,] "Rydberg_constant"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [76,] "u"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [77,] "ge"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [78,] "Gal"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [79,] "dyn"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [80,] "erg"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [81,] "Ba"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [82,] "P"                                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [83,] "St"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [84,] "Gauss"                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [85,] "Oe"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [86,] "Mx"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [87,] "inch"                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [88,] "mil"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [89,] "ft"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [90,] "yd"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [91,] "mi"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [92,] "angstrom"                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [93,] "ac"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [94,] "Ra"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [95,] "degF"                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [96,] "lb"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [97,] "oz"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [98,] "slug"                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [99,] "dr"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [100,] "gr"                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [101,] "lbf"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [102,] "cal"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [103,] "btu"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [104,] "psi"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [105,] "common_yr"                            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [106,] "common_quarter"                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [107,] "common_month"                         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [108,] "quarter"                              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [109,] "month"                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [110,] "fl_oz"                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [111,] "quart"                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [112,] "tonne"                                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [113,] "ton"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [114,] "US_gal"                               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [115,] "atom"                                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [116,] "molecule"                             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [117,] "EUR"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [118,] "USD"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [119,] "GBP"                                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        full_name                               definition                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [1,] "Meter"                                 ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [2,] "Second"                                ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [3,] "Ampere"                                ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [4,] "Kelvin"                                ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [5,] "Candela"                               ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [6,] "Gram"                                  ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [7,] "Mole"                                  ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [8,] "Steradian"                             ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [9,] "Radian"                                ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [10,] "Degree"                                "pi/180"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [11,] "Hertz"                                 "1/s"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [12,] "Newton"                                "1kg*m/s^2"               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [13,] "Pascal"                                "1N/m^2"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [14,] "Joule"                                 "1N*m"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [15,] "Watt"                                  "1J/s"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [16,] "Coulomb"                               "1A*s"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [17,] "Volt"                                  "1W/A"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [18,] "Ohm"                                   "1V/A"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [19,] "Siemens"                               "1/Ohm"                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [20,] "Farad"                                 "1s^4*A^2/(kg*m^2)"       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [21,] "Henry"                                 "1J/(A^2)"                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [22,] "Tesla"                                 "1kg/(A*s^2)"             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [23,] "Weber"                                 "1kg*m^2/(A*s^2)"         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [24,] "Lumen"                                 "1cd*sr"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [25,] "Lux"                                   "1lm/m^2"                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [26,] "Becquerel"                             "1/s"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [27,] "Gray"                                  "1J/kg"                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [28,] "Sievert"                               "1J/kg"                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [29,] "Katal"                                 "1mol/s"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [30,] "Percent"                               "1//100"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [31,] "Permille"                              "1//1000"                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [32,] "Pertenthousand"                        "1//10000"                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [33,] "Percentmille"                          "1//100000"               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [34,] "Permillion"                            "1//1000000"              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [35,] "Perbillion"                            "1//1000000000"           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [36,] "Pertrillion"                           "1//1000000000000"        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [37,] "Perquadrillion"                        "1//1000000000000000"     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [38,] "Celsius"                               "(27315//100)K"           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [39,] "Minute"                                "60s"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [40,] "Hour"                                  "3600s"                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [41,] "Day"                                   "86400s"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [42,] "Week"                                  "604800s"                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [43,] "Year"                                  "31557600s"               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [44,] "RevolutionsPerSecond"                  "2pi*rad/s"               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [45,] "RevolutionsPerMinute"                  "2pi*rad/minute"          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [46,] "Are"                                   "100m^2"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [47,] "Hectare"                               ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [48,] "Barn"                                  "100fm^2"                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [49,] "Liter"                                 "m^3//1000"               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [50,] "Molar"                                 "1mol/L"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [51,] ""                                      "1.602_176_634e-19*C"     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [52,] "eV"                                    "q*V"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [53,] "AngHertz"                              "2pi/s"                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [54,] "Bar"                                   "100000Pa"                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [55,] "Atmosphere"                            "101325Pa"                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [56,] "Torr"                                  "101325Pa//760"           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [57,] ""                                      "299_792_458*m/s"         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [58,] "SpeedOfLight"                          "1c0"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [59,] "magnetic constant"                     "4pi*(1//10)^7*H/m"       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [60,] "electric constant"                     ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [61,] "impedance of free space"               ""                        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [62,] "gravitational constant"                "6.674_30e-11*m^3/kg/s^2" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [63,] "standard acceleration of gravity"      "9.80665*m/s^2"           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [64,] "Planck constant"                       "6.626_070_15e-34*J*s"    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [65,] "hbar"                                  "h/2pi"                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [66,] "Superconducting magnetic flux quantum" "h/(2q)"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [67,] "electron rest mass"                    "9.109_383_7015e-31*kg"   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [68,] "neutron rest mass"                     "1.674_927_498_04e-27*kg" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [69,] "proton rest mass"                      "1.672_621_923_69e-27*kg" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [70,] "Bohr magneton"                         "q*hbar/(2*me)"           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [71,] "Avogadro constant"                     "6.022_140_76e23/mol"     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [72,] "Boltzmann constant"                    "1.380_649e-23*(J/K)"     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [73,] "molar gas constant"                    "Na*k"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [74,] "Stefan-Boltzmann constant"             "pi^2*k^4/(60*hbar^3*c^2)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [75,] "Rydberg constant"                      "10_973_731.568_160/m"    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [76,] "UnifiedAtomicMassUnit"                 "1.660_539_066_60e-27*kg" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [77,] "EarthGravity"                          "gn"                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [78,] "Gal"                                   "1cm/s^2"                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [79,] "Dyne"                                  "1g*cm/s^2"               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [80,] "Erg"                                   "1g*cm^2/s^2"             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [81,] "Barye"                                 "1g/cm/s^2"               </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [82,] "Poise"                                 "1g/cm/s"                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [83,] "Stokes"                                "1cm^2/s"                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [84,] "Gauss"                                 "(1//10_000)*T"           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [85,] "Oersted"                               "(1_000/4pi)*A/m"         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [86,] "Maxwell"                               "(1//100_000_000)*Wb"     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [87,] "Inch"                                  "(254//10000)*m"          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [88,] "Mil"                                   "(1//1000)*inch"          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [89,] "Foot"                                  "12inch"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [90,] "Yard"                                  "3ft"                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [91,] "Mile"                                  "1760yd"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [92,] "Angstrom"                              "(1//10)*nm"              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [93,] "Acre"                                  "(316160658//78125)*m^2"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [94,] "Rankine"                               "(5//9)*K"                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [95,] "Fahrenheit"                            "(45967//100)Ra"          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [96,] "Pound"                                 "0.45359237kg"            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [97,] "Ounce"                                 "lb//16"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [98,] "Slug"                                  "1lb*ge*s^2/ft"           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [99,] "Dram"                                  "oz//16"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [100,] "Grain"                                 "(32//875)*dr"            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [101,] "PoundsForce"                           "1lb*ge"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [102,] "Calorie"                               "4.184J"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [103,] "BritishThermalUnit"                    "1055.06J"                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [104,] "PoundsPerSquareInch"                   "1lbf/inch^2"             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [105,] "Common year"                           "365d"                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [106,] "Common quarter"                        "365/4d"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [107,] "Common month"                          "365/12d"                 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [108,] "Quarter"                               "1/4yr"                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [109,] "Month"                                 "1/12yr"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [110,] "Fluid ounce"                           "29.5735295625mL"         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [111,] "Quart"                                 "946.35cm^3"              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [112,] "Tonne"                                 "1000kg"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [113,] "Ton"                                   "907.18474kg"             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [114,] "Gallon"                                "0.003785411784m^3"       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [115,] "Atom"                                  "1/6.02214076e23mol"      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [116,] "Molecule"                              "1/6.02214076e23mol"      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [117,] "Euro"                                  "1"                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [118,] "Dollar"                                "1"                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [119,] "PoundSterling"                         "1"                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        prefix </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [1,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [2,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [3,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [4,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [5,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [6,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [7,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [8,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [9,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [10,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [11,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [12,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [13,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [14,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [15,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [16,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [17,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [18,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [19,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [20,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [21,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [22,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [23,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [24,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [25,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [26,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [27,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [28,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [29,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [30,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [31,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [32,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [33,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [34,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [35,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [36,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [37,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [38,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [39,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [40,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [41,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [42,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [43,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [44,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [45,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [46,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [47,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [48,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [49,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [50,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [51,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [52,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [53,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [54,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [55,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [56,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [57,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [58,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [59,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [60,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [61,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [62,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [63,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [64,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [65,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [66,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [67,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [68,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [69,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [70,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [71,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [72,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [73,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [74,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [75,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [76,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [77,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [78,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [79,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [80,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [81,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [82,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [83,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [84,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [85,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [86,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [87,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [88,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [89,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [90,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [91,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [92,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [93,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [94,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [95,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [96,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [97,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [98,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [99,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [100,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [101,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [102,] "TRUE" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [103,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [104,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [105,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [106,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [107,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [108,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [109,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [110,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [111,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [112,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [113,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [114,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [115,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [116,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [117,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [118,] "FALSE"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [119,] "FALSE"</span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 
