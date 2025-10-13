@@ -85,7 +85,8 @@ to install and set up the Julia environment. Follow the guide at
 ## Other System Dynamics software
 
 sdbuildR is heavily based on common System Dynamics software such as
-[Vensim](https://vensim.com/), [Powersim](https://powersim.com/),
+[Vensim](https://en.wikipedia.org/wiki/Vensim/),
+[Powersim](https://powersim.com/),
 [Stella](https://www.iseesystems.com/), and [Insight
 Maker](https://insightmaker.com/). To translate xmile models to R, see
 the R package [readsdr](https://CRAN.R-project.org/package=readsdr). To

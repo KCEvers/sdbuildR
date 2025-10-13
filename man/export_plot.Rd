@@ -23,10 +23,11 @@ export_plot(pl, file, width = 3, height = 4, units = "cm", dpi = 300)
 Returns \code{NULL} invisibly.
 }
 \description{
-Save a plot of a stock-and-flow diagram or a simulation to a specified file path.
+Save a plot of a stock-and-flow diagram or a simulation to a specified file path. Note that saving plots requires additional packages to be installed (see below).
 }
 \examples{
 
+# Only if dependencies are installed
 if (require("DiagrammeRsvg", quietly = TRUE) &
   require("rsvg", quietly = TRUE)) {
   sfm <- xmile("SIR")
@@ -36,8 +37,9 @@ if (require("DiagrammeRsvg", quietly = TRUE) &
   # Remove plot
   file.remove(file)
 }
-\dontshow{if (not_on_cran() & interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 
+\dontrun{ # requires internet
+# Only if dependencies are installed
 if (require("htmlwidgets", quietly = TRUE) &
   require("webshot2", quietly = TRUE)) {
   #     # Requires Chrome to save plotly plot:
@@ -47,7 +49,7 @@ if (require("htmlwidgets", quietly = TRUE) &
   # Remove plot
   file.remove(file)
 }
-\dontshow{\}) # examplesIf}
+}
 }
 \seealso{
 Other simulate: 

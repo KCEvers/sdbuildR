@@ -59,12 +59,14 @@ julia_init_ok <- function() {
 #' @family simulate
 #'
 #' @examples
+#' \dontrun{ # requires Julia setup
 #' if (JuliaConnectoR::juliaSetupOk()) {
 #'   # Start Julia session or set up environment (first time use)
 #'   use_julia()
 #'
 #'   # Stop Julia session
 #'   use_julia(stop = TRUE)
+#' }
 #' }
 use_julia <- function(
     stop = FALSE,

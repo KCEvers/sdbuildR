@@ -23,12 +23,14 @@ Create Julia environment to simulate stock-and-flow models. \code{use_julia()} l
 Keep in mind that the installation can take around 5-20 minutes. In every R session, \code{use_julia()} needs to be run once (which is done automatically in \code{simulate()}), which can take around 30 seconds.
 }
 \examples{
+\dontrun{ # requires Julia setup
 if (JuliaConnectoR::juliaSetupOk()) {
   # Start Julia session or set up environment (first time use)
   use_julia()
 
   # Stop Julia session
   use_julia(stop = TRUE)
+}
 }
 }
 \seealso{
