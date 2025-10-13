@@ -24,7 +24,6 @@ nonnegative(-1)
 Other internal: 
 \code{\link{clean_name}()},
 \code{\link{has_internet}()},
-\code{\link{not_on_cran}()},
 \code{\link{saveat_func}()}
 }
 \concept{internal}

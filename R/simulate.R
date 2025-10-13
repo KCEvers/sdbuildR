@@ -32,6 +32,7 @@
 #' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim, add_constants = TRUE)
 #'
+#' \dontrun{ # requires Julia setup
 #' if (JuliaConnectoR::juliaSetupOk()) {
 #'   # Use Julia for models with units or delay functions
 #'   sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
@@ -40,6 +41,7 @@
 #'
 #'   # Close Julia session
 #'   use_julia(stop = TRUE)
+#' }
 #' }
 simulate <- function(sfm,
                      keep_nonnegative_flow = TRUE,
@@ -658,7 +660,8 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 #' @seealso [use_threads()], [build()], [xmile()], [sim_specs()], [use_julia()]
 #'
 #' @examples
-#' # Ensemble simulations require Julia
+#'
+#' \dontrun{ # requires Julia setup
 #' if (JuliaConnectoR::juliaSetupOk()) {
 #'   # Load example and set simulation language to Julia
 #'   sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
@@ -721,6 +724,7 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 #'
 #'   # Close Julia
 #'   use_julia(stop = TRUE)
+#' }
 #' }
 ensemble <- function(sfm,
                      n = 10,
@@ -1024,6 +1028,7 @@ ensemble <- function(sfm,
 #' @export
 #'
 #' @examples
+#' \dontrun{ # requires Julia setup
 #' if (JuliaConnectoR::juliaSetupOk()) {
 #'   # Use Julia with 4 threads
 #'   use_julia()
@@ -1034,6 +1039,7 @@ ensemble <- function(sfm,
 #'
 #'   # Stop using Julia
 #'   use_julia(stop = TRUE)
+#' }
 #' }
 use_threads <- function(n = parallel::detectCores() - 1, stop = FALSE) {
   if (!is.numeric(n)) {

@@ -30,7 +30,6 @@ clean_name("predator", as.data.frame(sfm)[["name"]]) # "predator_1"
 Other internal: 
 \code{\link{has_internet}()},
 \code{\link{nonnegative}()},
-\code{\link{not_on_cran}()},
 \code{\link{saveat_func}()}
 }
 \concept{internal}

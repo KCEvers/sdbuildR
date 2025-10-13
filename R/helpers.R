@@ -22,23 +22,6 @@ has_internet <- function() {
 
 
 
-#' Check if on CRAN
-#'
-#' @returns Logical value
-#' @export
-#' @family internal
-#'
-#' @examples
-#' not_on_cran()
-not_on_cran <- function() {
-  env <- Sys.getenv("NOT_CRAN", unset = "")
-  if (identical(env, "")) {
-    interactive()
-  } else {
-    isTRUE(as.logical(env))
-  }
-}
-
 
 #' Near equivalent of purrr::compact()
 #'

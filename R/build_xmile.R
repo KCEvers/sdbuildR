@@ -1428,7 +1428,7 @@ report_name_change <- function(old_names, new_names) {
 #'   to = c(NA, "X", NA, NA, NA),
 #'   from = c(NA, NA, "X", NA, NA)
 #' )
-#' sfm <- build(sfm, df = df)
+#' sfm <- build(xmile(), df = df)
 #'
 #' # Check for errors in the model
 #' debugger(sfm)

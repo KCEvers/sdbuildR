@@ -20,7 +20,6 @@ has_internet()
 Other internal: 
 \code{\link{clean_name}()},
 \code{\link{nonnegative}()},
-\code{\link{not_on_cran}()},
 \code{\link{saveat_func}()}
 }
 \concept{internal}

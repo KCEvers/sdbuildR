@@ -1,4 +1,4 @@
-# sdbuildR (development version)
+# sdbuildR 1.0.0
 
 * Added extensive solver options
 * Created Julia package (SystemDynamicsBuildR.jl) to contain sdbuildR Julia code

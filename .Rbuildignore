@@ -18,3 +18,4 @@
 ^tests/testthat/testdata/insightmaker/validation$
 ^tests/testthat/testdata/insightmaker/delay$
 ^tests/testthat/testdata/insightmaker/fix$
+^CRAN-SUBMISSION$

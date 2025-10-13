@@ -68,7 +68,8 @@ To run large simulations, it is recommended to limit the output size by saving f
 If you do not see any variation within a condition of the ensemble (i.e. the confidence bands are virtually non-existent), there are likely no random elements in your model. Without these, there can be no variability in the model. Try specifying a random initial condition or adding randomness to other model elements.
 }
 \examples{
-# Ensemble simulations require Julia
+
+\dontrun{ # requires Julia setup
 if (JuliaConnectoR::juliaSetupOk()) {
   # Load example and set simulation language to Julia
   sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
@@ -131,6 +132,7 @@ if (JuliaConnectoR::juliaSetupOk()) {
 
   # Close Julia
   use_julia(stop = TRUE)
+}
 }
 }
 \seealso{

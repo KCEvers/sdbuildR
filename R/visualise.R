@@ -1,6 +1,6 @@
 #' Save plot to a file
 #'
-#' Save a plot of a stock-and-flow diagram or a simulation to a specified file path.
+#' Save a plot of a stock-and-flow diagram or a simulation to a specified file path. Note that saving plots requires additional packages to be installed (see below).
 #'
 #' @param pl Plot object.
 #' @param file File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. If no file extension is specified, it will default to png.
@@ -15,6 +15,7 @@
 #'
 #' @examples
 #'
+#' # Only if dependencies are installed
 #' if (require("DiagrammeRsvg", quietly = TRUE) &
 #'   require("rsvg", quietly = TRUE)) {
 #'   sfm <- xmile("SIR")
@@ -24,8 +25,9 @@
 #'   # Remove plot
 #'   file.remove(file)
 #' }
-#' @examplesIf not_on_cran() & interactive()
 #'
+#' \dontrun{ # requires internet
+#' # Only if dependencies are installed
 #' if (require("htmlwidgets", quietly = TRUE) &
 #'   require("webshot2", quietly = TRUE)) {
 #'   #     # Requires Chrome to save plotly plot:
@@ -34,6 +36,7 @@
 #'
 #'   # Remove plot
 #'   file.remove(file)
+#' }
 #' }
 export_plot <- function(pl, file, width = 3, height = 4, units = "cm", dpi = 300) {
   # Auto-detect format
