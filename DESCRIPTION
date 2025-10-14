@@ -1,6 +1,6 @@
 Package: sdbuildR
 Title: Easily Build, Simulate, and Visualise Stock-and-Flow Models
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: 
     person(given = "Kyra Caitlin", family = "Evers", 
     email = "kyra.c.evers@gmail.com", 
