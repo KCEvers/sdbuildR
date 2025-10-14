@@ -452,7 +452,8 @@ find_unit_strings <- function(sfm) {
 #' @family units
 #' @export
 #' @examples
-#' get_units()
+#' x <- get_units()
+#' head(x)
 #'
 get_units <- function() {
   units_df <- matrix(
@@ -638,7 +639,8 @@ get_units <- function() {
 #' @family units
 #' @export
 #' @examples
-#' get_regex_time_units()
+#' x <- get_regex_time_units()
+#' head(x)
 #'
 get_regex_time_units <- function() {
   # Get units dataframe and only keep time units
@@ -754,7 +756,8 @@ unit_prefixes <- function() {
 #' @family units
 #' @export
 #' @examples
-#' get_regex_units()
+#' x <- get_regex_units()
+#' head(x)
 #'
 get_regex_units <- function(sfm = NULL) {
   # Get units dataframe

@@ -13,7 +13,8 @@ Named vector with regular expressions as names and units as entries
 Get regular expressions for time units in Julia
 }
 \examples{
-get_regex_time_units()
+x <- get_regex_time_units()
+head(x)
 
 }
 \seealso{

@@ -2,9 +2,10 @@ Package: sdbuildR
 Title: Easily Build, Simulate, and Visualise Stock-and-Flow Models
 Version: 1.0.0
 Authors@R: 
-    person("Kyra Caitlin", "Evers", "", "kyra.c.evers@gmail.com", 
-           role = c("aut", "cre", "cph"),
-           comment = c(ORCID = "0000-0001-6890-3482", ROR = "04dkp9463"))
+    person(given = "Kyra Caitlin", family = "Evers", 
+    email = "kyra.c.evers@gmail.com", 
+    role = c("aut", "cre", "cph"),
+    comment = c(ORCID = "0000-0001-6890-3482", ROR = "04dkp9463"))
 Description: Stock-and-flow models are a computational method from the field of 
     system dynamics. They represent how systems change over time and are 
     mathematically equivalent to ordinary differential equations. 'sdbuildR'

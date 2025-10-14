@@ -16,7 +16,8 @@ Named vector with regular expressions as names and units as entries
 Get regular expressions for units in Julia
 }
 \examples{
-get_regex_units()
+x <- get_regex_units()
+head(x)
 
 }
 \seealso{

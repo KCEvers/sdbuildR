@@ -26,11 +26,12 @@
 #'   file.remove(file)
 #' }
 #'
+#' @examplesIf interactive()
 #' \dontrun{ # requires internet
 #' # Only if dependencies are installed
 #' if (require("htmlwidgets", quietly = TRUE) &
 #'   require("webshot2", quietly = TRUE)) {
-#'   #     # Requires Chrome to save plotly plot:
+#'   # Requires Chrome to save plotly plot:
 #'   sim <- simulate(sfm)
 #'   export_plot(plot(sim), file)
 #'
@@ -847,10 +848,6 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
 #' plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
 #'
 #' # Add constants to the plot
-#' plot(sim, add_constants = TRUE)
-#'
-#' # Plot all model variables
-#' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim, add_constants = TRUE)
 #'
 plot.sdbuildR_sim <- function(x,
