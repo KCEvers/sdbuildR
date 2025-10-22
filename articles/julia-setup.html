@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,17 @@
 
     
     
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://kcevers.github.io/sdbuildR/">sdbuildR</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'sdbuildR'</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     simulate, step</span></span>
+<span><span class="co">#&gt; The following object is masked from 'package:utils':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     debugger</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">JuliaConnectoR</span><span class="op">)</span></span></code></pre></div>
 <p>sdbuildR uses Julia for ensemble simulations and working with units
 in models. This is supported by the R package <a href="https://github.com/stefan-m-lenz/JuliaConnectoR/" class="external-link">JuliaConnectoR</a>.
 This guide will help you install Julia and configure it to work with
@@ -77,53 +88,43 @@ sdbuildR.</p>
 <h2 id="step-1-install-julia">Step 1: Install Julia<a class="anchor" aria-label="anchor" href="#step-1-install-julia"></a>
 </h2>
 <p>Download and install Julia from <a href="https://julialang.org/install/" class="external-link">https://julialang.org/install/</a>.
-If you already have Julia installed, you can go to step 2.</p>
+If you already have Julia installed, go to the next step.</p>
 <p>We recommend using <strong>juliaup</strong>, Julia’s official version
 manager, which makes it easy to install and switch between Julia
 versions. Some useful commands are listed below.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># See installed versions and current default</span></span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="ex">juliaup</span> status</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># Install latest stable version</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="ex">juliaup</span> add release</span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># Install specific version</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="ex">juliaup</span> add 1.11.3</span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># Set default version</span></span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="ex">juliaup</span> default 1.11.3</span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a></span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co"># Update juliaup and all Julia versions</span></span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="ex">juliaup</span> update</span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a></span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co"># Remove a version</span></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="ex">juliaup</span> remove 1.10.0</span>
-<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a></span>
-<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="co"># List all available versions</span></span>
-<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="ex">juliaup</span> list</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># See installed versions and current default</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="ex">juliaup</span> status</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># Install latest stable version</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="ex">juliaup</span> add release</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># Install specific version</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="ex">juliaup</span> add 1.11.3</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co"># Set default version</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="ex">juliaup</span> default 1.11.3</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co"># Update juliaup and all Julia versions</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="ex">juliaup</span> update</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co"># Remove a version</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="ex">juliaup</span> remove 1.10.0</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co"># List all available versions</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="ex">juliaup</span> list</span></code></pre></div>
 <p>Alternatively, you can download a standalone Julia installer from <a href="https://julialang.org/downloads/" class="external-link">https://julialang.org/downloads/</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="step-2-check-if-julia-is-accessible">Step 2: Check if Julia is accessible<a class="anchor" aria-label="anchor" href="#step-2-check-if-julia-is-accessible"></a>
 </h2>
-<p>After installing Julia, check if R can find it:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Check if Julia is on your PATH</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Sys.which.html" class="external-link">Sys.which</a></span><span class="op">(</span><span class="st">"julia"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Check if JULIA_BINDIR is set</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"JULIA_BINDIR"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Verify JuliaConnectoR can find Julia</span></span>
-<span><span class="fu">JuliaConnectoR</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/juliaSetupOk.html" class="external-link">juliaSetupOk</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>If both <code>Sys.which("julia")</code> and
-<code>Sys.getenv("JULIA_BINDIR")</code> return an empty string
-(<code>""</code>), you’ll need to add Julia to your PATH. If the Julia
-installation can be found, try to start a Julia session:</p>
+<p>After installing Julia, check if JuliaConnectoR can find it:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Verify JuliaConnectoR can start Julia</span></span>
-<span><span class="fu">JuliaConnectoR</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/startJuliaServer.html" class="external-link">startJuliaServer</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu">JuliaConnectoR</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/stopJulia.html" class="external-link">stopJulia</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/juliaSetupOk.html" class="external-link">juliaSetupOk</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>If the Julia installation can be found, try to start a Julia
+session:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/startJuliaServer.html" class="external-link">startJuliaServer</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/stopJulia.html" class="external-link">stopJulia</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>If this runs successfully, you can skip to step 6. If this throws an
 error, go to the next step.</p>
 </div>
@@ -137,7 +138,7 @@ installation (not the Julia executable itself).</p>
 </h3>
 <p>If you can start Julia from your terminal/command prompt, run this
 inside Julia:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>juliaBase.<span class="fu">julia_cmd</span>()[<span class="fl">1</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>juliaBase.<span class="fu">julia_cmd</span>()[<span class="fl">1</span>]</span></code></pre></div>
 <p>This returns something like:</p>
 <ul>
 <li>Windows:
@@ -157,11 +158,11 @@ end).</p>
 <h3 id="from-your-terminalcommand-prompt">From your terminal/command prompt<a class="anchor" aria-label="anchor" href="#from-your-terminalcommand-prompt"></a>
 </h3>
 <p><strong>Windows:</strong></p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="ex">where</span> julia</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="ex">where</span> julia</span></code></pre></div>
 <p><strong>macOS/Linux:</strong></p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">which</span> julia</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co"># or</span></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">whereis</span> julia</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">which</span> julia</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co"># or</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">whereis</span> julia</span></code></pre></div>
 <p>Take note of the path, removing the filename to get just the
 <code>bin</code> directory.</p>
 </div>
@@ -175,7 +176,7 @@ end).</p>
 <h3 id="open--renviron">Open .Renviron<a class="anchor" aria-label="anchor" href="#open--renviron"></a>
 </h3>
 <p>Run this in R to open your <code>.Renviron</code> file:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Install usethis if needed</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://usethis.r-lib.org" class="external-link">"usethis"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"usethis"</span><span class="op">)</span></span>
 <span></span>
@@ -218,92 +219,109 @@ R)</li>
 <h2 id="step-5-verify-the-setup">Step 5: Verify the setup<a class="anchor" aria-label="anchor" href="#step-5-verify-the-setup"></a>
 </h2>
 <p>After restarting R, verify that Julia is accessible:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Should show the path to julia executable</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Sys.which.html" class="external-link">Sys.which</a></span><span class="op">(</span><span class="st">"julia"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Check Julia version</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.html" class="external-link">system</a></span><span class="op">(</span><span class="st">"julia --version"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Verify JuliaConnectoR can find Julia</span></span>
-<span><span class="fu">JuliaConnectoR</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/juliaSetupOk.html" class="external-link">juliaSetupOk</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>If <code>Sys.which("julia")</code> returns a path and
-<code>juliaSetupOk()</code> returns <code>TRUE</code>, R can find your
-Julia installation!</p>
-<p>Check whether a Julia session can be started from R:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Verify JuliaConnectoR can start Julia</span></span>
-<span><span class="fu">JuliaConnectoR</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/startJuliaServer.html" class="external-link">startJuliaServer</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu">JuliaConnectoR</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/stopJulia.html" class="external-link">stopJulia</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/juliaSetupOk.html" class="external-link">juliaSetupOk</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>Check whether a Julia session can be started from R:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/startJuliaServer.html" class="external-link">startJuliaServer</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/stopJulia.html" class="external-link">stopJulia</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="step-6-using-julia-with-sdbuildr">Step 6: Using Julia with sdbuildR<a class="anchor" aria-label="anchor" href="#step-6-using-julia-with-sdbuildr"></a>
+</h2>
+<p>After installing Julia, you need to set up the Julia environment for
+sdbuildR:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_julia_env.html">install_julia_env</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>Note that this may take 10-25 minutes the first time as Julia
+downloads and compiles packages.</p>
+</div>
+<div class="section level2">
+<h2 id="step-7-verify-julia-environment-setup">Step 7: Verify Julia environment setup<a class="anchor" aria-label="anchor" href="#step-7-verify-julia-environment-setup"></a>
+</h2>
+<p>Check whether the Julia environment setup was successful:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/julia_status.html">julia_status</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>To start a Julia session and activate the Julia environment for
+sdbuildR, run <code><a href="../reference/use_julia.html">use_julia()</a></code>.</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/use_julia.html">use_julia</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>This needs to be done in <em>each</em> new R session.</p>
+<div class="section level3">
+<h3 id="close-julia-session">Close Julia session<a class="anchor" aria-label="anchor" href="#close-julia-session"></a>
+</h3>
+<p>To close the Julia session:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/use_julia.html">use_julia</a></span><span class="op">(</span>stop <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
 </h2>
 <div class="section level3">
-<h3 id="julia-still-not-found-after-restarting-r">Julia still not found after restarting R<a class="anchor" aria-label="anchor" href="#julia-still-not-found-after-restarting-r"></a>
+<h3 id="julia-not-found">Julia not found<a class="anchor" aria-label="anchor" href="#julia-not-found"></a>
 </h3>
+<p>JuliaConnectoR cannot find Julia, i.e. this evaluates to
+<code>FALSE</code>:</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/juliaSetupOk.html" class="external-link">juliaSetupOk</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>JuliaConnectoR tries to find Julia in the following order:</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"JULIA_BINDIR"</span><span class="op">)</span> <span class="co"># "" if not found</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Sys.which.html" class="external-link">Sys.which</a></span><span class="op">(</span><span class="st">"julia"</span><span class="op">)</span> <span class="co"># "" if not found</span></span>
+<span></span>
+<span><span class="co"># On Max/Linux:</span></span>
+<span><span class="va">julia_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"HOME"</span><span class="op">)</span>, <span class="st">".juliaup"</span>, <span class="st">"bin"</span>, <span class="st">"julia"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">julia_path</span><span class="op">)</span> <span class="co"># FALSE if not found</span></span></code></pre></div>
+<p>To add Julia to your PATH, follow step 4. If this still doesn’t
+work:</p>
 <ol style="list-style-type: decimal">
 <li>Double-check the path you added to <code>.Renviron</code>
 </li>
 <li>Make sure you’re pointing to the <code>bin</code> directory, not the
 Julia executable</li>
-<li>On Windows, use forward slashes (<code>/</code>) not backslashes
-(<code>\</code>)</li>
+<li>Make sure you’re using the file path separator appropriate for your
+operating system, which you can find with
+<code>.Platform$file.sep</code>.</li>
 <li>Verify you saved <code>.Renviron</code> and restarted R</li>
+<li>View your current PATH</li>
 </ol>
+<p>Check whether your Julia bin directory is in your PATH:</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># View PATH split by separator for readability</span></span>
+<span><span class="va">paths</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/strsplit.html" class="external-link">strsplit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"PATH"</span><span class="op">)</span>, <span class="va">.Platform</span><span class="op">$</span><span class="va">path.sep</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">paths</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"julia"</span>, <span class="va">paths</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="view-your-current-path">View your current PATH<a class="anchor" aria-label="anchor" href="#view-your-current-path"></a>
+<h3 id="removing-the-julia-environment-for-sdbuildr">Removing the Julia environment for sdbuildR<a class="anchor" aria-label="anchor" href="#removing-the-julia-environment-for-sdbuildr"></a>
 </h3>
-<p>To see all directories in your PATH:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># View PATH split by separator for readability</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/strsplit.html" class="external-link">strsplit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"PATH"</span><span class="op">)</span>, <span class="va">.Platform</span><span class="op">$</span><span class="va">path.sep</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span></code></pre></div>
-<p>Look for your Julia bin directory in this list.</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_julia_env.html">install_julia_env</a></span><span class="op">(</span>delete <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="advanced-using-multiple-julia-versions">Advanced: Using multiple Julia versions<a class="anchor" aria-label="anchor" href="#advanced-using-multiple-julia-versions"></a>
-</h2>
+<div class="section level3">
+<h3 id="advanced-using-multiple-julia-versions">Advanced: Using multiple Julia versions<a class="anchor" aria-label="anchor" href="#advanced-using-multiple-julia-versions"></a>
+</h3>
 <p>If you have multiple Julia versions installed, the first one found in
 your PATH will be used by default.</p>
-<div class="section level3">
-<h3 id="switch-versions-with-juliaup">Switch versions with juliaup<a class="anchor" aria-label="anchor" href="#switch-versions-with-juliaup"></a>
-</h3>
+<div class="section level4">
+<h4 id="switch-versions-with-juliaup">Switch versions with juliaup<a class="anchor" aria-label="anchor" href="#switch-versions-with-juliaup"></a>
+</h4>
 <p>If using juliaup, you can change the default version without
 modifying <code>.Renviron</code>:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># From terminal/command prompt</span></span>
-<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="ex">juliaup</span> default 1.11.3</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="co"># From terminal/command prompt</span></span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a><span class="ex">juliaup</span> default 1.11.3</span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="step-6-using-julia-with-sdbuildr">Step 6: Using Julia with sdbuildR<a class="anchor" aria-label="anchor" href="#step-6-using-julia-with-sdbuildr"></a>
-</h2>
-<p>To set up the Julia environment for sdbuildR, including all necessary
-packages, run <code><a href="../reference/use_julia.html">use_julia()</a></code>. First time use can take quite a
-while (i.e., 10-30 minutes).</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://kcevers.github.io/sdbuildR/">sdbuildR</a></span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/use_julia.html">use_julia</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>The Julia environment needs to be set up for <em>each</em> new R
-session, but should now be much quicker.</p>
-<div class="section level3">
-<h3 id="using-a-specific-version-with-sdbuildr">Using a specific version with sdbuildR<a class="anchor" aria-label="anchor" href="#using-a-specific-version-with-sdbuildr"></a>
-</h3>
+<div class="section level4">
+<h4 id="switch-versions-temporarily">Switch versions temporarily<a class="anchor" aria-label="anchor" href="#switch-versions-temporarily"></a>
+</h4>
 <p>By default, sdbuildR uses your default Julia version. To use a
 different version:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/use_julia.html">use_julia</a></span><span class="op">(</span>JULIA_HOME <span class="op">=</span> <span class="st">"C:/Users/YourName/.julia/juliaup/julia-1.11.3+0.x64.w64.mingw32/bin"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>JULIA_BINDIR <span class="op">=</span> <span class="st">"C:/Users/YourName/.julia/juliaup/julia-1.11.3+0.x64.w64.mingw32/bin"</span><span class="op">)</span></span></code></pre></div>
 <p>Note: This only affects the current R session and is not
 permanent.</p>
 </div>
-<div class="section level3">
-<h3 id="close-julia-session">Close Julia session<a class="anchor" aria-label="anchor" href="#close-julia-session"></a>
-</h3>
-<p>To close the Julia session:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/use_julia.html">use_julia</a></span><span class="op">(</span>stop <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
