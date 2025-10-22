@@ -12,7 +12,7 @@ use_julia(stop = FALSE, force = FALSE)
 \item{force}{If TRUE, force Julia setup to execute again.}
 }
 \value{
-Returns \code{NULL} invisibly.
+Returns \code{NULL} invisibly, used for side effects
 }
 \description{
 Start Julia session and activate Julia environment to simulate stock-and-flow models. \code{use_julia()} looks for a Julia installation and an instantiated Julia environment specifically for sdbuildR. This can be set up with \code{install_julia_env()}. For more guidance, please see \href{https://kcevers.github.io/sdbuildR/articles/julia-setup.html}{this vignette}.
@@ -35,6 +35,7 @@ if (julia_status()$status == "ready") {
 \seealso{
 Other julia: 
 \code{\link{install_julia_env}()},
-\code{\link{julia_status}()}
+\code{\link{julia_status}()},
+\code{\link{use_threads}()}
 }
 \concept{julia}

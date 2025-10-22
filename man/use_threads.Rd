@@ -15,7 +15,7 @@ use_threads(n = parallel::detectCores() - 1, stop = FALSE)
 No return value, called for side effects
 }
 \description{
-Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS. Note that this does not affect regular simulations with \code{simulate()}.
+Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS. Note that this does not affect regular simulations with \code{\link[=simulate]{simulate()}}.
 }
 \examples{
 \dontrun{
@@ -36,13 +36,9 @@ if (julia_status()$status == "ready") {
 \seealso{
 \code{\link[=ensemble]{ensemble()}}, \code{\link[=use_julia]{use_julia()}}
 
-Other simulate: 
-\code{\link{ensemble}()},
-\code{\link{export_plot}()},
-\code{\link{plot.sdbuildR_ensemble}()},
-\code{\link{plot.sdbuildR_sim}()},
-\code{\link{sim_specs}()},
-\code{\link{simulate}()},
-\code{\link{solvers}()}
+Other julia: 
+\code{\link{install_julia_env}()},
+\code{\link{julia_status}()},
+\code{\link{use_julia}()}
 }
-\concept{simulate}
+\concept{julia}

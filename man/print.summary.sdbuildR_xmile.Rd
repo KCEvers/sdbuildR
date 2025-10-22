@@ -7,12 +7,12 @@
 \method{print}{summary.sdbuildR_xmile}(x, ...)
 }
 \arguments{
-\item{x}{A summary object of class "summary.sdbuildR_xmile"}
+\item{x}{A summary object of class \link{summary.sdbuildR_xmile}}
 
 \item{...}{Additional arguments (unused)}
 }
 \value{
-Invisibly returns the summary object of class summary.sdbuildR_xmile
+Invisibly returns the summary object of class \link{summary.sdbuildR_xmile}
 }
 \description{
 Print method for summary.sdbuildR_xmile

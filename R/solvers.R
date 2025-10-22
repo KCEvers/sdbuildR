@@ -9,7 +9,7 @@
 #' @param to Character string indicating target language: "R" or "Julia"
 #' @param show_info Logical, whether to display additional solver information
 #'
-#' @return Character vector of equivalent solver(s) or list with details
+#' @returns Character vector of equivalent solver(s) or list with details
 #' @family simulate
 #' @export
 #'

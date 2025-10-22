@@ -22,7 +22,7 @@
 )
 }
 \arguments{
-\item{x}{Stock-and-flow model of class sdbuildR_xmile}
+\item{x}{A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 
 \item{vars}{Variables to plot. Defaults to NULL to plot all variables.}
 
@@ -32,7 +32,7 @@
 
 \item{font_size}{Font size. Defaults to 18.}
 
-\item{font_family}{Font name. Defaults to "Georgia".}
+\item{font_family}{Font name. Defaults to "Times New Roman".}
 
 \item{stock_col}{Colour of stocks. Defaults to "#83d3d4".}
 

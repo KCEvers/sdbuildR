@@ -18,10 +18,13 @@
 \item{...}{Optional parameters}
 }
 \value{
-Dataframe with simulation results
+A data.frame with simulation results. For \code{direction = "long"} (default),
+the data frame has three columns: \code{time}, \code{variable}, and \code{value}.
+For \code{direction = "wide"}, the data frame has columns \code{time} followed by
+one column per variable.
 }
 \description{
-Convert simulation results to a dataframe. The first column is time, followed by all stocks, and then all other auxiliary and flow variables.
+Convert simulation results to a dataframe.
 }
 \examples{
 sfm <- xmile("SIR")

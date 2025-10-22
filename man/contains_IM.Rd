@@ -2,7 +2,7 @@
 % Please edit documentation in R/custom_func.R
 \name{contains_IM}
 \alias{contains_IM}
-\title{Check whether needle (value) is in haystack (vector or string)}
+\title{Check if needle is in haystack}
 \usage{
 contains_IM(haystack, needle)
 }
@@ -15,7 +15,7 @@ contains_IM(haystack, needle)
 Logical value
 }
 \description{
-Equivalent of .Contains() in Insight Maker
+Check whether value is in vector or string. Equivalent of .Contains() in Insight Maker.
 }
 \examples{
 contains_IM(c("a", "b", "c"), "d") # FALSE

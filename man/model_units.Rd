@@ -7,7 +7,7 @@
 model_units(sfm, name, eqn = "1", doc = "", erase = FALSE, change_name = NULL)
 }
 \arguments{
-\item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
+\item{sfm}{Stock-and-flow model, object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 
 \item{name}{Name of unit. A character vector.}
 
@@ -20,10 +20,10 @@ model_units(sfm, name, eqn = "1", doc = "", erase = FALSE, change_name = NULL)
 \item{change_name}{New name for model unit. Defaults to NULL to indicate no change.}
 }
 \value{
-Modified stock-and-flow object with updated custom units.
+A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}
 }
 \description{
-A large library of units already exists, but you may want to define your own custom units. Use \code{model_units()} to add, change, or erase custom units from a stock-and-flow model. Custom units may be new base units, or may be defined in terms of other (custom) units. See \code{?u()} for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
+A large library of units already exists, but you may want to define your own custom units. Use \code{\link[=model_units]{model_units()}} to add, change, or erase custom units from a stock-and-flow model. Custom units may be new base units, or may be defined in terms of other (custom) units. See \code{\link[=u]{u()}} for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
 }
 \examples{
 # Units are only supported with Julia

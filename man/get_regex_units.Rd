@@ -7,7 +7,7 @@
 get_regex_units(sfm = NULL)
 }
 \arguments{
-\item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
+\item{sfm}{Stock-and-flow model, object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 }
 \value{
 Named vector with regular expressions as names and units as entries

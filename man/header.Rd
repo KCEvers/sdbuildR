@@ -17,7 +17,7 @@ header(
 )
 }
 \arguments{
-\item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
+\item{sfm}{Stock-and-flow model, object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 
 \item{name}{Model name. Defaults to "My Model".}
 
@@ -36,7 +36,7 @@ header(
 \item{...}{Optional other entries to add to the header.}
 }
 \value{
-Modified stock-and-flow object with an updated header.
+A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}
 }
 \description{
 The header of a stock-and-flow model contains metadata about the model, such as the name, author, and version. Modify the header of an existing model with standard or custom properties.

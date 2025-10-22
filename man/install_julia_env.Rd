@@ -39,6 +39,7 @@ if (julia_status()$julia_found) {
 \seealso{
 Other julia: 
 \code{\link{julia_status}()},
-\code{\link{use_julia}()}
+\code{\link{use_julia}()},
+\code{\link{use_threads}()}
 }
 \concept{julia}

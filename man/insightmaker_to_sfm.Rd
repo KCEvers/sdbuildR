@@ -24,16 +24,17 @@ insightmaker_to_sfm(
 \item{keep_solver}{If TRUE, keep the ODE solver as it is. If FALSE, switch to Euler integration in case of non-negative stocks to reproduce the Insight Maker data exactly. Defaults to FALSE.}
 }
 \value{
-Stock-and-flow model of class xmile.
+A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}
 }
 \description{
-Import a stock-and-flow model from \href{https://insightmaker.com/}{Insight Maker}. Models may be your own or from another user. Importing causal loop diagrams or agent-based models is not supported.
+Import a stock-and-flow model from \href{https://insightmaker.com/}{Insight Maker}. Models may be your own or another user's. Importing causal loop diagrams or agent-based models is not supported.
 }
 \details{
 Insight Maker models can be imported using either a URL or an Insight Maker file. Ensure the URL refers to a public (not private) model. To download a model file from Insight Maker, first clone the model if it is not your own. Then, go to "Share" (top right), "Export", and "Download Insight Maker file".
 }
 \examples{
 \dontshow{if (has_internet()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontrun{ # requires internet
 # Load a model from Insight Maker
 sfm <- insightmaker_to_sfm(
   URL =
@@ -48,6 +49,7 @@ sfm <- sim_specs(sfm, save_at = .5)
 # Simulate the model
 sim <- simulate(sfm)
 plot(sim)
+}
 \dontshow{\}) # examplesIf}
 }
 \seealso{

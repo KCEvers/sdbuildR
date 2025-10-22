@@ -7,15 +7,15 @@
 \method{summary}{sdbuildR_xmile}(object, ...)
 }
 \arguments{
-\item{object}{Stock-and-flow model of class sdbuildR_xmile}
+\item{object}{A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}}
 
 \item{...}{Optional arguments}
 }
 \value{
-Summary object of class summary.sdbuildR_xmile
+Summary object of class \link{summary.sdbuildR_xmile}
 }
 \description{
-Print summary of stock-and-flow model, including number of stocks, flows, constants, auxiliaries, graphical functions, macros, custom model units, and use of delay functions. Also prints simulation specifications.
+Print summary of stock-and-flow model, including number of stocks, flows, constants, auxiliaries, graphical functions, macros, and custom model units, as well as simulation specifications and use of delay functions.
 }
 \examples{
 sfm <- xmile("SIR")

@@ -19,7 +19,7 @@ ensemble(
 )
 }
 \arguments{
-\item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
+\item{sfm}{Stock-and-flow model, object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 
 \item{n}{Number of simulations to run in the ensemble. When range is specified, n defines the number of simulations to run per condition. If each condition only needs to be run once, set n = 1. Defaults to 10.}
 
@@ -31,7 +31,7 @@ ensemble(
 
 \item{quantiles}{Quantiles to calculate in the summary, e.g. c(0.025, 0.975).}
 
-\item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.}
+\item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if \code{sim_specs(language = "julia")} and no delay functions are used. Defaults to FALSE.}
 
 \item{keep_nonnegative_flow}{If TRUE, keeps original non-negativity setting of flows. Defaults to TRUE.}
 
@@ -42,7 +42,7 @@ ensemble(
 \item{verbose}{If TRUE, update on progress. Defaults to FALSE.}
 }
 \value{
-Object of class sdbuildR_ensemble, which is a list containing:
+Object of class \code{\link[=ensemble]{sdbuildR_ensemble}}, which is a list containing:
 \describe{
 \item{success}{If TRUE, simulation was successful. If FALSE, simulation failed.}
 \item{error_message}{If success is FALSE, contains the error message.}
@@ -60,10 +60,10 @@ Object of class sdbuildR_ensemble, which is a list containing:
 }
 }
 \description{
-Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in \code{range}. The ensemble can be run in parallel using multiple threads by first setting \code{use_threads()}. The results are returned as a dataframe with summary statistics and optionally individual simulations.
+Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in \code{range}. The ensemble can be run in parallel using multiple threads by first setting \code{\link[=use_threads]{use_threads()}}. The results are returned as a dataframe with summary statistics and optionally individual simulations.
 }
 \details{
-To run large simulations, it is recommended to limit the output size by saving fewer values. To create a reproducible ensemble simulation, set a seed using sim_specs().
+To run large simulations, it is recommended to limit the output size by saving fewer values. To create a reproducible ensemble simulation, set a seed using \code{\link[=sim_specs]{sim_specs()}}.
 
 If you do not see any variation within a condition of the ensemble (i.e. the confidence bands are virtually non-existent), there are likely no random elements in your model. Without these, there can be no variability in the model. Try specifying a random initial condition or adding randomness to other model elements.
 }
@@ -144,7 +144,6 @@ Other simulate:
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
-\code{\link{solvers}()},
-\code{\link{use_threads}()}
+\code{\link{solvers}()}
 }
 \concept{simulate}

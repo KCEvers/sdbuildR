@@ -23,7 +23,7 @@ has_internet <- function() {
 
 #' Near equivalent of purrr::compact()
 #'
-#' @param x
+#' @param x List
 #'
 #' @returns List with NULL values removed
 #' @noRd
@@ -36,7 +36,7 @@ compact_ <- function(x) {
 #'
 #' @param x Value
 #'
-#' @return Boolean; whether the value is defined
+#' @returns Boolean; whether the value is defined
 #' @noRd
 is_defined <- function(x) {
   # Safely check whether x is defined
@@ -91,7 +91,7 @@ list_extract <- function(nested_list, entry, keep_entry_name = FALSE) {
 #' @param element_name String, desired name of list
 #' @param change_null_to String, what to change NULL to
 #'
-#' @return Vector
+#' @returns Vector
 #' @noRd
 #'
 get_map <- function(x, element_name, change_null_to = "") {
@@ -113,7 +113,7 @@ get_map <- function(x, element_name, change_null_to = "") {
 #' @param arg Vector
 #' @param target Target object to match length of
 #'
-#' @return arg with same length as target
+#' @returns arg with same length as target
 #' @noRd
 #'
 ensure_length <- function(arg, target) {
@@ -155,7 +155,7 @@ get_exported_functions <- function(package) {
 
 #' Helper function to clean coding language
 #'
-#' @param langauge Language
+#' @param language Language
 #'
 #' @returns Cleaned language
 #' @noRd
@@ -205,7 +205,7 @@ clean_type <- function(type) {
 #' @param existing Vector of existing names in model
 #' @param protected Optional vector of protected names
 #'
-#' @return Translated names
+#' @returns Vector of cleaned names
 #' @export
 #' @family internal
 #' @examples
@@ -306,7 +306,7 @@ get_model_var <- function(sfm) {
 #'
 #' @inheritParams build
 #'
-#' @return Dataframe
+#' @returns Dataframe
 #' @noRd
 #'
 get_names <- function(sfm) {
@@ -397,7 +397,7 @@ safe_convert <- function(x, target_class) {
 #'
 #' @param bracket_arg String with arguments, excluding surrounding brackets
 #'
-#' @return Vector with arguments
+#' @returns Vector with arguments
 #' @noRd
 #'
 parse_args <- function(bracket_arg) {
@@ -572,7 +572,7 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
 #' @param names_with_brackets Boolean; whether to add square bracket around the variable names
 #' @inheritParams convert_equations_IM
 #'
-#' @return Dataframe with start and end indices of each name
+#' @returns Dataframe with start and end indices of each name
 #' @noRd
 #'
 get_range_names <- function(eqn, var_names, names_with_brackets = FALSE) {
@@ -615,7 +615,7 @@ get_range_names <- function(eqn, var_names, names_with_brackets = FALSE) {
 #' @inheritParams get_range_all_pairs
 #' @inheritParams get_range_names
 #'
-#' @return Sequence of indices
+#' @returns Sequence of indices
 #' @noRd
 #'
 get_seq_exclude <- function(eqn,
@@ -665,7 +665,7 @@ get_seq_exclude <- function(eqn,
 #'
 #' @inheritParams convert_equations_IM
 #'
-#' @return Dataframe with start and end indices of all words as well as extracted words
+#' @returns Dataframe with start and end indices of all words as well as extracted words
 #' @noRd
 #'
 get_words <- function(eqn) {

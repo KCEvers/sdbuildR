@@ -1,6 +1,6 @@
 #' Import Insight Maker model
 #'
-#' Import a stock-and-flow model from [Insight Maker](https://insightmaker.com/). Models may be your own or from another user. Importing causal loop diagrams or agent-based models is not supported.
+#' Import a stock-and-flow model from [Insight Maker](https://insightmaker.com/). Models may be your own or another user's. Importing causal loop diagrams or agent-based models is not supported.
 #'
 #' Insight Maker models can be imported using either a URL or an Insight Maker file. Ensure the URL refers to a public (not private) model. To download a model file from Insight Maker, first clone the model if it is not your own. Then, go to "Share" (top right), "Export", and "Download Insight Maker file".
 #'
@@ -10,7 +10,7 @@
 #' @param keep_nonnegative_stock If TRUE, keeps original non-negativity setting of stocks Defaults to FALSE.
 #' @param keep_solver If TRUE, keep the ODE solver as it is. If FALSE, switch to Euler integration in case of non-negative stocks to reproduce the Insight Maker data exactly. Defaults to FALSE.
 #'
-#' @return Stock-and-flow model of class xmile.
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @export
 #' @family insightmaker
 #' @seealso [build()], [xmile()]

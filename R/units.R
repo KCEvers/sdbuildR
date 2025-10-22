@@ -1,6 +1,6 @@
 #' Specify unit in equations
 #'
-#' Flexibly use units in equations by enclosing them in `u()`. Note that units are only supported in Julia, not in R.
+#' Flexibly use units in equations by enclosing them in [u()]. Note that units are only supported in Julia, not in R.
 #'
 #' Unit strings are converted to their standard symbols using regular expressions. This means that you can easily specify units without knowing their standard symbols. For example, u('kilograms per meters squared') will become 'kg/m^2'. You can use title-case for unit names, but letters cannot all be uppercase if this is not the standard symbol. For example, 'kilogram' works, but 'KILOGRAM' does not. This is to ensure that the right unit is detected.
 #'
@@ -53,11 +53,11 @@ u <- function(unit_str) {
 
 #' Drop unit in equation
 #'
-#' In rare cases, it may be desirable to drop the units of a variable within an equation. Use `drop_unit()` to render a variable unitless. See `?u()` for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
+#' In rare cases, it may be desirable to drop the units of a variable within an equation. Use [drop_u()] to render a variable unitless. See [u()] for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
 #'
 #' @param x Variable with unit
 #'
-#' @returns Unitless variable
+#' @returns Unitless variable (only in Julia)
 #' @seealso [model_units()], [unit_prefixes()], [u()], [convert_u()]
 #' @family units
 #' @export
@@ -75,12 +75,12 @@ drop_u <- function(x) {
 
 #' Convert unit in equation
 #'
-#' In rare cases, it may be desirable to change the units of a variable within an equation. Use `convert_u()` to convert a variable to another matching unit. See `?u()` for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
+#' In rare cases, it may be desirable to change the units of a variable within an equation. Use [convert_u()] to convert a variable to another matching unit. See [u()] for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
 #'
 #' @param x Variable
 #' @param unit_def Unit definition, e.g. u('seconds')
 #'
-#' @returns Variable with new unit
+#' @returns Variable with new unit (only in Julia)
 #' @seealso [model_units()], [unit_prefixes()], [u()], [drop_u()]
 #' @family units
 #' @export
@@ -147,7 +147,7 @@ split_units <- function(x) {
 #'
 #' @param x String with unit
 #'
-#' @return Cleaned string with unit
+#' @returns Cleaned string with unit
 #' @noRd
 #'
 replace_written_powers <- function(x) {
@@ -435,9 +435,14 @@ find_unit_strings <- function(sfm) {
 
 #' View all standard units
 #'
-#' `get_units()` yields a dataframe with all standard units in Julia's Unitful package and added custom units by sdbuildR.
+#' Obtain a dataframe with all standard units in Julia's Unitful package and added custom units by sdbuildR.
 #'
-#' @returns Dataframe with units in Julia
+#' @returns A character matrix with 5 columns: \code{description} (unit description),
+#'   \code{name} (unit symbol or abbreviation), \code{full_name} (full unit name),
+#'   \code{definition} (mathematical definition in terms of base units), and \code{prefix}
+#'   (logical indicating whether SI prefixes like kilo- or milli- can be applied).
+#'   Includes SI base units, derived units, CGS units, US customary units, and
+#'   custom units added by sdbuildR.
 #' @family units
 #' @export
 #' @examples
@@ -696,7 +701,10 @@ get_regex_time_units <- function() {
 
 #' Show unit prefixes
 #'
-#' @returns Matrix with unit prefixes, symbols, and power-of-ten scale
+#' @returns A character matrix with 3 columns: \code{prefix} (prefix name like "kilo" or "micro"),
+#'   \code{symbol} (prefix symbol like "k"), and \code{scale} (power-of-ten multiplier
+#'   like "10^3" or "10^-6"). Rows are ordered from largest (yotta, 10^24) to smallest
+#'   (yocto, 10^-24).
 #' @family units
 #' @export
 #'
@@ -755,8 +763,17 @@ get_regex_units <- function(sfm = NULL) {
   # Units which should not have a suffix s ([s]?), e.g. inch
   no_s_suffix <- c(
     "Hertz", "Siemens", "Henry", "Lux", "Percent",
-    "Permille", "Pertenthousand", "Percentmille", "Permillion", "Perbillion", "Pertrillion", "Perquadrillion", "Celsius",
-    "AngHertz", "SpeedOfLight", "magnetic constant", "electric constant", "impedance of free space", "gravitational constant", "standard acceleration of gravity", "Planck constant", "Superconducting magnetic flux quantum", "electron rest mass", "neutron rest mass", "proton rest mass", "Bohr magneton", "Avogadro constant", "Boltzmann constant", "molar gas constant", "Stefan-Boltzmann constant", "Rydberg constant", "UnifiedAtomicMassUnit", "EarthGravity", "Stokes", "Gauss", "Inch", "Mil", "Foot", "Fahrenheit", "PoundsPerSquareInch"
+    "Permille", "Pertenthousand", "Percentmille", "Permillion", "Perbillion",
+    "Pertrillion", "Perquadrillion", "Celsius",
+    "AngHertz", "SpeedOfLight", "magnetic constant", "electric constant",
+    "impedance of free space", "gravitational constant",
+    "standard acceleration of gravity", "Planck constant",
+    "Superconducting magnetic flux quantum", "electron rest mass",
+    "neutron rest mass", "proton rest mass", "Bohr magneton",
+    "Avogadro constant", "Boltzmann constant", "molar gas constant",
+    "Stefan-Boltzmann constant", "Rydberg constant", "UnifiedAtomicMassUnit",
+    "EarthGravity", "Stokes", "Gauss", "Inch", "Mil", "Foot", "Fahrenheit",
+    "PoundsPerSquareInch"
   )
 
   regex_units <- vapply(
@@ -818,15 +835,6 @@ get_regex_units <- function(sfm = NULL) {
     "^\\$" = "USD",
     "^\\u20AC$" = "EUR",
     "^\\u00A3$" = "GBP",
-    # "^[F|f]luid [ounce[s]?]?$" = "fl_oz",
-    # "^[Q|q]uarts$" = "quarts",
-    # "^[T|t]onne[s]?$" = "tonne",
-    # "^[T|t]on[s]?$" = "ton",
-    # "^[A|a]tom[s]?$" = "atom",
-    # "^[M|m]olecule[s]?$" = "molecule",
-    # "^[E|e]uro[s]?$" = "euro",
-    # "^[D|d]ollar[s]?$" = "dollar",
-
     "^[H|h]enries$" = "H",
     "^[L|l]uxes$" = "lx",
     "^[P|p]ercentage[s]?$" = "%",
@@ -858,7 +866,6 @@ get_regex_units <- function(sfm = NULL) {
       }
     }
   }
-
 
   # Only keep ones with characters in entry and name |> Filter(nzchar, .)
   regex_units <- regex_units[nzchar(names(regex_units)) & nzchar(unname(regex_units))]

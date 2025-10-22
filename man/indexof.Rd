@@ -2,7 +2,7 @@
 % Please edit documentation in R/custom_func.R
 \name{indexof}
 \alias{indexof}
-\title{Find index of needle (value) in haystack (vector)}
+\title{Find index of needle in haystack}
 \usage{
 indexof(haystack, needle)
 }
@@ -15,7 +15,7 @@ indexof(haystack, needle)
 Index, integer
 }
 \description{
-Equivalent of .IndexOf() in Insight Maker
+Find index of value in vector or string. Equivalent of .IndexOf() in Insight Maker.
 }
 \examples{
 indexof(c("a", "b", "c"), "b") # 2

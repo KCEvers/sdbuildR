@@ -6,10 +6,10 @@
 #' @param file File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. If no file extension is specified, it will default to png.
 #' @param width Width of image in units.
 #' @param height Height of image in units.
-#' @param units Units in which width and heigth are specified. Either "cm", "in", or "px".
+#' @param units Units in which width and height are specified. Either "cm", "in", or "px".
 #' @param dpi Resolution of image. Only used if units is not "px".
 #'
-#' @returns Returns `NULL` invisibly.
+#' @returns Returns `NULL` invisibly, called for side effects.
 #' @export
 #' @family simulate
 #'
@@ -184,12 +184,12 @@ export_plotly <- function(pl, file, format, width, height) {
 #'
 #' Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Thin grey edges indicate dependencies between variables. By default, constants (indicated by italic labels) are not shown. Hover over the variables to see their equations.
 #'
-#' @param x Stock-and-flow model of class sdbuildR_xmile
+#' @param x A stock-and-flow model object of class [`sdbuildR_xmile`][xmile].
 #' @param vars Variables to plot. Defaults to NULL to plot all variables.
 #' @param format_label If TRUE, apply default formatting (removing periods and underscores) to labels if labels are the same as variable names.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 20.
 #' @param font_size Font size. Defaults to 18.
-#' @param font_family Font name. Defaults to "Georgia".
+#' @param font_family Font name. Defaults to "Times New Roman".
 #' @param stock_col Colour of stocks. Defaults to "#83d3d4".
 #' @param flow_col Colour of flows. Defaults to "#f48153".
 #' @param dependency_col Colour of dependency arrows. Defaults to "#999999".
@@ -199,7 +199,7 @@ export_plotly <- function(pl, file, format, width, height) {
 #' @param minlen Minimum length of edges; must be an integer. Defaults to 2.
 #' @param ... Optional arguments
 #'
-#' @return Stock-and-flow diagram plotted with DiagrammeR()
+#' @returns Stock-and-flow diagram plotted with DiagrammeR()
 #' @export
 #' @family build
 #' @method plot sdbuildR_xmile
@@ -829,7 +829,7 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
 #' @param showlegend Whether to show legend. Must be TRUE or FALSE. Defaults to TRUE.
 #' @param ... Optional parameters
 #'
-#' @return Plot object
+#' @returns Plotly object
 #' @export
 #' @family simulate
 #' @seealso [simulate()], [as.data.frame.sdbuildR_sim()], [plot.sdbuildR_xmile()]
@@ -983,9 +983,9 @@ plot.sdbuildR_sim <- function(x,
 
 #' Plot timeseries of ensemble
 #'
-#' Visualize ensemble simulation results of a stock-and-flow model. Either summary statistics or individual trajectories can be plotted. When multiple conditions j are specified, a grid of subplots is plotted. See `ensemble()` for examples.
+#' Visualize ensemble simulation results of a stock-and-flow model. Either summary statistics or individual trajectories can be plotted. When multiple conditions j are specified, a grid of subplots is plotted. See [ensemble()] for examples.
 #'
-#' @param x Output of ensemble().
+#' @param x Output of [ensemble()].
 #' @param type Type of plot. Either "summary" for a summary plot with mean or median lines and confidence intervals, or "sims" for individual simulation trajectories with mean or median lines. Defaults to "summary".
 #' @param i Indices of the individual trajectories to plot if type = "sims". Defaults to 1:10. Including a high number of trajectories will slow down plotting considerably.
 #' @param j Indices of the condition to plot. Defaults to 1:9. If only one condition is specified, the plot will not be a grid of subplots.
@@ -1004,7 +1004,7 @@ plot.sdbuildR_sim <- function(x,
 #' @param ... Optional parameters
 #' @inheritParams plot.sdbuildR_sim
 #'
-#' @return Plot object with ensemble simulation
+#' @returns Plotly object
 #' @export
 #' @family simulate
 #' @seealso [ensemble()]

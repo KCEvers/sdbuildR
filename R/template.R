@@ -5,17 +5,16 @@
 #' @param name Name of model.
 #'
 #' @noRd
-#' @return Stock-and-flow model of class sdbuildR_xmile.
+#' @returns Stock-and-flow model of class [`sdbuildR_xmile`][xmile]
 #'
 template <- function(name) {
   model_names <- c(
     "logistic_model", "SIR", "predator_prey",
     "cusp",
     "Crielaard2022",
-    # Meadows
     "coffee_cup", "bank_account",
-    "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua",
-    "spruce_budworm"
+    "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua"
+    # "spruce_budworm"
   )
 
   if (missing(name)) {

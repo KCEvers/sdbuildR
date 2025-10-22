@@ -7,12 +7,12 @@
 debugger(sfm, quietly = FALSE)
 }
 \arguments{
-\item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
+\item{sfm}{Stock-and-flow model, object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 
 \item{quietly}{If TRUE, don't print problems. Defaults to FALSE.}
 }
 \value{
-If quietly = FALSE, list with problems and potential problems.
+If \code{quietly = FALSE}, list with problems and potential problems.
 }
 \description{
 Check for common formulation problems in a stock-and-flow model.

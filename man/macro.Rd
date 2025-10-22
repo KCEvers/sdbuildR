@@ -7,7 +7,7 @@
 macro(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = FALSE)
 }
 \arguments{
-\item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
+\item{sfm}{Stock-and-flow model, object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 
 \item{name}{Name of the macro. The equation will be assigned to this name.}
 
@@ -20,16 +20,28 @@ macro(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = FALSE)
 \item{erase}{If TRUE, remove macro from the model. Defaults to FALSE.}
 }
 \value{
-Modified stock-and-flow object with updated macros.
+A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}
 }
 \description{
-Macros are global variables or functions that can be used throughout your stock-and-flow model. \code{macro()} adds, changes, or erases a macro.
+Macros are global variables or functions that can be used throughout your stock-and-flow model. \code{\link[=macro]{macro()}} adds, changes, or erases a macro.
 }
 \examples{
+
+# Simple function
+sfm <- xmile() |>
+  macro("double", eqn = "function(x) x * 2") |>
+  build("a", "constant", eqn = "double(2)")
+
+# Function with defaults
+sfm <- xmile() |>
+  macro("scale", eqn = "function(x, factor = 10) x * factor") |>
+  build("b", "constant", eqn = "scale(2)")
+
 # If the logistic() function did not exist, you could create it yourself:
 sfm <- macro(xmile(), "func", eqn = "function(x, slope = 1, midpoint = .5){
    1 / (1 + exp(-slope*(x-midpoint)))
- }")
+ }") |>
+  build("c", "constant", eqn = "func(2, slope = 50)")
 
 }
 \seealso{

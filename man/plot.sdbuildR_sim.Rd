@@ -39,7 +39,7 @@
 \item{...}{Optional parameters}
 }
 \value{
-Plot object
+Plotly object
 }
 \description{
 Visualize simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.
@@ -65,7 +65,6 @@ Other simulate:
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
-\code{\link{solvers}()},
-\code{\link{use_threads}()}
+\code{\link{solvers}()}
 }
 \concept{simulate}

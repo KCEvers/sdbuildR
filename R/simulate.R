@@ -1,24 +1,28 @@
 #' Simulate stock-and-flow model
 #'
-#' Simulate a stock-and-flow model with simulation specifications defined by `sim_specs()`. If not already run, the Julia environment will first be set up with `use_julia()`. If any problems are detected by `debugger()`, the model cannot be simulated.
+#' Simulate a stock-and-flow model with simulation specifications defined by [sim_specs()]. If `sim_specs(language = "julia")`, the Julia environment will first be set up with [use_julia()]. If any problems are detected by [debugger()], the model cannot be simulated.
 #'
 #' @inheritParams insightmaker_to_sfm
 #' @inheritParams build
 #' @param keep_unit If TRUE, keeps units of variables. Defaults to TRUE.
 #' @param verbose If TRUE, update on progress. Defaults to FALSE.
-#' @param only_stocks If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.
+#' @param only_stocks If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if `sim_specs(language = "julia")` and no delay functions are used. Defaults to FALSE.
 #' @param ... Optional arguments
 #'
-#' @return Object of class sdbuildR_sim, which is a list containing:
+#' @returns Object of class [`sdbuildR_sim`][simulate], a list containing:
 #' \describe{
-#'   \item{df}{Dataframe, timeseries of computed variables in the ODE}
-#'   \item{init}{Initial value of stocks}
-#'   \item{constants}{Constant parameters}
-#'   \item{script}{Simulation script}
-#'   \item{duration}{Duration of simulation}
-#'   \item{success}{If TRUE, simulation was successful. If FALSE, simulation failed.}
+#'   \item{df}{Data frame: simulation results (time, variable, value)}
+#'   \item{init}{Named vector: initial stock values}
+#'   \item{constants}{Named vector: constant parameters}
+#'   \item{script}{Character: generated simulation code (R or Julia)}
+#'   \item{duration}{Numeric: simulation time in seconds}
+#'   \item{success}{Logical: TRUE if completed without errors}
 #'   \item{...}{Other parameters passed to simulate}
 #' }
+#'
+#' Use [as.data.frame()] to extract results, [plot()] to visualize.
+#'
+#'
 #' @export
 #' @family simulate
 #' @seealso [build()], [xmile()], [debugger()], [sim_specs()], [use_julia()]
@@ -88,7 +92,7 @@ simulate <- function(sfm,
 #'
 #' @inheritParams build
 #'
-#' @return List with issue and message
+#' @returns List with issue and message
 #' @noRd
 #'
 detect_undefined_var <- function(sfm) {
@@ -172,7 +176,7 @@ detect_undefined_var <- function(sfm) {
 #'
 #' @param dependencies_dict Named list with dependencies for each equation; names are equation names and entries are dependencies
 #'
-#' @return Equation names ordered according to their dependencies
+#' @returns Equation names ordered according to their dependencies
 #' @noRd
 #'
 topological_sort <- function(dependencies_dict) {
@@ -310,7 +314,7 @@ find_newly_defined_var <- function(eqn) {
 #' @inheritParams build
 #' @param reverse If FALSE, list for each variable X which variables Y it depends on for its equation definition. If TRUE, don't show dependencies but dependents. This reverses the dependencies, such that for each variable X, it lists what other variables Y depend on X.
 #'
-#' @return List, with for each model variable what other variables it depends on, or if reverse = TRUE, which variables depend on it
+#' @returns List, with for each model variable what other variables it depends on, or if \code{reverse = TRUE}, which variables depend on it
 #' @family build
 #' @export
 #'
@@ -375,7 +379,7 @@ reverse_dep <- function(dep) {
 #' @param only_var If TRUE, only look for variable names, not functions.
 #' @param only_model_var If TRUE, only look for dependencies on other model variables.
 #'
-#' @return Vector of dependencies (variable names in equation)
+#' @returns Vector of dependencies (variable names in equation)
 #' @noRd
 #'
 find_dependencies_ <- function(sfm, eqns = NULL, only_var = TRUE, only_model_var = TRUE) {
@@ -437,7 +441,7 @@ find_dependencies_ <- function(sfm, eqns = NULL, only_var = TRUE, only_model_var
 #' @inheritParams build
 #' @param print_msg If TRUE, print message if the ordering fails; defaults to TRUE.
 #'
-#' @return List with order of static and dynamic variables
+#' @returns List with order of static and dynamic variables
 #' @noRd
 #'
 order_equations <- function(sfm, print_msg = TRUE) {
@@ -611,9 +615,9 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 
 #' Run ensemble simulations
 #'
-#' Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in `range`. The ensemble can be run in parallel using multiple threads by first setting `use_threads()`. The results are returned as a dataframe with summary statistics and optionally individual simulations.
+#' Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in `range`. The ensemble can be run in parallel using multiple threads by first setting [use_threads()]. The results are returned as a dataframe with summary statistics and optionally individual simulations.
 #'
-#' To run large simulations, it is recommended to limit the output size by saving fewer values. To create a reproducible ensemble simulation, set a seed using sim_specs().
+#' To run large simulations, it is recommended to limit the output size by saving fewer values. To create a reproducible ensemble simulation, set a seed using [sim_specs()].
 #'
 #' If you do not see any variation within a condition of the ensemble (i.e. the confidence bands are virtually non-existent), there are likely no random elements in your model. Without these, there can be no variability in the model. Try specifying a random initial condition or adding randomness to other model elements.
 #'
@@ -625,7 +629,7 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 #' @param cross If TRUE, cross the parameters in the range list to generate all possible combinations of parameters. Defaults to TRUE.
 #' @param quantiles Quantiles to calculate in the summary, e.g. c(0.025, 0.975).
 #'
-#' @returns Object of class sdbuildR_ensemble, which is a list containing:
+#' @returns Object of class [`sdbuildR_ensemble`][ensemble], which is a list containing:
 #' \describe{
 #'  \item{success}{If TRUE, simulation was successful. If FALSE, simulation failed.}
 #'  \item{error_message}{If success is FALSE, contains the error message.}
@@ -1002,13 +1006,13 @@ ensemble <- function(sfm,
 
 #' Set up threaded ensemble simulations
 #'
-#' Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS. Note that this does not affect regular simulations with `simulate()`.
+#' Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS. Note that this does not affect regular simulations with [simulate()].
 #'
 #' @param n Number of Julia threads to use. Defaults to parallel::detectCores() - 1. If set to a value higher than the number of available cores minus 1, it will be set to the number of available cores minus 1.
 #' @param stop Stop using threaded ensemble simulations. Defaults to FALSE.
 #'
 #' @returns No return value, called for side effects
-#' @family simulate
+#' @family julia
 #' @seealso [ensemble()], [use_julia()]
 #' @export
 #'
@@ -1071,7 +1075,7 @@ use_threads <- function(n = parallel::detectCores() - 1, stop = FALSE) {
 #'
 #' @inheritParams build
 #'
-#' @return String with code to build stock-and-flow model from scratch.
+#' @returns String with code to build stock-and-flow model from scratch.
 #' @family build
 #' @export
 #'

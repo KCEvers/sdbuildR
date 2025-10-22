@@ -7,14 +7,26 @@
 xmile(name = NULL)
 }
 \arguments{
-\item{name}{Name of the template to load. If NULL, an empty stock-and-flow
+\item{name}{Name of the template to load. If \code{NULL}, an empty stock-and-flow
 model will be created with default simulation parameters and a default header.
-If specified, the name should be one of "logistic_model", "SIR",
-"predator_prey", "cusp", "Crielaard2022", "coffee_cup", "bank_account",
-"Lorenz", "Rossler", "vanderPol", "Duffing", "Chua".}
+If specified, \code{name} should be one of the available templates:
+\itemize{
+\item \strong{logistic_model}: Population growth with carrying capacity
+\item \strong{SIR}: Epidemic model (Susceptible-Infected-Recovered)
+\item \strong{predator_prey}: Lotka-Volterra dynamics
+\item \strong{cusp}: Cusp catastrophe model
+\item \strong{Crielaard2022}: Eating behavior (doi: 10.1037/met0000484)
+\item \strong{coffee_cup}: Temperature equilibration (Meadows)
+\item \strong{bank_account}: Compound interest (Meadows)
+\item \strong{Lorenz}: Lorenz attractor (chaotic)
+\item \strong{Rossler}: Rossler attractor (chaotic)
+\item \strong{vanderPol}: Van der Pol oscillator
+\item \strong{Duffing}: Forced Duffing oscillator
+\item \strong{Chua}: Chua's circuit (chaotic)
+}}
 }
 \value{
-Stock-and-flow model of class sdbuildR_xmile. Its structure is based
+A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}. Its structure is based
 on \href{https://docs.oasis-open.org/xmile/xmile/v1.0/os/xmile-v1.0-os.html}{XML Interchange Language for System Dynamics (XMILE)}. It is a nested list, containing:
 \describe{
 \item{header}{Meta-information about model. A list containing arguments listed in \code{\link[=header]{header()}}.}
@@ -23,9 +35,11 @@ on \href{https://docs.oasis-open.org/xmile/xmile/v1.0/os/xmile-v1.0-os.html}{XML
 \item{macro}{Global variable or functions. A list containing arguments listed in \code{\link[=macro]{macro()}}.}
 \item{model_units}{Custom model units. A list containing arguments listed in \code{\link[=model_units]{model_units()}}.}
 }
+
+Use \code{\link[=summary]{summary()}} to summarize, \code{\link[=as.data.frame]{as.data.frame()}} to convert to a data.frame, \code{\link[=plot]{plot()}} to visualize.
 }
 \description{
-Initialize an empty stock-and-flow model of class sdbuildR_xmile. You can
+Initialize a stock-and-flow model of class \code{\link[=xmile]{sdbuildR_xmile}}. You can
 either create an empty stock-and-flow model or load a template from the model
 library.
 }
@@ -48,8 +62,6 @@ sim <- simulate(sfm)
 plot(sim)
 }
 \seealso{
-\code{\link[=build]{build()}}
-
 Other build: 
 \code{\link{as.data.frame.sdbuildR_sim}()},
 \code{\link{as.data.frame.sdbuildR_xmile}()},

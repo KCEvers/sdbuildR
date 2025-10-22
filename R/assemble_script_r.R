@@ -2,7 +2,7 @@
 #'
 #' @inheritParams simulate
 #'
-#' @return List with variables created in the simulation script
+#' @returns List with variables created in the simulation script
 #' @noRd
 #'
 simulate_R <- function(sfm,
@@ -72,7 +72,7 @@ simulate_R <- function(sfm,
 #'
 #' @inheritParams simulate
 #'
-#' @return R script
+#' @returns String with R script
 #' @noRd
 #'
 compile_r <- function(sfm,
@@ -218,7 +218,7 @@ set.seed(%s)", as.character(sfm[["sim_specs"]][["seed"]]))
 #' @inheritParams build
 #' @inheritParams compile_ode
 #'
-#' @return List with necessary scripts
+#' @returns List with necessary scripts
 #' @noRd
 #'
 compile_destructuring_assign <- function(sfm, static_eqn) {
@@ -246,7 +246,7 @@ compile_destructuring_assign <- function(sfm, static_eqn) {
 #'
 #' @inheritParams build
 #'
-#' @return List with macro script
+#' @returns List with macro script
 #' @noRd
 compile_macros <- function(sfm) {
   script <- ""
@@ -276,7 +276,7 @@ compile_macros <- function(sfm) {
 
 #' Compile script for creating time vector
 #'
-#' @return List
+#' @returns List
 #' @importFrom rlang .data
 #' @inheritParams compile_r
 #' @noRd
@@ -322,7 +322,7 @@ compile_times <- function(sfm) {
 #'
 #' @noRd
 #'
-#' @return List with necessary scripts
+#' @returns List with necessary scripts
 #'
 compile_static_eqn <- function(sfm, ordering) {
   # Macros
@@ -393,7 +393,7 @@ compile_static_eqn <- function(sfm, ordering) {
 #'
 #' @inheritParams compile
 #'
-#' @returns Updated stock-and-flow model
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @noRd
 prep_equations_variables <- function(sfm, keep_nonnegative_flow) {
   # Graphical functions
@@ -490,7 +490,7 @@ prep_equations_variables <- function(sfm, keep_nonnegative_flow) {
 #' @inheritParams compile_r
 #'
 #' @noRd
-#' @return Updated stock-and-flow model
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #'
 prep_stock_change <- function(sfm) {
   # Add temporary property to sum change in Stocks
@@ -534,11 +534,12 @@ prep_stock_change <- function(sfm) {
 #' @inheritParams compile_r
 #'
 #' @noRd
-#' @return List with necessary scripts for ensuring non-negative Stocks
+#' @returns List with necessary scripts for ensuring non-negative stocks
 #'
 compile_nonneg_stocks <- function(sfm, keep_nonnegative_stock) {
   # Non-negative Stocks
-  nonneg_stock <- which(unlist(lapply(sfm[["model"]][["variables"]][["stock"]], `[[`, "non_negative")))
+  nonneg_stock <- which(unlist(lapply(sfm[["model"]][["variables"]][["stock"]],
+                                      `[[`, "non_negative")))
 
   if (keep_nonnegative_stock & length(nonneg_stock) > 0) {
     func_def <- sprintf(
@@ -602,7 +603,7 @@ attributes(%s)$valroot
 #' @param prep_script Intermediate output of compile_r()
 #' @param static_eqn Output of compile_static_eqn()
 #'
-#' @return List
+#' @returns List
 #' @importFrom rlang .data
 #' @noRd
 #'
@@ -713,7 +714,7 @@ compile_ode <- function(sfm, ordering, prep_script, static_eqn,
 #' @param nonneg_stocks Output of compile_nonneg_stocks()
 #' @inheritParams compile_ode
 #'
-#' @return List
+#' @returns List
 #' @inheritParams compile_r
 #' @noRd
 #'

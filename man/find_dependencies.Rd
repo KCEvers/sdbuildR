@@ -7,12 +7,12 @@
 find_dependencies(sfm, reverse = FALSE)
 }
 \arguments{
-\item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
+\item{sfm}{Stock-and-flow model, object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 
 \item{reverse}{If FALSE, list for each variable X which variables Y it depends on for its equation definition. If TRUE, don't show dependencies but dependents. This reverses the dependencies, such that for each variable X, it lists what other variables Y depend on X.}
 }
 \value{
-List, with for each model variable what other variables it depends on, or if reverse = TRUE, which variables depend on it
+List, with for each model variable what other variables it depends on, or if \code{reverse = TRUE}, which variables depend on it
 }
 \description{
 Find which other variables each variable is dependent on.
