@@ -26,11 +26,13 @@
 #'   file.remove(file)
 #' }
 #'
-#' \dontrun{ # requires internet
+#' @examplesIf interactive()
+#' \dontrun{
+#' # requires internet
 #' # Only if dependencies are installed
 #' if (require("htmlwidgets", quietly = TRUE) &
 #'   require("webshot2", quietly = TRUE)) {
-#'   #     # Requires Chrome to save plotly plot:
+#'   # Requires Chrome to save plotly plot:
 #'   sim <- simulate(sfm)
 #'   export_plot(plot(sim), file)
 #'
@@ -121,7 +123,6 @@ export_diagram <- function(pl, file, format, width, height) {
 }
 
 
-
 #' Export plotly object
 #'
 #' @inheritParams export_plot
@@ -177,8 +178,6 @@ export_plotly <- function(pl, file, format, width, height) {
 
   return(invisible())
 }
-
-
 
 
 #' Plot stock-and-flow diagram
@@ -598,7 +597,6 @@ plot.sdbuildR_xmile <- function(x,
 }
 
 
-
 #' Prepare for plotting simulation
 #'
 #' @param type_sim Either "sim" or "ensemble"
@@ -816,7 +814,6 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
 }
 
 
-
 #' Plot timeseries of simulation
 #'
 #' Visualize simulation results of a stock-and-flow model. Plot the evolution of stocks over time, with the option of also showing other model variables.
@@ -847,10 +844,6 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
 #' plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
 #'
 #' # Add constants to the plot
-#' plot(sim, add_constants = TRUE)
-#'
-#' # Plot all model variables
-#' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim, add_constants = TRUE)
 #'
 plot.sdbuildR_sim <- function(x,
@@ -986,9 +979,6 @@ plot.sdbuildR_sim <- function(x,
 
   return(pl)
 }
-
-
-
 
 
 #' Plot timeseries of ensemble
@@ -1336,7 +1326,6 @@ plot.sdbuildR_ensemble <- function(x,
 }
 
 
-
 #' Helper function to plot ensemble simulation results
 #'
 #' @param j_idx Index of the condition to plot.
@@ -1592,7 +1581,6 @@ plot_ensemble_helper <- function(j_idx, j_name, j, j_labels,
       )
     }
   }
-
 
 
   # Customize layout

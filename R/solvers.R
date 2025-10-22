@@ -870,7 +870,6 @@ solvers <- function(method,
   }
 
 
-
   if (show_info) {
     return(solver_info)
   } else {

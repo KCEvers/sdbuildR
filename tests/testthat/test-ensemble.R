@@ -1,6 +1,6 @@
 test_that("ensemble works", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # If you already have random elements in the model, no need to specify what to vary
   sfm <- xmile("Crielaard2022") |> sim_specs(
@@ -139,7 +139,7 @@ test_that("ensemble works", {
 
 test_that("plotting ensemble also works with singular time point", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # If you already have random elements in the model, no need to specify what to vary
   sfm <- xmile("predator_prey") |>
@@ -166,7 +166,7 @@ test_that("plotting ensemble also works with singular time point", {
 
 test_that("ensemble works with specified range", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # If you already have random elements in the model, no need to specify what to vary
   sfm <- xmile("Crielaard2022") |> sim_specs(
@@ -274,10 +274,9 @@ test_that("ensemble works with specified range", {
 })
 
 
-
 test_that("ensemble works with units", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # Test ensemble with model with units
   sfm <- xmile("coffee_cup") |>
@@ -300,10 +299,9 @@ test_that("ensemble works with units", {
 })
 
 
-
 test_that("ensemble works with NA", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # Combine varying initial condition and parameters
   sfm <- xmile("predator_prey") |>
@@ -342,7 +340,7 @@ test_that("ensemble works with NA", {
 
 test_that("ensemble: order of range parameters", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # In an earlier version, the order of the range parameters was not preserved
   sfm <- xmile() |>
@@ -388,7 +386,7 @@ test_that("ensemble: order of range parameters", {
 
 test_that("ensemble works with interpolation function", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   sfm <- xmile("logistic_model") |>
     sim_specs(

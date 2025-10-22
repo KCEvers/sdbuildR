@@ -40,7 +40,6 @@ test_that("find_dependencies works", {
 })
 
 
-
 test_that("get_build_code() works", {
   expect_no_error(get_build_code(xmile()))
 
@@ -68,8 +67,6 @@ test_that("get_build_code() works", {
 })
 
 
-
-
 test_that("save_at works", {
   sfm <- xmile("SIR") |> sim_specs(language = "R", stop = 10, save_at = 1)
   sim <- simulate(sfm)
@@ -77,7 +74,7 @@ test_that("save_at works", {
   expect_equal(unique(round(diff(sort(unique(df[["time"]]))), 4)), 1)
 
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
   sfm <- sfm |> sim_specs(language = "Julia")
   sim <- simulate(sfm)
   df <- as.data.frame(sim)

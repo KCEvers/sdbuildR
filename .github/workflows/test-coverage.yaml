@@ -12,6 +12,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       NOT_CRAN: "true"
+      AUTO_INSTALL_JULIA_ENV: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: r-lib/actions/setup-r@v2
@@ -34,25 +35,6 @@ jobs:
           echo "PATH: $PATH"
           which julia
           julia --version
-        shell: bash
-
-      - name: Install Julia packages
-        run: |
-          julia -e '
-            using Pkg
-            Pkg.add(name="OrdinaryDiffEq", version="6.98")
-            Pkg.add(name="DiffEqCallbacks", version="4.8")
-            Pkg.add(name="DataFrames", version="1.7")
-            Pkg.add(name="Distributions", version="0.25")
-            Pkg.add(name="Statistics", version="1.11")
-            Pkg.add(name="StatsBase", version="0.34.6")
-            Pkg.add(name="Unitful", version="1.23")
-            Pkg.add(name="DataInterpolations", version="8.1")
-            Pkg.add(name="Random", version="1.11")
-            Pkg.add(name="CSV", version="0.10")
-            Pkg.add(url="https://github.com/KCEvers/SystemDynamicsBuildR.jl")
-            Pkg.precompile()
-          '
         shell: bash
 
       - name: Test coverage

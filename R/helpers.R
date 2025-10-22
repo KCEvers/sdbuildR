@@ -21,8 +21,6 @@ has_internet <- function() {
 }
 
 
-
-
 #' Near equivalent of purrr::compact()
 #'
 #' @param x
@@ -32,8 +30,6 @@ has_internet <- function() {
 compact_ <- function(x) {
   Filter(Negate(rlang::is_empty), Filter(Negate(is.null), x))
 }
-
-
 
 
 #' Safely check whether value is defined
@@ -54,7 +50,6 @@ is_defined <- function(x) {
     }
   }
 }
-
 
 
 #' Extract entries from a nested list
@@ -90,8 +85,6 @@ list_extract <- function(nested_list, entry, keep_entry_name = FALSE) {
 }
 
 
-
-
 #' Apply purrr::map() and unlist() whilst preserving NULL
 #'
 #' @param x List
@@ -113,8 +106,6 @@ get_map <- function(x, element_name, change_null_to = "") {
   }, logical(1))] <- change_null_to
   return(unlist(x_list))
 }
-
-
 
 
 #' Ensure length of arg is same as target
@@ -139,8 +130,6 @@ ensure_length <- function(arg, target) {
 }
 
 
-
-
 #' Get exported function names from a package
 #'
 #' @param package package name
@@ -162,7 +151,6 @@ get_exported_functions <- function(package) {
   # Return sorted for consistency
   sort(functions)
 }
-
 
 
 #' Helper function to clean coding language
@@ -209,7 +197,6 @@ clean_type <- function(type) {
 }
 
 
-
 #' Clean variable name(s)
 #'
 #' Clean variable name(s) to create syntactically valid, unique names for use in R and Julia.
@@ -252,8 +239,13 @@ clean_name <- function(new, existing, protected = c()) {
 
     # These are variables in the ode and cannot be model element names
     unname(unlist(.sdbuildR_env[["P"]][names(.sdbuildR_env[["P"]]) %in% c(
-      "jl_pkg_name", "model_setup_name", "macro_name", "initial_value_name", "initial_value_names", "parameter_name", "parameter_names",
-      "state_name", "time_name", "change_state_name", "times_name", "timestep_name", "saveat_name", "time_units_name", "ensemble_iter", "ode_func_name", "callback_func_name", "callback_name", "intermediaries", "rootfun_name", "eventfun_name", "convert_u_func", "sdbuildR_units", "MyCustomUnits", "init_sdbuildR"
+      "jl_pkg_name", "model_setup_name", "macro_name", "initial_value_name",
+      "initial_value_names", "parameter_name", "parameter_names",
+      "state_name", "time_name", "change_state_name", "times_name",
+      "timestep_name", "saveat_name", "time_units_name", "ensemble_iter",
+      "ode_func_name", "callback_func_name", "callback_name", "intermediaries",
+      "rootfun_name", "eventfun_name", "convert_u_func", "sdbuildR_units",
+      "MyCustomUnits", "init_sdbuildR"
     )])),
     protected,
     as.character(stats::na.omit(existing))
@@ -299,8 +291,6 @@ clean_name <- function(new, existing, protected = c()) {
 }
 
 
-
-
 #' Quickly get names of model variables
 #'
 #' @inheritParams build
@@ -310,7 +300,6 @@ clean_name <- function(new, existing, protected = c()) {
 get_model_var <- function(sfm) {
   c(unname(unlist(lapply(sfm[["model"]][["variables"]], names))), names(sfm[["macro"]]))
 }
-
 
 
 #' Create dataframe with stock-and-flow model variables, types, labels, and units
@@ -404,8 +393,6 @@ safe_convert <- function(x, target_class) {
 }
 
 
-
-
 #' Split arguments to function by comma
 #'
 #' @param bracket_arg String with arguments, excluding surrounding brackets
@@ -442,8 +429,6 @@ parse_args <- function(bracket_arg) {
 
   return(args)
 }
-
-
 
 
 #' Sort arguments in function call according to default order
@@ -581,8 +566,6 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
 }
 
 
-
-
 #' Get start and end indices of each name
 #'
 #' @param var_names Vector with variable names
@@ -624,7 +607,6 @@ get_range_names <- function(eqn, var_names, names_with_brackets = FALSE) {
 
   return(idxs_df)
 }
-
 
 
 #' Get sequence of indices of to exclude
@@ -677,9 +659,6 @@ get_seq_exclude <- function(eqn,
 
   return(paired_seq)
 }
-
-
-
 
 
 #' Extract start and end indices of all words

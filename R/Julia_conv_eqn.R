@@ -15,13 +15,11 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
     sfm[["model"]][["variables"]][c("stock", "flow", "constant", "aux")],
     function(x) {
       lapply(x, function(y) {
-        # if (is_defined(y[["eqn"]])) {
         out <- convert_equations_julia(y[["type"]], y[["name"]],
           y[["eqn"]], var_names,
           regex_units = regex_units
         )
         y <- utils::modifyList(y, out)
-        # }
         return(y)
       })
     }
@@ -47,7 +45,6 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
 
   return(sfm)
 }
-
 
 
 #' Transform R code to Julia code
@@ -178,9 +175,6 @@ convert_equations_julia <- function(type, name, eqn, var_names, regex_units) {
 }
 
 
-
-
-
 #' Get indices of digits in string
 #'
 #' @inheritParams convert_equations_IM
@@ -214,7 +208,6 @@ get_range_digits <- function(eqn, var_names) {
 }
 
 
-
 #' Replace digits with floats in string
 #'
 #' @inheritParams convert_equations_IM
@@ -234,8 +227,6 @@ replace_digits_with_floats <- function(eqn, var_names) {
 
   return(eqn)
 }
-
-
 
 
 #' Translate R operators to Julia
@@ -338,7 +329,6 @@ replace_op_julia <- function(eqn, var_names) {
 }
 
 
-
 #' Find all round brackets
 #'
 #' Helper for convert_all_statements_julia()
@@ -379,7 +369,6 @@ find_round_brackets <- function(df, round_brackets, eqn, var_names) {
     func_name = func_name
   )))
 }
-
 
 
 #' Find all curly brackets
@@ -658,9 +647,6 @@ convert_all_statements_julia <- function(eqn, var_names) {
 }
 
 
-
-
-
 #' Create list of default arguments
 #'
 #' @param arg List with parsed arguments
@@ -915,7 +901,6 @@ get_syntax_julia <- function() {
 
   return(list(syntax_df = syntax_df, conv_df = conv_df))
 }
-
 
 
 #' Convert R built-in functions to Julia
@@ -1308,10 +1293,6 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
 }
 
 
-
-
-
-
 #' Convert random number generation in R to Julia
 #'
 #' @inheritParams sort_args
@@ -1454,7 +1435,6 @@ conv_seq <- function(arg, R_func, julia_func) {
 }
 
 
-
 #' Convert R sample() to Julia StatsBase.sample()
 #'
 #' @inheritParams conv_seq
@@ -1519,10 +1499,6 @@ vector_to_square_brackets <- function(eqn, var_names) {
 
   return(eqn)
 }
-
-
-
-
 
 
 #' Remove scientific notation from string

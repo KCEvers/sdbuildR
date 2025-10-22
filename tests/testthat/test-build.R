@@ -217,7 +217,6 @@ test_that("add and change variable with build() simultaneously", {
 })
 
 
-
 test_that("overwriting to and from of a flow works", {
   sfm <- xmile() |>
     build("a", "stock") |>
@@ -749,7 +748,6 @@ test_that("unique unit names in model_units()", {
 })
 
 
-
 test_that("erase in model_units() works", {
   # Erase units
   sfm <- xmile() |>
@@ -788,7 +786,6 @@ test_that("change_name in model_units() works", {
     model_units("abc")
   expect_equal(sfm$model_units$abc$eqn, "def")
 })
-
 
 
 test_that("debugger() works", {
@@ -1056,7 +1053,6 @@ test_that("macro() works", {
 })
 
 
-
 test_that("add_from_df() works", {
   df <- data.frame(
     type = c("stock", "flow", "flow", "constant", "constant"),
@@ -1094,7 +1090,6 @@ test_that("graphical functions are created with correct properties", {
   expect_equal(sfm$model$variables$gf$lookup1$interpolation, defaults[["interpolation"]])
   expect_equal(sfm$model$variables$gf$lookup1$extrapolation, defaults[["extrapolation"]])
 })
-
 
 
 test_that("graphical functions require both xpts and ypts or neither", {

@@ -56,7 +56,6 @@ expit <- function(x) {
 }
 
 
-
 #' Generate random logical value
 #'
 #' Equivalent of RandBoolean() in Insight Maker
@@ -174,8 +173,6 @@ contains_IM <- function(haystack, needle) {
 }
 
 
-
-
 #' Create ramp function
 #'
 #' Create a ramp function that increases linearly from 0 to a specified height at a specified start time, and stays at this height after the specified end time.
@@ -257,7 +254,6 @@ ramp <- function(times, start, finish, height = 1) {
   input <- stats::approxfun(signal, rule = 2, method = "linear")
   return(input)
 }
-
 
 
 #' Create pulse function
@@ -359,8 +355,6 @@ pulse <- function(times, start, height = 1, width = 1, repeat_interval = NULL) {
   input <- stats::approxfun(signal, rule = 2, method = "constant")
   return(input)
 }
-
-
 
 
 #' Create step function
@@ -468,10 +462,6 @@ seasonal <- function(times, period = 1, shift = 0) {
 }
 
 
-
-
-
-
 #' Safely check whether x is less than zero
 #'
 #' If using Julia, units are preserved
@@ -493,7 +483,6 @@ nonnegative <- function(x) {
     return(max(c(0, x)))
   }
 }
-
 
 
 #' Remainder and modulus
@@ -536,7 +525,6 @@ rem <- function(a, b) {
 }
 
 
-
 #' @export
 #' @rdname rem_mod
 mod <- function(a, b) {
@@ -544,14 +532,11 @@ mod <- function(a, b) {
 }
 
 
-
-
 #' @export
 #' @rdname rem_mod
 `%REM%` <- function(a, b) {
   rem(a, b)
 }
-
 
 
 #' Logistic function
@@ -574,8 +559,6 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
 
   return(upper / (1 + exp(-slope * (x - midpoint))))
 }
-
-
 
 
 #' Internal function to save dataframe at specific times

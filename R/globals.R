@@ -4,15 +4,17 @@
 if (!exists(".sdbuildR_env")) {
   .sdbuildR_env <- new.env(parent = emptyenv())
 
-  .sdbuildR_env[["jl_init"]] <- FALSE
+  .sdbuildR_env[["jl"]] <- list(
+    init = FALSE,
+    required_version = "1.11",
+    pkg_name = "SystemDynamicsBuildR",
+    pkg_version = "0.2.5" # required version
+  )
 
   # Names of variables and functions
   .sdbuildR_env[["P"]] <- list(
     debug = FALSE,
     insightmaker_version = 38,
-    jl_required_version = "1.11",
-    jl_pkg_name = "SystemDynamicsBuildR",
-    jl_pkg_version = "0.2.4",
     model_setup_name = "model_setup",
     macro_name = "macro",
     initial_value_name = "init",

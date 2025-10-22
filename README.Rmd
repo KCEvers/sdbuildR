@@ -67,7 +67,7 @@ sdbuildR offers two simulation engines: R and Julia (supported by [JuliaConnecto
 
 ## Other System Dynamics software
 
-sdbuildR is heavily based on common System Dynamics software such as [Vensim](https://en.wikipedia.org/wiki/Vensim/), [Powersim](https://powersim.com/), [Stella](https://www.iseesystems.com/), and [Insight Maker](https://insightmaker.com/). To translate xmile models to R, see the R package [readsdr](https://CRAN.R-project.org/package=readsdr). To build stock-and-flow models with the R package [deSolve](https://CRAN.R-project.org/package=deSolve), the book [System Dynamics Modeling with R](https://link.springer.com/book/10.1007/978-3-319-34043-2) by Jim Duggan will prove useful. In Python, stock-and-flow models are supported by [PySD](https://doi.org/10.21105/joss.04329).
+sdbuildR is heavily based on common System Dynamics software such as [Vensim](https://en.wikipedia.org/wiki/Vensim), [Powersim](https://powersim.com/), [Stella](https://www.iseesystems.com/), and [Insight Maker](https://insightmaker.com/). To translate xmile models to R, see the R package [readsdr](https://CRAN.R-project.org/package=readsdr). To build stock-and-flow models with the R package [deSolve](https://CRAN.R-project.org/package=deSolve), the book [System Dynamics Modeling with R](https://link.springer.com/book/10.1007/978-3-319-34043-2) by Jim Duggan will prove useful. In Python, stock-and-flow models are supported by [PySD](https://doi.org/10.21105/joss.04329).
 
 
 ## Troubleshooting

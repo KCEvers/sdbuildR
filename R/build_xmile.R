@@ -111,10 +111,6 @@ get_flow_df <- function(sfm) {
 }
 
 
-
-
-
-
 #' Create dataframe of simulation results
 #'
 #' Convert simulation results to a dataframe. The first column is time, followed by all stocks, and then all other auxiliary and flow variables.
@@ -236,8 +232,6 @@ get_delay_past <- function(sfm) {
   z <- z[lengths(z) > 0]
   return(z)
 }
-
-
 
 
 #' Check whether object is of class sdbuildR_xmile
@@ -432,7 +426,6 @@ validate_xmile <- function(sfm) {
 }
 
 
-
 #' Switch names and values of list, handling different lengths in entries
 #'
 #' @param x List
@@ -446,7 +439,6 @@ switch_list <- function(x) {
 
   return(as.list(new_list))
 }
-
 
 
 #' Create, modify or remove custom units
@@ -468,7 +460,7 @@ switch_list <- function(x) {
 #'
 #' @examples
 #' # Units are only supported with Julia
-#' if (JuliaConnectoR::juliaSetupOk()) {
+#' if (julia_status()$status == "ready") {
 #'   sfm <- xmile("Crielaard2022")
 #'   sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
 #'
@@ -668,8 +660,6 @@ model_units <- function(sfm, name, eqn = "1", doc = "",
 
   return(sfm)
 }
-
-
 
 
 #' Create, modify or remove a global variable or function
@@ -919,7 +909,6 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 }
 
 
-
 #' Modify simulation specifications
 #'
 #' Simulation specifications are the settings that determine how the model is simulated, such as the integration method (i.e. solver), start and stop time, and timestep. Modify these specifications for an existing stock-and-flow model.
@@ -961,7 +950,7 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' sfm <- sim_specs(sfm, seed = 1) |>
 #'   build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
 #'
-#' if (JuliaConnectoR::juliaSetupOk()) {
+#' if (julia_status()$status == "ready") {
 #'   # Change the simulation language to Julia to use units
 #'   sfm <- sim_specs(sfm, language = "Julia")
 #' }
@@ -1234,9 +1223,6 @@ sim_specs <- function(sfm,
 }
 
 
-
-
-
 #' Remove variable from stock-and-flow model
 #'
 #' @inheritParams build
@@ -1274,7 +1260,6 @@ erase_var <- function(sfm, name) {
 }
 
 
-
 #' Report whether any names were changed
 #'
 #' @param old_names Vector with old names
@@ -1295,11 +1280,6 @@ report_name_change <- function(old_names, new_names) {
 
   return(invisible())
 }
-
-
-
-
-
 
 
 #' Create, modify or remove variables
@@ -1862,7 +1842,6 @@ build <- function(sfm, name, type,
   }
 
 
-
   # Only need regex_units if any of the following are passed
   if (any(c("eqn", "units") %in% passed_arg)) {
     regex_units <- get_regex_units()
@@ -1988,8 +1967,6 @@ build <- function(sfm, name, type,
 }
 
 
-
-
 #' Add and/or modify model from dataframe
 #'
 #' @inheritParams build
@@ -2039,8 +2016,6 @@ add_from_df <- function(sfm, df) {
 }
 
 
-
-
 #' Get possible variable properties per building block type
 #'
 #' @return List with default properties per building block type
@@ -2071,9 +2046,6 @@ get_building_block_prop <- function() {
     "gf" = c("name", "type", "units", "label", "xpts", "ypts", "source", "interpolation", "extrapolation", "doc")
   ))
 }
-
-
-
 
 
 #' Debug stock-and-flow model
@@ -2254,7 +2226,6 @@ debugger <- function(sfm, quietly = FALSE) {
   }
 
 
-
   if (!quietly & length(problems) > 0) {
     message("Problems:")
     message(paste0(problems, collapse = "\n\n"))
@@ -2278,7 +2249,6 @@ debugger <- function(sfm, quietly = FALSE) {
     return(invisible())
   }
 }
-
 
 
 #' Check whether static variables (stock's initial values, constants) depend on dynamic variables
@@ -2326,9 +2296,6 @@ static_depend_on_dyn <- function(sfm) {
     return(list(issue = FALSE))
   }
 }
-
-
-
 
 
 #' Convert stock-and-flow model to dataframe
@@ -2518,7 +2485,6 @@ as.data.frame.sdbuildR_xmile <- function(x,
 
   return(df)
 }
-
 
 
 #' Print overview of stock-and-flow model

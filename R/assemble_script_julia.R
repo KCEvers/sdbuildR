@@ -282,7 +282,6 @@ compile_julia <- function(sfm, filepath_sim,
 }
 
 
-
 #' Check for keyword arguments in Julia translated equation
 #'
 #' Check whether any variable names are used as functions with keyword arguments in the Julia translated equation
@@ -475,9 +474,6 @@ prep_delayN_smoothN <- function(sfm, delayN_smoothN) {
 }
 
 
-
-
-
 #' Compile script for defining a units module in Julia
 #'
 #' @inheritParams compile_julia
@@ -529,16 +525,19 @@ compile_units_julia <- function(sfm, keep_unit) {
 
     script <- paste0(
       script,
-      "\n# Define custom units; register after each unit as some units may be defined by other units\nmodule ", .sdbuildR_env[["P"]][["MyCustomUnits"]], "\n\tusing Unitful\n\tusing ", .sdbuildR_env[["P"]][["jl_pkg_name"]], ".", .sdbuildR_env[["P"]][["sdbuildR_units"]], "\n\t",
+      "\n# Define custom units; register after each unit as some units may be defined by other units\nmodule ",
+      .sdbuildR_env[["P"]][["MyCustomUnits"]], "\n\tusing Unitful\n\tusing ",
+      .sdbuildR_env[["jl"]][["pkg_name"]], ".",
+      .sdbuildR_env[["P"]][["sdbuildR_units"]], "\n\t",
       unit_str,
-      "\n\tUnitful.register(", .sdbuildR_env[["P"]][["MyCustomUnits"]], ")\nend\n\n",
+      "\n\tUnitful.register(",
+      .sdbuildR_env[["P"]][["MyCustomUnits"]], ")\nend\n\n",
       "Unitful.register(", .sdbuildR_env[["P"]][["MyCustomUnits"]], ")\n"
     )
   }
 
   return(list(script = script))
 }
-
 
 
 #' Compile Julia script for global variables
@@ -569,10 +568,6 @@ compile_macros_julia <- function(sfm) {
 }
 
 
-
-
-
-
 #' Compile Julia script for creating time vector
 #'
 #' @return List
@@ -601,8 +596,6 @@ compile_times_julia <- function(sfm, keep_unit) {
 
   return(list(script = script))
 }
-
-
 
 
 #' Prepare equations of all model variables
@@ -915,8 +908,6 @@ compile_static_eqn_julia <- function(sfm, ensemble_pars, ordering, intermediarie
   }
 
 
-
-
   # If there was an issue with the ordering of static and dynamic equations, only compile static equations
   if (ordering[["static_and_dynamic"]][["issue"]]) {
     # Compile and order static equations
@@ -1046,8 +1037,6 @@ compile_static_eqn_julia <- function(sfm, ensemble_pars, ordering, intermediarie
   }
 
 
-
-
   return(list(
     stock_names = names(stock_eqn),
     par_names = c(names(constant_eqn), names(gf_eqn)),
@@ -1084,7 +1073,6 @@ compile_static_eqn_julia <- function(sfm, ensemble_pars, ordering, intermediarie
     )
   ))
 }
-
 
 
 #' Prepare for summing change in stocks in stock-and-flow model in Julia script
@@ -1157,9 +1145,6 @@ prep_stock_change_julia <- function(sfm, keep_unit) {
 
   return(sfm)
 }
-
-
-
 
 
 #' Compile Julia script for ODE function
@@ -1386,9 +1371,6 @@ function %s(%s, %s, integrator)",
 }
 
 
-
-
-
 #' Compile Julia script for running ODE
 #'
 #' @param filepath_sim Path to output file
@@ -1485,7 +1467,6 @@ compile_run_ode_julia <- function(sfm,
         .sdbuildR_env[["P"]][["ensemble_iter"]], "] = SavedValues(eltype(",
         .sdbuildR_env[["P"]][["time_name"]], "), Any)\nend\n\n"
       ), ""),
-
 
 
       # Ensemble problem function
@@ -1624,10 +1605,6 @@ compile_run_ode_julia <- function(sfm,
 
   return(list(script = script))
 }
-
-
-
-
 
 
 #' Write a string to a temporary file

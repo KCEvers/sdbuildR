@@ -38,11 +38,13 @@ if (require("DiagrammeRsvg", quietly = TRUE) &
   file.remove(file)
 }
 
-\dontrun{ # requires internet
+\dontshow{if (interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontrun{
+# requires internet
 # Only if dependencies are installed
 if (require("htmlwidgets", quietly = TRUE) &
   require("webshot2", quietly = TRUE)) {
-  #     # Requires Chrome to save plotly plot:
+  # Requires Chrome to save plotly plot:
   sim <- simulate(sfm)
   export_plot(plot(sim), file)
 
@@ -50,6 +52,7 @@ if (require("htmlwidgets", quietly = TRUE) &
   file.remove(file)
 }
 }
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other simulate: 
@@ -59,7 +62,6 @@ Other simulate:
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
 \code{\link{solvers}()},
-\code{\link{use_julia}()},
 \code{\link{use_threads}()}
 }
 \concept{simulate}

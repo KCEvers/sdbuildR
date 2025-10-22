@@ -16,6 +16,9 @@ reference:
 - title: Simulate stock-and-flow models
 - contents:
   - has_concept("simulate")
+- title: Set-up and use Julia
+- contents:
+  - has_concept("julia")
 - title: Insight Maker
 - contents:
   - has_concept("insightmaker")

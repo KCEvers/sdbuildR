@@ -65,7 +65,7 @@ head(as.data.frame(sim))
 sfm <- sim_specs(sfm, seed = 1) |>
   build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
 
-if (JuliaConnectoR::juliaSetupOk()) {
+if (julia_status()$status == "ready") {
   # Change the simulation language to Julia to use units
   sfm <- sim_specs(sfm, language = "Julia")
 }
@@ -80,7 +80,6 @@ Other simulate:
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{simulate}()},
 \code{\link{solvers}()},
-\code{\link{use_julia}()},
 \code{\link{use_threads}()}
 }
 \concept{simulate}

@@ -1,3 +1,7 @@
+# sdbuildR 1.0.2
+
+# sdbuildR 1.0.1
+
 # sdbuildR 1.0.0
 
 * Added extensive solver options

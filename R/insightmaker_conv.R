@@ -335,7 +335,6 @@ IM_to_xmile <- function(xml_file) {
     })
 
 
-
   # Variables -> Auxiliaries
   variable_prop <- c(
     "doc", "eqn_insightmaker", "units_insightmaker", "name_insightmaker",
@@ -601,7 +600,6 @@ IM_to_xmile <- function(xml_file) {
 }
 
 
-
 #' Prepare Insight Maker equation
 #'
 #' @param eqn Insight Maker equation to prepare
@@ -659,8 +657,6 @@ replace_names_IM <- function(string, original, replacement, with_brackets = TRUE
     return(new_string)
   }
 }
-
-
 
 
 #' Prepare units for Julia's Unitful package
@@ -853,8 +849,6 @@ clean_units_IM <- function(sfm, regex_units) {
 }
 
 
-
-
 #' Check non-negative Stocks and Flows
 #'
 #' @inheritParams build
@@ -881,7 +875,6 @@ check_nonnegativity <- function(sfm, keep_nonnegative_flow, keep_nonnegative_sto
 
   return(sfm)
 }
-
 
 
 #' Convert global Insight Maker script to macros
@@ -1155,7 +1148,6 @@ replace_safely <- function(eqn, dict, var_names, ignore_case = TRUE) {
 }
 
 
-
 #' Split macro equation and names
 #'
 #' @inheritParams build
@@ -1304,9 +1296,6 @@ convert_equations_IM_wrapper <- function(sfm, regex_units) {
 }
 
 
-
-
-
 #' Remove brackets around R names
 #'
 #' Add units and add sources for graphical functions
@@ -1331,7 +1320,6 @@ remove_brackets_from_names <- function(sfm) {
 
   return(sfm)
 }
-
 
 
 #' Split auxiliaries into static parameters or dynamic variables

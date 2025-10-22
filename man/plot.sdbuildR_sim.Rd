@@ -55,10 +55,6 @@ plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
 # Add constants to the plot
 plot(sim, add_constants = TRUE)
 
-# Plot all model variables
-sim <- simulate(sfm, only_stocks = FALSE)
-plot(sim, add_constants = TRUE)
-
 }
 \seealso{
 \code{\link[=simulate]{simulate()}}, \code{\link[=as.data.frame.sdbuildR_sim]{as.data.frame.sdbuildR_sim()}}, \code{\link[=plot.sdbuildR_xmile]{plot.sdbuildR_xmile()}}
@@ -70,7 +66,6 @@ Other simulate:
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
 \code{\link{solvers}()},
-\code{\link{use_julia}()},
 \code{\link{use_threads}()}
 }
 \concept{simulate}
