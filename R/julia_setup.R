@@ -36,14 +36,14 @@ julia_init_ok <- function() {
   # active_project <- JuliaConnectoR::juliaEval(julia_cmd)
 
   # Check init variable exists
-  julia_cmd <- paste0("isdefined(Main, :",
-                      .sdbuildR_env[["P"]][["init_sdbuildR"]], ")")
+  julia_cmd <- paste0(
+    "isdefined(Main, :",
+    .sdbuildR_env[["P"]][["init_sdbuildR"]], ")"
+  )
   init_sdbuildR <- JuliaConnectoR::juliaEval(julia_cmd)
 
   return(unitful_loaded && project_name == "sdbuildR" && isTRUE(init_sdbuildR))
 }
-
-
 
 
 #' Check status of Julia installation and environment
@@ -67,7 +67,6 @@ julia_init_ok <- function() {
 #' print(status)
 #'
 julia_status <- function(verbose = TRUE) {
-
   result <- list(
     julia_found = FALSE,
     julia_path = NULL,
@@ -82,7 +81,7 @@ julia_status <- function(verbose = TRUE) {
   result[["julia_found"]] <- JuliaConnectoR::juliaSetupOk() && !is.null(julia_loc[["path"]]) && nzchar(julia_loc[["path"]]) && file.exists(julia_loc[["path"]])
   result[["julia_path"]] <- julia_loc[["path"]]
 
-  if (!result[["julia_found"]]){
+  if (!result[["julia_found"]]) {
     result$status <- "julia_not_installed"
     if (verbose) {
       message("Julia not found. Install Julia from https://julialang.org/install/")
@@ -99,10 +98,12 @@ julia_status <- function(verbose = TRUE) {
   if (package_version(result[["julia_version"]]) <= package_version(required_jl_version)) {
     result$status <- "julia_needs_update"
     if (verbose) {
-      message("Detected Julia version ", result[["julia_version"]],
-         ", which is older than needed for sdbuildR (version >= ",
-         required_jl_version,
-         "). Please go to https://julialang.org/install/ to update Julia.")
+      message(
+        "Detected Julia version ", result[["julia_version"]],
+        ", which is older than needed for sdbuildR (version >= ",
+        required_jl_version,
+        "). Please go to https://julialang.org/install/ to update Julia."
+      )
     }
     return(result)
   }
@@ -155,7 +156,6 @@ julia_status <- function(verbose = TRUE) {
 #'
 #' @noRd
 check_manifest_for_pkg <- function(manifest_file, pkg_name) {
-
   result <- list(
     installed = FALSE,
     version = "0.0.0"
@@ -165,51 +165,53 @@ check_manifest_for_pkg <- function(manifest_file, pkg_name) {
     return(result)
   }
 
-  tryCatch({
-    # Read Manifest.toml
-    manifest_content <- readLines(manifest_file, warn = FALSE)
+  tryCatch(
+    {
+      # Read Manifest.toml
+      manifest_content <- readLines(manifest_file, warn = FALSE)
 
-    # Find the package section
-    # Manifest.toml format (v2.0):
-    # [[deps.PackageName]]
-    # uuid = "..."
-    # version = "1.2.3"
+      # Find the package section
+      # Manifest.toml format (v2.0):
+      # [[deps.PackageName]]
+      # uuid = "..."
+      # version = "1.2.3"
 
-    # Look for the package
-    pkg_pattern <- sprintf("\\[\\[deps\\.%s\\]\\]", pkg_name)
-    pkg_idx <- grep(pkg_pattern, manifest_content)
-
-    if (length(pkg_idx) == 0) {
-      # Try alternative format (older manifests)
-      pkg_pattern <- sprintf("\\[\"%s\"\\]", pkg_name)
+      # Look for the package
+      pkg_pattern <- sprintf("\\[\\[deps\\.%s\\]\\]", pkg_name)
       pkg_idx <- grep(pkg_pattern, manifest_content)
-    }
 
-    if (length(pkg_idx) > 0) {
-      result$installed <- TRUE
+      if (length(pkg_idx) == 0) {
+        # Try alternative format (older manifests)
+        pkg_pattern <- sprintf("\\[\"%s\"\\]", pkg_name)
+        pkg_idx <- grep(pkg_pattern, manifest_content)
+      }
 
-      # Look for version in the next few lines
-      # Read up to 20 lines after the package declaration
-      search_lines <- manifest_content[pkg_idx[1]:(min(pkg_idx[1] + 20, length(manifest_content)))]
+      if (length(pkg_idx) > 0) {
+        result$installed <- TRUE
 
-      version_line <- grep("^version\\s*=", search_lines, value = TRUE)
+        # Look for version in the next few lines
+        # Read up to 20 lines after the package declaration
+        search_lines <- manifest_content[pkg_idx[1]:(min(pkg_idx[1] + 20, length(manifest_content)))]
 
-      if (length(version_line) > 0) {
-        # Extract version string
-        version_match <- regmatches(
-          version_line[1],
-          regexec("version\\s*=\\s*\"([^\"]+)\"", version_line[1])
-        )
+        version_line <- grep("^version\\s*=", search_lines, value = TRUE)
 
-        if (length(version_match[[1]]) > 1) {
-          result$version <- version_match[[1]][2]
+        if (length(version_line) > 0) {
+          # Extract version string
+          version_match <- regmatches(
+            version_line[1],
+            regexec("version\\s*=\\s*\"([^\"]+)\"", version_line[1])
+          )
+
+          if (length(version_match[[1]]) > 1) {
+            result$version <- version_match[[1]][2]
+          }
         }
       }
+    },
+    error = function(e) {
+      warning("Error reading Manifest.toml: ", conditionMessage(e))
     }
-
-  }, error = function(e) {
-    warning("Error reading Manifest.toml: ", conditionMessage(e))
-  })
+  )
 
   return(result)
 }
@@ -226,56 +228,57 @@ check_manifest_for_pkg <- function(manifest_file, pkg_name) {
 #'   \item{version}{Character. Package version, or NULL if not found.}
 #'
 #' @noRd
-check_julia_env_for_pkg <- function(pkg_name){
-
+check_julia_env_for_pkg <- function(pkg_name) {
   result <- list(
     installed = FALSE,
     version = "0.0.0"
   )
 
-  result <- tryCatch({
+  result <- tryCatch(
+    {
+      # Check if package is installed
+      is_installed <- tryCatch(
+        {
+          JuliaConnectoR::juliaEval(paste0(
+            '!isnothing(findfirst(p -> p.name == "', pkg_name,
+            '", Pkg.dependencies()))'
+          ))
+        },
+        error = function(e) {
+          FALSE
+        }
+      )
 
-    # Check if package is installed
-    is_installed <- tryCatch(
-      {
-        JuliaConnectoR::juliaEval(paste0(
-          '!isnothing(findfirst(p -> p.name == "', pkg_name,
-          '", Pkg.dependencies()))'
-        ))
-      },
-      error = function(e) {
-        FALSE
+      # Check whether version is up to date
+      if (is_installed) {
+        installed_version <- tryCatch(
+          {
+            JuliaConnectoR::juliaEval(paste0(
+              'string(Pkg.dependencies()[findfirst(p -> p.name == "',
+              pkg_name,
+              '", Pkg.dependencies())].version)'
+            ))
+          },
+          error = function(e) {
+            "0.0.0" # If can't determine version, assume it needs update
+          }
+        )
+      } else {
+        installed_version <- FALSE
       }
-    )
 
-    # Check whether version is up to date
-    if (is_installed){
-      installed_version <- tryCatch(
-      {
-        JuliaConnectoR::juliaEval(paste0(
-          'string(Pkg.dependencies()[findfirst(p -> p.name == "',
-          pkg_name,
-          '", Pkg.dependencies())].version)'
-        ))
-      },
-      error = function(e) {
-        "0.0.0" # If can't determine version, assume it needs update
-      }
-    )
-    } else {
-      installed_version <- FALSE
+      list(
+        installed = is_installed,
+        version = installed_version
+      )
+    },
+    error = function(e) {
+      return(result)
     }
-
-    list(installed = is_installed,
-         version = installed_version)
-
-  }, error = function(e){
-    return(result)
-  })
+  )
 
   return(result)
 }
-
 
 
 #' Install or update Julia environment
@@ -302,14 +305,13 @@ check_julia_env_for_pkg <- function(pkg_name){
 #' @examples
 #' \dontrun{
 #' if (julia_status()$julia_found) {
-#'  install_julia_env()
+#'   install_julia_env()
 #' }
 #' }
-install_julia_env <- function(remove = FALSE){
-
+install_julia_env <- function(remove = FALSE) {
   status <- julia_status(verbose = FALSE)
 
-  if (!status[["status"]] %in% c("install_julia_env", "ready")){
+  if (!status[["status"]] %in% c("install_julia_env", "ready")) {
     stop()
   }
 
@@ -318,8 +320,7 @@ install_julia_env <- function(remove = FALSE){
     JuliaConnectoR::startJuliaServer()
   })
 
-  if (remove){
-
+  if (remove) {
     # Find set-up location for sdbuildR in Julia
     env_path <- system.file(package = "sdbuildR")
 
@@ -328,28 +329,28 @@ install_julia_env <- function(remove = FALSE){
     JuliaConnectoR::juliaEval(julia_cmd)
 
     # Delete SystemDynamicsBuildR.jl
-    JuliaConnectoR::juliaEval(sprintf('using Pkg; Pkg.rm("%s")',
-                                      .sdbuildR_env[["jl"]][["pkg_name"]]))
+    JuliaConnectoR::juliaEval(sprintf(
+      'using Pkg; Pkg.rm("%s")',
+      .sdbuildR_env[["jl"]][["pkg_name"]]
+    ))
 
     manifest_file <- system.file("Manifest.toml", package = "sdbuildR")
-    if (file.exists(manifest_file)){
+    if (file.exists(manifest_file)) {
       file.remove(manifest_file)
     }
     JuliaConnectoR::juliaEval("Pkg.gc()")
     status <- julia_status(verbose = FALSE)
 
-    if (status[["status"]] != "install_julia_env"){
+    if (status[["status"]] != "install_julia_env") {
       warning("Removing Julia environment FAILED!")
     } else {
       message("Julia environment successfully removed.")
     }
-
   } else {
     # Run the setup script
     setup_script <- system.file("setup.jl", package = "sdbuildR")
     JuliaConnectoR::juliaEval(sprintf('include("%s")', setup_script))
     julia_status()
-
   }
 
   # Stop Julia
@@ -373,7 +374,8 @@ install_julia_env <- function(remove = FALSE){
 #' @family julia
 #'
 #' @examples
-#' \dontrun{ # requires Julia setup
+#' \dontrun{
+#' # requires Julia setup
 #' if (julia_status()$status == "ready") {
 #'   # Start a Julia session and activate the Julia environment for sdbuildR
 #'   use_julia()
@@ -383,9 +385,9 @@ install_julia_env <- function(remove = FALSE){
 #' }
 #' }
 use_julia <- function(
-    stop = FALSE,
-    force = FALSE) {
-
+  stop = FALSE,
+  force = FALSE
+) {
   if (stop) {
     # Check whether a session is active
     if (!julia_setup_ok()) {
@@ -406,7 +408,7 @@ use_julia <- function(
 
   status <- julia_status()
 
-  if (status[["status"]] != "ready"){
+  if (status[["status"]] != "ready") {
     stop()
   }
 
@@ -469,7 +471,7 @@ use_julia <- function(
   required_pkg_version <- .sdbuildR_env[["jl"]][["pkg_version"]]
   installed_pkg_version <- find_jl_pkg_version(pkg_name = .sdbuildR_env[["jl"]][["pkg_name"]])
 
-  if (package_version(installed_pkg_version) < package_version(required_pkg_version)){
+  if (package_version(installed_pkg_version) < package_version(required_pkg_version)) {
     JuliaConnectoR::stopJulia()
     stop("Julia packages need to be updated!\nPlease run install_julia_env().")
   }
@@ -490,8 +492,7 @@ use_julia <- function(
 #' @returns Logical value indicating whether the package needs to be updated
 #' @noRd
 #'
-find_jl_pkg_version <- function(pkg_name){
-
+find_jl_pkg_version <- function(pkg_name) {
   # Check if SystemDynamicsBuildR.jl is installed by examining Manifest.toml
   manifest_file <- system.file("Manifest.toml", package = "sdbuildR")
   pkg_check <- check_manifest_for_pkg(
@@ -499,14 +500,13 @@ find_jl_pkg_version <- function(pkg_name){
     pkg_name
   )
 
-  if (pkg_check$installed & pkg_check$version == "0.0.0"){
+  if (pkg_check$installed & pkg_check$version == "0.0.0") {
     # Try alternative way of finding package version if this did not work
     pkg_check <- check_julia_env_for_pkg(pkg_name)
   }
 
   return(pkg_check$version)
 }
-
 
 
 #' Set up Julia environment for sdbuildR with init.jl
@@ -525,7 +525,7 @@ run_init <- function() {
 
   # Install all dependencies from Project.toml
   JuliaConnectoR::juliaEval("Pkg.instantiate()")
-  JuliaConnectoR::juliaEval('Pkg.resolve()')
+  JuliaConnectoR::juliaEval("Pkg.resolve()")
 
   # Source the init.jl script
   init_file <- system.file("init.jl", package = "sdbuildR")
@@ -536,25 +536,22 @@ run_init <- function() {
 }
 
 
-
-
 #' Find Julia installation and version
 #'
 #' @returns List with path to Julia installation (bin directory, not executable) and Julia version
 #' @noRd
-find_julia <- function(){
-
+find_julia <- function() {
   julia_paths <- getJuliaExecutablePath()
   julia_version <- getJuliaVersionViaCmd(julia_paths$juliaCmd)
 
-  return(list(path = julia_paths$juliaBindir,
-              version = julia_version))
+  return(list(
+    path = julia_paths$juliaBindir,
+    version = julia_version
+  ))
 }
 
 
-
 getJuliaExecutablePath <- function() {
-
   juliaBindir <- Sys.getenv("JULIA_BINDIR")
   if (juliaBindir == "") {
     if (Sys.which("julia") == "") {
@@ -566,8 +563,10 @@ getJuliaExecutablePath <- function() {
   } else { # use the JULIA_BINDIR variable, as it is specified
     juliaExe <- list.files(path = juliaBindir, pattern = "^julia.*")
     if (length(juliaExe) == 0) {
-      stop(paste0("No Julia executable file found in supposed bin directory \"" ,
-                  juliaBindir, "\""))
+      stop(paste0(
+        "No Julia executable file found in supposed bin directory \"",
+        juliaBindir, "\""
+      ))
     }
     juliaCmd <- file.path(juliaBindir, "julia")
   }
@@ -594,8 +593,10 @@ getJuliaExecutablePath <- function() {
     }
   }
 
-  return(list(juliaBindir = juliaBindir,
-              juliaCmd = juliaCmd))
+  return(list(
+    juliaBindir = juliaBindir,
+    juliaCmd = juliaCmd
+  ))
 }
 
 
@@ -605,7 +606,7 @@ fallbackOnDefaultJuliaupPath <- function() {
   # (On Mac, Julia might not be on the PATH in the R session even though
   # Julia has been installed in the default way via Juliaup.)
   juliaCmd <- file.path(Sys.getenv("HOME"), ".juliaup", "bin", "julia")
-  if (!file.exists(juliaCmd) || Sys.info()['sysname'] == "Windows") {
+  if (!file.exists(juliaCmd) || Sys.info()["sysname"] == "Windows") {
     stop('Julia could not be found.
 Julia needs to be installed and findable for the "JuliaConnectoR" package to work.
 After installing Julia, the best way make Julia findable is to put the folder containing the Julia executable into the PATH environment variable.
@@ -620,12 +621,17 @@ For more information, see the help topic ?`Julia-Setup`.
 getJuliaVersionViaCmd <- function(juliaCmd = getJuliaExecutablePath()) {
   juliaVersion <- NULL
   try({
-    juliaVersion <- system2(juliaCmd, "--version", stdout = TRUE
-                            # env = getJuliaEnv()
-                            )
-    juliaVersion <- regmatches(juliaVersion,
-                               regexpr("[0-9]+\\.[0-9]+\\.[0-9]+",
-                                       juliaVersion))
+    juliaVersion <- system2(juliaCmd, "--version",
+      stdout = TRUE
+      # env = getJuliaEnv()
+    )
+    juliaVersion <- regmatches(
+      juliaVersion,
+      regexpr(
+        "[0-9]+\\.[0-9]+\\.[0-9]+",
+        juliaVersion
+      )
+    )
   })
   juliaVersion
 }

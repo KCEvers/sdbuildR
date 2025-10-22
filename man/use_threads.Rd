@@ -18,7 +18,8 @@ No return value, called for side effects
 Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS. Note that this does not affect regular simulations with \code{simulate()}.
 }
 \examples{
-\dontrun{ # requires Julia setup
+\dontrun{
+# requires Julia setup
 if (julia_status()$status == "ready") {
   # Use Julia with 4 threads
   use_julia()

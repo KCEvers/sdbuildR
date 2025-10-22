@@ -137,7 +137,6 @@ test_that("translating Insight Maker models works (cran)", {
 })
 
 
-
 test_that("translating Insight Maker models works (validation)", {
   skip_on_cran()
   testthat::skip_if_not(julia_status()$status == "ready")

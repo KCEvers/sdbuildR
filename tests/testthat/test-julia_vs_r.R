@@ -148,7 +148,6 @@ test_that("compare output Julia and R for templates", {
 })
 
 
-
 test_that("as.data.frame(sim) works", {
   sfm <- xmile("SIR") |> sim_specs(dt = 0.1, save_at = 1, stop = 10)
 

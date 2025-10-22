@@ -32,7 +32,8 @@
 #' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim, add_constants = TRUE)
 #'
-#' \dontrun{ # requires Julia setup
+#' \dontrun{
+#' # requires Julia setup
 #' if (julia_status()$status == "ready") {
 #'   # Use Julia for models with units or delay functions
 #'   sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
@@ -81,9 +82,6 @@ simulate <- function(sfm,
     stop("Language not supported.\nPlease run either sim_specs(sfm, language = 'Julia') (recommended) or sim_specs(sfm, language = 'R') (no unit, delay, or ensemble support).")
   }
 }
-
-
-
 
 
 #' Detect undefined variables in equations
@@ -170,11 +168,6 @@ detect_undefined_var <- function(sfm) {
 }
 
 
-
-
-
-
-
 #' Topologically sort equations according to their dependencies
 #'
 #' @param dependencies_dict Named list with dependencies for each equation; names are equation names and entries are dependencies
@@ -242,7 +235,6 @@ topological_sort <- function(dependencies_dict) {
 }
 
 
-
 #' Detect circular dependencies in equations
 #'
 #' @param g Graph object
@@ -272,7 +264,6 @@ circularity <- function(g) {
     return(list(issue = FALSE, msg = ""))
   }
 }
-
 
 
 #' Find newly defined variables in equation
@@ -312,7 +303,6 @@ find_newly_defined_var <- function(eqn) {
 }
 
 
-
 #' Find dependencies
 #'
 #' Find which other variables each variable is dependent on.
@@ -337,7 +327,6 @@ find_dependencies <- function(sfm, reverse = FALSE) {
 
   return(dep)
 }
-
 
 
 #' Reverse dependencies
@@ -443,8 +432,6 @@ find_dependencies_ <- function(sfm, eqns = NULL, only_var = TRUE, only_model_var
 }
 
 
-
-
 #' Order equations of static and dynamic part of stock-and-flow model
 #'
 #' @inheritParams build
@@ -526,7 +513,6 @@ order_equations <- function(sfm, print_msg = TRUE) {
     static_and_dynamic = static_and_dynamic
   ))
 }
-
 
 
 #' Compare two simulations
@@ -660,8 +646,8 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 #' @seealso [use_threads()], [build()], [xmile()], [sim_specs()], [use_julia()]
 #'
 #' @examples
-#'
-#' \dontrun{ # requires Julia setup
+#' \dontrun{
+#' # requires Julia setup
 #' if (julia_status()$status == "ready") {
 #'   # Load example and set simulation language to Julia
 #'   sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
@@ -1014,7 +1000,6 @@ ensemble <- function(sfm,
 }
 
 
-
 #' Set up threaded ensemble simulations
 #'
 #' Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS. Note that this does not affect regular simulations with `simulate()`.
@@ -1028,7 +1013,8 @@ ensemble <- function(sfm,
 #' @export
 #'
 #' @examples
-#' \dontrun{ # requires Julia setup
+#' \dontrun{
+#' # requires Julia setup
 #' if (julia_status()$status == "ready") {
 #'   # Use Julia with 4 threads
 #'   use_julia()
@@ -1069,7 +1055,8 @@ use_threads <- function(n = parallel::detectCores() - 1, stop = FALSE) {
 
     # Save user's old setting
     .sdbuildR_env[["prev_JULIA_NUM_THREADS"]] <- Sys.getenv("JULIA_NUM_THREADS",
-                                                            unset = NA)
+      unset = NA
+    )
 
     .sdbuildR_env[["JULIA_NUM_THREADS"]] <- n
   }

@@ -39,7 +39,8 @@ if (require("DiagrammeRsvg", quietly = TRUE) &
 }
 
 \dontshow{if (interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-\dontrun{ # requires internet
+\dontrun{
+# requires internet
 # Only if dependencies are installed
 if (require("htmlwidgets", quietly = TRUE) &
   require("webshot2", quietly = TRUE)) {

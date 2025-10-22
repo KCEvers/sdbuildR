@@ -4,7 +4,6 @@
 #' @noRd
 julia_func <- function() {
   func_def <- list(
-
     # extrapolation = 1: return NA when outside of bounds
     # extrapolation = 2: return nearest value when outside of bounds
     "custom_func" = list(
@@ -967,8 +966,6 @@ end
       #     return timeseries_df, param_matrix, param_names, init_val_matrix, init_val_names
       # end
       # ",
-
-
 
 
       "ensemble_to_df" = "function ensemble_to_df(solve_out, init_names,

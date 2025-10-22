@@ -187,7 +187,6 @@ test_that("simulate with different components works", {
 })
 
 
-
 test_that("seed works", {
   testthat::skip_on_cran()
   testthat::skip_if_not(julia_status()$status == "ready")
@@ -208,7 +207,6 @@ test_that("seed works", {
   sim2 <- simulate(sfm)
   expect_equal(dplyr::last(sim1$df$value), dplyr::last(sim2$df$value))
 })
-
 
 
 test_that("units in stocks and flows", {

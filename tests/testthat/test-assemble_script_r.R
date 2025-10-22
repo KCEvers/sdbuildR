@@ -86,7 +86,6 @@ test_that("simulate with different components works", {
   # eqn = "sigmoid((workday - normal_workday), midpoint = health)"
 
 
-
   # Only keep stocks
   sfm <- xmile("SIR") |> sim_specs(language = "R", stop = 10, dt = 0.1)
   sim <- simulate(sfm, only_stocks = TRUE)
@@ -188,8 +187,6 @@ test_that("seed works", {
   sim2 <- simulate(sfm)
   expect_equal(dplyr::last(sim1$df$value), dplyr::last(sim2$df$value))
 })
-
-
 
 
 test_that("function in aux still works", {

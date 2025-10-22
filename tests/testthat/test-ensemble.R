@@ -274,7 +274,6 @@ test_that("ensemble works with specified range", {
 })
 
 
-
 test_that("ensemble works with units", {
   testthat::skip_on_cran()
   testthat::skip_if_not(julia_status()$status == "ready")
@@ -298,7 +297,6 @@ test_that("ensemble works with units", {
   expect_no_error(expect_no_message(plot(sims)))
   expect_no_error(expect_no_message(plot(sims, type = "sims")))
 })
-
 
 
 test_that("ensemble works with NA", {

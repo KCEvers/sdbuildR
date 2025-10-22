@@ -32,7 +32,7 @@ Note that this may take 10-25 minutes the first time as Julia downloads and comp
 \examples{
 \dontrun{
 if (julia_status()$julia_found) {
- install_julia_env()
+  install_julia_env()
 }
 }
 }

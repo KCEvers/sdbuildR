@@ -51,7 +51,6 @@ u <- function(unit_str) {
 }
 
 
-
 #' Drop unit in equation
 #'
 #' In rare cases, it may be desirable to drop the units of a variable within an equation. Use `drop_unit()` to render a variable unitless. See `?u()` for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
@@ -72,7 +71,6 @@ u <- function(unit_str) {
 drop_u <- function(x) {
   return(x)
 }
-
 
 
 #' Convert unit in equation
@@ -143,8 +141,6 @@ split_units <- function(x) {
 
   return(x_split)
 }
-
-
 
 
 #' Replace written powers ("squared", "cubed") in string
@@ -353,10 +349,6 @@ clean_unit <- function(x, regex_units, ignore_case = FALSE,
 }
 
 
-
-
-
-
 #' Find missing unit definitions
 #'
 #' @inheritParams build
@@ -409,7 +401,6 @@ detect_undefined_units <- function(sfm, new_eqns, new_units, regex_units, R_or_J
 }
 
 
-
 #' Find unit strings
 #'
 #' @inheritParams build
@@ -440,8 +431,6 @@ find_unit_strings <- function(sfm) {
 
   return(eqn_units)
 }
-
-
 
 
 #' View all standard units
@@ -705,7 +694,6 @@ get_regex_time_units <- function() {
 }
 
 
-
 #' Show unit prefixes
 #'
 #' @returns Matrix with unit prefixes, symbols, and power-of-ten scale
@@ -877,9 +865,6 @@ get_regex_units <- function(sfm = NULL) {
 
   return(regex_units)
 }
-
-
-
 
 
 #' Get list of standard custom units in Julia

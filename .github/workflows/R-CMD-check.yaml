@@ -30,6 +30,7 @@ jobs:
       AUTO_JULIA_INSTALL: true
       R_KEEP_PKG_SOURCE: yes
       NOT_CRAN: "true"
+      AUTO_INSTALL_JULIA_ENV: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -60,13 +61,6 @@ jobs:
           echo "PATH: $PATH"
           which julia
           julia --version
-        shell: bash
-
-      # Set up Julia environment using setup.jl directly
-      - name: Set up Julia environment for sdbuildR
-        run: |
-          cd inst
-          julia setup.jl
         shell: bash
 
       - uses: r-lib/actions/check-r-package@v2

@@ -4,11 +4,12 @@
 if (!exists(".sdbuildR_env")) {
   .sdbuildR_env <- new.env(parent = emptyenv())
 
-  .sdbuildR_env[["jl"]] <- list(init = FALSE,
-                                required_version = "1.11",
-                                pkg_name = "SystemDynamicsBuildR",
-                                pkg_version = "0.2.5" # required version
-                                )
+  .sdbuildR_env[["jl"]] <- list(
+    init = FALSE,
+    required_version = "1.11",
+    pkg_name = "SystemDynamicsBuildR",
+    pkg_version = "0.2.5" # required version
+  )
 
   # Names of variables and functions
   .sdbuildR_env[["P"]] <- list(

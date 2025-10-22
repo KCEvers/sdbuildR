@@ -6,7 +6,6 @@ test_that("parse_args() works", {
 })
 
 
-
 test_that("clean_name() works", {
   sfm <- xmile()
   names_df <- get_names(sfm)
@@ -24,8 +23,6 @@ test_that("clean_name() works", {
 })
 
 
-
-
 test_that("clean_language works", {
   expect_equal(clean_language("r"), "R")
   expect_equal(clean_language(" r "), "R")
@@ -34,8 +31,6 @@ test_that("clean_language works", {
   expect_equal(clean_language("jl"), "Julia")
   expect_error(clean_language("python"), "The language python is not one of the languages available in sdbuildR")
 })
-
-
 
 
 test_that("get_names() works", {

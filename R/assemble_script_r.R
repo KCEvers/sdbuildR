@@ -242,7 +242,6 @@ compile_destructuring_assign <- function(sfm, static_eqn) {
 }
 
 
-
 #' Compile script for global variables
 #'
 #' @inheritParams build
@@ -313,7 +312,6 @@ compile_times <- function(sfm) {
 
   return(list(script = script))
 }
-
 
 
 #' Compile script for static variables, i.e. initial conditions, functions, and parameters
@@ -389,7 +387,6 @@ compile_static_eqn <- function(sfm, ordering) {
     constants_def, init_def
   )))
 }
-
 
 
 #' Prepare equations and variables in stock-and-flow model
@@ -487,8 +484,6 @@ prep_equations_variables <- function(sfm, keep_nonnegative_flow) {
 }
 
 
-
-
 #' Prepare for summing change in stocks in stock-and-flow model
 #'
 #' @inheritParams build
@@ -531,7 +526,6 @@ prep_stock_change <- function(sfm) {
 
   return(sfm)
 }
-
 
 
 #' Compile script for non-negative Stocks

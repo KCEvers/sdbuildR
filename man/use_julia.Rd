@@ -21,7 +21,8 @@ Start Julia session and activate Julia environment to simulate stock-and-flow mo
 In every R session, \code{use_julia()} needs to be run once (which is done automatically in \code{simulate()}), which can take around 30-60 seconds.
 }
 \examples{
-\dontrun{ # requires Julia setup
+\dontrun{
+# requires Julia setup
 if (julia_status()$status == "ready") {
   # Start a Julia session and activate the Julia environment for sdbuildR
   use_julia()

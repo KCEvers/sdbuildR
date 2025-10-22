@@ -40,7 +40,6 @@ test_that("find_dependencies works", {
 })
 
 
-
 test_that("get_build_code() works", {
   expect_no_error(get_build_code(xmile()))
 
@@ -66,8 +65,6 @@ test_that("get_build_code() works", {
     expect_identical(sim1$df$value, sim2$df$value)
   }
 })
-
-
 
 
 test_that("save_at works", {

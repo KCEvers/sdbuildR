@@ -53,7 +53,8 @@ plot(sim)
 sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim, add_constants = TRUE)
 
-\dontrun{ # requires Julia setup
+\dontrun{
+# requires Julia setup
 if (julia_status()$status == "ready") {
   # Use Julia for models with units or delay functions
   sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")

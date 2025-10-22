@@ -16,6 +16,7 @@
 #' @seealso [build()], [xmile()]
 #'
 #' @examplesIf has_internet()
+#' \dontrun{ # requires internet
 #' # Load a model from Insight Maker
 #' sfm <- insightmaker_to_sfm(
 #'   URL =
@@ -30,7 +31,7 @@
 #' # Simulate the model
 #' sim <- simulate(sfm)
 #' plot(sim)
-#'
+#' }
 insightmaker_to_sfm <- function(URL,
                                 file,
                                 keep_nonnegative_flow = TRUE,

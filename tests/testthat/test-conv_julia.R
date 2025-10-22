@@ -95,7 +95,6 @@ end"
 })
 
 
-
 test_that("converting functions to Julia with named arguments", {
   sfm <- xmile("predator_prey")
   var_names <- get_model_var(sfm)
@@ -255,7 +254,6 @@ test_that("custom function definitons work", {
   sim <- expect_no_error(simulate(sfm))
   expect_equal(sim$df[1, "value"], 1 + 2)
 })
-
 
 
 test_that("clean units for Julia", {
@@ -511,7 +509,6 @@ test_that("converting statements", {
   #   expect_equal(result, expected)
 
 
-
   # # One-liner functions with brackets
   # # ** to do: this doesn't work if there is no name assigned...
   # # eqn = "sum_two_nums <- function(x, y) x + y"
@@ -524,7 +521,6 @@ test_that("converting statements", {
   # **to do: hysteresis model
   # "F <- function(x,a,d){\nif (x > a + d){\n  1\n  } else if (x > a){\n   1-2*(((a-x + d)/(2*d))^2)\n   } else {\n       ifelse(x>a-d, 2*(((x-a + d)/(2*d))^2), 0)\n}\n}"
 })
-
 
 
 test_that("replace_written_powers() works", {
@@ -609,7 +605,6 @@ test_that("convert_distribution() to Julia", {
   expected <- "Distributions.pdf.(Distributions.Gamma(2.0, 30.0, 1.0/30.0), 1)"
   expect_equal(result, expected)
 })
-
 
 
 test_that("convert sequence works", {

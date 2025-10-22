@@ -86,7 +86,6 @@ convert_equations_IM <- function(type,
 }
 
 
-
 #' Replace comment characters from Insight Maker to R
 #'
 #' @inheritParams convert_equations_IM
@@ -127,7 +126,6 @@ replace_comments <- function(eqn) {
 }
 
 
-
 #' Get start and end indices of all comments
 #'
 #' @inheritParams convert_equations_IM
@@ -163,7 +161,6 @@ get_range_comments <- function(eqn) {
 }
 
 
-
 #' Clean equation and extract comments
 #'
 #' @inheritParams convert_equations_IM
@@ -196,8 +193,6 @@ remove_comments <- function(eqn) {
     doc = doc
   ))
 }
-
-
 
 
 #' Translate Insight Maker colon operator to R
@@ -238,8 +233,6 @@ replace_colon <- function(eqn, var_names) {
 
   return(eqn)
 }
-
-
 
 
 #' Translate curly bracket syntax from Insight Maker to R
@@ -359,10 +352,6 @@ curly_to_vector_brackets <- function(eqn, var_names) {
 }
 
 
-
-
-
-
 #' Translate Insight Maker operators to R
 #'
 #' @inheritParams convert_equations_IM
@@ -457,8 +446,6 @@ replace_op_IM <- function(eqn, var_names) {
 
   return(eqn)
 }
-
-
 
 
 #' Convert statement syntax from Insight Maker to R
@@ -811,8 +798,6 @@ get_range_pairs <- function(eqn, var_names,
 }
 
 
-
-
 #' Get indices of all quotation marks
 #'
 #' @inheritParams convert_equations_IM
@@ -955,8 +940,6 @@ get_range_all_pairs <- function(eqn, var_names,
     return(data.frame())
   }
 }
-
-
 
 
 #' Get regular expressions for built-in Insight Maker functions
@@ -1203,7 +1186,6 @@ get_syntax_IM <- function() {
 
   return(list(syntax_df = syntax_df, syntax_df_unsupp = syntax_df_unsupp))
 }
-
 
 
 #' Convert Insight Maker built-in functions to R
@@ -1523,9 +1505,6 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 }
 
 
-
-
-
 #' Extract arguments before function (object-oriented syntax)
 #'
 #' @inheritParams convert_equations_IM
@@ -1570,8 +1549,6 @@ extract_prefunc_args <- function(eqn, var_names, start_func, names_with_brackets
 
   return(prefunc_arg)
 }
-
-
 
 
 #' Convert Insight Maker's Lookup() to R
@@ -1744,7 +1721,6 @@ conv_delayN <- function(func, arg) {
 }
 
 
-
 #' Convert Insight Maker's Step() function to R
 #'
 #' @param h_step Height of step, defaults to 1
@@ -1895,7 +1871,6 @@ conv_ramp <- function(func, arg, match_idx, name, # Default settings of Insight 
     add_Rcode = add_Rcode
   ))
 }
-
 
 
 #' Convert Insight Maker's Seasonal() function to R
