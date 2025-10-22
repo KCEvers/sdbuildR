@@ -54,7 +54,7 @@ sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim, add_constants = TRUE)
 
 \dontrun{ # requires Julia setup
-if (JuliaConnectoR::juliaSetupOk()) {
+if (julia_status()$status == "ready") {
   # Use Julia for models with units or delay functions
   sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
   sim <- simulate(sfm)
@@ -75,7 +75,6 @@ Other simulate:
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},
 \code{\link{solvers}()},
-\code{\link{use_julia}()},
 \code{\link{use_threads}()}
 }
 \concept{simulate}

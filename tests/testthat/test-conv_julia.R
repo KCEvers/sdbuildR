@@ -244,7 +244,7 @@ test_that("custom function definitons work", {
 
   # Repeat in Julia
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
   sfm <- xmile() |> macro("func", "function(x, y = 1, z = 2) x + y")
   expect_equal(sfm$macro$func$eqn_julia, "function func(x, y = 1.0, z = 2.0)\n x .+ y\nend")
 

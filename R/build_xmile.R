@@ -468,7 +468,7 @@ switch_list <- function(x) {
 #'
 #' @examples
 #' # Units are only supported with Julia
-#' if (JuliaConnectoR::juliaSetupOk()) {
+#' if (julia_status()$status == "ready") {
 #'   sfm <- xmile("Crielaard2022")
 #'   sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
 #'
@@ -961,7 +961,7 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' sfm <- sim_specs(sfm, seed = 1) |>
 #'   build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
 #'
-#' if (JuliaConnectoR::juliaSetupOk()) {
+#' if (julia_status()$status == "ready") {
 #'   # Change the simulation language to Julia to use units
 #'   sfm <- sim_specs(sfm, language = "Julia")
 #' }

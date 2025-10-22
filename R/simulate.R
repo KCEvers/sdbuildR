@@ -33,7 +33,7 @@
 #' plot(sim, add_constants = TRUE)
 #'
 #' \dontrun{ # requires Julia setup
-#' if (JuliaConnectoR::juliaSetupOk()) {
+#' if (julia_status()$status == "ready") {
 #'   # Use Julia for models with units or delay functions
 #'   sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
 #'   sim <- simulate(sfm)
@@ -662,7 +662,7 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 #' @examples
 #'
 #' \dontrun{ # requires Julia setup
-#' if (JuliaConnectoR::juliaSetupOk()) {
+#' if (julia_status()$status == "ready") {
 #'   # Load example and set simulation language to Julia
 #'   sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
 #'
@@ -1022,14 +1022,14 @@ ensemble <- function(sfm,
 #' @param n Number of Julia threads to use. Defaults to parallel::detectCores() - 1. If set to a value higher than the number of available cores minus 1, it will be set to the number of available cores minus 1.
 #' @param stop Stop using threaded ensemble simulations. Defaults to FALSE.
 #'
-#' @returns NULL
+#' @returns No return value, called for side effects
 #' @family simulate
 #' @seealso [ensemble()], [use_julia()]
 #' @export
 #'
 #' @examples
 #' \dontrun{ # requires Julia setup
-#' if (JuliaConnectoR::juliaSetupOk()) {
+#' if (julia_status()$status == "ready") {
 #'   # Use Julia with 4 threads
 #'   use_julia()
 #'   use_threads(n = 4)
@@ -1068,7 +1068,8 @@ use_threads <- function(n = parallel::detectCores() - 1, stop = FALSE) {
     }
 
     # Save user's old setting
-    .sdbuildR_env[["prev_JULIA_NUM_THREADS"]] <- Sys.getenv("JULIA_NUM_THREADS", unset = NA)
+    .sdbuildR_env[["prev_JULIA_NUM_THREADS"]] <- Sys.getenv("JULIA_NUM_THREADS",
+                                                            unset = NA)
 
     .sdbuildR_env[["JULIA_NUM_THREADS"]] <- n
   }

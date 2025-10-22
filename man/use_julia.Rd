@@ -4,12 +4,10 @@
 \alias{use_julia}
 \title{Set up Julia environment}
 \usage{
-use_julia(stop = FALSE, JULIA_HOME = NULL, force = FALSE)
+use_julia(stop = FALSE, force = FALSE)
 }
 \arguments{
 \item{stop}{If TRUE, stop active Julia session. Defaults to FALSE.}
-
-\item{JULIA_HOME}{Path to Julia installation. Defaults to NULL to locate Julia automatically.}
 
 \item{force}{If TRUE, force Julia setup to execute again.}
 }
@@ -17,15 +15,15 @@ use_julia(stop = FALSE, JULIA_HOME = NULL, force = FALSE)
 Returns \code{NULL} invisibly.
 }
 \description{
-Create Julia environment to simulate stock-and-flow models. \code{use_julia()} looks for a Julia installation, and if found, will set up a Julia project enviroment. In most cases, this will require installing some packages. The Julia project environment is located in the inst directory of the sdbuildR package ("Project.toml").
+Start Julia session and activate Julia environment to simulate stock-and-flow models. \code{use_julia()} looks for a Julia installation and an instantiated Julia environment specifically for sdbuildR. This can be set up with \code{install_julia_env()}. For more guidance, please see \href{https://kcevers.github.io/sdbuildR/articles/julia-setup.html}{this vignette}.
 }
 \details{
-Keep in mind that the installation can take around 5-20 minutes. In every R session, \code{use_julia()} needs to be run once (which is done automatically in \code{simulate()}), which can take around 30 seconds.
+In every R session, \code{use_julia()} needs to be run once (which is done automatically in \code{simulate()}), which can take around 30-60 seconds.
 }
 \examples{
 \dontrun{ # requires Julia setup
-if (JuliaConnectoR::juliaSetupOk()) {
-  # Start Julia session or set up environment (first time use)
+if (julia_status()$status == "ready") {
+  # Start a Julia session and activate the Julia environment for sdbuildR
   use_julia()
 
   # Stop Julia session
@@ -34,14 +32,8 @@ if (JuliaConnectoR::juliaSetupOk()) {
 }
 }
 \seealso{
-Other simulate: 
-\code{\link{ensemble}()},
-\code{\link{export_plot}()},
-\code{\link{plot.sdbuildR_ensemble}()},
-\code{\link{plot.sdbuildR_sim}()},
-\code{\link{sim_specs}()},
-\code{\link{simulate}()},
-\code{\link{solvers}()},
-\code{\link{use_threads}()}
+Other julia: 
+\code{\link{install_julia_env}()},
+\code{\link{julia_status}()}
 }
-\concept{simulate}
+\concept{julia}

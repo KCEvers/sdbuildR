@@ -52,23 +52,15 @@ jobs:
           julia --version
         shell: bash
 
-      # Install specific Julia packages
-      - name: Install Julia packages
+      # Set up Julia environment using setup.jl directly
+      - name: Set up Julia environment for sdbuildR
         run: |
           julia -e '
             using Pkg
-            Pkg.add(name="OrdinaryDiffEq", version="6.98")
-            Pkg.add(name="DiffEqCallbacks", version="4.8")
-            Pkg.add(name="DataFrames", version="1.7")
-            Pkg.add(name="Distributions", version="0.25")
-            Pkg.add(name="Statistics", version="1.11")
-            Pkg.add(name="StatsBase", version="0.34.6")
-            Pkg.add(name="Unitful", version="1.23")
-            Pkg.add(name="DataInterpolations", version="8.1")
-            Pkg.add(name="Random", version="1.11")
-            Pkg.add(name="CSV", version="0.10")
-            Pkg.add(url="https://github.com/KCEvers/SystemDynamicsBuildR.jl")
-            Pkg.precompile()
+            # Activate environment from inst/ folder in source
+            Pkg.activate("./inst")
+            # Run the setup script
+            include("./inst/setup.jl")
           '
         shell: bash
 

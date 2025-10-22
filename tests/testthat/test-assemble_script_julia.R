@@ -2,7 +2,7 @@
 
 test_that("templates work", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   for (s in c("SIR", "predator_prey", "logistic_model", "Crielaard2022", "Duffing", "Chua")) {
     sfm <- xmile(s) |> sim_specs(language = "Julia", stop = 10, dt = 0.1)
@@ -27,7 +27,7 @@ test_that("templates work", {
 
 test_that("output of simulate in Julia", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   sfm <- xmile("SIR") |> sim_specs(language = "Julia", start = 0, stop = 10, dt = .1)
   sim <- expect_no_error(simulate(sfm))
@@ -51,7 +51,7 @@ test_that("output of simulate in Julia", {
 
 test_that("save_at works", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # Cannot set save_at to lower than dt
   sfm <- xmile("SIR")
@@ -84,7 +84,7 @@ test_that("save_at works", {
 
 test_that("save_from works", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   sfm <- xmile("SIR") |> sim_specs(
     start = 0, stop = 20,
@@ -100,7 +100,7 @@ test_that("save_from works", {
 
 test_that("simulate with different components works", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # Without stocks throws error
   sfm <- xmile()
@@ -190,7 +190,7 @@ test_that("simulate with different components works", {
 
 test_that("seed works", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # Without a seed, simulations shouldn't be the same
   sfm <- xmile("predator_prey") |>
@@ -213,7 +213,7 @@ test_that("seed works", {
 
 test_that("units in stocks and flows", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # No unit specified in stock yet stock evaluates to unit
   sfm <- xmile() |>
@@ -230,7 +230,7 @@ test_that("units in stocks and flows", {
 
 test_that("function in aux still works", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   sfm <- xmile() |>
     sim_specs(language = "Julia", start = 0, stop = 10, dt = .1) |>
@@ -253,7 +253,7 @@ test_that("function in aux still works", {
 
 test_that("negative times are possible", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   sfm <- xmile("logistic_model") |> sim_specs(
     start = -1, stop = 10, dt = 0.1,
@@ -267,7 +267,7 @@ test_that("negative times are possible", {
 
 test_that("functions in Julia work", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # round() with units
   sfm <- xmile() |>

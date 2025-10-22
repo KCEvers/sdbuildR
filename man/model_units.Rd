@@ -27,7 +27,7 @@ A large library of units already exists, but you may want to define your own cus
 }
 \examples{
 # Units are only supported with Julia
-if (JuliaConnectoR::juliaSetupOk()) {
+if (julia_status()$status == "ready") {
   sfm <- xmile("Crielaard2022")
   sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
 

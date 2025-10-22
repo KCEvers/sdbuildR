@@ -61,7 +61,6 @@ Other simulate:
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
 \code{\link{solvers}()},
-\code{\link{use_julia}()},
 \code{\link{use_threads}()}
 }
 \concept{simulate}

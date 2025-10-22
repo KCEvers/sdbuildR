@@ -7,11 +7,9 @@
 ## Resubmission
 This is a resubmission. In this version I have:
 
-* Changed 'buildeR' to 'builder' in the DESCRIPTION.
+* Removed the LICENSE file.
 
-* Removed the Maintainer field in the DESCRIPTION, keeping only Authors@R.
+* Changed @returns in use_threads() from "NULL" to "No return value, called for side effects", which adds a \value tag in the documentation.
 
-* Changed the URL from 'https://vensim.com/' to 'https://en.wikipedia.org/wiki/Vensim' in the README.
-
-* Surrounded examples which require a custom Julia environment to be set up in \dontrun{}. The installation of Julia and required packages can take up to 20 minutes, and the initialization of the Julia environment can take up to a minute, considerably slowing down these examples.
+* Removed automatic installation of Julia packages and instead wrote a separate function for this: install_julia_env(). In the description of the function, it is made clear that this will install Julia packages.
 

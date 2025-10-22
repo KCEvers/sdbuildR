@@ -70,7 +70,7 @@ If you do not see any variation within a condition of the ensemble (i.e. the con
 \examples{
 
 \dontrun{ # requires Julia setup
-if (JuliaConnectoR::juliaSetupOk()) {
+if (julia_status()$status == "ready") {
   # Load example and set simulation language to Julia
   sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
 
@@ -145,7 +145,6 @@ Other simulate:
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
 \code{\link{solvers}()},
-\code{\link{use_julia}()},
 \code{\link{use_threads}()}
 }
 \concept{simulate}

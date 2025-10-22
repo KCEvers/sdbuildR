@@ -112,7 +112,7 @@ test_that("logistic works", {
   )
 
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   sim <- expect_no_error(simulate(sfm0 |> sim_specs(language = "Julia")))
   df <- as.data.frame(sim)
@@ -184,7 +184,7 @@ test_that("step works", {
 
 test_that("step works (Julia)", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # Set-up basic sfm
   sfm0 <- xmile() |>
@@ -304,7 +304,7 @@ test_that("pulse works", {
 
 test_that("pulse works (Julia)", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # Set-up basic sfm
   sfm0 <- xmile() |>
@@ -381,7 +381,7 @@ test_that("ramp works", {
 
 test_that("ramp works (Julia)", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # Set-up basic sfm
   sfm0 <- xmile() |>
@@ -440,7 +440,7 @@ test_that("seasonal works", {
 
 test_that("seasonal works (Julia)", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # Set-up basic sfm
   sfm0 <- xmile() |>

@@ -15,7 +15,6 @@ Description: Stock-and-flow models are a computational method from the field of
     'sdbuildR' simulates models in 'R' and 'Julia', where 'Julia' offers unit
     support and large-scale ensemble simulations. Additionally, 'sdbuildR' can 
     import models created in 'Insight Maker' (<https://insightmaker.com/>). 
-License: GPL (>= 3) | file LICENSE
 URL: https://kcevers.github.io/sdbuildR/, https://github.com/KCEvers/sdbuildR
 BugReports: https://github.com/KCEvers/sdbuildR/issues
 Depends: 
@@ -51,3 +50,4 @@ Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+License: GPL (>= 3)

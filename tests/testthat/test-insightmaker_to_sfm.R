@@ -31,7 +31,7 @@ test_that("downloading and simulating Insight Maker models works", {
 
   sfm_list <- list()
 
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   URL <- "https://insightmaker.com/insight/3xgsvC7QKgPktHWZuXyGAl/Clone-of-Global-Climate-Change"
   sfm_list[[1]] <- sfm <- expect_no_error(insightmaker_to_sfm(URL = URL))
@@ -140,7 +140,7 @@ test_that("translating Insight Maker models works (cran)", {
 
 test_that("translating Insight Maker models works (validation)", {
   skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   # Get path to the cran folder
   folder <- test_path("testdata", "insightmaker", "validation")

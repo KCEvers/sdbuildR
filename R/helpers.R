@@ -252,8 +252,13 @@ clean_name <- function(new, existing, protected = c()) {
 
     # These are variables in the ode and cannot be model element names
     unname(unlist(.sdbuildR_env[["P"]][names(.sdbuildR_env[["P"]]) %in% c(
-      "jl_pkg_name", "model_setup_name", "macro_name", "initial_value_name", "initial_value_names", "parameter_name", "parameter_names",
-      "state_name", "time_name", "change_state_name", "times_name", "timestep_name", "saveat_name", "time_units_name", "ensemble_iter", "ode_func_name", "callback_func_name", "callback_name", "intermediaries", "rootfun_name", "eventfun_name", "convert_u_func", "sdbuildR_units", "MyCustomUnits", "init_sdbuildR"
+      "jl_pkg_name", "model_setup_name", "macro_name", "initial_value_name",
+      "initial_value_names", "parameter_name", "parameter_names",
+      "state_name", "time_name", "change_state_name", "times_name",
+      "timestep_name", "saveat_name", "time_units_name", "ensemble_iter",
+      "ode_func_name", "callback_func_name", "callback_name", "intermediaries",
+      "rootfun_name", "eventfun_name", "convert_u_func", "sdbuildR_units",
+      "MyCustomUnits", "init_sdbuildR"
     )])),
     protected,
     as.character(stats::na.omit(existing))

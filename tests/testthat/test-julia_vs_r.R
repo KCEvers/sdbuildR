@@ -1,6 +1,6 @@
 test_that("compare output Julia and R for templates", {
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
 
   sfm <- xmile("SIR") |> sim_specs(dt = 0.1, save_at = 1, stop = 10)
   sim1 <- simulate(sfm |> sim_specs(language = "R"))
@@ -160,7 +160,7 @@ test_that("as.data.frame(sim) works", {
   expect_equal(sort(colnames(df)), c("Infected", "Recovered", "Susceptible", "time"))
 
   testthat::skip_on_cran()
-  testthat::skip_if_not(JuliaConnectoR::juliaSetupOk())
+  testthat::skip_if_not(julia_status()$status == "ready")
   sim <- simulate(sfm |> sim_specs(language = "Julia"), only_stocks = TRUE)
   expect_equal(class(as.data.frame(sim)), "data.frame")
   expect_equal(nrow(as.data.frame(sim)) > 0, TRUE)
