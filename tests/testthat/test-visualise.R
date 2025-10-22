@@ -15,6 +15,7 @@ test_that("export_plot works", {
 
   # Ubuntu throws error because it cannot access chrome
   skip_on_os("linux")
+  skip_on_os("windows") # windows now also has issues accessing chrome
   skip_if_not_installed(c("htmlwidgets", "webshot2"))
 
   skip_if_not(has_internet()) # requires internet

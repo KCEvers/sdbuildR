@@ -65,13 +65,8 @@ jobs:
       # Set up Julia environment using setup.jl directly
       - name: Set up Julia environment for sdbuildR
         run: |
-          julia -e '
-            using Pkg
-            # Activate environment from inst/ folder in source
-            Pkg.activate("./inst")
-            # Run the setup script
-            include("./inst/setup.jl")
-          '
+          cd inst
+          julia setup.jl
         shell: bash
 
       - uses: r-lib/actions/check-r-package@v2
