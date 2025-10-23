@@ -32,15 +32,17 @@ high-quality models. Get started at
 
 All package capabilities are described in the vignettes:
 
-- `vignette("build")` Learn how to build, modify, and debug
-  stock-and-flow models.
-- `vignette("julia-setup")` Install and set up the Julia environment for
-  running ensemble simulations and using units.
-- `vignette("ensemble")` Learn how to assess a model’s sensitivity,
-  uncertainty and robustness with ensemble simulations.
-- `vignette("units")` Learn why and how to use (custom) units.
-  <!-- 3. **Delays**: Not all dynamics are instantaneous. Learn about delays (fixed, smooth, material and information) and how to implement them with sdbuildR. -->
-  <!-- 4. **Sensitivity**:  -->
+- [Build](https://kcevers.github.io/sdbuildR/articles/build.html): Learn
+  how to build, modify, and debug stock-and-flow models.
+- [Julia
+  setup](https://kcevers.github.io/sdbuildR/articles/julia-setup.html):
+  Install and set up the Julia environment for running ensemble
+  simulations and using units.
+- [Ensemble](https://kcevers.github.io/sdbuildR/articles/ensemble.html):
+  Learn how to assess a model’s sensitivity, uncertainty and robustness
+  with ensemble simulations.
+- [Units](https://kcevers.github.io/sdbuildR/articles/units.html): Learn
+  why and how to use (custom) units.
 
 ## Installation
 
@@ -60,19 +62,21 @@ remotes::install_github("KCEvers/sdbuildR")
 sdbuildR offers two simulation engines: R and Julia (supported by
 [JuliaConnectoR](https://github.com/stefan-m-lenz/JuliaConnectoR/)). If
 you would like to run ensemble simulations and use units, you will need
-to install and set up the Julia environment. Follow the guide at
-`vignette("julia-setup")`.
+to install and set up the Julia environment. See [this
+vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html)
+for guidance.
 
 ## Limitations
 
-- Unlike in other System Dynamics software, sdbuildR minimally supports
-  non-negative stocks and flows. Setting stocks to non-negative will not
-  adjust flows. In any case, enforcing either stocks or flows to be
-  non-negative is not recommended, as it may mask model
-  misspecification. Stocks and flows that logically cannot be negative
-  (e.g., animals or deaths) should ideally remain non-negative as a
-  result of the model’s equations and parameters, rather than by forcing
-  them to be non-negative.
+- Unlike in other system dynamics software, sdbuildR provides only
+  minimal support for non-negative stocks and flows. Specifically,
+  setting stocks to non-negative will constrain the stocks to remain
+  non-negative, but will not adjust the corresponding flows. In any
+  case, enforcing either stocks or flows to be non-negative is not
+  recommended, as it may mask model misspecification. Stocks and flows
+  that logically cannot be negative (e.g., animals or deaths) should
+  ideally remain non-negative as a result of the model’s equations and
+  parameters, rather than by forcing them to be non-negative.
 
 - sdbuildR does not support vectorized operations, destructuring
   assignment, or minimum and maximum constraints for variables.
@@ -82,9 +86,9 @@ to install and set up the Julia environment. Follow the guide at
   nor the delay and past functions. A message is issued if any of these
   are detected.
 
-## Other System Dynamics software
+## Other system dynamics software
 
-sdbuildR is heavily based on common System Dynamics software such as
+sdbuildR is heavily based on common system dynamics software such as
 [Vensim](https://en.wikipedia.org/wiki/Vensim),
 [Powersim](https://powersim.com/),
 [Stella](https://www.iseesystems.com/), and [Insight

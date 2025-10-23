@@ -14,11 +14,11 @@ knitr::opts_chunk$set(
 )
 ```
 
-### Get started with a template
-
-```{r libraries, include=FALSE}
+```{r, echo=TRUE, message=FALSE}
 library(sdbuildR)
 ```
+
+### Get started with a template
 
 Stock-and-flow models can be created in three ways in sdbuildR. Firstly, dozens of example models can be loaded using `xmile()`. Plot the stock-and-flow diagram to get an overview of the model:
 
@@ -85,7 +85,7 @@ as.data.frame(sfm)
 
 See the vignettes to learn more about all features of sdbuildR:
 
-* `vignette("build")` Learn how to build, modify, and debug stock-and-flow models.
-* `vignette("julia-setup")` Install and set up the Julia environment for running ensemble simulations and using units.
-* `vignette("ensemble")` Learn how to assess a model's sensitivity, uncertainty and robustness with ensemble simulations.
-* `vignette("units")` Learn why and how to use (custom) units.
+* [Build](https://kcevers.github.io/sdbuildR/articles/build.html): Learn how to build, modify, and debug stock-and-flow models.
+* [Julia setup](https://kcevers.github.io/sdbuildR/articles/julia-setup.html): Install and set up the Julia environment for running ensemble simulations and using units.
+* [Ensemble](https://kcevers.github.io/sdbuildR/articles/ensemble.html): Learn how to assess a model's sensitivity, uncertainty and robustness with ensemble simulations.
+* [Units](https://kcevers.github.io/sdbuildR/articles/units.html): Learn why and how to use (custom) units.

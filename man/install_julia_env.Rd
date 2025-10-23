@@ -30,7 +30,7 @@ Instantiate the Julia environment for sdbuildR to run stock-and-flow models usin
 Note that this may take 10-25 minutes the first time as Julia downloads and compiles packages.
 }
 \examples{
-\dontshow{if (julia_status()$julia_found) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (julia_status()$julia_found && Sys.getenv("NOT_CRAN") == "true") (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 \dontrun{
   install_julia_env()
 }

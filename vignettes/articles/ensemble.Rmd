@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r libraries, include=FALSE}
+```{r, echo=TRUE, message=FALSE}
 library(sdbuildR)
 ```
 
@@ -40,7 +40,7 @@ sfm <- xmile("Crielaard2022")
 summary(sfm)
 ```
 
-Ensemble simulations are only supported in Julia, so we need to load the Julia environment and change the simulation language to Julia. For guidance on installing and setting up the Julia environment, see `vignette(julia-setup)`.
+Ensemble simulations are only supported in Julia, so we need to activate the Julia environment for sdbuildR and change the simulation language to Julia. For guidance on installing and setting up the Julia environment, see [this vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html).
 
 ```{r, results='hide'}
 use_julia()
@@ -111,7 +111,6 @@ plot(sims, type = "sims")
 ```
 
 This automatically only plots the first ten simulations, as plotting a large number of simulations can be quite slow. We can change which simulations we plot by specifying the `i` argument:
-
 
 ```{r }
 plot(sims, type = "sims", i = 15:30)
@@ -191,7 +190,7 @@ sims <- ensemble(sfm,
 plot(sims, nrows = 1)
 ```
 
-We can select specific conditions to compare, where here we plot the first 5 simulations of the first two conditions:
+We can select specific conditions to compare, where here we plot the first fifteen simulations of the first two conditions:
 
 ```{r}
 plot(sims, i = 1:15, j = 1:2, type = "sims", nrows = 1)
@@ -199,13 +198,20 @@ plot(sims, i = 1:15, j = 1:2, type = "sims", nrows = 1)
 
 ### Accessing simulation results
 
-The results of the ensemble simulation are stored in the `sims` object. You can access the summary statistics per condition $j$ and per timepoint, such as the mean and confidence intervals, using:
+The results of the ensemble simulation are stored in the `sims` object, which is a list containing, among others:
+- `summary`: summary statistics across all simulations per condition
+- `df`: individual simulation data (if `return_sims = TRUE`)
+- `init`: initial values of stocks
+- `constants`: parameter values used
+- `conditions`: matrix showing parameter combinations for each $j$
+
+You can access the summary statistics per condition $j$ and per time point, such as the mean and confidence intervals, using:
 
 ```{r}
 head(sims$summary)
 ```
 
-If you have set have set `return_sims = TRUE`, you can find the individual simulation runs in `sims$df`. These are in long format, containing the value of each variable for each timepoint in each simulation $i$ per condition $j$. 
+If you have set have set `return_sims = TRUE`, you can find the individual simulation runs in `sims$df`. These are in long format, containing the value of each variable for each time point in each simulation $i$ per condition $j$. 
 
 ```{r}
 head(sims$df)

@@ -65,6 +65,7 @@ plot(sfm, show_constants = FALSE, show_aux = FALSE)
 
 # Only show specific variables
 plot(sfm, vars = "Susceptible")
+
 }
 \seealso{
 \code{\link[=insightmaker_to_sfm]{insightmaker_to_sfm()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=plot.sdbuildR_sim]{plot.sdbuildR_sim()}}

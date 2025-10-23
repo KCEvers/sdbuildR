@@ -3,8 +3,10 @@ title: "Building stock-and-flow models"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Building stock-and-flow models}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r, include = FALSE}
@@ -20,8 +22,11 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r libraries, include=FALSE}
+```{r, echo=TRUE, message=FALSE}
 library(sdbuildR)
+```
+
+```{r libraries, include=FALSE}
 library(knitr)
 library(kableExtra)
 ```
@@ -248,7 +253,7 @@ sfm <- build(sfm, "sleep", "stock", eqn = "necessary_sleep") |>
   ) |>
   build("worry_factor", "constant", eqn = .1)
 
-plot(sfm, center_stocks = TRUE)
+plot(sfm)
 ```
 
 The model now contains two stocks and three flows.
@@ -359,7 +364,7 @@ kableExtra::kbl(functions_table,
 
 ### Simulation specifications
 
-We may want to observe the system over a longer time period, or with a different time step. To change the simulation specifications, use `sim_specs()`. Below, we simulate from 0 to 250 days.  To decrease the size of the resulting dataframe, the simulation time step `dt` should *not* be lowered, as this can affect the accuracy of the simulation. Rather, we can save the simulation results only every 0.1 days, which preserves accuracy. We additionally don't save the first 100 days. The method is set to `"euler"`, which is the simplest numerical integration method. 
+We may want to observe the system over a longer time period, or with a different time step. To change the simulation specifications, use `sim_specs()`. Below, we simulate from 0 to 250 days.  To decrease the size of the resulting dataframe, the simulation time step `dt` should *not* be lowered, as this can affect the accuracy of the simulation. Rather, we can save the simulation results only every 0.1 days, which preserves accuracy. We additionally don't save the first 100 days. The method is set to `"euler"`, which is the simplest numerical integration method. For more complex models or when higher accuracy is needed, consider other methods like `"rk4"`. See [`?solvers()`] for available methods.
 
 ```{r}
 sfm <- xmile("predator_prey") |>
@@ -381,7 +386,7 @@ sfm <- build(sfm, c("predator", "prey"), eqn = "runif(1, 20, 50)") |>
   sim_specs(seed = 1)
 ```
 
-In case a seed was set, this will appear in `summary()`. The seed can also be removed to ensure variation in the simulation. This can be useful to for example test the sensitivity of the model to changes in the initial condition. 
+In case a seed was set, this will appear in `summary.sdbuildR_xmile()`. The seed can also be removed to ensure variation in the simulation. This can be useful to for example test the sensitivity of the model to changes in the initial condition. 
 
 ```{r}
 sfm <- sim_specs(sfm, seed = NULL)
@@ -438,7 +443,7 @@ sfm <- xmile() |>
 
 ### Graphical functions
 
-Graphical functions, also known as table or lookup functions, are interpolation functions used to create custom input-output functions, where we define the desired output (y) for a specified input (x). They are defined by a set of x- and y-domain points. The interpolation method defines the behaviour of the graphical function between x-points, and the extrapolation method defines the behaviour outside of the x-points. For example, a simple graphical function may look like this:
+Graphical functions (`gf`), also known as table or lookup functions, are interpolation functions used to create custom input-output functions, where we define the desired output (y) for a specified input (x). They are defined by a set of x- and y-domain points. The interpolation method defines the behaviour of the graphical function between x-points, and the extrapolation method defines the behaviour outside of the x-points. For example, a simple graphical function called "graph" may look like this:
 
 ```{r}
 sfm <- xmile() |>
@@ -451,7 +456,7 @@ sfm <- xmile() |>
 The function can now be used in any equation in the model like so:
 
 ```{r}
-sfm <- build(sfm, "x", "aux", eqn = "graph(y)")
+sfm <- build(sfm, "x", "constant", eqn = "graph(1)")
 ```
 
 
@@ -467,7 +472,7 @@ sfm <- xmile() |>
 This will create a function `func()` that can be used in any equation in the model like so: 
 
 ```{r}
-sfm <- build(sfm, "x", "aux", eqn = "func(y)")
+sfm <- build(sfm, "x", "constant", eqn = "func(0)")
 ```
 
 

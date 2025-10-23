@@ -368,9 +368,11 @@ install_julia_env <- function(remove = FALSE) {
 }
 
 
-#' Set up Julia environment
+#' Start Julia and activate environment
 #'
-#' Start Julia session and activate Julia environment to simulate stock-and-flow models. `use_julia()` looks for a Julia installation and an instantiated Julia environment specifically for sdbuildR. This can be set up with `install_julia_env()`. For more guidance, please see [this vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html).
+#' Start Julia session and activate Julia environment to simulate stock-and-flow models. To do so, Julia needs to be installed and findable from within R. See [this vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html) for guidance. In addition, the Julia environment specifically for sdbuildR needs to have been instantiated. This can be set up with `install_julia_env()`.
+#'
+#' Julia supports running stock-and-flow models with units as well as ensemble simulations (see `ensemble()`).
 #'
 #' In every R session, `use_julia()` needs to be run once (which is done automatically in `simulate()`), which can take around 30-60 seconds.
 #'
@@ -381,17 +383,13 @@ install_julia_env <- function(remove = FALSE) {
 #' @export
 #' @concept julia
 #'
-#' @examples
-#' \dontrun{
-#' # requires Julia setup
-#' if (julia_status()$status == "ready") {
-#'   # Start a Julia session and activate the Julia environment for sdbuildR
-#'   use_julia()
+#' @examplesIf julia_status()$status == "ready"
+#' # Start a Julia session and activate the Julia environment for sdbuildR
+#' use_julia()
 #'
-#'   # Stop Julia session
-#'   use_julia(stop = TRUE)
-#' }
-#' }
+#' # Stop Julia session
+#' use_julia(stop = TRUE)
+#'
 use_julia <- function(
   stop = FALSE,
   force = FALSE

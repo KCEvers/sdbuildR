@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-Units, such as seconds, kilograms, or BMI, refer to the measurement units assigned to variables to quantify their magnitudes and ensure consistency in the model. Specifying units may seem like an unnecessary burden, because as we've seen in `vignette("build")`, stock-and-flow models can run without units. We'll first motivate the need and use of units for model verification and interpretation, after which we'll show how to use units in sdbuildR.
+Units, such as seconds, kilograms, or BMI, refer to the measurement units assigned to variables to quantify their magnitudes and ensure consistency in the model. Specifying units may seem like an unnecessary burden, because as we've seen in [this vignette](https://kcevers.github.io/sdbuildR/articles/build.html), stock-and-flow models can run without units. We'll first motivate the need and use of units for model verification and interpretation, after which we'll show how to use units in sdbuildR.
 
 ## Why units?
 
@@ -94,13 +94,13 @@ Moreover, units help identify and differentiate between time scales in the syste
 library(sdbuildR)
 ```
 
-Units thus help to verify and interpret our models. Next, we'll use the simple example of a coffee cup to explore how to specify the simulation time unit, units of variables, and units in equations. We will finish with how to define and use your own custom units. Note that using units is only supported for running models with `sim_specs(language = 'Julia')`, not in R (see *Why are units not supported in R?* below). Set up the Julia environment first:
+Units thus help to verify and interpret our models. Next, we'll use the simple example of a coffee cup to explore how to specify the simulation time unit, units of variables, and units in equations. We will finish with how to define and use your own custom units. Note that using units is only supported for running models with `sim_specs(language = 'Julia')`, not in R (see *Why are units not supported in R?* below). Activate the Julia environment first:
 
 ```{r, echo=TRUE}
 use_julia()
 ```
 
-For guidance on installing and setting up the Julia environment, see `vignette(julia-setup)`. For all models, the simulation engine has to be changed to Julia:
+For guidance on installing and setting up the Julia environment, see [this vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html). For all models, the simulation engine has to be changed to Julia:
 
 ```{r}
 sfm <- xmile() |>
@@ -240,7 +240,7 @@ sfm <- xmile() |>
     eqn = "18",
     units = "Celsius", label = "Room temperature"
   ) |>
-  build("cooling", "flow",
+  build("change", "flow",
     eqn = "(room_temperature - coffee_temperature) / u('10minutes')",
     units = "Celsius/minute", to = "coffee_temperature",
     label = "Cooling or heating"
@@ -304,7 +304,7 @@ sfm <- model_units(sfm, "kilograms")
 Changing the name of a custom unit is also possible with `model_units()`, which will ensure that any uses of the unit in the model are updated:
 
 ```{r}
-sfm <- model_units(sfm, "CO_2", change_name = "C02")
+sfm <- model_units(sfm, "CO_2", change_name = "CO2")
 ```
 
 Previously added model units can be removed by setting `erase = TRUE`:

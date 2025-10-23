@@ -214,6 +214,7 @@ export_plotly <- function(pl, file, format, width, height) {
 #'
 #' # Only show specific variables
 #' plot(sfm, vars = "Susceptible")
+#'
 plot.sdbuildR_xmile <- function(x,
                                 vars = NULL,
                                 format_label = TRUE,
