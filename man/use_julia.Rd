@@ -32,10 +32,4 @@ if (julia_status()$status == "ready") {
 }
 }
 }
-\seealso{
-Other julia: 
-\code{\link{install_julia_env}()},
-\code{\link{julia_status}()},
-\code{\link{use_threads}()}
-}
 \concept{julia}

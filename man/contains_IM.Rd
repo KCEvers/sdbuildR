@@ -21,16 +21,4 @@ Check whether value is in vector or string. Equivalent of .Contains() in Insight
 contains_IM(c("a", "b", "c"), "d") # FALSE
 contains_IM(c("abcdef"), "bc") # TRUE
 }
-\seealso{
-Other custom: 
-\code{\link{expit}()},
-\code{\link{indexof}()},
-\code{\link{length_IM}()},
-\code{\link{logistic}()},
-\code{\link{logit}()},
-\code{\link{rbool}()},
-\code{\link{rdist}()},
-\code{\link{rem}()},
-\code{\link{round_IM}()}
-}
 \concept{custom}

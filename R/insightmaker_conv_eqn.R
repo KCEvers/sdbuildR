@@ -3,12 +3,12 @@
 #' Transform Insight Maker eqn to R code
 #'
 #' @param eqn String with Insight Maker eqn, but translated R names
-#' @param var_names Dataframe with type, name, label and units per variable
+#' @param var_names data.frame with type, name, label and units per variable
 #' @param name R name of variable to which the eqn belongs
 #' @param type Name of model element to which the eqn belongs
 #' @inheritParams clean_unit
 #'
-#' @returns Dataframe with transformed eqn and additional R code needed to make the eqn function
+#' @returns data.frame with transformed eqn and additional R code needed to make the eqn function
 #' @noRd
 #' @importFrom rlang .data
 #'
@@ -129,7 +129,7 @@ replace_comments <- function(eqn) {
 #' Get start and end indices of all comments
 #'
 #' @inheritParams convert_equations_IM
-#' @returns Dataframe with start and end indices of all comments in eqn
+#' @returns data.frame with start and end indices of all comments in eqn
 #' @noRd
 #'
 get_range_comments <- function(eqn) {
@@ -258,7 +258,7 @@ curly_to_vector_brackets <- function(eqn, var_names) {
 
     # Check nesting
     if (nrow(paired_idxs) > 0) {
-      # Create dataframe with properties per pair
+      # Create data.frame with properties per pair
       paired_idxs_prop <- paired_idxs
       paired_idxs_prop["id"] <- seq_len(nrow(paired_idxs_prop))
 
@@ -802,7 +802,7 @@ get_range_pairs <- function(eqn, var_names,
 #' Get indices of all quotation marks
 #'
 #' @inheritParams convert_equations_IM
-#' @returns Dataframe with indices of quotation marks in eqn
+#' @returns data.frame with indices of quotation marks in eqn
 #' @noRd
 #'
 get_range_quot <- function(eqn) {
@@ -830,7 +830,7 @@ get_range_quot <- function(eqn) {
     }
 
     if (length(idx_quot) > 0) {
-      # Create dataframe with start and end indices of quotation marks
+      # Create data.frame with start and end indices of quotation marks
       pair_quotation_marks <- data.frame(
         start = idx_quot[seq(1, length(idx_quot), by = 2)],
         end = idx_quot[seq(2, length(idx_quot), by = 2)]
@@ -849,7 +849,7 @@ get_range_quot <- function(eqn) {
 #' @param add_custom String with custom enclosure to look for, e.g. "paste0()", defaults to NULL
 #' @param type Vector with types of enclosures to look for
 #'
-#' @returns Dataframe with indices per type of bracket
+#' @returns data.frame with indices per type of bracket
 #' @importFrom rlang .data
 #' @noRd
 #'
@@ -943,7 +943,7 @@ get_range_all_pairs <- function(eqn, var_names,
 
 #' Get regular expressions for built-in Insight Maker functions
 #'
-#' @returns Dataframe
+#' @returns data.frame
 #' @noRd
 get_syntax_IM <- function() {
   # Custom function to replace each (nested) function; necessary because regex in stringr unfortunately doesn't seem to handle nested functions
@@ -1120,7 +1120,7 @@ get_syntax_IM <- function() {
     ))
   )
 
-  # Convert to dataframe
+  # Convert to data.frame
   conv_df <- as.data.frame(conv_df, stringsAsFactors = FALSE)
 
   # Filter out syntax4 and syntax5
@@ -1200,7 +1200,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
   add_Rcode_list <- add_Rcode <- list()
 
   if (grepl("[[:alpha:]]", eqn)) {
-    # Dataframe with regular expressions for each built-in Insight Maker function
+    # data.frame with regular expressions for each built-in Insight Maker function
     syntax_df <- syntax_IM[["syntax_df"]]
     syntax_df_unsupp <- syntax_IM[["syntax_df_unsupp"]] # Unsupported functions
 

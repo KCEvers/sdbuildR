@@ -26,32 +26,23 @@ A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}
 A large library of units already exists, but you may want to define your own custom units. Use \code{\link[=model_units]{model_units()}} to add, change, or erase custom units from a stock-and-flow model. Custom units may be new base units, or may be defined in terms of other (custom) units. See \code{\link[=u]{u()}} for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
 }
 \examples{
+\dontshow{if (julia_status()$status == "ready") (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 # Units are only supported with Julia
-if (julia_status()$status == "ready") {
-  sfm <- xmile("Crielaard2022")
-  sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
+sfm <- xmile("Crielaard2022")
+sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
 
-  # You may also use words rather than symbols for the unit definition.
-  # The following modifies the unit BMI:
-  sfm <- model_units(sfm, "BMI", eqn = "kilogram/meters^2")
+# You may also use words rather than symbols for the unit definition.
+# The following modifies the unit BMI:
+sfm <- model_units(sfm, "BMI", eqn = "kilogram/meters^2")
 
-  # Remove unit:
-  sfm <- model_units(sfm, "BMI", erase = TRUE)
+# Remove unit:
+sfm <- model_units(sfm, "BMI", erase = TRUE)
 
-  # Unit names may be changed to be syntactically valid and avoid overlap:
-  sfm <- model_units(xmile(), "C0^2")
-}
+# Unit names may be changed to be syntactically valid and avoid overlap:
+sfm <- model_units(xmile(), "C0^2")
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=unit_prefixes]{unit_prefixes()}}
-
-Other units: 
-\code{\link{convert_u}()},
-\code{\link{drop_u}()},
-\code{\link{get_regex_time_units}()},
-\code{\link{get_regex_units}()},
-\code{\link{get_units}()},
-\code{\link{u}()},
-\code{\link{unit_prefixes}()}
 }
 \concept{units}

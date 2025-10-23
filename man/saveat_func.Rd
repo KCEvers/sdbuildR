@@ -2,23 +2,23 @@
 % Please edit documentation in R/custom_func.R
 \name{saveat_func}
 \alias{saveat_func}
-\title{Internal function to save dataframe at specific times}
+\title{Internal function to save data frame at specific times}
 \usage{
 saveat_func(df, time_col, new_times)
 }
 \arguments{
-\item{df}{Dataframe in wide format}
+\item{df}{data.frame in wide format}
 
 \item{time_col}{Name of the time column}
 
-\item{new_times}{Vector of new times to save the dataframe at}
+\item{new_times}{Vector of new times to save the data frame at}
 }
 \value{
 Interpolated data.frame. The data frame has columns \code{time} followed by
 one column per variable.
 }
 \description{
-Internal function used to save the dataframe at specific times in case save_at is not equal to dt in the simulation specifications.
+Internal function used to save the data frame at specific times in case save_at is not equal to dt in the simulation specifications.
 }
 \examples{
 # Recommended: Use save_at in sim_specs() to downsample simulations
@@ -41,11 +41,5 @@ df_wide <- as.data.frame(sim, direction = "wide")
 df_manual <- saveat_func(df_wide, "time", new_times)
 nrow(df_manual)
 
-}
-\seealso{
-Other internal: 
-\code{\link{clean_name}()},
-\code{\link{has_internet}()},
-\code{\link{nonnegative}()}
 }
 \concept{internal}

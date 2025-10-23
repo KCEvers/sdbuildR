@@ -9,7 +9,7 @@
 #' @returns Specified unit (only in Julia)
 #'
 #' @seealso [model_units()], [unit_prefixes()], [convert_u()], [drop_u()]
-#' @family units
+#' @concept units
 #' @export
 #'
 #' @examples
@@ -59,7 +59,7 @@ u <- function(unit_str) {
 #'
 #' @returns Unitless variable (only in Julia)
 #' @seealso [model_units()], [unit_prefixes()], [u()], [convert_u()]
-#' @family units
+#' @concept units
 #' @export
 #'
 #' @examples
@@ -82,7 +82,7 @@ drop_u <- function(x) {
 #'
 #' @returns Variable with new unit (only in Julia)
 #' @seealso [model_units()], [unit_prefixes()], [u()], [drop_u()]
-#' @family units
+#' @concept units
 #' @export
 #'
 #' @examples
@@ -435,7 +435,7 @@ find_unit_strings <- function(sfm) {
 
 #' View all standard units
 #'
-#' Obtain a dataframe with all standard units in Julia's Unitful package and added custom units by sdbuildR.
+#' Obtain a data frame with all standard units in Julia's Unitful package and added custom units by sdbuildR.
 #'
 #' @returns A character matrix with 5 columns: \code{description} (unit description),
 #'   \code{name} (unit symbol or abbreviation), \code{full_name} (full unit name),
@@ -443,7 +443,7 @@ find_unit_strings <- function(sfm) {
 #'   (logical indicating whether SI prefixes like kilo- or milli- can be applied).
 #'   Includes SI base units, derived units, CGS units, US customary units, and
 #'   custom units added by sdbuildR.
-#' @family units
+#' @concept units
 #' @export
 #' @examples
 #' x <- get_units()
@@ -630,7 +630,7 @@ get_units <- function() {
 #'
 #' @returns Named vector with regular expressions as names and units as entries
 #'
-#' @family units
+#' @concept units
 #' @export
 #' @examples
 #' x <- get_regex_time_units()
@@ -705,7 +705,7 @@ get_regex_time_units <- function() {
 #'   \code{symbol} (prefix symbol like "k"), and \code{scale} (power-of-ten multiplier
 #'   like "10^3" or "10^-6"). Rows are ordered from largest (yotta, 10^24) to smallest
 #'   (yocto, 10^-24).
-#' @family units
+#' @concept units
 #' @export
 #'
 #' @examples
@@ -749,7 +749,7 @@ unit_prefixes <- function() {
 #' @inheritParams build
 #' @returns Named vector with regular expressions as names and units as entries
 #'
-#' @family units
+#' @concept units
 #' @export
 #' @examples
 #' x <- get_regex_units()

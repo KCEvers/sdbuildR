@@ -48,10 +48,5 @@ plot(sim)
 }
 \seealso{
 \code{\link[=step]{step()}}, \code{\link[=pulse]{pulse()}}, \code{\link[=seasonal]{seasonal()}}
-
-Other input: 
-\code{\link{pulse}()},
-\code{\link{seasonal}()},
-\code{\link{step}()}
 }
 \concept{input}

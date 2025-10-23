@@ -25,16 +25,4 @@ round(-0.5) # 0
 round_IM(1.5) # 2
 round(1.5) # 2
 }
-\seealso{
-Other custom: 
-\code{\link{contains_IM}()},
-\code{\link{expit}()},
-\code{\link{indexof}()},
-\code{\link{length_IM}()},
-\code{\link{logistic}()},
-\code{\link{logit}()},
-\code{\link{rbool}()},
-\code{\link{rdist}()},
-\code{\link{rem}()}
-}
 \concept{custom}

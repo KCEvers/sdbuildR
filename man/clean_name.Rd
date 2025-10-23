@@ -26,10 +26,4 @@ sfm <- xmile("predator_prey")
 clean_name("predator", as.data.frame(sfm)[["name"]]) # "predator_1"
 
 }
-\seealso{
-Other internal: 
-\code{\link{has_internet}()},
-\code{\link{nonnegative}()},
-\code{\link{saveat_func}()}
-}
 \concept{internal}

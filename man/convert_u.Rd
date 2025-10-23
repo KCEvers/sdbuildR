@@ -28,14 +28,5 @@ sfm <- xmile() |>
 }
 \seealso{
 \code{\link[=model_units]{model_units()}}, \code{\link[=unit_prefixes]{unit_prefixes()}}, \code{\link[=u]{u()}}, \code{\link[=drop_u]{drop_u()}}
-
-Other units: 
-\code{\link{drop_u}()},
-\code{\link{get_regex_time_units}()},
-\code{\link{get_regex_units}()},
-\code{\link{get_units}()},
-\code{\link{model_units}()},
-\code{\link{u}()},
-\code{\link{unit_prefixes}()}
 }
 \concept{units}

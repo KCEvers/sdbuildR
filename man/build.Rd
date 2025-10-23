@@ -63,7 +63,20 @@ build(
 
 \item{extrapolation}{Only for graphical functions: extrapolation method. Must be either "nearest" or "NA". Defaults to "nearest".}
 
-\item{df}{Dataframe with variable properties to add and/or modify.}
+\item{df}{A data.frame with variable properties to add and/or modify. Each row represents one variable to build. Required columns depend on the variable type being created:
+\itemize{
+\item All types require: 'type', 'name'
+\item Stocks require: 'eqn' (initial value)
+\item Flows require: 'eqn', and at least one of 'from' or 'to'
+\item Constants require: 'eqn'
+\item Auxiliaries require: 'eqn'
+\item Graphical functions require: 'xpts', 'ypts'
+}
+
+Optional columns for all types: 'units', 'label', 'doc', 'non_negative'
+Optional columns for graphical functions: 'source', 'interpolation', 'extrapolation'
+
+Columns not applicable to a variable type should be set to NA. See Examples for a complete demonstration.}
 }
 \value{
 A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}
@@ -164,8 +177,8 @@ sfm <- build(sfm, "DELTA", change_type = "stock")
 # Remove variable
 sfm <- build(sfm, "prey", erase = TRUE)
 
-# To add and/or modify variables more quickly, pass a dataframe.
-# The dataframe is processed row-wise.
+# To add and/or modify variables more quickly, pass a data.frame.
+# The data.frame is processed row-wise.
 # For instance, to create a logistic population growth model:
 df <- data.frame(
   type = c("stock", "flow", "flow", "constant", "constant"),
@@ -186,18 +199,5 @@ debugger(sfm)
 }
 \seealso{
 \code{\link[=xmile]{xmile()}}
-
-Other build: 
-\code{\link{as.data.frame.sdbuildR_sim}()},
-\code{\link{as.data.frame.sdbuildR_xmile}()},
-\code{\link{debugger}()},
-\code{\link{find_dependencies}()},
-\code{\link{get_build_code}()},
-\code{\link{header}()},
-\code{\link{macro}()},
-\code{\link{plot.sdbuildR_xmile}()},
-\code{\link{print.summary.sdbuildR_xmile}()},
-\code{\link{summary.sdbuildR_xmile}()},
-\code{\link{xmile}()}
 }
 \concept{build}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/build_xmile.R
 \name{as.data.frame.sdbuildR_sim}
 \alias{as.data.frame.sdbuildR_sim}
-\title{Create dataframe of simulation results}
+\title{Create data frame of simulation results}
 \usage{
 \method{as.data.frame}{sdbuildR_sim}(x, row.names = NULL, optional = FALSE, direction = "long", ...)
 }
@@ -13,7 +13,7 @@
 
 \item{optional}{Ignored parameter.}
 
-\item{direction}{Format of dataframe, either "long" (default) or "wide".}
+\item{direction}{Format of data frame, either "long" (default) or "wide".}
 
 \item{...}{Optional parameters}
 }
@@ -24,7 +24,7 @@ For \code{direction = "wide"}, the data frame has columns \code{time} followed b
 one column per variable.
 }
 \description{
-Convert simulation results to a dataframe.
+Convert simulation results to a data.frame.
 }
 \examples{
 sfm <- xmile("SIR")
@@ -39,18 +39,5 @@ head(df_wide)
 }
 \seealso{
 \code{\link[=simulate]{simulate()}}, \code{\link[=xmile]{xmile()}}
-
-Other build: 
-\code{\link{as.data.frame.sdbuildR_xmile}()},
-\code{\link{build}()},
-\code{\link{debugger}()},
-\code{\link{find_dependencies}()},
-\code{\link{get_build_code}()},
-\code{\link{header}()},
-\code{\link{macro}()},
-\code{\link{plot.sdbuildR_xmile}()},
-\code{\link{print.summary.sdbuildR_xmile}()},
-\code{\link{summary.sdbuildR_xmile}()},
-\code{\link{xmile}()}
 }
 \concept{build}

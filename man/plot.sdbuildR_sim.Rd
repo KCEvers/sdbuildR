@@ -26,7 +26,7 @@
 
 \item{palette}{Colour palette. Must be one of hcl.pals().}
 
-\item{colors}{Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.}
+\item{colors}{Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation data frame. Defaults to NULL.}
 
 \item{font_family}{Font family. Defaults to "Times New Roman".}
 
@@ -58,13 +58,5 @@ plot(sim, add_constants = TRUE)
 }
 \seealso{
 \code{\link[=simulate]{simulate()}}, \code{\link[=as.data.frame.sdbuildR_sim]{as.data.frame.sdbuildR_sim()}}, \code{\link[=plot.sdbuildR_xmile]{plot.sdbuildR_xmile()}}
-
-Other simulate: 
-\code{\link{ensemble}()},
-\code{\link{export_plot}()},
-\code{\link{plot.sdbuildR_ensemble}()},
-\code{\link{sim_specs}()},
-\code{\link{simulate}()},
-\code{\link{solvers}()}
 }
 \concept{simulate}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/build_xmile.R
 \name{as.data.frame.sdbuildR_xmile}
 \alias{as.data.frame.sdbuildR_xmile}
-\title{Convert stock-and-flow model to dataframe}
+\title{Convert stock-and-flow model to data frame}
 \usage{
 \method{as.data.frame}{sdbuildR_xmile}(
   x,
@@ -21,11 +21,11 @@
 
 \item{optional}{Ignored parameter.}
 
-\item{type}{Variable types to retain in the dataframe. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'macro', or 'model_units'. Defaults to NULL to include all types.}
+\item{type}{Variable types to retain in the data frame. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'macro', or 'model_units'. Defaults to NULL to include all types.}
 
-\item{name}{Variable names to retain in the dataframe. Defaults to NULL to include all variables.}
+\item{name}{Variable names to retain in the data frame. Defaults to NULL to include all variables.}
 
-\item{properties}{Variable properties to retain in the dataframe. Defaults to NULL to include all properties.}
+\item{properties}{Variable properties to retain in the data frame. Defaults to NULL to include all properties.}
 
 \item{...}{Optional arguments}
 }
@@ -39,7 +39,7 @@ depend on the \code{type} and \code{properties} arguments. Returns an empty data
 if no components match the filters.
 }
 \description{
-Create a dataframe with properties of all model variables, model units, and macros. Specify the variable types, variable names, and/or properties to get a subset of the dataframe.
+Create a data frame with properties of all model variables, model units, and macros. Specify the variable types, variable names, and/or properties to get a subset of the data frame.
 }
 \examples{
 as.data.frame(xmile("SIR"))
@@ -50,19 +50,5 @@ as.data.frame(xmile("SIR"), type = "stock")
 # Only show equation and label
 as.data.frame(xmile("SIR"), properties = c("eqn", "label"))
 
-}
-\seealso{
-Other build: 
-\code{\link{as.data.frame.sdbuildR_sim}()},
-\code{\link{build}()},
-\code{\link{debugger}()},
-\code{\link{find_dependencies}()},
-\code{\link{get_build_code}()},
-\code{\link{header}()},
-\code{\link{macro}()},
-\code{\link{plot.sdbuildR_xmile}()},
-\code{\link{print.summary.sdbuildR_xmile}()},
-\code{\link{summary.sdbuildR_xmile}()},
-\code{\link{xmile}()}
 }
 \concept{build}

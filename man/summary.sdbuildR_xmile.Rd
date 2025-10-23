@@ -24,18 +24,5 @@ summary(sfm)
 }
 \seealso{
 \code{\link[=build]{build()}}
-
-Other build: 
-\code{\link{as.data.frame.sdbuildR_sim}()},
-\code{\link{as.data.frame.sdbuildR_xmile}()},
-\code{\link{build}()},
-\code{\link{debugger}()},
-\code{\link{find_dependencies}()},
-\code{\link{get_build_code}()},
-\code{\link{header}()},
-\code{\link{macro}()},
-\code{\link{plot.sdbuildR_xmile}()},
-\code{\link{print.summary.sdbuildR_xmile}()},
-\code{\link{xmile}()}
 }
 \concept{build}

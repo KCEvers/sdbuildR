@@ -18,16 +18,4 @@ Logit function
 \examples{
 logit(.1)
 }
-\seealso{
-Other custom: 
-\code{\link{contains_IM}()},
-\code{\link{expit}()},
-\code{\link{indexof}()},
-\code{\link{length_IM}()},
-\code{\link{logistic}()},
-\code{\link{rbool}()},
-\code{\link{rdist}()},
-\code{\link{rem}()},
-\code{\link{round_IM}()}
-}
 \concept{custom}

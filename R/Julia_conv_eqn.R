@@ -53,7 +53,7 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
 #' @inheritParams convert_equations_IM
 #' @inheritParams clean_unit
 #'
-#' @returns Dataframe with transformed eqn
+#' @returns data.frame with transformed eqn
 #' @importFrom rlang .data
 #' @noRd
 #'
@@ -179,7 +179,7 @@ convert_equations_julia <- function(type, name, eqn, var_names, regex_units) {
 #'
 #' @inheritParams convert_equations_IM
 #'
-#' @returns Dataframe with start and end indices of digits
+#' @returns data.frame with start and end indices of digits
 #' @noRd
 #'
 get_range_digits <- function(eqn, var_names) {
@@ -333,11 +333,11 @@ replace_op_julia <- function(eqn, var_names) {
 #'
 #' Helper for convert_all_statements_julia()
 #'
-#' @param df Dataframe with indices
-#' @param round_brackets Dataframe with indices of round brackets
+#' @param df data.frame with indices
+#' @param round_brackets data.frame with indices of round brackets
 #' @inheritParams convert_equations_julia
 #'
-#' @returns Modified dataframe
+#' @returns Modified data.frame
 #' @noRd
 #'
 find_round_brackets <- function(df, round_brackets, eqn, var_names) {
@@ -375,10 +375,10 @@ find_round_brackets <- function(df, round_brackets, eqn, var_names) {
 #'
 #' Helper for convert_all_statements_julia()
 #'
-#' @param df Dataframe with indices
-#' @param paired_idxs Dataframe with indices
+#' @param df data.frame with indices
+#' @param paired_idxs data.frame with indices
 #'
-#' @returns Modified dataframe
+#' @returns Modified data.frame
 #' @noRd
 #'
 find_curly_brackets <- function(df, paired_idxs) {
@@ -669,7 +669,7 @@ create_default_arg <- function(arg) {
 #' Get regular expressions for Julia functions
 #'
 #' @noRd
-#' @returns Dataframe
+#' @returns data.frame
 get_syntax_julia <- function() {
   # Custom function to replace each (nested) function; necessary because regex in stringr unfortunately doesn't seem to handle nested functions
   conv_df <- matrix(
@@ -879,7 +879,7 @@ get_syntax_julia <- function() {
     dimnames = list(NULL, c("R", "julia", "syntax", "add_first_arg", "add_second_arg", "add_broadcast"))
   )
 
-  # Convert to dataframe
+  # Convert to data.frame
   conv_df <- as.data.frame(conv_df, stringsAsFactors = FALSE)
 
   # Create syntax_df by copying conv_df
@@ -916,7 +916,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
   # Check if equation contains letters and opening and closing brackets
   # (all translated R functions have brackets)
   if (grepl("[[:alpha:]]", eqn) && grepl("\\(", eqn) && grepl("\\)", eqn)) {
-    # Dataframe with regular expressions for each built-in R function
+    # data.frame with regular expressions for each built-in R function
     syntax_df <- syntax_julia[["syntax_df"]]
     conv_df <- syntax_julia[["conv_df"]]
 

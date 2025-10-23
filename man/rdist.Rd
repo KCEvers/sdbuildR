@@ -20,16 +20,4 @@ Equivalent of RandDist() in Insight Maker
 \examples{
 rdist(c(1, 2, 3), c(.5, .25, .25))
 }
-\seealso{
-Other custom: 
-\code{\link{contains_IM}()},
-\code{\link{expit}()},
-\code{\link{indexof}()},
-\code{\link{length_IM}()},
-\code{\link{logistic}()},
-\code{\link{logit}()},
-\code{\link{rbool}()},
-\code{\link{rem}()},
-\code{\link{round_IM}()}
-}
 \concept{custom}

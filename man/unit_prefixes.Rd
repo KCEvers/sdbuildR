@@ -18,14 +18,4 @@ Show unit prefixes
 \examples{
 unit_prefixes()
 }
-\seealso{
-Other units: 
-\code{\link{convert_u}()},
-\code{\link{drop_u}()},
-\code{\link{get_regex_time_units}()},
-\code{\link{get_regex_units}()},
-\code{\link{get_units}()},
-\code{\link{model_units}()},
-\code{\link{u}()}
-}
 \concept{units}

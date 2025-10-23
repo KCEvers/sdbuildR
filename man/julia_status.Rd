@@ -14,8 +14,8 @@ A list with components:
 \item{julia_found}{Logical. TRUE if Julia installation found.}
 \item{julia_path}{Character. Path to Julia bin.}
 \item{julia_version}{Character. Julia version string, or NULL if not found.}
-\item{env_exists}{Logical. TRUE if inst/Project.toml exists in sdbuildR package.}
-\item{env_instantiated}{Logical. TRUE if inst/Manifest.toml exists (i.e., Julia environment was instantiated).}
+\item{env_exists}{Logical. TRUE if Project.toml exists in sdbuildR package.}
+\item{env_instantiated}{Logical. TRUE if Manifest.toml exists (i.e., Julia environment was instantiated).}
 \item{status}{Character. Overall status: "julia_not_installed", "julia_needs_update", "sdbuildR_needs_reinstall", "install_julia_env", "ready", or "unknown".}
 }
 \description{
@@ -36,11 +36,5 @@ Based on the 'status' value:
 status <- julia_status()
 print(status)
 
-}
-\seealso{
-Other julia: 
-\code{\link{install_julia_env}()},
-\code{\link{use_julia}()},
-\code{\link{use_threads}()}
 }
 \concept{julia}

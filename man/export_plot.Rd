@@ -54,13 +54,4 @@ if (require("htmlwidgets", quietly = TRUE) &
 }
 \dontshow{\}) # examplesIf}
 }
-\seealso{
-Other simulate: 
-\code{\link{ensemble}()},
-\code{\link{plot.sdbuildR_ensemble}()},
-\code{\link{plot.sdbuildR_sim}()},
-\code{\link{sim_specs}()},
-\code{\link{simulate}()},
-\code{\link{solvers}()}
-}
 \concept{simulate}
