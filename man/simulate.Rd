@@ -15,7 +15,7 @@ simulate(
 )
 }
 \arguments{
-\item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
+\item{sfm}{Stock-and-flow model, object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 
 \item{keep_nonnegative_flow}{If TRUE, keeps original non-negativity setting of flows. Defaults to TRUE.}
 
@@ -23,26 +23,28 @@ simulate(
 
 \item{keep_unit}{If TRUE, keeps units of variables. Defaults to TRUE.}
 
-\item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.}
+\item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if \code{sim_specs(language = "julia")} and no delay functions are used. Defaults to FALSE.}
 
 \item{verbose}{If TRUE, update on progress. Defaults to FALSE.}
 
 \item{...}{Optional arguments}
 }
 \value{
-Object of class sdbuildR_sim, which is a list containing:
+Object of class \code{\link[=simulate]{sdbuildR_sim}}, a list containing:
 \describe{
-\item{df}{Dataframe, timeseries of computed variables in the ODE}
-\item{init}{Initial value of stocks}
-\item{constants}{Constant parameters}
-\item{script}{Simulation script}
-\item{duration}{Duration of simulation}
-\item{success}{If TRUE, simulation was successful. If FALSE, simulation failed.}
+\item{df}{Data frame: simulation results (time, variable, value)}
+\item{init}{Named vector: initial stock values}
+\item{constants}{Named vector: constant parameters}
+\item{script}{Character: generated simulation code (R or Julia)}
+\item{duration}{Numeric: simulation time in seconds}
+\item{success}{Logical: TRUE if completed without errors}
 \item{...}{Other parameters passed to simulate}
 }
+
+Use \code{\link[=as.data.frame]{as.data.frame()}} to extract results, \code{\link[=plot]{plot()}} to visualize.
 }
 \description{
-Simulate a stock-and-flow model with simulation specifications defined by \code{sim_specs()}. If not already run, the Julia environment will first be set up with \code{use_julia()}. If any problems are detected by \code{debugger()}, the model cannot be simulated.
+Simulate a stock-and-flow model with simulation specifications defined by \code{\link[=sim_specs]{sim_specs()}}. If \code{sim_specs(language = "julia")}, the Julia environment will first be set up with \code{\link[=use_julia]{use_julia()}}. If any problems are detected by \code{\link[=debugger]{debugger()}}, the model cannot be simulated.
 }
 \examples{
 sfm <- xmile("SIR")
@@ -75,7 +77,6 @@ Other simulate:
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},
-\code{\link{solvers}()},
-\code{\link{use_threads}()}
+\code{\link{solvers}()}
 }
 \concept{simulate}

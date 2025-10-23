@@ -8,7 +8,7 @@
 #' @param type Name of model element to which the eqn belongs
 #' @inheritParams clean_unit
 #'
-#' @return Dataframe with transformed eqn and additional R code needed to make the eqn function
+#' @returns Dataframe with transformed eqn and additional R code needed to make the eqn function
 #' @noRd
 #' @importFrom rlang .data
 #'
@@ -90,7 +90,7 @@ convert_equations_IM <- function(type,
 #'
 #' @inheritParams convert_equations_IM
 #'
-#' @return Updated eqn
+#' @returns Updated eqn
 #' @noRd
 #'
 replace_comments <- function(eqn) {
@@ -129,7 +129,7 @@ replace_comments <- function(eqn) {
 #' Get start and end indices of all comments
 #'
 #' @inheritParams convert_equations_IM
-#' @return Dataframe with start and end indices of all comments in eqn
+#' @returns Dataframe with start and end indices of all comments in eqn
 #' @noRd
 #'
 get_range_comments <- function(eqn) {
@@ -174,7 +174,8 @@ remove_comments <- function(eqn) {
     comment_df <- get_range_comments(eqn)
 
     # Get indices of comments
-    seq_idxs_range <- unlist(mapply(seq, comment_df[, "start"], comment_df[, "end"], SIMPLIFY = FALSE))
+    seq_idxs_range <- unlist(mapply(seq, comment_df[, "start"],
+                                    comment_df[, "end"], SIMPLIFY = FALSE))
 
     split_formula <- strsplit(eqn, "")[[1]]
 
@@ -198,7 +199,7 @@ remove_comments <- function(eqn) {
 #' Translate Insight Maker colon operator to R
 #'
 #' @inheritParams convert_equations_IM
-#' @return Updated eqn
+#' @returns Updated eqn
 #' @noRd
 #'
 replace_colon <- function(eqn, var_names) {
@@ -238,7 +239,7 @@ replace_colon <- function(eqn, var_names) {
 #' Translate curly bracket syntax from Insight Maker to R
 #'
 #' @inheritParams convert_equations_IM
-#' @return Updated eqn
+#' @returns Updated eqn
 #' @noRd
 #'
 curly_to_vector_brackets <- function(eqn, var_names) {
@@ -355,7 +356,7 @@ curly_to_vector_brackets <- function(eqn, var_names) {
 #' Translate Insight Maker operators to R
 #'
 #' @inheritParams convert_equations_IM
-#' @return Updated eqn
+#' @returns Updated eqn
 #' @importFrom rlang .data
 #' @noRd
 #'
@@ -453,7 +454,7 @@ replace_op_IM <- function(eqn, var_names) {
 #' @param line String with line of code
 #' @inheritParams convert_equations_IM
 #'
-#' @return Updated line
+#' @returns Updated line
 #' @noRd
 #'
 convert_statement <- function(line, var_names) {
@@ -620,7 +621,7 @@ convert_statement <- function(line, var_names) {
 #'
 #' @inheritParams convert_equations_IM
 #'
-#' @return Updated eqn
+#' @returns Updated eqn
 #' @noRd
 #'
 convert_all_statements <- function(eqn, var_names) {
@@ -705,7 +706,7 @@ convert_all_statements <- function(eqn, var_names) {
 #' @param closing String with closing character, e.g., ")".
 #' @param names_with_brackets Logical, whether variable names include brackets.
 #'
-#' @return Data frame with indices of enclosures and nesting properties.
+#' @returns Data frame with indices of enclosures and nesting properties.
 #' @noRd
 #' @importFrom stringr str_locate_all str_sub
 get_range_pairs <- function(eqn, var_names,
@@ -801,13 +802,11 @@ get_range_pairs <- function(eqn, var_names,
 #' Get indices of all quotation marks
 #'
 #' @inheritParams convert_equations_IM
-#' @return Dataframe with indices of quotation marks in eqn
+#' @returns Dataframe with indices of quotation marks in eqn
 #' @noRd
 #'
 get_range_quot <- function(eqn) {
   # Get indices of quotation marks (no such thing as nested quotation marks, luckily, so we only need to find indices of all quotation marks and consecutive ones belong together)
-  # idx_quot = stringr::str_locate_all(eqn, "'")[[1]][, 1]
-  # idx_quot_escape = stringr::str_locate_all(eqn, "\"")[[1]][, 1]
   pair_quotation_marks <- data.frame()
 
   idx_quot_single <- gregexpr("'", eqn)[[1]] # Match both single and double quotes
@@ -850,7 +849,7 @@ get_range_quot <- function(eqn) {
 #' @param add_custom String with custom enclosure to look for, e.g. "paste0()", defaults to NULL
 #' @param type Vector with types of enclosures to look for
 #'
-#' @return Dataframe with indices per type of bracket
+#' @returns Dataframe with indices per type of bracket
 #' @importFrom rlang .data
 #' @noRd
 #'
@@ -944,7 +943,7 @@ get_range_all_pairs <- function(eqn, var_names,
 
 #' Get regular expressions for built-in Insight Maker functions
 #'
-#' @return Dataframe
+#' @returns Dataframe
 #' @noRd
 get_syntax_IM <- function() {
   # Custom function to replace each (nested) function; necessary because regex in stringr unfortunately doesn't seem to handle nested functions
@@ -1190,7 +1189,7 @@ get_syntax_IM <- function() {
 
 #' Convert Insight Maker built-in functions to R
 #'
-#' @return List with transformed eqn and list with additional R code needed to make the eqn function
+#' @returns List with transformed eqn and list with additional R code needed to make the eqn function
 #' @inheritParams convert_equations_IM
 #' @importFrom rlang .data
 #' @noRd
@@ -1511,7 +1510,7 @@ convert_builtin_functions_IM <- function(type, name, eqn, var_names) {
 #' @inheritParams get_range_names
 #' @param start_func Index of start of function
 #'
-#' @return String with arguments before function
+#' @returns String with arguments before function
 #' @noRd
 #'
 extract_prefunc_args <- function(eqn, var_names, start_func, names_with_brackets) {
@@ -1558,7 +1557,7 @@ extract_prefunc_args <- function(eqn, var_names, start_func, names_with_brackets
 #' @inheritParams conv_delayN
 #' @inheritParams convert_equations_IM
 #'
-#' @return Transformed eqn
+#' @returns Transformed eqn
 #' @noRd
 #'
 conv_lookup <- function(func, arg, name) {
@@ -1584,7 +1583,7 @@ conv_lookup <- function(func, arg, name) {
 #' Check whether an eqn consists of only a primitive between brackets
 #'
 #' @inheritParams convert_equations_IM
-#' @return Boolean
+#' @returns Logical value
 #' @noRd
 #'
 check_only_primitive <- function(eqn) {
@@ -1605,7 +1604,7 @@ check_only_primitive <- function(eqn) {
 #' @inheritParams conv_past_values
 #' @noRd
 #'
-#' @return List with transformed eqn and additional R code needed to make the eqn function
+#' @returns List with transformed eqn and additional R code needed to make the eqn function
 conv_delay <- function(func, arg, name) {
   # Fixed delays are treated the same as PastValues()
   replacement <- sprintf(
@@ -1627,7 +1626,7 @@ conv_delay <- function(func, arg, name) {
 #'
 #'
 #' @noRd
-#' @return List with transformed eqn and additional R code needed to make the eqn function
+#' @returns List with transformed eqn and additional R code needed to make the eqn function
 #' @inheritParams convert_equations_IM
 #' @inheritParams conv_delayN
 #'
@@ -1686,7 +1685,7 @@ conv_past_values <- function(func, arg, name) {
 #' @param arg Arguments passed to Insight Maker function
 #'
 #' @noRd
-#' @return List with transformed eqn and additional R code needed to make the eqn function
+#' @returns List with transformed eqn and additional R code needed to make the eqn function
 #' @importFrom rlang .data
 #'
 conv_delayN <- function(func, arg) {
@@ -1726,7 +1725,7 @@ conv_delayN <- function(func, arg) {
 #' @param h_step Height of step, defaults to 1
 #' @param match_idx Index of the number of times the same function has been called in the same eqn
 #'
-#' @return List with transformed eqn and list with additional R code needed to make the eqn function
+#' @returns List with transformed eqn and list with additional R code needed to make the eqn function
 #' @noRd
 #' @inheritParams conv_delayN
 #' @inheritParams convert_equations_IM
@@ -1769,7 +1768,7 @@ conv_step <- function(func, arg, match_idx, name, # Default settings of Insight 
 #' @param w_pulse Width of pulse in duration (i.e. time), defaults to 0 to indicate an instantaneous pulse
 #' @param repeat_interval Interval at which to repeat pulse, defaults to "NULL" to indicate no repetition
 #'
-#' @return List with transformed eqn and list with additional R code needed to make the eqn function
+#' @returns List with transformed eqn and list with additional R code needed to make the eqn function
 #' @noRd
 #' @inheritParams convert_equations_IM
 #' @inheritParams conv_step
@@ -1829,7 +1828,7 @@ conv_pulse <- function(func,
 #'
 #' @param h_ramp End height of ramp, defaults to 1
 #'
-#' @return List with transformed eqn and list with additional R code needed to make the eqn function
+#' @returns List with transformed eqn and list with additional R code needed to make the eqn function
 #' @noRd
 #' @inheritParams convert_equations_IM
 #' @inheritParams conv_step
@@ -1878,7 +1877,7 @@ conv_ramp <- function(func, arg, match_idx, name, # Default settings of Insight 
 #' @param period Period of wave in years, defaults to 1
 #' @param shift Time in years at which the wave peaks, defaults to 0
 #'
-#' @return List with transformed eqn and list with additional R code needed to make the eqn function
+#' @returns List with transformed eqn and list with additional R code needed to make the eqn function
 #' @inheritParams convert_equations_IM
 #' @noRd
 #' @inheritParams conv_step

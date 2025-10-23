@@ -7,7 +7,10 @@
 unit_prefixes()
 }
 \value{
-Matrix with unit prefixes, symbols, and power-of-ten scale
+A character matrix with 3 columns: \code{prefix} (prefix name like "kilo" or "micro"),
+\code{symbol} (prefix symbol like "k"), and \code{scale} (power-of-ten multiplier
+like "10^3" or "10^-6"). Rows are ordered from largest (yotta, 10^24) to smallest
+(yocto, 10^-24).
 }
 \description{
 Show unit prefixes

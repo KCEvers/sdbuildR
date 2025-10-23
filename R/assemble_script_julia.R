@@ -2,7 +2,7 @@
 #'
 #' @inheritParams simulate
 #'
-#' @return List with variables created in the simulation script
+#' @returns List with variables created in the simulation script
 #' @noRd
 #'
 simulate_julia <- function(sfm,
@@ -110,7 +110,7 @@ simulate_julia <- function(sfm,
 #' @inheritParams simulate
 #' @param ensemble_pars List; parameters for the ensemble simulation. Defaults to NULL to not run an ensemble and simply a regular trajectory.
 #'
-#' @return Julia script
+#' @returns Julia script
 #' @noRd
 #'
 compile_julia <- function(sfm, filepath_sim,
@@ -289,7 +289,7 @@ compile_julia <- function(sfm, filepath_sim,
 #' @inheritParams build
 #' @param var_names Character vector; variable names in the model.
 #'
-#' @returns NULL
+#' @returns Returns `NULL`, called for side effects.
 #' @noRd
 check_no_keyword_arg <- function(sfm, var_names) {
   # Check for all variable names if they are used as functions. If so, throw error if they are used with keyword arguments in the Julia translated equation.
@@ -400,7 +400,7 @@ prep_ensemble_range <- function(sfm, ensemble_pars) {
 #' @inheritParams build
 #' @param delayN_smoothN List with delayN and smoothN functions
 #'
-#' @returns Updated stock-and-flow model
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @noRd
 prep_delayN_smoothN <- function(sfm, delayN_smoothN) {
   # If delayN() and smoothN() were used, add these to the model
@@ -478,7 +478,7 @@ prep_delayN_smoothN <- function(sfm, delayN_smoothN) {
 #'
 #' @inheritParams compile_julia
 #'
-#' @return List with script
+#' @returns List with script
 #'
 #' @noRd
 compile_units_julia <- function(sfm, keep_unit) {
@@ -544,7 +544,7 @@ compile_units_julia <- function(sfm, keep_unit) {
 #'
 #' @inheritParams compile_R
 #'
-#' @return List with macro script
+#' @returns List with macro script
 #' @noRd
 compile_macros_julia <- function(sfm) {
   script <- ""
@@ -570,7 +570,7 @@ compile_macros_julia <- function(sfm) {
 
 #' Compile Julia script for creating time vector
 #'
-#' @return List
+#' @returns List
 #' @importFrom rlang .data
 #'
 #' @inheritParams compile_julia
@@ -603,7 +603,7 @@ compile_times_julia <- function(sfm, keep_unit) {
 #' @inheritParams build
 #' @inheritParams compile
 #'
-#' @returns Updated stock-and-flow model with equations as strings
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @noRd
 prep_equations_variables_julia <- function(sfm, keep_unit, keep_nonnegative_flow) {
   names_df <- get_names(sfm)
@@ -846,7 +846,7 @@ prep_intermediary_variables_julia <- function(sfm, ordering) {
 #' @param ordering List with order of static and dynamic variables, output of order_equations()
 #' @param intermediaries List with intermediary variables and values
 #'
-#' @return List with necessary scripts
+#' @returns List with necessary scripts
 #'
 #' @noRd
 compile_static_eqn_julia <- function(sfm, ensemble_pars, ordering, intermediaries, keep_unit) {
@@ -1079,7 +1079,7 @@ compile_static_eqn_julia <- function(sfm, ensemble_pars, ordering, intermediarie
 #'
 #' @inheritParams compile_julia
 #'
-#' @return Updated stock-and-flow model
+#' @returns Updated stock-and-flow model
 #' @noRd
 #'
 prep_stock_change_julia <- function(sfm, keep_unit) {
@@ -1158,7 +1158,7 @@ prep_stock_change_julia <- function(sfm, keep_unit) {
 #' @param prep_script Intermediate output of compile_julia()
 #' @param static_eqn Output of compile_static_eqn()
 #'
-#' @return List
+#' @returns List
 #' @importFrom rlang .data
 #' @noRd
 #'
@@ -1382,7 +1382,7 @@ function %s(%s, %s, integrator)",
 #' @inheritParams compile_R
 #' @inheritParams order_equations
 #'
-#' @return List
+#' @returns List
 #' @noRd
 #'
 compile_run_ode_julia <- function(sfm,
@@ -1611,7 +1611,7 @@ compile_run_ode_julia <- function(sfm,
 #'
 #' @param script String containing the code to write
 #' @param fileext String with file extension, either ".R" or ".jl"
-#' @return The path to the created file
+#' @returns The path to the created file
 #'
 #' @noRd
 write_script <- function(script,

@@ -15,12 +15,12 @@ export_plot(pl, file, width = 3, height = 4, units = "cm", dpi = 300)
 
 \item{height}{Height of image in units.}
 
-\item{units}{Units in which width and heigth are specified. Either "cm", "in", or "px".}
+\item{units}{Units in which width and height are specified. Either "cm", "in", or "px".}
 
 \item{dpi}{Resolution of image. Only used if units is not "px".}
 }
 \value{
-Returns \code{NULL} invisibly.
+Returns \code{NULL} invisibly, called for side effects.
 }
 \description{
 Save a plot of a stock-and-flow diagram or a simulation to a specified file path. Note that saving plots requires additional packages to be installed (see below).
@@ -61,7 +61,6 @@ Other simulate:
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
-\code{\link{solvers}()},
-\code{\link{use_threads}()}
+\code{\link{solvers}()}
 }
 \concept{simulate}

@@ -4,7 +4,7 @@
 #' @inheritParams simulate_julia
 #' @inheritParams clean_unit
 #'
-#' @return Updated sfm
+#' @returns Updated sfm
 #' @noRd
 #'
 convert_equations_julia_wrapper <- function(sfm, regex_units) {
@@ -53,7 +53,7 @@ convert_equations_julia_wrapper <- function(sfm, regex_units) {
 #' @inheritParams convert_equations_IM
 #' @inheritParams clean_unit
 #'
-#' @return Dataframe with transformed eqn
+#' @returns Dataframe with transformed eqn
 #' @importFrom rlang .data
 #' @noRd
 #'
@@ -232,7 +232,7 @@ replace_digits_with_floats <- function(eqn, var_names) {
 #' Translate R operators to Julia
 #'
 #' @inheritParams convert_equations_IM
-#' @return Updated eqn
+#' @returns Updated eqn
 #' @importFrom rlang .data
 #' @noRd
 #'
@@ -399,7 +399,7 @@ find_curly_brackets <- function(df, paired_idxs) {
 #'
 #' @inheritParams convert_equations_IM
 #'
-#' @return Updated eqn
+#' @returns Updated eqn
 #' @noRd
 #'
 convert_all_statements_julia <- function(eqn, var_names) {
@@ -669,7 +669,7 @@ create_default_arg <- function(arg) {
 #' Get regular expressions for Julia functions
 #'
 #' @noRd
-#' @return Dataframe
+#' @returns Dataframe
 get_syntax_julia <- function() {
   # Custom function to replace each (nested) function; necessary because regex in stringr unfortunately doesn't seem to handle nested functions
   conv_df <- matrix(
@@ -905,7 +905,7 @@ get_syntax_julia <- function() {
 
 #' Convert R built-in functions to Julia
 #'
-#' @return List with transformed eqn and list with additional R code needed to make the eqn function
+#' @returns List with transformed eqn and list with additional R code needed to make the eqn function
 #' @inheritParams convert_equations_IM
 #' @noRd
 #' @importFrom rlang .data
@@ -1468,7 +1468,7 @@ conv_sample <- function(arg, R_func, julia_func) {
 #' Translate vector bracket syntax from R to square brackets in Julia
 #'
 #' @inheritParams convert_equations_IM
-#' @return Updated eqn
+#' @returns Updated eqn
 #' @noRd
 #'
 vector_to_square_brackets <- function(eqn, var_names) {

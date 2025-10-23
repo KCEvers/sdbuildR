@@ -14,7 +14,7 @@ clean_name(new, existing, protected = c())
 \item{protected}{Optional vector of protected names}
 }
 \value{
-Translated names
+Vector of cleaned names
 }
 \description{
 Clean variable name(s) to create syntactically valid, unique names for use in R and Julia.

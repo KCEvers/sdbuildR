@@ -18,7 +18,7 @@ sim_specs(
 )
 }
 \arguments{
-\item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
+\item{sfm}{Stock-and-flow model, object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 
 \item{method}{Integration method. Defaults to "euler".}
 
@@ -26,11 +26,16 @@ sim_specs(
 
 \item{stop}{End time of simulation. Defaults to 100.}
 
-\item{dt}{Timestep of solver. Defaults to 0.01.}
+\item{dt}{Timestep of solver; controls simulation accuracy. Smaller = more
+accurate but slower. Defaults to 0.01.}
 
-\item{save_at}{Timestep at which to save computed values. Defaults to dt.}
+\item{save_at}{Timestep at which to save computed values; controls output size.
+Must be >= dt. Use larger than dt to reduce memory without sacrificing accuracy.
+Example: dt = 0.01, save_at = 1 gives accurate simulation but only saves
+every 100th point. Defaults to dt (save everything).}
 
-\item{save_from}{Time to at which to start saving computed values. Defaults to start. Set to a larger time than start to store less data.}
+\item{save_from}{Time at which to start saving values. Use to discard initial
+transient behavior. Must be >= start. Defaults to start.}
 
 \item{seed}{Seed number to ensure reproducibility across runs in case of random elements. Must be an integer. Defaults to NULL (no seed).}
 
@@ -39,7 +44,7 @@ sim_specs(
 \item{language}{Coding language in which to simulate model. Either "R" or "Julia". Julia is necessary for using units or delay functions. Defaults to "R".}
 }
 \value{
-Modified stock-and-flow object with updated simulation specifications.
+A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}
 }
 \description{
 Simulation specifications are the settings that determine how the model is simulated, such as the integration method (i.e. solver), start and stop time, and timestep. Modify these specifications for an existing stock-and-flow model.
@@ -79,7 +84,6 @@ Other simulate:
 \code{\link{plot.sdbuildR_ensemble}()},
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{simulate}()},
-\code{\link{solvers}()},
-\code{\link{use_threads}()}
+\code{\link{solvers}()}
 }
 \concept{simulate}

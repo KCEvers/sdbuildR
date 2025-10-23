@@ -5,7 +5,7 @@
 #' @param URL String with URL to an Insight Maker model
 #' @param file If specified, file path to save Insight Maker model to. If NULL, do not save model.
 #'
-#' @return XML string with Insight Maker model
+#' @returns XML string with Insight Maker model
 #' @seealso [insightmaker_to_sfm()]
 #' @export
 #' @family insightmaker
@@ -90,7 +90,7 @@ url_to_IM <- function(URL, file = NULL) {
 #'
 #' @param xml_file XML structured model
 #'
-#' @return Nested list in XMILE style
+#' @returns Nested list in XMILE style
 #' @noRd
 #'
 IM_to_xmile <- function(xml_file) {
@@ -635,7 +635,7 @@ prep_eqn_IM <- function(eqn) {
 #' @param replacement Vector with strings as replacements
 #' @param with_brackets Boolean; whether to include square brackets around the match and replacement
 #'
-#' @return Updated string
+#' @returns Updated string
 #' @noRd
 #'
 replace_names_IM <- function(string, original, replacement, with_brackets = TRUE) {
@@ -664,7 +664,7 @@ replace_names_IM <- function(string, original, replacement, with_brackets = TRUE
 #' @inheritParams build
 #' @inheritParams clean_unit
 #'
-#' @return Updated sfm
+#' @returns Updated sfm
 #' @noRd
 #'
 clean_units_IM <- function(sfm, regex_units) {
@@ -854,7 +854,7 @@ clean_units_IM <- function(sfm, regex_units) {
 #' @inheritParams build
 #' @inheritParams insightmaker_to_sfm
 #'
-#' @return Updated sfm
+#' @returns Updated sfm
 #' @noRd
 #'
 check_nonnegativity <- function(sfm, keep_nonnegative_flow, keep_nonnegative_stock, keep_solver) {
@@ -1210,7 +1210,7 @@ split_macros_IM <- function(sfm) {
 #' @inheritParams build
 #' @inheritParams clean_unit
 #'
-#' @return Updated stock-and-flow model with converted equations to R.
+#' @returns Updated stock-and-flow model with converted equations to R.
 #' @noRd
 #'
 convert_equations_IM_wrapper <- function(sfm, regex_units) {
@@ -1303,7 +1303,7 @@ convert_equations_IM_wrapper <- function(sfm, regex_units) {
 #' @inheritParams clean_units_IM
 #' @inheritParams build
 #'
-#' @return Updated sfm
+#' @returns Updated sfm
 #' @noRd
 #'
 remove_brackets_from_names <- function(sfm) {
@@ -1326,7 +1326,7 @@ remove_brackets_from_names <- function(sfm) {
 #'
 #' @inheritParams build
 #'
-#' @return Vector of variable names that are constants
+#' @returns Vector of variable names that are constants
 #' @noRd
 #'
 split_aux_wrapper <- function(sfm) {

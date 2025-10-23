@@ -27,7 +27,7 @@
 )
 }
 \arguments{
-\item{x}{Output of ensemble().}
+\item{x}{Output of \code{\link[=ensemble]{ensemble()}}.}
 
 \item{type}{Type of plot. Either "summary" for a summary plot with mean or median lines and confidence intervals, or "sims" for individual simulation trajectories with mean or median lines. Defaults to "summary".}
 
@@ -66,10 +66,10 @@
 \item{...}{Optional parameters}
 }
 \value{
-Plot object with ensemble simulation
+Plotly object
 }
 \description{
-Visualize ensemble simulation results of a stock-and-flow model. Either summary statistics or individual trajectories can be plotted. When multiple conditions j are specified, a grid of subplots is plotted. See \code{ensemble()} for examples.
+Visualize ensemble simulation results of a stock-and-flow model. Either summary statistics or individual trajectories can be plotted. When multiple conditions j are specified, a grid of subplots is plotted. See \code{\link[=ensemble]{ensemble()}} for examples.
 }
 \seealso{
 \code{\link[=ensemble]{ensemble()}}
@@ -80,7 +80,6 @@ Other simulate:
 \code{\link{plot.sdbuildR_sim}()},
 \code{\link{sim_specs}()},
 \code{\link{simulate}()},
-\code{\link{solvers}()},
-\code{\link{use_threads}()}
+\code{\link{solvers}()}
 }
 \concept{simulate}

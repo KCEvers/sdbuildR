@@ -27,7 +27,7 @@ build(
 )
 }
 \arguments{
-\item{sfm}{Stock-and-flow model, object of class sdbuildR_xmile.}
+\item{sfm}{Stock-and-flow model, object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 
 \item{name}{Variable name. Character vector.}
 
@@ -39,7 +39,7 @@ build(
 
 \item{label}{Name of variable used for plotting. Defaults to the same as name.}
 
-\item{doc}{Description of variable. Defaults to "".}
+\item{doc}{Description of variable. Defaults to "" (no description).}
 
 \item{change_name}{New name for variable (optional). Defaults to NULL to indicate no change.}
 
@@ -66,7 +66,7 @@ build(
 \item{df}{Dataframe with variable properties to add and/or modify.}
 }
 \value{
-Modified stock-and-flow object.
+A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}
 }
 \description{
 Add, change, or erase variables in a stock-and-flow model. Variables may be stocks, flows, constants, auxiliaries, or graphical functions.

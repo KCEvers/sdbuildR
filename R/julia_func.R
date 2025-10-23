@@ -1,6 +1,6 @@
 #' Customary functions written in Julia
 #'
-#' @return List with Julia code
+#' @returns List with Julia code
 #' @noRd
 julia_func <- function() {
   func_def <- list(

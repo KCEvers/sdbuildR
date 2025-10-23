@@ -14,7 +14,8 @@ saveat_func(df, time_col, new_times)
 \item{new_times}{Vector of new times to save the dataframe at}
 }
 \value{
-Dataframe with new times and interpolated values
+Interpolated data.frame. The data frame has columns \code{time} followed by
+one column per variable.
 }
 \description{
 Internal function used to save the dataframe at specific times in case save_at is not equal to dt in the simulation specifications.
@@ -27,7 +28,7 @@ df <- as.data.frame(sim)
 nrow(df) # Returns only times at intervals of 1
 head(df)
 
-# The saveat_func() is the underlying function used by save_at
+# The saveat_func() is the underlying function used by simulate()
 # Direct use is not recommended, but shown here for completeness:
 sfm <- sfm |> sim_specs(save_at = 0.01)
 sim <- simulate(sfm)
@@ -39,6 +40,7 @@ new_times <- seq(min(df$time), max(df$time), by = 1)
 df_wide <- as.data.frame(sim, direction = "wide")
 df_manual <- saveat_func(df_wide, "time", new_times)
 nrow(df_manual)
+
 }
 \seealso{
 Other internal: 

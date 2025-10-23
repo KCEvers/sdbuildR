@@ -15,7 +15,7 @@
 )
 }
 \arguments{
-\item{x}{Stock-and-flow model of class sdbuildR_xmile}
+\item{x}{A stock-and-flow model object of class \code{\link[=xmile]{sdbuildR_xmile}}.}
 
 \item{row.names}{NULL or a character vector giving the row names for the data frame. Missing values are not allowed.}
 
@@ -30,7 +30,13 @@
 \item{...}{Optional arguments}
 }
 \value{
-Dataframe with properties of all model variables, model units, and macros.
+A data.frame with one row per model component (variable, unit definition, or macro).
+Common columns include \code{type} (component type), \code{name} (variable name),
+\code{eqn} (equation), \code{units} (units of measurement), and \code{label}
+(descriptive label). Additional columns may include \code{to}, \code{from},
+\code{non_negative}, and others depending on variable types. The exact columns returned
+depend on the \code{type} and \code{properties} arguments. Returns an empty data.frame
+if no components match the filters.
 }
 \description{
 Create a dataframe with properties of all model variables, model units, and macros. Specify the variable types, variable names, and/or properties to get a subset of the dataframe.

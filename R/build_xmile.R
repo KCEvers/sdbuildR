@@ -1,6 +1,6 @@
 #' Create a new stock-and-flow model
 #'
-#' Initialize an empty stock-and-flow model of class sdbuildR_xmile. You can
+#' Initialize a stock-and-flow model of class [`sdbuildR_xmile`][xmile]. You can
 #' either create an empty stock-and-flow model or load a template from the model
 #' library.
 #'
@@ -8,13 +8,25 @@
 #' Rather, use [header()], [sim_specs()], [build()], [macro()], and
 #' [model_units()] for safe manipulation.
 #'
-#' @param name Name of the template to load. If NULL, an empty stock-and-flow
+#' @param name Name of the template to load. If `NULL`, an empty stock-and-flow
 #' model will be created with default simulation parameters and a default header.
-#' If specified, the name should be one of "logistic_model", "SIR",
-#' "predator_prey", "cusp", "Crielaard2022", "coffee_cup", "bank_account",
-#' "Lorenz", "Rossler", "vanderPol", "Duffing", "Chua".
+#' If specified, `name` should be one of the available templates:
+#' \itemize{
+#'   \item \strong{logistic_model}: Population growth with carrying capacity
+#'   \item \strong{SIR}: Epidemic model (Susceptible-Infected-Recovered)
+#'   \item \strong{predator_prey}: Lotka-Volterra dynamics
+#'   \item \strong{cusp}: Cusp catastrophe model
+#'   \item \strong{Crielaard2022}: Eating behavior (doi: 10.1037/met0000484)
+#'   \item \strong{coffee_cup}: Temperature equilibration (Meadows)
+#'   \item \strong{bank_account}: Compound interest (Meadows)
+#'   \item \strong{Lorenz}: Lorenz attractor (chaotic)
+#'   \item \strong{Rossler}: Rossler attractor (chaotic)
+#'   \item \strong{vanderPol}: Van der Pol oscillator
+#'   \item \strong{Duffing}: Forced Duffing oscillator
+#'   \item \strong{Chua}: Chua's circuit (chaotic)
+#' }
 #'
-#' @return Stock-and-flow model of class sdbuildR_xmile. Its structure is based
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]. Its structure is based
 #'  on [XML Interchange Language for System Dynamics (XMILE)](https://docs.oasis-open.org/xmile/xmile/v1.0/os/xmile-v1.0-os.html). It is a nested list, containing:
 #' \describe{
 #'  \item{header}{Meta-information about model. A list containing arguments listed in [header()].}
@@ -24,9 +36,10 @@
 #'  \item{model_units}{Custom model units. A list containing arguments listed in [model_units()].}
 #'  }
 #'
+#' Use [summary()] to summarize, [as.data.frame()] to convert to a data.frame, [plot()] to visualize.
+#'
 #' @export
 #' @family build
-#' @seealso [build()]
 #'
 #' @examples sfm <- xmile()
 #' summary(sfm)
@@ -49,9 +62,9 @@ xmile <- function(name = NULL) {
 }
 
 
-#' Create new object of class sdbuildR_xmile
+#' Create new object of class [`sdbuildR_xmile`][xmile]
 #'
-#' @return Stock-and-flow model of class [`xmile`][sdbuildR_xmile]
+#' @returns A stock-and-flow model of class [`sdbuildR_xmile`][xmile]
 #' @noRd
 #'
 new_sdbuildR_xmile <- function() {
@@ -113,14 +126,17 @@ get_flow_df <- function(sfm) {
 
 #' Create dataframe of simulation results
 #'
-#' Convert simulation results to a dataframe. The first column is time, followed by all stocks, and then all other auxiliary and flow variables.
+#' Convert simulation results to a dataframe.
 #'
 #' @inheritParams plot.sdbuildR_sim
 #' @param direction Format of dataframe, either "long" (default) or "wide".
 #' @param row.names NULL or a character vector giving the row names for the data frame. Missing values are not allowed.
 #' @param optional Ignored parameter.
 #'
-#' @returns Dataframe with simulation results
+#' @returns A data.frame with simulation results. For \code{direction = "long"} (default),
+#'   the data frame has three columns: \code{time}, \code{variable}, and \code{value}.
+#'   For \code{direction = "wide"}, the data frame has columns \code{time} followed by
+#'   one column per variable.
 #' @export
 #' @seealso [simulate()], [xmile()]
 #' @family build
@@ -139,7 +155,7 @@ get_flow_df <- function(sfm) {
 as.data.frame.sdbuildR_sim <- function(x,
                                        row.names = NULL, optional = FALSE,
                                        direction = "long", ...) {
-  # Check whether it is an xmile object
+  # Check whether it is the correct object
   if (!inherits(x, "sdbuildR_sim")) {
     stop("This is not an object of class sdbuildR_sim! Simulate a stock-and-flow model with simulate().")
   }
@@ -234,11 +250,11 @@ get_delay_past <- function(sfm) {
 }
 
 
-#' Check whether object is of class sdbuildR_xmile
+#' Check whether object is of class [`sdbuildR_xmile`][xmile]
 #'
 #' @inheritParams build
 #'
-#' @returns NULL
+#' @returns Returns `NULL`, called for side effects.
 #' @noRd
 check_xmile <- function(sfm) {
   # Check whether it is an xmile object
@@ -254,7 +270,7 @@ check_xmile <- function(sfm) {
 #'
 #' @inheritParams build
 #'
-#' @return Validated stock-and-flow model of class sdbuildR_xmile
+#' @returns A stock-and-flow model of class [`sdbuildR_xmile`][xmile]
 #' @noRd
 #'
 validate_xmile <- function(sfm) {
@@ -429,7 +445,7 @@ validate_xmile <- function(sfm) {
 #' Switch names and values of list, handling different lengths in entries
 #'
 #' @param x List
-#' @return List
+#' @returns List
 #' @noRd
 switch_list <- function(x) {
   # Switch names and values
@@ -443,7 +459,7 @@ switch_list <- function(x) {
 
 #' Create, modify or remove custom units
 #'
-#' A large library of units already exists, but you may want to define your own custom units. Use `model_units()` to add, change, or erase custom units from a stock-and-flow model. Custom units may be new base units, or may be defined in terms of other (custom) units. See `?u()` for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
+#' A large library of units already exists, but you may want to define your own custom units. Use [model_units()] to add, change, or erase custom units from a stock-and-flow model. Custom units may be new base units, or may be defined in terms of other (custom) units. See [u()] for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
 #'
 #' @inheritParams build
 #' @param name Name of unit. A character vector.
@@ -452,7 +468,7 @@ switch_list <- function(x) {
 #' @param erase If TRUE, remove model unit from the model. Defaults to FALSE.
 #' @param change_name New name for model unit. Defaults to NULL to indicate no change.
 #'
-#' @return Modified stock-and-flow object with updated custom units.
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #'
 #' @export
 #' @family units
@@ -664,7 +680,7 @@ model_units <- function(sfm, name, eqn = "1", doc = "",
 
 #' Create, modify or remove a global variable or function
 #'
-#' Macros are global variables or functions that can be used throughout your stock-and-flow model. `macro()` adds, changes, or erases a macro.
+#' Macros are global variables or functions that can be used throughout your stock-and-flow model. [macro()] adds, changes, or erases a macro.
 #'
 #' @inheritParams build
 #' @param name Name of the macro. The equation will be assigned to this name.
@@ -673,15 +689,27 @@ model_units <- function(sfm, name, eqn = "1", doc = "",
 #' @param change_name New name for macro (optional). Defaults to NULL to indicate no change.
 #' @param erase If TRUE, remove macro from the model. Defaults to FALSE.
 #'
-#' @return Modified stock-and-flow object with updated macros.
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @family build
 #' @export
 #'
 #' @examples
+#'
+#' # Simple function
+#' sfm <- xmile() |>
+#'   macro("double", eqn = "function(x) x * 2") |>
+#'   build("a", "constant", eqn = "double(2)")
+#'
+#' # Function with defaults
+#' sfm <- xmile() |>
+#'   macro("scale", eqn = "function(x, factor = 10) x * factor") |>
+#'   build("b", "constant", eqn = "scale(2)")
+#'
 #' # If the logistic() function did not exist, you could create it yourself:
 #' sfm <- macro(xmile(), "func", eqn = "function(x, slope = 1, midpoint = .5){
 #'    1 / (1 + exp(-slope*(x-midpoint)))
-#'  }")
+#'  }") |>
+#'   build("c", "constant", eqn = "func(2, slope = 50)")
 #'
 macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = FALSE) {
   # Basic check
@@ -869,7 +897,7 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
 #' @param doi DOI associated with the model. Defaults to "".
 #' @param ... Optional other entries to add to the header.
 #'
-#' @return Modified stock-and-flow object with an updated header.
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @family build
 #' @export
 #'
@@ -917,14 +945,19 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' @param method Integration method. Defaults to "euler".
 #' @param start Start time of simulation. Defaults to 0.
 #' @param stop End time of simulation. Defaults to 100.
-#' @param dt Timestep of solver. Defaults to 0.01.
-#' @param save_at Timestep at which to save computed values. Defaults to dt.
-#' @param save_from Time to at which to start saving computed values. Defaults to start. Set to a larger time than start to store less data.
+#' @param dt Timestep of solver; controls simulation accuracy. Smaller = more
+#'   accurate but slower. Defaults to 0.01.
+#' @param save_at Timestep at which to save computed values; controls output size.
+#'   Must be >= dt. Use larger than dt to reduce memory without sacrificing accuracy.
+#'   Example: dt = 0.01, save_at = 1 gives accurate simulation but only saves
+#'   every 100th point. Defaults to dt (save everything).
+#' @param save_from Time at which to start saving values. Use to discard initial
+#'   transient behavior. Must be >= start. Defaults to start.
 #' @param seed Seed number to ensure reproducibility across runs in case of random elements. Must be an integer. Defaults to NULL (no seed).
 #' @param time_units Simulation time unit, e.g. 's' (second). Defaults to "s".
 #' @param language Coding language in which to simulate model. Either "R" or "Julia". Julia is necessary for using units or delay functions. Defaults to "R".
 #'
-#' @return Modified stock-and-flow object with updated simulation specifications.
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @family simulate
 #' @seealso [solvers()]
 #' @export
@@ -1227,7 +1260,7 @@ sim_specs <- function(sfm,
 #'
 #' @inheritParams build
 #'
-#' @return Updated stock-and-flow Model
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @noRd
 #'
 erase_var <- function(sfm, name) {
@@ -1265,7 +1298,7 @@ erase_var <- function(sfm, name) {
 #' @param old_names Vector with old names
 #' @param new_names Vector with new names
 #'
-#' @returns NULL
+#' @returns Returns `NULL`, called for side effects
 #' @noRd
 report_name_change <- function(old_names, new_names) {
   # Warning if specified name changed
@@ -1306,7 +1339,7 @@ report_name_change <- function(old_names, new_names) {
 #'
 #' The obligatory properties of a graphical function are "name", "type", "xpts", and "ypts". "xpts" and "ypts" must be of the same length. Optional additional properties are "units", "label", "doc", "source", "interpolation", "extrapolation".
 #'
-#' @param sfm Stock-and-flow model, object of class sdbuildR_xmile.
+#' @param sfm Stock-and-flow model, object of class [`sdbuildR_xmile`][xmile].
 #' @param name Variable name. Character vector.
 #' @param type Type of building block(s); one of 'stock', 'flow', 'constant', 'aux', or 'gf'). Does not need to be specified to modify an existing variable.
 #' @param change_name New name for variable (optional). Defaults to NULL to indicate no change.
@@ -1323,10 +1356,10 @@ report_name_change <- function(old_names, new_names) {
 #' @param source Only for graphical functions: name of the variable which will serve as the input to the graphical function. Necessary to specify if units are used. Defaults to NULL.
 #' @param interpolation Only for graphical functions: interpolation method. Must be either "constant" or "linear". Defaults to "linear".
 #' @param extrapolation Only for graphical functions: extrapolation method. Must be either "nearest" or "NA". Defaults to "nearest".
-#' @param doc Description of variable. Defaults to "".
+#' @param doc Description of variable. Defaults to "" (no description).
 #' @param df Dataframe with variable properties to add and/or modify.
 #'
-#' @return Modified stock-and-flow object.
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @seealso [xmile()]
 #' @family build
 #' @export
@@ -1421,11 +1454,8 @@ build <- function(sfm, name, type,
                   change_name = NULL,
                   change_type = NULL,
                   erase = FALSE,
-                  # Flow arguments
                   to = NULL, from = NULL,
-                  # Rarely used arguments
                   non_negative = FALSE,
-                  # Graphical function arguments
                   xpts = NULL, ypts = NULL,
                   source = NULL,
                   interpolation = "linear",
@@ -1971,7 +2001,7 @@ build <- function(sfm, name, type,
 #'
 #' @inheritParams build
 #'
-#' @return Updated stock-and-flow model.
+#' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @noRd
 #'
 add_from_df <- function(sfm, df) {
@@ -2018,7 +2048,7 @@ add_from_df <- function(sfm, df) {
 
 #' Get possible variable properties per building block type
 #'
-#' @return List with default properties per building block type
+#' @returns List with default properties per building block type
 #' @noRd
 #'
 get_building_block_prop <- function() {
@@ -2069,7 +2099,7 @@ get_building_block_prop <- function() {
 #' @inheritParams build
 #' @param quietly If TRUE, don't print problems. Defaults to FALSE.
 #'
-#' @returns If quietly = FALSE, list with problems and potential problems.
+#' @returns If \code{quietly = FALSE}, list with problems and potential problems.
 #' @family build
 #' @export
 #'
@@ -2309,7 +2339,13 @@ static_depend_on_dyn <- function(sfm) {
 #' @param row.names NULL or a character vector giving the row names for the data frame. Missing values are not allowed.
 #' @param optional Ignored parameter.
 #'
-#' @returns Dataframe with properties of all model variables, model units, and macros.
+#' @returns A data.frame with one row per model component (variable, unit definition, or macro).
+#'   Common columns include \code{type} (component type), \code{name} (variable name),
+#'   \code{eqn} (equation), \code{units} (units of measurement), and \code{label}
+#'   (descriptive label). Additional columns may include \code{to}, \code{from},
+#'   \code{non_negative}, and others depending on variable types. The exact columns returned
+#'   depend on the \code{type} and \code{properties} arguments. Returns an empty data.frame
+#'   if no components match the filters.
 #' @export
 #' @family build
 #' @method as.data.frame sdbuildR_xmile
@@ -2489,12 +2525,12 @@ as.data.frame.sdbuildR_xmile <- function(x,
 
 #' Print overview of stock-and-flow model
 #'
-#' Print summary of stock-and-flow model, including number of stocks, flows, constants, auxiliaries, graphical functions, macros, custom model units, and use of delay functions. Also prints simulation specifications.
+#' Print summary of stock-and-flow model, including number of stocks, flows, constants, auxiliaries, graphical functions, macros, and custom model units, as well as simulation specifications and use of delay functions.
 #'
-#' @param object Stock-and-flow model of class sdbuildR_xmile
+#' @param object A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @inheritParams plot.sdbuildR_xmile
 #'
-#' @return Summary object of class summary.sdbuildR_xmile
+#' @returns Summary object of class [summary.sdbuildR_xmile]
 #' @family build
 #' @export
 #' @seealso [build()]
@@ -2518,7 +2554,8 @@ summary.sdbuildR_xmile <- function(object, ...) {
   # Check for delay functions
   delay_past <- get_delay_past(object)
   delay_func <- get_delayN_smoothN(object)
-  matched_time_unit <- find_matching_regex(object[["sim_specs"]][["time_units"]], get_regex_time_units())
+  matched_time_unit <- find_matching_regex(object[["sim_specs"]][["time_units"]],
+                                           get_regex_time_units())
 
   # Create structured summary object
   summary_obj <- list(
@@ -2555,10 +2592,10 @@ summary.sdbuildR_xmile <- function(object, ...) {
 
 #' Print method for summary.sdbuildR_xmile
 #'
-#' @param x A summary object of class "summary.sdbuildR_xmile"
+#' @param x A summary object of class [summary.sdbuildR_xmile]
 #' @param ... Additional arguments (unused)
 #'
-#' @return Invisibly returns the summary object of class summary.sdbuildR_xmile
+#' @returns Invisibly returns the summary object of class [summary.sdbuildR_xmile]
 #' @export
 #' @family build
 print.summary.sdbuildR_xmile <- function(x, ...) {
@@ -2641,7 +2678,7 @@ print.summary.sdbuildR_xmile <- function(x, ...) {
       paste0(", save_at = ", x$simulation$save_at)
     ),
     ifelse(x$simulation$save_from == x$simulation$start, "",
-      paste0(", save_from = ", x$simulation$save_at)
+      paste0(", save_from = ", x$simulation$save_from)
     )
   ))
 

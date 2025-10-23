@@ -6,7 +6,7 @@ if (!exists(".sdbuildR_env")) {
 
   .sdbuildR_env[["jl"]] <- list(
     init = FALSE,
-    required_version = "1.11",
+    required_version = "1.10",
     pkg_name = "SystemDynamicsBuildR",
     pkg_version = "0.2.5" # required version
   )

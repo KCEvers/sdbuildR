@@ -21,6 +21,17 @@ A list with components:
 \description{
 Check if Julia can be found and if the Julia environment for sdbuildR has been instantiated. Note that this does not mean a Julia session has been started, merely whether it \emph{could} be. For more guidance, please see \href{https://kcevers.github.io/sdbuildR/articles/julia-setup.html}{this vignette}.
 }
+\section{What to Do Next}{
+
+Based on the 'status' value:
+\describe{
+\item{"julia_not_installed"}{Install Julia from https://julialang.org/}
+\item{"julia_needs_update"}{Update Julia to >= version 1.10}
+\item{"install_julia_env"}{Run \code{install_julia_env()}}
+\item{"ready"}{Run \code{use_julia()} to start a session}
+}
+}
+
 \examples{
 status <- julia_status()
 print(status)
@@ -29,6 +40,7 @@ print(status)
 \seealso{
 Other julia: 
 \code{\link{install_julia_env}()},
-\code{\link{use_julia}()}
+\code{\link{use_julia}()},
+\code{\link{use_threads}()}
 }
 \concept{julia}

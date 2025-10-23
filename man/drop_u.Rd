@@ -10,10 +10,10 @@ drop_u(x)
 \item{x}{Variable with unit}
 }
 \value{
-Unitless variable
+Unitless variable (only in Julia)
 }
 \description{
-In rare cases, it may be desirable to drop the units of a variable within an equation. Use \code{drop_unit()} to render a variable unitless. See \code{?u()} for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
+In rare cases, it may be desirable to drop the units of a variable within an equation. Use \code{\link[=drop_u]{drop_u()}} to render a variable unitless. See \code{\link[=u]{u()}} for more information on the rules of specifying units. Note that units are only supported in Julia, not in R.
 }
 \examples{
 # For example, the cosine function only accepts unitless arguments or

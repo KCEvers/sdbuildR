@@ -31,6 +31,8 @@
         if (status$status == "install_julia_env") {
           install_julia_env()
         }
+      }, error = function(e){
+        invisible()
       }
     )
   }

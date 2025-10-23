@@ -7,10 +7,15 @@
 get_units()
 }
 \value{
-Dataframe with units in Julia
+A character matrix with 5 columns: \code{description} (unit description),
+\code{name} (unit symbol or abbreviation), \code{full_name} (full unit name),
+\code{definition} (mathematical definition in terms of base units), and \code{prefix}
+(logical indicating whether SI prefixes like kilo- or milli- can be applied).
+Includes SI base units, derived units, CGS units, US customary units, and
+custom units added by sdbuildR.
 }
 \description{
-\code{get_units()} yields a dataframe with all standard units in Julia's Unitful package and added custom units by sdbuildR.
+Obtain a dataframe with all standard units in Julia's Unitful package and added custom units by sdbuildR.
 }
 \examples{
 x <- get_units()

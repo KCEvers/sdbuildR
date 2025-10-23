@@ -5,7 +5,7 @@
 #' @param x Value
 #' @param digits Number of digits; optional, defaults to 0
 #'
-#' @return Rounded value
+#' @returns Rounded value
 #' @family custom
 #' @export
 #'
@@ -28,7 +28,7 @@ round_IM <- function(x, digits = 0) {
 #'
 #' @param p Probability, numerical value between 0 and 1
 #'
-#' @return Numerical value
+#' @returns Numerical value
 #' @family custom
 #' @export
 #'
@@ -45,7 +45,7 @@ logit <- function(p) {
 #'
 #' @param x Numerical value
 #'
-#' @return Numerical value
+#' @returns Numerical value
 #' @family custom
 #' @export
 #'
@@ -62,7 +62,7 @@ expit <- function(x) {
 #'
 #' @param p Probability of TRUE, numerical value between 0 and 1
 #'
-#' @return Logical value
+#' @returns Logical value
 #' @family custom
 #' @export
 #'
@@ -80,7 +80,7 @@ rbool <- function(p) {
 #' @param a Vector to draw sample from
 #' @param b Vector of probabilities
 #'
-#' @return One sample from custom distribution
+#' @returns One sample from custom distribution
 #' @family custom
 #' @export
 #'
@@ -91,14 +91,14 @@ rdist <- function(a, b) {
 }
 
 
-#' Find index of needle (value) in haystack (vector)
+#' Find index of needle in haystack
 #'
-#' Equivalent of .IndexOf() in Insight Maker
+#' Find index of value in vector or string. Equivalent of .IndexOf() in Insight Maker.
 #'
 #' @param haystack Vector or string to search through
 #' @param needle Value to search for
 #'
-#' @return Index, integer
+#' @returns Index, integer
 #' @family custom
 #' @export
 #'
@@ -134,7 +134,7 @@ indexof <- function(haystack, needle) {
 #'
 #' @param x A vector or a string
 #'
-#' @return The number of elements in x if x is a vector; the number of characters in x if x is a string
+#' @returns The number of elements in x if x is a vector; the number of characters in x if x is a string
 #' @family custom
 #' @export
 #'
@@ -150,14 +150,14 @@ length_IM <- function(x) {
 }
 
 
-#' Check whether needle (value) is in haystack (vector or string)
+#' Check if needle is in haystack
 #'
-#' Equivalent of .Contains() in Insight Maker
+#' Check whether value is in vector or string. Equivalent of .Contains() in Insight Maker.
 #'
 #' @param haystack Vector or string to search through
 #' @param needle Value to search for
 #'
-#' @return Logical value
+#' @returns Logical value
 #' @family custom
 #' @export
 #'
@@ -185,7 +185,7 @@ contains_IM <- function(haystack, needle) {
 #' @param height End height of ramp, defaults to 1
 #'
 #' @export
-#' @return Ramp interpolation function
+#' @returns Ramp interpolation function
 #' @family input
 #' @seealso [step()], [pulse()], [seasonal()]
 #' @examples
@@ -269,7 +269,7 @@ ramp <- function(times, start, finish, height = 1) {
 #' @param repeat_interval Interval at which to repeat pulse. Defaults to NULL to indicate no repetition.
 #'
 #' @export
-#' @return Pulse interpolation function
+#' @returns Pulse interpolation function
 #' @seealso [step()], [ramp()], [seasonal()]
 #' @family input
 #' @examples
@@ -368,7 +368,7 @@ pulse <- function(times, start, height = 1, width = 1, repeat_interval = NULL) {
 #' @param height Height of step, defaults to 1
 #'
 #' @export
-#' @return Step interpolation function
+#' @returns Step interpolation function
 #' @seealso [ramp()], [pulse()], [seasonal()]
 #' @family input
 #' @examples
@@ -434,7 +434,7 @@ step <- function(times, start, height = 1) {
 #' @param period Duration of wave in simulation time units. Defaults to 1.
 #' @param shift Timing of wave peak in simulation time units. Defaults to 0.
 #'
-#' @return Seasonal interpolation function
+#' @returns Seasonal interpolation function
 #' @family input
 #' @seealso [step()], [pulse()], [ramp()]
 #' @export
@@ -468,7 +468,7 @@ seasonal <- function(times, period = 1, shift = 0) {
 #'
 #' @param x Value
 #'
-#' @return x if x is greater than 0, 0 otherwise
+#' @returns x if x is greater than 0, 0 otherwise
 #' @family internal
 #' @export
 #'
@@ -569,7 +569,8 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
 #' @param time_col Name of the time column
 #' @param new_times Vector of new times to save the dataframe at
 #'
-#' @returns Dataframe with new times and interpolated values
+#' @returns Interpolated data.frame. The data frame has columns \code{time} followed by
+#'   one column per variable.
 #' @family internal
 #' @export
 #' @examples
@@ -580,7 +581,7 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
 #' nrow(df) # Returns only times at intervals of 1
 #' head(df)
 #'
-#' # The saveat_func() is the underlying function used by save_at
+#' # The saveat_func() is the underlying function used by simulate()
 #' # Direct use is not recommended, but shown here for completeness:
 #' sfm <- sfm |> sim_specs(save_at = 0.01)
 #' sim <- simulate(sfm)
@@ -592,6 +593,7 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
 #' df_wide <- as.data.frame(sim, direction = "wide")
 #' df_manual <- saveat_func(df_wide, "time", new_times)
 #' nrow(df_manual)
+#'
 saveat_func <- function(df, time_col, new_times) {
   # Extract the time column (first column)
   time <- df[[time_col]]

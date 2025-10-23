@@ -1,6 +1,6 @@
 #' Check Julia setup
 #'
-#' @return Logical value
+#' @returns Logical value
 #' @noRd
 julia_setup_ok <- function() {
   JuliaConnectoR::juliaSetupOk() &&
@@ -13,7 +13,7 @@ julia_setup_ok <- function() {
 #'
 #' This should only be run if a Julia session was already initialized with JuliaConnectoR.
 #'
-#' @return Logical value
+#' @returns Logical value
 #' @noRd
 julia_init_ok <- function() {
   # Check if Unitful was loaded (as an example package that needs to be loaded)
@@ -50,15 +50,25 @@ julia_init_ok <- function() {
 #'
 #' Check if Julia can be found and if the Julia environment for sdbuildR has been instantiated. Note that this does not mean a Julia session has been started, merely whether it *could* be. For more guidance, please see [this vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html).
 #'
+#'
 #' @param verbose If TRUE, print detailed status information. Defaults to TRUE.
 #'
-#' @return A list with components:
+#' @returns A list with components:
 #'   \item{julia_found}{Logical. TRUE if Julia installation found.}
 #'   \item{julia_path}{Character. Path to Julia bin.}
 #'   \item{julia_version}{Character. Julia version string, or NULL if not found.}
 #'   \item{env_exists}{Logical. TRUE if inst/Project.toml exists in sdbuildR package.}
 #'   \item{env_instantiated}{Logical. TRUE if inst/Manifest.toml exists (i.e., Julia environment was instantiated).}
 #'   \item{status}{Character. Overall status: "julia_not_installed", "julia_needs_update", "sdbuildR_needs_reinstall", "install_julia_env", "ready", or "unknown".}
+#'
+#' @section What to Do Next:
+#' Based on the 'status' value:
+#' \describe{
+#'   \item{"julia_not_installed"}{Install Julia from https://julialang.org/}
+#'   \item{"julia_needs_update"}{Update Julia to >= version 1.10}
+#'   \item{"install_julia_env"}{Run \code{install_julia_env()}}
+#'   \item{"ready"}{Run \code{use_julia()} to start a session}
+#' }
 #'
 #' @export
 #' @family julia
@@ -150,7 +160,7 @@ julia_status <- function(verbose = TRUE) {
 #' @param manifest_file Path to Manifest.toml file
 #' @inheritParams find_jl_pkg_version
 #'
-#' @return List with components:
+#' @returns List with components:
 #'   \item{installed}{Logical. TRUE if package found in Manifest.}
 #'   \item{version}{Character. Package version, or NULL if not found.}
 #'
@@ -223,7 +233,7 @@ check_manifest_for_pkg <- function(manifest_file, pkg_name) {
 #'
 #' @inheritParams find_jl_pkg_version
 #'
-#' @return List with components:
+#' @returns List with components:
 #'   \item{installed}{Logical. TRUE if package found in Manifest.}
 #'   \item{version}{Character. Package version, or NULL if not found.}
 #'
@@ -369,7 +379,7 @@ install_julia_env <- function(remove = FALSE) {
 #' @param stop If TRUE, stop active Julia session. Defaults to FALSE.
 #' @param force If TRUE, force Julia setup to execute again.
 #'
-#' @return Returns `NULL` invisibly.
+#' @returns Returns `NULL` invisibly, used for side effects
 #' @export
 #' @family julia
 #'
@@ -511,7 +521,7 @@ find_jl_pkg_version <- function(pkg_name) {
 
 #' Set up Julia environment for sdbuildR with init.jl
 #'
-#' @return NULL
+#' @returns NULL
 #' @noRd
 run_init <- function() {
   message("Setting up Julia environment for sdbuildR...\n")
@@ -639,7 +649,7 @@ getJuliaVersionViaCmd <- function(juliaCmd = getJuliaExecutablePath()) {
 
 #' Internal function to create initialization file for Julia
 #'
-#' @return NULL
+#' @returns NULL
 #' @noRd
 #'
 create_julia_init_env <- function() {

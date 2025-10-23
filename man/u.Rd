@@ -13,7 +13,7 @@ u(unit_str)
 Specified unit (only in Julia)
 }
 \description{
-Flexibly use units in equations by enclosing them in \code{u()}. Note that units are only supported in Julia, not in R.
+Flexibly use units in equations by enclosing them in \code{\link[=u]{u()}}. Note that units are only supported in Julia, not in R.
 }
 \details{
 Unit strings are converted to their standard symbols using regular expressions. This means that you can easily specify units without knowing their standard symbols. For example, u('kilograms per meters squared') will become 'kg/m^2'. You can use title-case for unit names, but letters cannot all be uppercase if this is not the standard symbol. For example, 'kilogram' works, but 'KILOGRAM' does not. This is to ensure that the right unit is detected.
