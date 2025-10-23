@@ -67,7 +67,7 @@
 
 
 <dl><dt id="arg-sfm">sfm<a class="anchor" aria-label="anchor" href="#arg-sfm"></a></dt>
-<dd><p>Stock-and-flow model, object of class sdbuildR_xmile.</p></dd>
+<dd><p>Stock-and-flow model, object of class <code><a href="xmile.html">sdbuildR_xmile</a></code>.</p></dd>
 
 
 <dt id="arg-n">n<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
@@ -91,7 +91,7 @@
 
 
 <dt id="arg-only-stocks">only_stocks<a class="anchor" aria-label="anchor" href="#arg-only-stocks"></a></dt>
-<dd><p>If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if language is set to "Julia" in sim_specs() and no delay functions are used. Defaults to FALSE.</p></dd>
+<dd><p>If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if <code>sim_specs(language = "julia")</code> and no delay functions are used. Defaults to FALSE.</p></dd>
 
 
 <dt id="arg-keep-nonnegative-flow">keep_nonnegative_flow<a class="anchor" aria-label="anchor" href="#arg-keep-nonnegative-flow"></a></dt>
@@ -112,7 +112,7 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Object of class sdbuildR_ensemble, which is a list containing:</p><dl><dt>success</dt>
+    <p>Object of class <code>sdbuildR_ensemble</code>, which is a list containing:</p><dl><dt>success</dt>
 <dd><p>If TRUE, simulation was successful. If FALSE, simulation failed.</p></dd>
 
 <dt>error_message</dt>
@@ -155,7 +155,7 @@
 </dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>To run large simulations, it is recommended to limit the output size by saving fewer values. To create a reproducible ensemble simulation, set a seed using sim_specs().</p>
+    <p>To run large simulations, it is recommended to limit the output size by saving fewer values. To create a reproducible ensemble simulation, set a seed using <code><a href="sim_specs.html">sim_specs()</a></code>.</p>
 <p>If you do not see any variation within a condition of the ensemble (i.e. the confidence bands are virtually non-existent), there are likely no random elements in your model. Without these, there can be no variability in the model. Try specifying a random initial condition or adding randomness to other model elements.</p>
     </div>
     <div class="section level2">
@@ -167,8 +167,7 @@
 <code><a href="plot.sdbuildR_sim.html">plot.sdbuildR_sim</a>()</code>,
 <code><a href="sim_specs.html">sim_specs</a>()</code>,
 <code><a href="simulate.html">simulate</a>()</code>,
-<code><a href="solvers.html">solvers</a>()</code>,
-<code><a href="use_threads.html">use_threads</a>()</code></p></div>
+<code><a href="solvers.html">solvers</a>()</code></p></div>
     </div>
 
     <div class="section level2">

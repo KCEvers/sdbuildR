@@ -64,7 +64,7 @@
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>Stock-and-flow model of class sdbuildR_xmile</p></dd>
+<dd><p>A stock-and-flow model object of class <code><a href="xmile.html">sdbuildR_xmile</a></code>.</p></dd>
 
 
 <dt id="arg-row-names">row.names<a class="anchor" aria-label="anchor" href="#arg-row-names"></a></dt>
@@ -93,7 +93,13 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Dataframe with properties of all model variables, model units, and macros.</p>
+    <p>A data.frame with one row per model component (variable, unit definition, or macro).
+Common columns include <code>type</code> (component type), <code>name</code> (variable name),
+<code>eqn</code> (equation), <code>units</code> (units of measurement), and <code>label</code>
+(descriptive label). Additional columns may include <code>to</code>, <code>from</code>,
+<code>non_negative</code>, and others depending on variable types. The exact columns returned
+depend on the <code>type</code> and <code>properties</code> arguments. Returns an empty data.frame
+if no components match the filters.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
