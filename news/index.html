@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,6 +41,9 @@
       <small>Source: <a href="https://github.com/KCEvers/sdbuildR/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.4" id="sdbuildr-104">sdbuildR 1.0.4<a class="anchor" aria-label="anchor" href="#sdbuildr-104"></a></h2>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.3" id="sdbuildr-103">sdbuildR 1.0.3<a class="anchor" aria-label="anchor" href="#sdbuildr-103"></a></h2>
 <ul><li><p>Removed automatic installation of Julia packages and instead wrote a separate function for this: install_julia_env(). install_julia_env() is called in .onLoad() ONLY if the custom environmental variable AUTO_INSTALL_JULIA_ENV is “true” and NOT_CRAN is “true”. This is to ensure GitHub workflows have the Julia environment instantiated, but this will not affect users, as they do not have AUTO_INSTALL_JULIA_ENV.</p></li>

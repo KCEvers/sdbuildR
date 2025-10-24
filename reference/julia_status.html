@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,13 +66,13 @@
 <dd><p>Logical. TRUE if Julia installation found.</p></dd>
 
 <dt>julia_path</dt>
-<dd><p>Character. Path to Julia bin.</p></dd>
+<dd><p>Character. Path to Julia bin, or "" if not found.</p></dd>
 
 <dt>julia_version</dt>
-<dd><p>Character. Julia version string, or NULL if not found.</p></dd>
+<dd><p>Character. Julia version string, or "" if not found.</p></dd>
 
 <dt>env_exists</dt>
-<dd><p>Logical. TRUE if Project.toml exists in sdbuildR package.</p></dd>
+<dd><p>Logical. TRUE if Project.toml exists in sdbuildR package, which specifies the Julia packages and versions needed to instantiate the Julia environment for sdbuildR.</p></dd>
 
 <dt>env_instantiated</dt>
 <dd><p>Logical. TRUE if Manifest.toml exists (i.e., Julia environment was instantiated).</p></dd>
