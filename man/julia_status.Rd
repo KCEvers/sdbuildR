@@ -25,7 +25,7 @@ Check if Julia can be found and if the Julia environment for sdbuildR has been i
 
 Based on the 'status' value:
 \describe{
-\item{"julia_not_installed"}{Install Julia from https://julialang.org/}
+\item{"julia_not_installed"}{Install Julia from \url{https://julialang.org/install/}}
 \item{"julia_needs_update"}{Update Julia to >= version 1.10}
 \item{"install_julia_env"}{Run \code{install_julia_env()}}
 \item{"ready"}{Run \code{use_julia()} to start a session}

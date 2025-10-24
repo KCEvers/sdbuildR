@@ -89,3 +89,11 @@ See the vignettes to learn more about all features of sdbuildR:
 * [Julia setup](https://kcevers.github.io/sdbuildR/articles/julia-setup.html): Install and set up the Julia environment for running ensemble simulations and using units.
 * [Ensemble](https://kcevers.github.io/sdbuildR/articles/ensemble.html): Learn how to assess a model's sensitivity, uncertainty and robustness with ensemble simulations.
 * [Units](https://kcevers.github.io/sdbuildR/articles/units.html): Learn why and how to use (custom) units.
+
+## Citation
+
+To cite sdbuildR, please use:
+
+```{r include=TRUE}
+citation("sdbuildR")
+```

@@ -6,6 +6,7 @@ articles:
   navbar: ~
   contents:
   - articles/build
+  - articles/jdr
   - articles/julia-setup
   - articles/ensemble
   - articles/units

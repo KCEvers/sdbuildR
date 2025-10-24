@@ -29,7 +29,7 @@ sdbuildR uses Julia for ensemble simulations and working with units in models. T
 
 Download and install Julia from [https://julialang.org/install/](https://julialang.org/install/). If you already have Julia installed, go to the next step.
 
-We recommend using **juliaup**, Julia's official version manager, which makes it easy to install and switch between Julia versions. Some useful commands are listed below.
+We recommend using juliaup, Julia's official version manager, which makes it easy to install and switch between Julia versions. Some useful commands are listed below.
 
 ```bash
 # See installed versions and current default
@@ -149,7 +149,7 @@ PATH="/usr/bin:${PATH}"
 
 Replace the path before the separator with your actual Julia bin directory. Be sure to keep `${PATH}` at the end, such that the Julia path is appended to the PATH.
 
-If using **juliaup** (recommended), you can point to the **juliaup** directory instead of a specific version:
+If using juliaup (recommended), you can point to the juliaup directory instead of a specific version:
 
 **Windows:**
 ```
@@ -161,7 +161,7 @@ PATH="C:/Users/YourName/.julia/juliaup;${PATH}"
 PATH="~/.julia/juliaup/bin:${PATH}"
 ```
 
-This allows **juliaup** to manage which Julia version is used.
+This allows juliaup to manage which Julia version is used.
 
 
 ### Save and restart R.

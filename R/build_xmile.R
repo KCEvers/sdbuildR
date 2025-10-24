@@ -24,6 +24,7 @@
 #'   \item \strong{vanderPol}: Van der Pol oscillator
 #'   \item \strong{Duffing}: Forced Duffing oscillator
 #'   \item \strong{Chua}: Chua's circuit (chaotic)
+#'   \item \strong{JDR}: Job Demands-Resources Theory as formalized in Evers et al. (submitted)
 #' }
 #'
 #' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]. Its structure is based
