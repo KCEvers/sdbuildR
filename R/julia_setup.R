@@ -64,7 +64,7 @@ julia_init_ok <- function() {
 #' @section What to Do Next:
 #' Based on the 'status' value:
 #' \describe{
-#'   \item{"julia_not_installed"}{Install Julia from https://julialang.org/}
+#'   \item{"julia_not_installed"}{Install Julia from [https://julialang.org/install/](https://julialang.org/install/)}
 #'   \item{"julia_needs_update"}{Update Julia to >= version 1.10}
 #'   \item{"install_julia_env"}{Run \code{install_julia_env()}}
 #'   \item{"ready"}{Run \code{use_julia()} to start a session}
@@ -87,8 +87,12 @@ julia_status <- function(verbose = TRUE) {
   )
 
   # Find Julia installation
-  julia_loc <- find_julia()
-  result[["julia_found"]] <- JuliaConnectoR::juliaSetupOk() && !is.null(julia_loc[["path"]]) && nzchar(julia_loc[["path"]]) && file.exists(julia_loc[["path"]])
+  julia_loc <- tryCatch({
+    find_julia()
+  }, error = function(e){
+    return(list(path = NULL))
+  })
+  result[["julia_found"]] <- !is.null(julia_loc[["path"]]) && nzchar(julia_loc[["path"]]) && file.exists(julia_loc[["path"]]) #&& JuliaConnectoR::juliaSetupOk()
   result[["julia_path"]] <- julia_loc[["path"]]
 
   if (!result[["julia_found"]]) {
@@ -291,7 +295,7 @@ check_julia_env_for_pkg <- function(pkg_name) {
 }
 
 
-#' Install or update Julia environment
+#' Install, update, or remove Julia environment
 #'
 #' Instantiate the Julia environment for sdbuildR to run stock-and-flow models using Julia. For more guidance, please see [this vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html).
 #'
@@ -310,11 +314,15 @@ check_julia_env_for_pkg <- function(pkg_name) {
 #'
 #' @returns Invisibly returns NULL after instantiating the Julia environment.
 #' @export
+#' @seealso [use_julia()], [julia_status()]
 #' @concept julia
 #'
 #' @examplesIf julia_status()$julia_found && Sys.getenv("NOT_CRAN") == "true"
 #' \dontrun{
 #'   install_julia_env()
+#'
+#'   # Remove Julia environment
+#'   install_julia_env(remove = TRUE)
 #' }
 install_julia_env <- function(remove = FALSE) {
   status <- julia_status(verbose = FALSE)
@@ -381,6 +389,7 @@ install_julia_env <- function(remove = FALSE) {
 #'
 #' @returns Returns `NULL` invisibly, used for side effects
 #' @export
+#' @seealso [julia_status()], [install_julia_env()]
 #' @concept julia
 #'
 #' @examplesIf julia_status()$status == "ready"
@@ -547,6 +556,7 @@ run_init <- function() {
 #' @returns List with path to Julia installation (bin directory, not executable) and Julia version
 #' @noRd
 find_julia <- function() {
+
   julia_paths <- getJuliaExecutablePath()
   julia_version <- getJuliaVersionViaCmd(julia_paths$juliaCmd)
 
@@ -578,10 +588,8 @@ getJuliaExecutablePath <- function() {
   }
 
   # Ensure juliaBindir ends in Julia
-  # juliaBindir <- dir(dirname(juliaBindir), pattern = "^bin$", full.names = TRUE)
 
-
-  # If JULIA_HOME already points to bin directory, keep it
+  # If juliaBindir already points to bin directory, keep it
   if (basename(juliaBindir) == "bin") {
     # Already pointing to bin, nothing to do
   } else {

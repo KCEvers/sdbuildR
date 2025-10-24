@@ -2,7 +2,7 @@
 % Please edit documentation in R/julia_setup.R
 \name{install_julia_env}
 \alias{install_julia_env}
-\title{Install or update Julia environment}
+\title{Install, update, or remove Julia environment}
 \usage{
 install_julia_env(remove = FALSE)
 }
@@ -33,7 +33,13 @@ Note that this may take 10-25 minutes the first time as Julia downloads and comp
 \dontshow{if (julia_status()$julia_found && Sys.getenv("NOT_CRAN") == "true") (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 \dontrun{
   install_julia_env()
+
+  # Remove Julia environment
+  install_julia_env(remove = TRUE)
 }
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+\code{\link[=use_julia]{use_julia()}}, \code{\link[=julia_status]{julia_status()}}
 }
 \concept{julia}

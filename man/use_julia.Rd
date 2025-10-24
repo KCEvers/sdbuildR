@@ -31,4 +31,7 @@ use_julia()
 use_julia(stop = TRUE)
 \dontshow{\}) # examplesIf}
 }
+\seealso{
+\code{\link[=julia_status]{julia_status()}}, \code{\link[=install_julia_env]{install_julia_env()}}
+}
 \concept{julia}

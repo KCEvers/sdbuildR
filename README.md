@@ -66,6 +66,30 @@ to install and set up the Julia environment. See [this
 vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html)
 for guidance.
 
+## Citation
+
+To cite sdbuildR, please use:
+
+``` r
+citation("sdbuildR")
+#> To cite package 'sdbuildR' in publications use:
+#> 
+#>   Evers K (2025). _sdbuildR: Easily Build, Simulate, and Visualise
+#>   Stock-and-Flow Models_. R package version 1.0.3,
+#>   https://github.com/KCEvers/sdbuildR,
+#>   <https://kcevers.github.io/sdbuildR/>.
+#> 
+#> A BibTeX entry for LaTeX users is
+#> 
+#>   @Manual{,
+#>     title = {sdbuildR: Easily Build, Simulate, and Visualise Stock-and-Flow Models},
+#>     author = {Kyra Caitlin Evers},
+#>     year = {2025},
+#>     note = {R package version 1.0.3, https://github.com/KCEvers/sdbuildR},
+#>     url = {https://kcevers.github.io/sdbuildR/},
+#>   }
+```
+
 ## Limitations
 
 - Unlike in other system dynamics software, sdbuildR provides only

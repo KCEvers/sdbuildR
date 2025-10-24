@@ -23,6 +23,7 @@ If specified, \code{name} should be one of the available templates:
 \item \strong{vanderPol}: Van der Pol oscillator
 \item \strong{Duffing}: Forced Duffing oscillator
 \item \strong{Chua}: Chua's circuit (chaotic)
+\item \strong{JDR}: Job Demands-Resources Theory as formalized in Evers et al. (submitted)
 }}
 }
 \value{
