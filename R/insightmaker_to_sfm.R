@@ -12,11 +12,10 @@
 #'
 #' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @export
-#' @family insightmaker
+#' @concept insightmaker
 #' @seealso [build()], [xmile()]
 #'
-#' @examplesIf has_internet()
-#' \dontrun{ # requires internet
+#' @examplesIf has_internet() && Sys.getenv("NOT_CRAN") == "true"
 #' # Load a model from Insight Maker
 #' sfm <- insightmaker_to_sfm(
 #'   URL =
@@ -31,7 +30,7 @@
 #' # Simulate the model
 #' sim <- simulate(sfm)
 #' plot(sim)
-#' }
+#'
 insightmaker_to_sfm <- function(URL,
                                 file,
                                 keep_nonnegative_flow = TRUE,

@@ -70,20 +70,11 @@ head(as.data.frame(sim))
 sfm <- sim_specs(sfm, seed = 1) |>
   build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
 
-if (julia_status()$status == "ready") {
-  # Change the simulation language to Julia to use units
-  sfm <- sim_specs(sfm, language = "Julia")
-}
+# Change the simulation language to Julia to use units
+sfm <- sim_specs(sfm, language = "Julia")
+
 }
 \seealso{
 \code{\link[=solvers]{solvers()}}
-
-Other simulate: 
-\code{\link{ensemble}()},
-\code{\link{export_plot}()},
-\code{\link{plot.sdbuildR_ensemble}()},
-\code{\link{plot.sdbuildR_sim}()},
-\code{\link{simulate}()},
-\code{\link{solvers}()}
 }
 \concept{simulate}

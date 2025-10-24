@@ -27,8 +27,5 @@ xml <- url_to_IM(
 }
 \seealso{
 \code{\link[=insightmaker_to_sfm]{insightmaker_to_sfm()}}
-
-Other insightmaker: 
-\code{\link{insightmaker_to_sfm}()}
 }
 \concept{insightmaker}

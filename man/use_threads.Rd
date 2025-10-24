@@ -18,27 +18,19 @@ No return value, called for side effects
 Specify the number of threads for ensemble simulations in Julia. This will not overwrite your current global setting for JULIA_NUM_THREADS. Note that this does not affect regular simulations with \code{\link[=simulate]{simulate()}}.
 }
 \examples{
-\dontrun{
-# requires Julia setup
-if (julia_status()$status == "ready") {
-  # Use Julia with 4 threads
-  use_julia()
-  use_threads(n = 4)
+\dontshow{if (julia_status()$status == "ready") (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# Use Julia with 4 threads
+use_julia()
+use_threads(n = 4)
 
-  # Stop using threads
-  use_threads(stop = TRUE)
+# Stop using threads
+use_threads(stop = TRUE)
 
-  # Stop using Julia
-  use_julia(stop = TRUE)
-}
-}
+# Stop using Julia
+use_julia(stop = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=ensemble]{ensemble()}}, \code{\link[=use_julia]{use_julia()}}
-
-Other julia: 
-\code{\link{install_julia_env}()},
-\code{\link{julia_status}()},
-\code{\link{use_julia}()}
 }
 \concept{julia}

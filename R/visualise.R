@@ -11,7 +11,7 @@
 #'
 #' @returns Returns `NULL` invisibly, called for side effects.
 #' @export
-#' @family simulate
+#' @concept simulate
 #'
 #' @examples
 #'
@@ -182,7 +182,7 @@ export_plotly <- function(pl, file, format, width, height) {
 
 #' Plot stock-and-flow diagram
 #'
-#' Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Thin grey edges indicate dependencies between variables. By default, constants (indicated by italic labels) are not shown. Hover over the variables to see their equations.
+#' Visualize a stock-and-flow diagram using the R package DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Thin grey edges indicate dependencies between variables. By default, constants (indicated by italic labels) are not shown. Hover over the variables to see their equations.
 #'
 #' @param x A stock-and-flow model object of class [`sdbuildR_xmile`][xmile].
 #' @param vars Variables to plot. Defaults to NULL to plot all variables.
@@ -199,9 +199,9 @@ export_plotly <- function(pl, file, format, width, height) {
 #' @param minlen Minimum length of edges; must be an integer. Defaults to 2.
 #' @param ... Optional arguments
 #'
-#' @returns Stock-and-flow diagram plotted with DiagrammeR()
+#' @returns Stock-and-flow diagram
 #' @export
-#' @family build
+#' @concept build
 #' @method plot sdbuildR_xmile
 #' @seealso [insightmaker_to_sfm()], [xmile()], [plot.sdbuildR_sim()]
 #'
@@ -214,6 +214,7 @@ export_plotly <- function(pl, file, format, width, height) {
 #'
 #' # Only show specific variables
 #' plot(sfm, vars = "Susceptible")
+#'
 plot.sdbuildR_xmile <- function(x,
                                 vars = NULL,
                                 format_label = TRUE,
@@ -600,7 +601,7 @@ plot.sdbuildR_xmile <- function(x,
 #' Prepare for plotting simulation
 #'
 #' @param type_sim Either "sim" or "ensemble"
-#' @param df Dataframe to plot
+#' @param df data.frame to plot
 #' @param constants Constants to plot
 #' @inheritParams plot.sdbuildR_sim
 #' @inheritParams build
@@ -720,7 +721,7 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
       stop(paste0(
         paste0(vars[idx], collapse = ", "),
         ifelse(sum(idx) == 1, " is", " are"),
-        " in the model, but not in the simulated dataframe. Run simulate() with only_stocks = FALSE."
+        " in the model, but not in the simulated data frame. Run simulate() with only_stocks = FALSE."
       ))
     }
 
@@ -783,7 +784,7 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
   gen_colors <- FALSE
   if (!is.null(colors)) {
     if (length(colors) < nr_var) {
-      stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation dataframe (", nr_var, ").\nUsing palette instead..."))
+      stop(paste0("Length of colors (", length(colors), ") must be equal to the number of variables in the simulation data frame (", nr_var, ").\nUsing palette instead..."))
       gen_colors <- TRUE
     }
   } else {
@@ -822,7 +823,7 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
 #' @param add_constants If TRUE, include constants in plot. Defaults to FALSE.
 #' @param vars Variables to plot. Defaults to NULL to plot all variables.
 #' @param palette Colour palette. Must be one of hcl.pals().
-#' @param colors Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
+#' @param colors Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation data frame. Defaults to NULL.
 #' @param font_family Font family. Defaults to "Times New Roman".
 #' @param font_size Font size. Defaults to 16.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
@@ -831,7 +832,7 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
 #'
 #' @returns Plotly object
 #' @export
-#' @family simulate
+#' @concept simulate
 #' @seealso [simulate()], [as.data.frame.sdbuildR_sim()], [plot.sdbuildR_xmile()]
 #' @method plot sdbuildR_sim
 #'
@@ -870,7 +871,7 @@ plot.sdbuildR_sim <- function(x,
   }
 
   if (nrow(x[["df"]]) == 0) {
-    stop("Dataframe has no rows!")
+    stop("Data frame has no rows!")
   }
 
   if (!is.logical(showlegend)) {
@@ -993,7 +994,7 @@ plot.sdbuildR_sim <- function(x,
 #' @param shareX If TRUE, share the x-axis across subplots. Defaults to TRUE.
 #' @param shareY If TRUE, share the y-axis across subplots. Defaults to TRUE.
 #' @param palette Colour palette. Must be one of hcl.pals().
-#' @param colors Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
+#' @param colors Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation data frame. Defaults to NULL.
 #' @param font_family Font family. Defaults to "Times New Roman".
 #' @param font_size Font size. Defaults to 16.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
@@ -1006,7 +1007,7 @@ plot.sdbuildR_sim <- function(x,
 #'
 #' @returns Plotly object
 #' @export
-#' @family simulate
+#' @concept simulate
 #' @seealso [ensemble()]
 #' @method plot sdbuildR_ensemble
 #'
@@ -1333,14 +1334,14 @@ plot.sdbuildR_ensemble <- function(x,
 #' @param j Index of the condition to plot. Used to determine whether to show the legend.
 #' @param type Type of plot. Must be one of "summary" or "sims". Defaults to "summary". If "summary", the plot will show the mean and confidence intervals of the simulation results. If "sims", the plot will show all individual simulation runs in i.
 #' @param create_subplots If TRUE, create subplots for each condition. If FALSE, plot all conditions in one plot.
-#' @param summary_df_highlight Dataframe with summary statistics of the ensemble simulation results (stocks). Must contain columns "j", "variable", "mean", and confidence interval columns (e.g., "q0.025", "q0.975").
-#' @param summary_df_nonhighlight Dataframe with summary statistics of the ensemble simulation results (non-stocks). Must contain columns "j", "variable", "mean", and confidence interval columns (e.g., "q0.025", "q0.975").
-#' @param df_highlight Dataframe with individual simulation results (stocks). Must contain columns "i", "j", "variable", and "value". Only used if type = "sims".
-#' @param df_nonhighlight Dataframe with individual simulation results (non-stocks). Must contain columns "i", "j", "variable", and "value". Only used if type = "sims".
+#' @param summary_df_highlight data.frame with summary statistics of the ensemble simulation results (stocks). Must contain columns "j", "variable", "mean", and confidence interval columns (e.g., "q0.025", "q0.975").
+#' @param summary_df_nonhighlight data.frame with summary statistics of the ensemble simulation results (non-stocks). Must contain columns "j", "variable", "mean", and confidence interval columns (e.g., "q0.025", "q0.975").
+#' @param df_highlight data.frame with individual simulation results (stocks). Must contain columns "i", "j", "variable", and "value". Only used if type = "sims".
+#' @param df_nonhighlight data.frame with individual simulation results (non-stocks). Must contain columns "i", "j", "variable", and "value". Only used if type = "sims".
 #' @param q_low Column name for the lower bound of the confidence interval (e.g., "q0.025").
 #' @param q_high Column name for the upper bound of the confidence interval (e.g., "q0.975").
 #' @param mode Plotting mode. Either "lines" if there are multiple time points or "markers" for a single time point.
-#' @param colors Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation dataframe. Defaults to NULL.
+#' @param colors Vector of colours. If NULL, the color palette will be used. If specified, will override palette. The number of colours must be equal to the number of variables in the simulation data frame. Defaults to NULL.
 #' @param dots List of additional parameters passed to the plotly functions.
 #' @param main Main title of the plot. Defaults to the name of the stock-and-flow model and the number of simulations.
 #' @param xlab Label on x-axis.

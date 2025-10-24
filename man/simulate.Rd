@@ -23,9 +23,9 @@ simulate(
 
 \item{keep_unit}{If TRUE, keeps units of variables. Defaults to TRUE.}
 
-\item{only_stocks}{If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if \code{sim_specs(language = "julia")} and no delay functions are used. Defaults to FALSE.}
+\item{only_stocks}{If TRUE, only return stocks in output, discarding flows and auxiliaries. If FALSE, flows and auxiliaries are saved, which slows down the simulation. Defaults to FALSE.}
 
-\item{verbose}{If TRUE, update on progress. Defaults to FALSE.}
+\item{verbose}{If TRUE, print duration of simulation. Defaults to FALSE.}
 
 \item{...}{Optional arguments}
 }
@@ -55,28 +55,17 @@ plot(sim)
 sim <- simulate(sfm, only_stocks = FALSE)
 plot(sim, add_constants = TRUE)
 
-\dontrun{
-# requires Julia setup
-if (julia_status()$status == "ready") {
-  # Use Julia for models with units or delay functions
-  sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
-  sim <- simulate(sfm)
-  plot(sim)
+\dontshow{if (julia_status()$status == "ready") (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# Use Julia for models with units
+sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
+sim <- simulate(sfm)
+plot(sim)
 
-  # Close Julia session
-  use_julia(stop = TRUE)
-}
-}
+# Close Julia session
+use_julia(stop = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=debugger]{debugger()}}, \code{\link[=sim_specs]{sim_specs()}}, \code{\link[=use_julia]{use_julia()}}
-
-Other simulate: 
-\code{\link{ensemble}()},
-\code{\link{export_plot}()},
-\code{\link{plot.sdbuildR_ensemble}()},
-\code{\link{plot.sdbuildR_sim}()},
-\code{\link{sim_specs}()},
-\code{\link{solvers}()}
 }
 \concept{simulate}

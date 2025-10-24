@@ -19,16 +19,4 @@ Equivalent of .Length() in Insight Maker, which returns the number of elements w
 length_IM(c("a", "b", "c")) # 3
 length_IM("abcdef") # 6
 }
-\seealso{
-Other custom: 
-\code{\link{contains_IM}()},
-\code{\link{expit}()},
-\code{\link{indexof}()},
-\code{\link{logistic}()},
-\code{\link{logit}()},
-\code{\link{rbool}()},
-\code{\link{rdist}()},
-\code{\link{rem}()},
-\code{\link{round_IM}()}
-}
 \concept{custom}

@@ -682,7 +682,7 @@ clean_units_IM <- function(sfm, regex_units) {
 
   # Define custom units
   if (nzchar(sfm[["model_units_str"]])) {
-    # Create dataframe with custom units, splitting by <> to separate name, eqn, and alias
+    # Create data.frame with custom units, splitting by <> to separate name, eqn, and alias
     custom_units_df <- strsplit(
       # In Insight Maker, units are not case-sensitive
       tolower(sfm[["model_units_str"]]), "\n"

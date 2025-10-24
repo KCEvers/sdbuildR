@@ -22,16 +22,4 @@ indexof(c("a", "b", "c"), "b") # 2
 indexof("haystack", "hay") # 1
 indexof("haystack", "m") # 0
 }
-\seealso{
-Other custom: 
-\code{\link{contains_IM}()},
-\code{\link{expit}()},
-\code{\link{length_IM}()},
-\code{\link{logistic}()},
-\code{\link{logit}()},
-\code{\link{rbool}()},
-\code{\link{rdist}()},
-\code{\link{rem}()},
-\code{\link{round_IM}()}
-}
 \concept{custom}

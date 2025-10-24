@@ -33,8 +33,7 @@ Import a stock-and-flow model from \href{https://insightmaker.com/}{Insight Make
 Insight Maker models can be imported using either a URL or an Insight Maker file. Ensure the URL refers to a public (not private) model. To download a model file from Insight Maker, first clone the model if it is not your own. Then, go to "Share" (top right), "Export", and "Download Insight Maker file".
 }
 \examples{
-\dontshow{if (has_internet()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-\dontrun{ # requires internet
+\dontshow{if (has_internet() && Sys.getenv("NOT_CRAN") == "true") (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 # Load a model from Insight Maker
 sfm <- insightmaker_to_sfm(
   URL =
@@ -49,13 +48,9 @@ sfm <- sim_specs(sfm, save_at = .5)
 # Simulate the model
 sim <- simulate(sfm)
 plot(sim)
-}
 \dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=build]{build()}}, \code{\link[=xmile]{xmile()}}
-
-Other insightmaker: 
-\code{\link{url_to_IM}()}
 }
 \concept{insightmaker}

@@ -5,7 +5,7 @@
 #' @returns Logical value
 #'
 #' @export
-#' @family internal
+#' @concept internal
 #' @examples
 #' has_internet()
 #'
@@ -207,7 +207,7 @@ clean_type <- function(type) {
 #'
 #' @returns Vector of cleaned names
 #' @export
-#' @family internal
+#' @concept internal
 #' @examples
 #' sfm <- xmile("predator_prey")
 #' # As the variable name "predator" is already taken, clean_name() will create
@@ -302,11 +302,11 @@ get_model_var <- function(sfm) {
 }
 
 
-#' Create dataframe with stock-and-flow model variables, types, labels, and units
+#' Create data frame with stock-and-flow model variables, types, labels, and units
 #'
 #' @inheritParams build
 #'
-#' @returns Dataframe
+#' @returns data.frame
 #' @noRd
 #'
 get_names <- function(sfm) {
@@ -572,7 +572,7 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
 #' @param names_with_brackets Boolean; whether to add square bracket around the variable names
 #' @inheritParams convert_equations_IM
 #'
-#' @returns Dataframe with start and end indices of each name
+#' @returns data.frame with start and end indices of each name
 #' @noRd
 #'
 get_range_names <- function(eqn, var_names, names_with_brackets = FALSE) {
@@ -665,7 +665,7 @@ get_seq_exclude <- function(eqn,
 #'
 #' @inheritParams convert_equations_IM
 #'
-#' @returns Dataframe with start and end indices of all words as well as extracted words
+#' @returns data.frame with start and end indices of all words as well as extracted words
 #' @noRd
 #'
 get_words <- function(eqn) {

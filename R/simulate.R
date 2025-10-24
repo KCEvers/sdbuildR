@@ -5,8 +5,8 @@
 #' @inheritParams insightmaker_to_sfm
 #' @inheritParams build
 #' @param keep_unit If TRUE, keeps units of variables. Defaults to TRUE.
-#' @param verbose If TRUE, update on progress. Defaults to FALSE.
-#' @param only_stocks If TRUE, only save stocks. If FALSE, auxiliaries and flows are saved using a callback function. Only applies if `sim_specs(language = "julia")` and no delay functions are used. Defaults to FALSE.
+#' @param verbose If TRUE, print duration of simulation. Defaults to FALSE.
+#' @param only_stocks If TRUE, only return stocks in output, discarding flows and auxiliaries. If FALSE, flows and auxiliaries are saved, which slows down the simulation. Defaults to FALSE.
 #' @param ... Optional arguments
 #'
 #' @returns Object of class [`sdbuildR_sim`][simulate], a list containing:
@@ -24,7 +24,7 @@
 #'
 #'
 #' @export
-#' @family simulate
+#' @concept simulate
 #' @seealso [build()], [xmile()], [debugger()], [sim_specs()], [use_julia()]
 #'
 #' @examples
@@ -36,18 +36,15 @@
 #' sim <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim, add_constants = TRUE)
 #'
-#' \dontrun{
-#' # requires Julia setup
-#' if (julia_status()$status == "ready") {
-#'   # Use Julia for models with units or delay functions
-#'   sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
-#'   sim <- simulate(sfm)
-#'   plot(sim)
+#' @examplesIf julia_status()$status == "ready"
+#' # Use Julia for models with units
+#' sfm <- sim_specs(xmile("coffee_cup"), language = "Julia")
+#' sim <- simulate(sfm)
+#' plot(sim)
 #'
-#'   # Close Julia session
-#'   use_julia(stop = TRUE)
-#' }
-#' }
+#' # Close Julia session
+#' use_julia(stop = TRUE)
+#'
 simulate <- function(sfm,
                      keep_nonnegative_flow = TRUE,
                      keep_nonnegative_stock = FALSE,
@@ -83,7 +80,7 @@ simulate <- function(sfm,
       verbose = verbose
     ))
   } else {
-    stop("Language not supported.\nPlease run either sim_specs(sfm, language = 'Julia') (recommended) or sim_specs(sfm, language = 'R') (no unit, delay, or ensemble support).")
+    stop("Language not supported.\nPlease run either sim_specs(sfm, language = 'Julia') (recommended) or sim_specs(sfm, language = 'R') (no unit or ensemble support).")
   }
 }
 
@@ -315,7 +312,7 @@ find_newly_defined_var <- function(eqn) {
 #' @param reverse If FALSE, list for each variable X which variables Y it depends on for its equation definition. If TRUE, don't show dependencies but dependents. This reverses the dependencies, such that for each variable X, it lists what other variables Y depend on X.
 #'
 #' @returns List, with for each model variable what other variables it depends on, or if \code{reverse = TRUE}, which variables depend on it
-#' @family build
+#' @concept build
 #' @export
 #'
 #' @examples
@@ -615,7 +612,7 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 
 #' Run ensemble simulations
 #'
-#' Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in `range`. The ensemble can be run in parallel using multiple threads by first setting [use_threads()]. The results are returned as a dataframe with summary statistics and optionally individual simulations.
+#' Run an ensemble simulation of a stock-and-flow model, varying initial conditions and/or parameters in the range specified in `range`. The ensemble can be run in parallel using multiple threads by first setting [use_threads()]. The results are returned as a data.frame with summary statistics and optionally individual simulations.
 #'
 #' To run large simulations, it is recommended to limit the output size by saving fewer values. To create a reproducible ensemble simulation, set a seed using [sim_specs()].
 #'
@@ -625,97 +622,100 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 #' @inheritParams simulate
 #' @param n Number of simulations to run in the ensemble. When range is specified, n defines the number of simulations to run per condition. If each condition only needs to be run once, set n = 1. Defaults to 10.
 #' @param return_sims If TRUE, return the individual simulations in the ensemble. Set to FALSE to save memory. Defaults to FALSE.
-#' @param range List of ranges to vary parameters in the ensemble. Only stocks and constants can be specified. All ranges have to be of the same length if cross = FALSE. Defaults to NULL.
+#' @param range  A named list specifying parameter ranges for ensemble conditions. Names must correspond to existing stock or constant variable names in the model. Each list element should be a numeric vector of values to test.
+#'
+#' If cross = TRUE (default), all combinations of values are generated. For example, list(param1 = c(1, 2), param2 = c(10, 20)) creates 4 conditions: (1,10), (1,20), (2,10), (2,20).
+#'
+#' If cross = FALSE, values are paired element-wise, requiring all vectors to have equal length. For example, list(param1 = c(1, 2, 3), param2 = c(10, 20, 30)) creates 3 conditions: (1,10), (2,20), (3,30).
+#' Defaults to NULL (no parameter variation).
+#'
 #' @param cross If TRUE, cross the parameters in the range list to generate all possible combinations of parameters. Defaults to TRUE.
 #' @param quantiles Quantiles to calculate in the summary, e.g. c(0.025, 0.975).
+#' @param verbose If TRUE, print details and duration of simulation. Defaults to TRUE.
 #'
 #' @returns Object of class [`sdbuildR_ensemble`][ensemble], which is a list containing:
 #' \describe{
 #'  \item{success}{If TRUE, simulation was successful. If FALSE, simulation failed.}
 #'  \item{error_message}{If success is FALSE, contains the error message.}
-#'  \item{df}{Dataframe with simulation results in long format, if return_sims is TRUE. The iteration number is indicated by column "i". If range was specified, the condition is indicated by column "j".}
-#'  \item{summary}{Dataframe with summary statistics of the ensemble, including quantiles specified in quantiles. If range was specified, summary statistics are calculated for each condition (j) in the ensemble.}
+#'  \item{df}{data.frame with simulation results in long format, if return_sims is TRUE. The iteration number is indicated by column "i". If range was specified, the condition is indicated by column "j".}
+#'  \item{summary}{data.frame with summary statistics of the ensemble, including quantiles specified in quantiles. If range was specified, summary statistics are calculated for each condition (j) in the ensemble.}
 #'  \item{n}{Number of simulations run in the ensemble (per condition j if range is specified).}
 #'  \item{n_total}{Total number of simulations run in the ensemble (across all conditions if range is specified).}
 #'  \item{n_conditions}{Total number of conditions.}
-#'  \item{conditions}{Dataframe with the conditions used in the ensemble, if range is specified.}
-#'  \item{init}{List with df (if return_sims = TRUE) and summary, containing dataframe with the initial values of the stocks used in the ensemble.}
-#'  \item{constants}{List with df (if return_sims = TRUE) and summary, containing dataframe with the constant parameters used in the ensemble.}
+#'  \item{conditions}{data.frame with the conditions used in the ensemble, if range is specified.}
+#'  \item{init}{List with df (if return_sims = TRUE) and summary, containing data.frame with the initial values of the stocks used in the ensemble.}
+#'  \item{constants}{List with df (if return_sims = TRUE) and summary, containing data.frame with the constant parameters used in the ensemble.}
 #'  \item{script}{Julia script used for the ensemble simulation.}
 #'  \item{duration}{Duration of the simulation in seconds.}
 #'  \item{...}{Other parameters passed to ensemble}
 #'  }
 #' @export
-#' @family simulate
+#' @concept simulate
 #' @seealso [use_threads()], [build()], [xmile()], [sim_specs()], [use_julia()]
 #'
-#' @examples
-#' \dontrun{
-#' # requires Julia setup
-#' if (julia_status()$status == "ready") {
-#'   # Load example and set simulation language to Julia
-#'   sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
+#' @examplesIf julia_status()$status == "ready"
+#' # Load example and set simulation language to Julia
+#' sfm <- xmile("predator_prey") |> sim_specs(language = "Julia")
 #'
-#'   # Set random initial conditions
-#'   sfm <- build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
+#' # Set random initial conditions
+#' sfm <- build(sfm, c("predator", "prey"), eqn = "runif(1, min = 20, max = 80)")
 #'
-#'   # For ensemble simulations, it is highly recommended to reduce the
-#'   # returned output. For example, to save only every 1 time units and discard
-#'   # the first 100 time units, use:
-#'   sfm <- sim_specs(sfm, save_at = 1, save_from = 100)
+#' # For ensemble simulations, it is highly recommended to reduce the
+#' # returned output. For example, to save only every 1 time units and discard
+#' # the first 100 time units, use:
+#' sfm <- sim_specs(sfm, save_at = 1, save_from = 100)
 #'
-#'   # Run ensemble simulation with 100 simulations
-#'   sims <- ensemble(sfm, n = 100)
-#'   plot(sims)
+#' # Run ensemble simulation with 100 simulations
+#' sims <- ensemble(sfm, n = 100)
+#' plot(sims)
 #'
-#'   # Plot individual trajectories
-#'   sims <- ensemble(sfm, n = 10, return_sims = TRUE)
-#'   plot(sims, type = "sims")
+#' # Plot individual trajectories
+#' sims <- ensemble(sfm, n = 10, return_sims = TRUE)
+#' plot(sims, type = "sims")
 #'
-#'   # Specify which trajectories to plot
-#'   plot(sims, type = "sims", i = 1)
+#' # Specify which trajectories to plot
+#' plot(sims, type = "sims", i = 1)
 #'
-#'   # Plot the median with lighter individual trajectories
-#'   plot(sims, central_tendency = "median", type = "sims", alpha = 0.1)
+#' # Plot the median with lighter individual trajectories
+#' plot(sims, central_tendency = "median", type = "sims", alpha = 0.1)
 #'
-#'   # Ensembles can also be run with exact values for the initial conditions
-#'   # and parameters. Below, we vary the initial values of the predator and the
-#'   # birth rate of the predators (delta). We generate a hunderd samples per
-#'   # condition. By default, the parameters are crossed, meaning that all
-#'   # combinations of the parameters are run.
-#'   sims <- ensemble(sfm,
-#'     n = 50,
-#'     range = list("predator" = c(10, 50), "delta" = c(.025, .05))
+#' # Ensembles can also be run with exact values for the initial conditions
+#' # and parameters. Below, we vary the initial values of the predator and the
+#' # birth rate of the predators (delta). We generate a hunderd samples per
+#' # condition. By default, the parameters are crossed, meaning that all
+#' # combinations of the parameters are run.
+#' sims <- ensemble(sfm,
+#'   n = 50,
+#'   range = list("predator" = c(10, 50), "delta" = c(.025, .05))
+#' )
+#'
+#' plot(sims)
+#'
+#' # By default, a maximum of nine conditions is plotted.
+#' # Plot specific conditions:
+#' plot(sims, j = c(1, 3), nrows = 1)
+#'
+#' # Generate a non-crossed design, where the length of each range needs to be
+#' # equal:
+#' sims <- ensemble(sfm,
+#'   n = 10, cross = FALSE,
+#'   range = list(
+#'     "predator" = c(10, 20, 30),
+#'     "delta" = c(.020, .025, .03)
 #'   )
+#' )
+#' plot(sims, nrows = 3)
 #'
-#'   plot(sims)
+#' # Run simulation in parallel
+#' use_threads(4)
+#' sims <- ensemble(sfm, n = 10)
 #'
-#'   # By default, a maximum of nine conditions is plotted.
-#'   # Plot specific conditions:
-#'   plot(sims, j = c(1, 3), nrows = 1)
+#' # Stop using threads
+#' use_threads(stop = TRUE)
 #'
-#'   # Generate a non-crossed design, where the length of each range needs to be
-#'   # equal:
-#'   sims <- ensemble(sfm,
-#'     n = 10, cross = FALSE,
-#'     range = list(
-#'       "predator" = c(10, 20, 30),
-#'       "delta" = c(.020, .025, .03)
-#'     )
-#'   )
-#'   plot(sims, nrows = 3)
+#' # Close Julia
+#' use_julia(stop = TRUE)
 #'
-#'   # Run simulation in parallel
-#'   use_threads(4)
-#'   sims <- ensemble(sfm, n = 10)
-#'
-#'   # Stop using threads
-#'   use_threads(stop = TRUE)
-#'
-#'   # Close Julia
-#'   use_julia(stop = TRUE)
-#' }
-#' }
 ensemble <- function(sfm,
                      n = 10,
                      return_sims = FALSE,
@@ -1012,25 +1012,21 @@ ensemble <- function(sfm,
 #' @param stop Stop using threaded ensemble simulations. Defaults to FALSE.
 #'
 #' @returns No return value, called for side effects
-#' @family julia
+#' @concept julia
 #' @seealso [ensemble()], [use_julia()]
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' # requires Julia setup
-#' if (julia_status()$status == "ready") {
-#'   # Use Julia with 4 threads
-#'   use_julia()
-#'   use_threads(n = 4)
+#' @examplesIf julia_status()$status == "ready"
+#' # Use Julia with 4 threads
+#' use_julia()
+#' use_threads(n = 4)
 #'
-#'   # Stop using threads
-#'   use_threads(stop = TRUE)
+#' # Stop using threads
+#' use_threads(stop = TRUE)
 #'
-#'   # Stop using Julia
-#'   use_julia(stop = TRUE)
-#' }
-#' }
+#' # Stop using Julia
+#' use_julia(stop = TRUE)
+#'
 use_threads <- function(n = parallel::detectCores() - 1, stop = FALSE) {
   if (!is.numeric(n)) {
     stop("n must be a number!")
@@ -1076,7 +1072,7 @@ use_threads <- function(n = parallel::detectCores() - 1, stop = FALSE) {
 #' @inheritParams build
 #'
 #' @returns String with code to build stock-and-flow model from scratch.
-#' @family build
+#' @concept build
 #' @export
 #'
 #' @examples

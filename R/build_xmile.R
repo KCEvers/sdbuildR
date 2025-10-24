@@ -39,7 +39,8 @@
 #' Use [summary()] to summarize, [as.data.frame()] to convert to a data.frame, [plot()] to visualize.
 #'
 #' @export
-#' @family build
+#' @concept build
+#' @seealso [build()], [header()], [macro()], [model_units()], [sim_specs()]
 #'
 #' @examples sfm <- xmile()
 #' summary(sfm)
@@ -108,7 +109,7 @@ new_sdbuildR_xmile <- function() {
 #'
 #' @inheritParams build
 #'
-#' @returns Dataframe with for each flow which stock and flow to and/or from
+#' @returns data.frame with for each flow which stock and flow to and/or from
 #' @noRd
 get_flow_df <- function(sfm) {
   check_xmile(sfm)
@@ -124,12 +125,12 @@ get_flow_df <- function(sfm) {
 }
 
 
-#' Create dataframe of simulation results
+#' Create data frame of simulation results
 #'
-#' Convert simulation results to a dataframe.
+#' Convert simulation results to a data.frame.
 #'
 #' @inheritParams plot.sdbuildR_sim
-#' @param direction Format of dataframe, either "long" (default) or "wide".
+#' @param direction Format of data frame, either "long" (default) or "wide".
 #' @param row.names NULL or a character vector giving the row names for the data frame. Missing values are not allowed.
 #' @param optional Ignored parameter.
 #'
@@ -139,7 +140,7 @@ get_flow_df <- function(sfm) {
 #'   one column per variable.
 #' @export
 #' @seealso [simulate()], [xmile()]
-#' @family build
+#' @concept build
 #' @method as.data.frame sdbuildR_sim
 #'
 #' @examples
@@ -471,25 +472,24 @@ switch_list <- function(x) {
 #' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #'
 #' @export
-#' @family units
+#' @concept units
 #' @seealso [unit_prefixes()]
 #'
-#' @examples
+#' @examplesIf julia_status()$status == "ready"
 #' # Units are only supported with Julia
-#' if (julia_status()$status == "ready") {
-#'   sfm <- xmile("Crielaard2022")
-#'   sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
+#' sfm <- xmile("Crielaard2022")
+#' sfm <- model_units(sfm, "BMI", eqn = "kg/m^2", doc = "Body Mass Index")
 #'
-#'   # You may also use words rather than symbols for the unit definition.
-#'   # The following modifies the unit BMI:
-#'   sfm <- model_units(sfm, "BMI", eqn = "kilogram/meters^2")
+#' # You may also use words rather than symbols for the unit definition.
+#' # The following modifies the unit BMI:
+#' sfm <- model_units(sfm, "BMI", eqn = "kilogram/meters^2")
 #'
-#'   # Remove unit:
-#'   sfm <- model_units(sfm, "BMI", erase = TRUE)
+#' # Remove unit:
+#' sfm <- model_units(sfm, "BMI", erase = TRUE)
 #'
-#'   # Unit names may be changed to be syntactically valid and avoid overlap:
-#'   sfm <- model_units(xmile(), "C0^2")
-#' }
+#' # Unit names may be changed to be syntactically valid and avoid overlap:
+#' sfm <- model_units(xmile(), "C0^2")
+#'
 model_units <- function(sfm, name, eqn = "1", doc = "",
                         erase = FALSE, change_name = NULL) {
   # Basic check
@@ -690,7 +690,7 @@ model_units <- function(sfm, name, eqn = "1", doc = "",
 #' @param erase If TRUE, remove macro from the model. Defaults to FALSE.
 #'
 #' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
-#' @family build
+#' @concept build
 #' @export
 #'
 #' @examples
@@ -898,7 +898,7 @@ macro <- function(sfm, name, eqn = "0.0", doc = "", change_name = NULL, erase = 
 #' @param ... Optional other entries to add to the header.
 #'
 #' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
-#' @family build
+#' @concept build
 #' @export
 #'
 #' @examples
@@ -958,7 +958,7 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' @param language Coding language in which to simulate model. Either "R" or "Julia". Julia is necessary for using units or delay functions. Defaults to "R".
 #'
 #' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
-#' @family simulate
+#' @concept simulate
 #' @seealso [solvers()]
 #' @export
 #'
@@ -983,10 +983,9 @@ header <- function(sfm, name = "My Model", caption = "My Model Description",
 #' sfm <- sim_specs(sfm, seed = 1) |>
 #'   build(c("predator", "prey"), eqn = "runif(1, 20, 50)")
 #'
-#' if (julia_status()$status == "ready") {
-#'   # Change the simulation language to Julia to use units
-#'   sfm <- sim_specs(sfm, language = "Julia")
-#' }
+#' # Change the simulation language to Julia to use units
+#' sfm <- sim_specs(sfm, language = "Julia")
+#'
 sim_specs <- function(sfm,
                       method = "euler",
                       start = "0.0",
@@ -1032,8 +1031,7 @@ sim_specs <- function(sfm,
 
     if (dt != 1) {
       if (dt > .1) {
-        # warning(paste0("dt = ", dt, " is larger than 0.1! This will likely lead to inaccuracies in the simulation. To reduce the size of the simulaton dataframe, use save_at = ", dt, ", and keep dt to a smaller value. To simulate in discrete time, set dt = 1."))
-        warning(paste0("Detected use of large timestep dt = ", dt, ". This will likely lead to inaccuracies in the simulation. Run sim_specs(sfm, save_at = ", dt, ") to reduce the size of the simulaton dataframe, and keep dt to a smaller value."))
+        warning(paste0("Detected use of large timestep dt = ", dt, ". This will likely lead to inaccuracies in the simulation. Run sim_specs(sfm, save_at = ", dt, ") to reduce the size of the simulation data frame, and keep dt to a smaller value."))
       }
     }
   }
@@ -1357,11 +1355,23 @@ report_name_change <- function(old_names, new_names) {
 #' @param interpolation Only for graphical functions: interpolation method. Must be either "constant" or "linear". Defaults to "linear".
 #' @param extrapolation Only for graphical functions: extrapolation method. Must be either "nearest" or "NA". Defaults to "nearest".
 #' @param doc Description of variable. Defaults to "" (no description).
-#' @param df Dataframe with variable properties to add and/or modify.
+#' @param df A data.frame with variable properties to add and/or modify. Each row represents one variable to build. Required columns depend on the variable type being created:
+#'
+#' - All types require: 'type', 'name'
+#' - Stocks require: 'eqn' (initial value)
+#' - Flows require: 'eqn', and at least one of 'from' or 'to'
+#' - Constants require: 'eqn'
+#' - Auxiliaries require: 'eqn'
+#' - Graphical functions require: 'xpts', 'ypts'
+#'
+#' Optional columns for all types: 'units', 'label', 'doc', 'non_negative'
+#' Optional columns for graphical functions: 'source', 'interpolation', 'extrapolation'
+#'
+#' Columns not applicable to a variable type should be set to NA. See Examples for a complete demonstration.
 #'
 #' @returns A stock-and-flow model object of class [`sdbuildR_xmile`][xmile]
 #' @seealso [xmile()]
-#' @family build
+#' @concept build
 #' @export
 #'
 #' @examples
@@ -1427,8 +1437,8 @@ report_name_change <- function(old_names, new_names) {
 #' # Remove variable
 #' sfm <- build(sfm, "prey", erase = TRUE)
 #'
-#' # To add and/or modify variables more quickly, pass a dataframe.
-#' # The dataframe is processed row-wise.
+#' # To add and/or modify variables more quickly, pass a data.frame.
+#' # The data.frame is processed row-wise.
 #' # For instance, to create a logistic population growth model:
 #' df <- data.frame(
 #'   type = c("stock", "flow", "flow", "constant", "constant"),
@@ -1501,7 +1511,7 @@ build <- function(sfm, name, type,
     }
   }
 
-  # Get names dataframe
+  # Get names data.frame
   names_df <- get_names(sfm)
   var_names <- names_df[["name"]]
 
@@ -1997,7 +2007,7 @@ build <- function(sfm, name, type,
 }
 
 
-#' Add and/or modify model from dataframe
+#' Add and/or modify model from data frame
 #'
 #' @inheritParams build
 #'
@@ -2006,7 +2016,7 @@ build <- function(sfm, name, type,
 #'
 add_from_df <- function(sfm, df) {
   if (!inherits(df, "data.frame")) {
-    stop("df must be a dataframe!")
+    stop("df must be a data.frame!")
   }
 
   # Get all properties
@@ -2099,8 +2109,8 @@ get_building_block_prop <- function() {
 #' @inheritParams build
 #' @param quietly If TRUE, don't print problems. Defaults to FALSE.
 #'
-#' @returns If \code{quietly = FALSE}, list with problems and potential problems.
-#' @family build
+#' @returns If `quietly = FALSE`, list with problems and potential problems.
+#' @concept build
 #' @export
 #'
 #' @examples
@@ -2328,14 +2338,14 @@ static_depend_on_dyn <- function(sfm) {
 }
 
 
-#' Convert stock-and-flow model to dataframe
+#' Convert stock-and-flow model to data frame
 #'
-#' Create a dataframe with properties of all model variables, model units, and macros. Specify the variable types, variable names, and/or properties to get a subset of the dataframe.
+#' Create a data frame with properties of all model variables, model units, and macros. Specify the variable types, variable names, and/or properties to get a subset of the data frame.
 #'
 #' @inheritParams plot.sdbuildR_xmile
-#' @param type Variable types to retain in the dataframe. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'macro', or 'model_units'. Defaults to NULL to include all types.
-#' @param name Variable names to retain in the dataframe. Defaults to NULL to include all variables.
-#' @param properties Variable properties to retain in the dataframe. Defaults to NULL to include all properties.
+#' @param type Variable types to retain in the data frame. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', 'macro', or 'model_units'. Defaults to NULL to include all types.
+#' @param name Variable names to retain in the data frame. Defaults to NULL to include all variables.
+#' @param properties Variable properties to retain in the data frame. Defaults to NULL to include all properties.
 #' @param row.names NULL or a character vector giving the row names for the data frame. Missing values are not allowed.
 #' @param optional Ignored parameter.
 #'
@@ -2347,7 +2357,7 @@ static_depend_on_dyn <- function(sfm) {
 #'   depend on the \code{type} and \code{properties} arguments. Returns an empty data.frame
 #'   if no components match the filters.
 #' @export
-#' @family build
+#' @concept build
 #' @method as.data.frame sdbuildR_xmile
 #'
 #' @examples as.data.frame(xmile("SIR"))
@@ -2531,7 +2541,7 @@ as.data.frame.sdbuildR_xmile <- function(x,
 #' @inheritParams plot.sdbuildR_xmile
 #'
 #' @returns Summary object of class [summary.sdbuildR_xmile]
-#' @family build
+#' @concept build
 #' @export
 #' @seealso [build()]
 #'
@@ -2597,7 +2607,7 @@ summary.sdbuildR_xmile <- function(object, ...) {
 #'
 #' @returns Invisibly returns the summary object of class [summary.sdbuildR_xmile]
 #' @export
-#' @family build
+#' @concept build
 print.summary.sdbuildR_xmile <- function(x, ...) {
   cat("Your model contains:\n")
 

@@ -36,10 +36,5 @@ plot(sim)
 }
 \seealso{
 \code{\link[=step]{step()}}, \code{\link[=pulse]{pulse()}}, \code{\link[=ramp]{ramp()}}
-
-Other input: 
-\code{\link{pulse}()},
-\code{\link{ramp}()},
-\code{\link{step}()}
 }
 \concept{input}

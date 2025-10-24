@@ -16,10 +16,4 @@ Internal function
 has_internet()
 
 }
-\seealso{
-Other internal: 
-\code{\link{clean_name}()},
-\code{\link{nonnegative}()},
-\code{\link{saveat_func}()}
-}
 \concept{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/julia_setup.R
 \name{use_julia}
 \alias{use_julia}
-\title{Set up Julia environment}
+\title{Start Julia and activate environment}
 \usage{
 use_julia(stop = FALSE, force = FALSE)
 }
@@ -15,27 +15,20 @@ use_julia(stop = FALSE, force = FALSE)
 Returns \code{NULL} invisibly, used for side effects
 }
 \description{
-Start Julia session and activate Julia environment to simulate stock-and-flow models. \code{use_julia()} looks for a Julia installation and an instantiated Julia environment specifically for sdbuildR. This can be set up with \code{install_julia_env()}. For more guidance, please see \href{https://kcevers.github.io/sdbuildR/articles/julia-setup.html}{this vignette}.
+Start Julia session and activate Julia environment to simulate stock-and-flow models. To do so, Julia needs to be installed and findable from within R. See \href{https://kcevers.github.io/sdbuildR/articles/julia-setup.html}{this vignette} for guidance. In addition, the Julia environment specifically for sdbuildR needs to have been instantiated. This can be set up with \code{install_julia_env()}.
 }
 \details{
+Julia supports running stock-and-flow models with units as well as ensemble simulations (see \code{ensemble()}).
+
 In every R session, \code{use_julia()} needs to be run once (which is done automatically in \code{simulate()}), which can take around 30-60 seconds.
 }
 \examples{
-\dontrun{
-# requires Julia setup
-if (julia_status()$status == "ready") {
-  # Start a Julia session and activate the Julia environment for sdbuildR
-  use_julia()
+\dontshow{if (julia_status()$status == "ready") (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# Start a Julia session and activate the Julia environment for sdbuildR
+use_julia()
 
-  # Stop Julia session
-  use_julia(stop = TRUE)
-}
-}
-}
-\seealso{
-Other julia: 
-\code{\link{install_julia_env}()},
-\code{\link{julia_status}()},
-\code{\link{use_threads}()}
+# Stop Julia session
+use_julia(stop = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \concept{julia}

@@ -51,10 +51,10 @@
 \item{...}{Optional arguments}
 }
 \value{
-Stock-and-flow diagram plotted with DiagrammeR()
+Stock-and-flow diagram
 }
 \description{
-Visualize a stock-and-flow diagram using DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Thin grey edges indicate dependencies between variables. By default, constants (indicated by italic labels) are not shown. Hover over the variables to see their equations.
+Visualize a stock-and-flow diagram using the R package DiagrammeR. Stocks are represented as boxes. Flows are represented as arrows between stocks and/or double circles, where the latter represent what it outside of the model boundary. Thin grey edges indicate dependencies between variables. By default, constants (indicated by italic labels) are not shown. Hover over the variables to see their equations.
 }
 \examples{
 sfm <- xmile("SIR")
@@ -65,21 +65,9 @@ plot(sfm, show_constants = FALSE, show_aux = FALSE)
 
 # Only show specific variables
 plot(sfm, vars = "Susceptible")
+
 }
 \seealso{
 \code{\link[=insightmaker_to_sfm]{insightmaker_to_sfm()}}, \code{\link[=xmile]{xmile()}}, \code{\link[=plot.sdbuildR_sim]{plot.sdbuildR_sim()}}
-
-Other build: 
-\code{\link{as.data.frame.sdbuildR_sim}()},
-\code{\link{as.data.frame.sdbuildR_xmile}()},
-\code{\link{build}()},
-\code{\link{debugger}()},
-\code{\link{find_dependencies}()},
-\code{\link{get_build_code}()},
-\code{\link{header}()},
-\code{\link{macro}()},
-\code{\link{print.summary.sdbuildR_xmile}()},
-\code{\link{summary.sdbuildR_xmile}()},
-\code{\link{xmile}()}
 }
 \concept{build}

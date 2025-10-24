@@ -7,7 +7,7 @@
 install_julia_env(remove = FALSE)
 }
 \arguments{
-\item{remove}{If TRUE, remove Julia environment for sdbuildR. This will delete the inst/Manifest.toml file, as well as the SystemDynamicsBuildR.jl package. All other Julia packages remain untouched.}
+\item{remove}{If TRUE, remove Julia environment for sdbuildR. This will delete the Manifest.toml file, as well as the SystemDynamicsBuildR.jl package. All other Julia packages remain untouched.}
 }
 \value{
 Invisibly returns NULL after instantiating the Julia environment.
@@ -19,10 +19,10 @@ Instantiate the Julia environment for sdbuildR to run stock-and-flow models usin
 \code{install_julia_env()} will:
 \itemize{
 \item Start a Julia session
-\item Activate a Julia environment using sdbuildR's inst/Project.toml
+\item Activate a Julia environment using sdbuildR's Project.toml
 \item Install SystemDynamicsBuildR.jl from GitHub (https://github.com/KCEvers/SystemDynamicsBuildR.jl)
 \item Install all other required Julia packages
-\item Create inst/Manifest.toml
+\item Create Manifest.toml
 \item Precompile packages for faster subsequent loading
 \item Stop the Julia session
 }
@@ -30,16 +30,10 @@ Instantiate the Julia environment for sdbuildR to run stock-and-flow models usin
 Note that this may take 10-25 minutes the first time as Julia downloads and compiles packages.
 }
 \examples{
+\dontshow{if (julia_status()$julia_found && Sys.getenv("NOT_CRAN") == "true") (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 \dontrun{
-if (julia_status()$julia_found) {
   install_julia_env()
 }
-}
-}
-\seealso{
-Other julia: 
-\code{\link{julia_status}()},
-\code{\link{use_julia}()},
-\code{\link{use_threads}()}
+\dontshow{\}) # examplesIf}
 }
 \concept{julia}

@@ -16,10 +16,11 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r}
+```{r, echo=TRUE, message=FALSE}
 library(sdbuildR)
 library(JuliaConnectoR)
 ```
+
 
 sdbuildR uses Julia for ensemble simulations and working with units in models. This is supported by the R package [JuliaConnectoR](https://github.com/stefan-m-lenz/JuliaConnectoR/). This guide will help you install Julia and configure it to work with sdbuildR.
 
@@ -59,13 +60,13 @@ Alternatively, you can download a standalone Julia installer from [https://julia
 
 After installing Julia, check if JuliaConnectoR can find it:
 
-```{r eval=FALSE}
+```{r}
 juliaSetupOk()
 ```
 
 If the Julia installation can be found, try to start a Julia session:
 
-```{r eval=FALSE}
+```{r}
 startJuliaServer()
 stopJulia()
 ```
@@ -131,20 +132,22 @@ This will open `.Renviron` in your text editor. If the file doesn't exist, it wi
 
 Add one of the following lines to `.Renviron`, replacing the path with your actual Julia bin directory:
 
-**Windows (use forward slashes):**
+**Windows (use forward slashes for the path, semicolon as separator):**
 ```
 PATH="C:/Users/YourName/.julia/juliaup/julia-1.11.3+0.x64.w64.mingw32/bin;${PATH}"
 ```
 
-**macOS:**
+**macOS (use `:` as separator):**
 ```
 PATH="/Applications/Julia-1.11.app/Contents/Resources/julia/bin:${PATH}"
 ```
 
-**Linux:**
+**Linux (use `:` as separator):**
 ```
 PATH="/usr/bin:${PATH}"
 ```
+
+Replace the path before the separator with your actual Julia bin directory. Be sure to keep `${PATH}` at the end, such that the Julia path is appended to the PATH.
 
 If using **juliaup** (recommended), you can point to the **juliaup** directory instead of a specific version:
 
@@ -170,13 +173,13 @@ This allows **juliaup** to manage which Julia version is used.
 
 After restarting R, verify that Julia is accessible:
 
-```{r eval=FALSE}
+```{r}
 juliaSetupOk()
 ```
 
 Check whether a Julia session can be started from R:
 
-```{r eval=FALSE}
+```{r}
 startJuliaServer()
 stopJulia()
 ```
@@ -195,24 +198,21 @@ Note that this may take 10-25 minutes the first time as Julia downloads and comp
 
 Check whether the Julia environment setup was successful:
 
-```{r, eval=FALSE}
+```{r}
 julia_status()
 ```
 
-To start a Julia session and activate the Julia environment for sdbuildR, run `use_julia()`. 
+To start a Julia session and activate the Julia environment for sdbuildR: 
 
-```{r eval=FALSE}
+```{r}
 use_julia()
 ```
 
 This needs to be done in *each* new R session.
 
-
-### Close Julia session
-
 To close the Julia session:
 
-```{r eval=FALSE}
+```{r}
 use_julia(stop = TRUE)
 ```
 
@@ -224,7 +224,7 @@ use_julia(stop = TRUE)
 
 JuliaConnectoR cannot find Julia, i.e. this evaluates to `FALSE`:
 
-```{r eval=FALSE}
+```{r}
 juliaSetupOk()
 ```
 
@@ -235,7 +235,7 @@ Sys.getenv("JULIA_BINDIR") # "" if not found
 
 Sys.which("julia") # "" if not found
 
-# On Max/Linux:
+# On Mac/Linux:
 julia_path <- file.path(Sys.getenv("HOME"), ".juliaup", "bin", "julia")
 file.exists(julia_path) # FALSE if not found
 ```
@@ -259,7 +259,7 @@ paths[grepl("julia", paths)]
 ### Removing the Julia environment for sdbuildR
 
 ```{r eval=FALSE}
-install_julia_env(delete = TRUE)
+install_julia_env(remove = TRUE)
 ```
 
 ### Advanced: Using multiple Julia versions

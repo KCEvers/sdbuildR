@@ -20,10 +20,4 @@ nonnegative(NA)
 nonnegative(-1)
 
 }
-\seealso{
-Other internal: 
-\code{\link{clean_name}()},
-\code{\link{has_internet}()},
-\code{\link{saveat_func}()}
-}
 \concept{internal}

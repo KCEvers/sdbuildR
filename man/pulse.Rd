@@ -52,10 +52,5 @@ plot(sim)
 }
 \seealso{
 \code{\link[=step]{step()}}, \code{\link[=ramp]{ramp()}}, \code{\link[=seasonal]{seasonal()}}
-
-Other input: 
-\code{\link{ramp}()},
-\code{\link{seasonal}()},
-\code{\link{step}()}
 }
 \concept{input}

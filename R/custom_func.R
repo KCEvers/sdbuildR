@@ -6,7 +6,7 @@
 #' @param digits Number of digits; optional, defaults to 0
 #'
 #' @returns Rounded value
-#' @family custom
+#' @concept custom
 #' @export
 #'
 #' @examples
@@ -29,7 +29,7 @@ round_IM <- function(x, digits = 0) {
 #' @param p Probability, numerical value between 0 and 1
 #'
 #' @returns Numerical value
-#' @family custom
+#' @concept custom
 #' @export
 #'
 #' @examples
@@ -46,7 +46,7 @@ logit <- function(p) {
 #' @param x Numerical value
 #'
 #' @returns Numerical value
-#' @family custom
+#' @concept custom
 #' @export
 #'
 #' @examples
@@ -63,7 +63,7 @@ expit <- function(x) {
 #' @param p Probability of TRUE, numerical value between 0 and 1
 #'
 #' @returns Logical value
-#' @family custom
+#' @concept custom
 #' @export
 #'
 #' @examples
@@ -81,7 +81,7 @@ rbool <- function(p) {
 #' @param b Vector of probabilities
 #'
 #' @returns One sample from custom distribution
-#' @family custom
+#' @concept custom
 #' @export
 #'
 #' @examples
@@ -99,7 +99,7 @@ rdist <- function(a, b) {
 #' @param needle Value to search for
 #'
 #' @returns Index, integer
-#' @family custom
+#' @concept custom
 #' @export
 #'
 #' @examples
@@ -135,7 +135,7 @@ indexof <- function(haystack, needle) {
 #' @param x A vector or a string
 #'
 #' @returns The number of elements in x if x is a vector; the number of characters in x if x is a string
-#' @family custom
+#' @concept custom
 #' @export
 #'
 #' @examples
@@ -158,7 +158,7 @@ length_IM <- function(x) {
 #' @param needle Value to search for
 #'
 #' @returns Logical value
-#' @family custom
+#' @concept custom
 #' @export
 #'
 #' @examples
@@ -186,7 +186,7 @@ contains_IM <- function(haystack, needle) {
 #'
 #' @export
 #' @returns Ramp interpolation function
-#' @family input
+#' @concept input
 #' @seealso [step()], [pulse()], [seasonal()]
 #' @examples
 #' # Create a simple model with a ramp function
@@ -271,7 +271,7 @@ ramp <- function(times, start, finish, height = 1) {
 #' @export
 #' @returns Pulse interpolation function
 #' @seealso [step()], [ramp()], [seasonal()]
-#' @family input
+#' @concept input
 #' @examples
 #' # Create a simple model with a pulse function
 #' # that starts at time 5, jumps to a height of 2
@@ -370,7 +370,7 @@ pulse <- function(times, start, height = 1, width = 1, repeat_interval = NULL) {
 #' @export
 #' @returns Step interpolation function
 #' @seealso [ramp()], [pulse()], [seasonal()]
-#' @family input
+#' @concept input
 #' @examples
 #' # Create a simple model with a step function
 #' # that jumps at time 50 to a height of 5
@@ -435,7 +435,7 @@ step <- function(times, start, height = 1) {
 #' @param shift Timing of wave peak in simulation time units. Defaults to 0.
 #'
 #' @returns Seasonal interpolation function
-#' @family input
+#' @concept input
 #' @seealso [step()], [pulse()], [ramp()]
 #' @export
 #'
@@ -469,10 +469,11 @@ seasonal <- function(times, period = 1, shift = 0) {
 #' @param x Value
 #'
 #' @returns x if x is greater than 0, 0 otherwise
-#' @family internal
+#' @concept internal
 #' @export
 #'
-#' @examples nonnegative(NA)
+#' @examples
+#' nonnegative(NA)
 #' nonnegative(-1)
 #'
 nonnegative <- function(x) {
@@ -493,7 +494,7 @@ nonnegative <- function(x) {
 #' @param b Divisor
 #'
 #' @returns Remainder
-#' @family custom
+#' @concept custom
 #' @export
 #' @rdname rem_mod
 #'
@@ -547,10 +548,11 @@ mod <- function(a, b) {
 #' @param upper Maximal value returned by logistic function. Defaults to 1.
 #'
 #' @returns f(x), where f is the logistic function
-#' @family custom
+#' @concept custom
 #' @export
 #'
-#' @examples logistic(0)
+#' @examples
+#' logistic(0)
 #' logistic(1, slope = 5, midpoint = 0.5)
 logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
   stopifnot("slope must be numeric!" = is.numeric(slope))
@@ -561,17 +563,17 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
 }
 
 
-#' Internal function to save dataframe at specific times
+#' Internal function to save data frame at specific times
 #'
-#' Internal function used to save the dataframe at specific times in case save_at is not equal to dt in the simulation specifications.
+#' Internal function used to save the data frame at specific times in case save_at is not equal to dt in the simulation specifications.
 #'
-#' @param df Dataframe in wide format
+#' @param df data.frame in wide format
 #' @param time_col Name of the time column
-#' @param new_times Vector of new times to save the dataframe at
+#' @param new_times Vector of new times to save the data frame at
 #'
 #' @returns Interpolated data.frame. The data frame has columns \code{time} followed by
 #'   one column per variable.
-#' @family internal
+#' @concept internal
 #' @export
 #' @examples
 #' # Recommended: Use save_at in sim_specs() to downsample simulations

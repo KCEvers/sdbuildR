@@ -10,7 +10,7 @@
 #' @param show_info Logical, whether to display additional solver information
 #'
 #' @returns Character vector of equivalent solver(s) or list with details
-#' @family simulate
+#' @concept simulate
 #' @export
 #'
 #' @examples

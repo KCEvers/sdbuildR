@@ -57,8 +57,8 @@ julia_init_ok <- function() {
 #'   \item{julia_found}{Logical. TRUE if Julia installation found.}
 #'   \item{julia_path}{Character. Path to Julia bin.}
 #'   \item{julia_version}{Character. Julia version string, or NULL if not found.}
-#'   \item{env_exists}{Logical. TRUE if inst/Project.toml exists in sdbuildR package.}
-#'   \item{env_instantiated}{Logical. TRUE if inst/Manifest.toml exists (i.e., Julia environment was instantiated).}
+#'   \item{env_exists}{Logical. TRUE if Project.toml exists in sdbuildR package.}
+#'   \item{env_instantiated}{Logical. TRUE if Manifest.toml exists (i.e., Julia environment was instantiated).}
 #'   \item{status}{Character. Overall status: "julia_not_installed", "julia_needs_update", "sdbuildR_needs_reinstall", "install_julia_env", "ready", or "unknown".}
 #'
 #' @section What to Do Next:
@@ -71,7 +71,7 @@ julia_init_ok <- function() {
 #' }
 #'
 #' @export
-#' @family julia
+#' @concept julia
 #' @examples
 #' status <- julia_status()
 #' print(status)
@@ -129,7 +129,7 @@ julia_status <- function(verbose = TRUE) {
   if (!result$env_exists) {
     result$status <- "sdbuildR_needs_reinstall"
     if (verbose) {
-      message("sdbuildR inst/Project.toml not found. This shouldn't happen - try reinstalling sdbuildR.")
+      message("sdbuildR Project.toml not found. This shouldn't happen - try reinstalling sdbuildR.")
     }
     return(result)
   }
@@ -297,26 +297,24 @@ check_julia_env_for_pkg <- function(pkg_name) {
 #'
 #' `install_julia_env()` will:
 #' * Start a Julia session
-#' * Activate a Julia environment using sdbuildR's inst/Project.toml
+#' * Activate a Julia environment using sdbuildR's Project.toml
 #' * Install SystemDynamicsBuildR.jl from GitHub (https://github.com/KCEvers/SystemDynamicsBuildR.jl)
 #' * Install all other required Julia packages
-#' * Create inst/Manifest.toml
+#' * Create Manifest.toml
 #' * Precompile packages for faster subsequent loading
 #' * Stop the Julia session
 #'
 #' Note that this may take 10-25 minutes the first time as Julia downloads and compiles packages.
 #'
-#' @param remove If TRUE, remove Julia environment for sdbuildR. This will delete the inst/Manifest.toml file, as well as the SystemDynamicsBuildR.jl package. All other Julia packages remain untouched.
+#' @param remove If TRUE, remove Julia environment for sdbuildR. This will delete the Manifest.toml file, as well as the SystemDynamicsBuildR.jl package. All other Julia packages remain untouched.
 #'
 #' @returns Invisibly returns NULL after instantiating the Julia environment.
 #' @export
-#' @family julia
+#' @concept julia
 #'
-#' @examples
+#' @examplesIf julia_status()$julia_found && Sys.getenv("NOT_CRAN") == "true"
 #' \dontrun{
-#' if (julia_status()$julia_found) {
 #'   install_julia_env()
-#' }
 #' }
 install_julia_env <- function(remove = FALSE) {
   status <- julia_status(verbose = FALSE)
@@ -370,9 +368,11 @@ install_julia_env <- function(remove = FALSE) {
 }
 
 
-#' Set up Julia environment
+#' Start Julia and activate environment
 #'
-#' Start Julia session and activate Julia environment to simulate stock-and-flow models. `use_julia()` looks for a Julia installation and an instantiated Julia environment specifically for sdbuildR. This can be set up with `install_julia_env()`. For more guidance, please see [this vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html).
+#' Start Julia session and activate Julia environment to simulate stock-and-flow models. To do so, Julia needs to be installed and findable from within R. See [this vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html) for guidance. In addition, the Julia environment specifically for sdbuildR needs to have been instantiated. This can be set up with `install_julia_env()`.
+#'
+#' Julia supports running stock-and-flow models with units as well as ensemble simulations (see `ensemble()`).
 #'
 #' In every R session, `use_julia()` needs to be run once (which is done automatically in `simulate()`), which can take around 30-60 seconds.
 #'
@@ -381,19 +381,15 @@ install_julia_env <- function(remove = FALSE) {
 #'
 #' @returns Returns `NULL` invisibly, used for side effects
 #' @export
-#' @family julia
+#' @concept julia
 #'
-#' @examples
-#' \dontrun{
-#' # requires Julia setup
-#' if (julia_status()$status == "ready") {
-#'   # Start a Julia session and activate the Julia environment for sdbuildR
-#'   use_julia()
+#' @examplesIf julia_status()$status == "ready"
+#' # Start a Julia session and activate the Julia environment for sdbuildR
+#' use_julia()
 #'
-#'   # Stop Julia session
-#'   use_julia(stop = TRUE)
-#' }
-#' }
+#' # Stop Julia session
+#' use_julia(stop = TRUE)
+#'
 use_julia <- function(
   stop = FALSE,
   force = FALSE
@@ -495,7 +491,7 @@ use_julia <- function(
 
 #' Find installed version of Julia package
 #'
-#' Find the current version of a package by inspecting the inst/Manifest.toml. If this does not work, verify its version in the Julia session. This function should only be run if Julia session was started and Julia environment was activated.
+#' Find the current version of a package by inspecting the Manifest.toml. If this does not work, verify its version in the Julia session. This function should only be run if Julia session was started and Julia environment was activated.
 #'
 #' @param pkg_name Name of the package to look for
 #'
