@@ -12,9 +12,9 @@ julia_status(verbose = TRUE)
 \value{
 A list with components:
 \item{julia_found}{Logical. TRUE if Julia installation found.}
-\item{julia_path}{Character. Path to Julia bin.}
-\item{julia_version}{Character. Julia version string, or NULL if not found.}
-\item{env_exists}{Logical. TRUE if Project.toml exists in sdbuildR package.}
+\item{julia_path}{Character. Path to Julia bin, or "" if not found.}
+\item{julia_version}{Character. Julia version string, or "" if not found.}
+\item{env_exists}{Logical. TRUE if Project.toml exists in sdbuildR package, which specifies the Julia packages and versions needed to instantiate the Julia environment for sdbuildR.}
 \item{env_instantiated}{Logical. TRUE if Manifest.toml exists (i.e., Julia environment was instantiated).}
 \item{status}{Character. Overall status: "julia_not_installed", "julia_needs_update", "sdbuildR_needs_reinstall", "install_julia_env", "ready", or "unknown".}
 }
