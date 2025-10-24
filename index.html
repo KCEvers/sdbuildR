@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/build.html">Building stock-and-flow models</a></li>
+    <li><a class="dropdown-item" href="articles/jdr.html">Formalizing Job Demands-Resources Theory</a></li>
     <li><a class="dropdown-item" href="articles/julia-setup.html">Setting up Julia</a></li>
     <li><a class="dropdown-item" href="articles/ensemble.html">Ensemble simulations</a></li>
     <li><a class="dropdown-item" href="articles/units.html">Using (custom) units</a></li>
@@ -100,6 +101,29 @@
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://remotes.r-lib.org" class="external-link">"remotes"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"KCEvers/sdbuildR"</span><span class="op">)</span></span></code></pre></div>
 <p>sdbuildR offers two simulation engines: R and Julia (supported by <a href="https://github.com/stefan-m-lenz/JuliaConnectoR/" class="external-link">JuliaConnectoR</a>). If you would like to run ensemble simulations and use units, you will need to install and set up the Julia environment. See <a href="https://kcevers.github.io/sdbuildR/articles/julia-setup.html">this vignette</a> for guidance.</p>
+</div>
+<div class="section level2">
+<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h2>
+<p>To cite sdbuildR, please use:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"sdbuildR"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; To cite package 'sdbuildR' in publications use:</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;   Evers K (2025). _sdbuildR: Easily Build, Simulate, and Visualise</span></span>
+<span><span class="co">#&gt;   Stock-and-Flow Models_. R package version 1.0.3,</span></span>
+<span><span class="co">#&gt;   https://github.com/KCEvers/sdbuildR,</span></span>
+<span><span class="co">#&gt;   &lt;https://kcevers.github.io/sdbuildR/&gt;.</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; A BibTeX entry for LaTeX users is</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;   @Manual{,</span></span>
+<span><span class="co">#&gt;     title = {sdbuildR: Easily Build, Simulate, and Visualise Stock-and-Flow Models},</span></span>
+<span><span class="co">#&gt;     author = {Kyra Caitlin Evers},</span></span>
+<span><span class="co">#&gt;     year = {2025},</span></span>
+<span><span class="co">#&gt;     note = {R package version 1.0.3, https://github.com/KCEvers/sdbuildR},</span></span>
+<span><span class="co">#&gt;     url = {https://kcevers.github.io/sdbuildR/},</span></span>
+<span><span class="co">#&gt;   }</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="limitations">Limitations<a class="anchor" aria-label="anchor" href="#limitations"></a>

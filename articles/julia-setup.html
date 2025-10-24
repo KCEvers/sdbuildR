@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,6 +35,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/build.html">Building stock-and-flow models</a></li>
+    <li><a class="dropdown-item" href="../articles/jdr.html">Formalizing Job Demands-Resources Theory</a></li>
     <li><a class="dropdown-item" href="../articles/julia-setup.html">Setting up Julia</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble.html">Ensemble simulations</a></li>
     <li><a class="dropdown-item" href="../articles/units.html">Using (custom) units</a></li>
@@ -81,9 +82,9 @@ sdbuildR.</p>
 </h2>
 <p>Download and install Julia from <a href="https://julialang.org/install/" class="external-link">https://julialang.org/install/</a>.
 If you already have Julia installed, go to the next step.</p>
-<p>We recommend using <strong>juliaup</strong>, Julia’s official version
-manager, which makes it easy to install and switch between Julia
-versions. Some useful commands are listed below.</p>
+<p>We recommend using juliaup, Julia’s official version manager, which
+makes it easy to install and switch between Julia versions. Some useful
+commands are listed below.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># See installed versions and current default</span></span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="ex">juliaup</span> status</span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
@@ -195,14 +196,13 @@ separator):</strong></p>
 <p>Replace the path before the separator with your actual Julia bin
 directory. Be sure to keep <code>${PATH}</code> at the end, such that
 the Julia path is appended to the PATH.</p>
-<p>If using <strong>juliaup</strong> (recommended), you can point to the
-<strong>juliaup</strong> directory instead of a specific version:</p>
+<p>If using juliaup (recommended), you can point to the juliaup
+directory instead of a specific version:</p>
 <p><strong>Windows:</strong></p>
 <pre><code><span><span class="va">PATH</span><span class="op">=</span><span class="st">"C:/Users/YourName/.julia/juliaup;${PATH}"</span></span></code></pre>
 <p><strong>macOS/Linux:</strong></p>
 <pre><code><span><span class="va">PATH</span><span class="op">=</span><span class="st">"~/.julia/juliaup/bin:${PATH}"</span></span></code></pre>
-<p>This allows <strong>juliaup</strong> to manage which Julia version is
-used.</p>
+<p>This allows juliaup to manage which Julia version is used.</p>
 </div>
 <div class="section level3">
 <h3 id="save-and-restart-r-">Save and restart R.<a class="anchor" aria-label="anchor" href="#save-and-restart-r-"></a>
