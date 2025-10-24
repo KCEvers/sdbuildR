@@ -1339,7 +1339,7 @@ sfm0 <- sfm0 |> sim_specs(save_at = 5, language = "Julia") |>
 sfm <- sfm0
 
 sims <- ensemble(sfm, n = 1000)
-plot(sims)
+plot(sims, vars = c("E", "D"))
 ```
 
 #### Parameter Variation
@@ -1355,7 +1355,7 @@ sims <- ensemble(sfm,
 
 plot(sims,
   type = "sims", i = 1:100, alpha = .25,
-  nrows = 1, central_tendency = FALSE
+  nrows = 1, central_tendency = FALSE, vars = c("E", "D")
 )
 ```
 
@@ -1388,7 +1388,7 @@ plot(sim)
 sims <- ensemble(sfm, n = 100, return_sims = TRUE)
 plot(sims,
   type = "sims", i = 1:100, alpha = .25, central_tendency = FALSE,
-  vars = c("X", "D", "r_X_D")
+  vars = c("E", "D", "r_X_D")
 )
 ```
 
