@@ -55,7 +55,7 @@
 
 
 <dl><dt id="arg-remove">remove<a class="anchor" aria-label="anchor" href="#arg-remove"></a></dt>
-<dd><p>If TRUE, remove Julia environment for sdbuildR. This will delete the inst/Manifest.toml file, as well as the SystemDynamicsBuildR.jl package. All other Julia packages remain untouched.</p></dd>
+<dd><p>If TRUE, remove Julia environment for sdbuildR. This will delete the Manifest.toml file, as well as the SystemDynamicsBuildR.jl package. All other Julia packages remain untouched.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -65,28 +65,19 @@
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>install_julia_env()</code> will:</p><ul><li><p>Start a Julia session</p></li>
-<li><p>Activate a Julia environment using sdbuildR's inst/Project.toml</p></li>
+<li><p>Activate a Julia environment using sdbuildR's Project.toml</p></li>
 <li><p>Install SystemDynamicsBuildR.jl from GitHub (https://github.com/KCEvers/SystemDynamicsBuildR.jl)</p></li>
 <li><p>Install all other required Julia packages</p></li>
-<li><p>Create inst/Manifest.toml</p></li>
+<li><p>Create Manifest.toml</p></li>
 <li><p>Precompile packages for faster subsequent loading</p></li>
 <li><p>Stop the Julia session</p></li>
 </ul><p>Note that this may take 10-25 minutes the first time as Julia downloads and compiles packages.</p>
-    </div>
-    <div class="section level2">
-    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p>Other julia:
-<code><a href="julia_status.html">julia_status</a>()</code>,
-<code><a href="use_julia.html">use_julia</a>()</code>,
-<code><a href="use_threads.html">use_threads</a>()</code></p></div>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="julia_status.html">julia_status</a></span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">julia_found</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="fu">install_julia_env</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

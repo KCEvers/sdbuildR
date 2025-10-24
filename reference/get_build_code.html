@@ -62,21 +62,6 @@
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>String with code to build stock-and-flow model from scratch.</p>
     </div>
-    <div class="section level2">
-    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p>Other build:
-<code><a href="as.data.frame.sdbuildR_sim.html">as.data.frame.sdbuildR_sim</a>()</code>,
-<code><a href="as.data.frame.sdbuildR_xmile.html">as.data.frame.sdbuildR_xmile</a>()</code>,
-<code><a href="build.html">build</a>()</code>,
-<code><a href="debugger.html">debugger</a>()</code>,
-<code><a href="find_dependencies.html">find_dependencies</a>()</code>,
-<code><a href="header.html">header</a>()</code>,
-<code><a href="macro.html">macro</a>()</code>,
-<code><a href="plot.sdbuildR_xmile.html">plot.sdbuildR_xmile</a>()</code>,
-<code><a href="print.summary.sdbuildR_xmile.html">print.summary.sdbuildR_xmile</a>()</code>,
-<code><a href="summary.sdbuildR_xmile.html">summary.sdbuildR_xmile</a>()</code>,
-<code><a href="xmile.html">xmile</a>()</code></p></div>
-    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -87,7 +72,7 @@
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> `?styler::print.vertical()` for more information.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> sfm &lt;- xmile() |&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   sim_specs(method = "euler", start = "0.0", stop = "20.0", dt = "0.01", save_at = "0.01", save_from = "0.0", seed = NULL, time_units = "wk", language = "R") |&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   header(name = "Susceptible-Infected-Recovered (SIR)", created = "2025-10-23 07:19:26.814061") |&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   header(name = "Susceptible-Infected-Recovered (SIR)", created = "2025-10-24 07:24:55.765254") |&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Susceptible", type = "stock", eqn = "99999", label = "Susceptible") |&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Infected", type = "stock", eqn = "1", label = "Infected") |&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   build(name = "Recovered", type = "stock", label = "Recovered") |&gt;</span>
