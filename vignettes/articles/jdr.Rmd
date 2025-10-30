@@ -28,7 +28,6 @@ This is the online supplemental material accompanying the paper *Formalizing Psy
 To follow the entire tutorial, it is necessary to install Julia as well as set up the Julia environment. See [this vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html) for guidance.
 
 ```{r libraries, results='hide', message=FALSE}
-# remotes::install_github("KCEvers/sdbuildR")
 library(sdbuildR)
 ```
 
