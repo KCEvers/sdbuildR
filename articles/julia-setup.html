@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.5.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.6.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,7 +134,7 @@ installation (not the Julia executable itself).</p>
 </h3>
 <p>If you can start Julia from your terminal/command prompt, run this
 inside Julia:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>juliaBase.<span class="fu">julia_cmd</span>()[<span class="fl">1</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode julia"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="bu">Base</span>.<span class="fu">julia_cmd</span>()[<span class="fl">1</span>]</span></code></pre></div>
 <p>This returns something like:</p>
 <ul>
 <li>Windows:
@@ -248,11 +248,8 @@ downloads and compiles packages.</p>
 <span><span class="co">#&gt; $julia_found</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $julia_path</span></span>
-<span><span class="co">#&gt; [1] "/opt/hostedtoolcache/julia/1.11.7/x64/bin"</span></span>
-<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $julia_version</span></span>
-<span><span class="co">#&gt; [1] "1.11.7"</span></span>
+<span><span class="co">#&gt; [1] "1.12.1"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $env_exists</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
@@ -266,7 +263,6 @@ downloads and compiles packages.</p>
 sdbuildR:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/use_julia.html">use_julia</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Julia environment is ready to be activated.</span></span>
 <span><span class="co">#&gt; Starting Julia ...</span></span>
 <span><span class="co">#&gt; Connecting to Julia TCP server at localhost:11980 ...</span></span>
 <span><span class="co">#&gt; Setting up Julia environment for sdbuildR...</span></span></code></pre></div>
