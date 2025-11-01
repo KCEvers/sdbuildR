@@ -42,7 +42,7 @@ jobs:
       - name: Set up Julia
         uses: julia-actions/setup-julia@v2
         with:
-          version: '1.11.7'
+          version: '1.12.1'
 
       # Print Julia environment variables
       - name: Print Julia environment
