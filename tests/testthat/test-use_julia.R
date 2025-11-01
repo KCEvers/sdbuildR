@@ -2,7 +2,7 @@ test_that("use_julia() works", {
   status <- expect_no_error(julia_status())
   expect_named(status,
     c(
-      "julia_found", "julia_path", "julia_version", "env_exists",
+      "julia_found", "julia_version", "env_exists",
       "env_instantiated", "status"
     ),
     ignore.order = TRUE

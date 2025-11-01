@@ -37,17 +37,17 @@ simulate_julia <- function(sfm,
     {
       use_julia()
 
-      # Set Julia BINDIR
-      old_option <- Sys.getenv("JULIA_BINDIR", unset = NA)
-      Sys.setenv("JULIA_BINDIR" = .sdbuildR_env[["JULIA_BINDIR"]])
-
-      on.exit({
-        if (is.na(old_option)) {
-          Sys.unsetenv("JULIA_BINDIR")
-        } else {
-          Sys.setenv("JULIA_BINDIR" = old_option)
-        }
-      })
+      # # Set Julia BINDIR
+      # old_option <- Sys.getenv("JULIA_BINDIR", unset = NA)
+      # Sys.setenv("JULIA_BINDIR" = .sdbuildR_env[["JULIA_BINDIR"]])
+      #
+      # on.exit({
+      #   if (is.na(old_option)) {
+      #     Sys.unsetenv("JULIA_BINDIR")
+      #   } else {
+      #     Sys.setenv("JULIA_BINDIR" = old_option)
+      #   }
+      # })
 
       # Evaluate script
       start_t <- Sys.time()
@@ -579,7 +579,7 @@ compile_macros_julia <- function(sfm) {
 compile_times_julia <- function(sfm, keep_unit) {
   script <- sprintf(
     "\n\n# Simulation time unit (smallest time scale in your model)
-%s = u\"%s\"\n# Define time sequence\n%s = (%s, %s)%s\n# Initialize time (only necessary if constants use t)\n%s = %s[1]\n# Time step\n%s = %s%s\n# Save at value\n%s = %s%s\n# Define saving time sequence\n%s = %s%s; %s = %s:%s:%s[2]\n",
+%s = u\"%s\"\n# Define time sequence\n%s = (%s, %s)%s\n# Initialize time (only necessary if constants use t)\n%s = %s[1]\n# Time step\n%s = %s%s\n# Save at value\n%s = %s%s\n# Define saving time sequence\n%s = %s%s; %s = %s:%s:%s[2]\n%s = %s[1]:%s:%s[2]\n",
     .sdbuildR_env[["P"]][["time_units_name"]], sfm[["sim_specs"]][["time_units"]],
     .sdbuildR_env[["P"]][["times_name"]], sfm[["sim_specs"]][["start"]], sfm[["sim_specs"]][["stop"]],
     ifelse(keep_unit, paste0(" .* ", .sdbuildR_env[["P"]][["time_units_name"]]), ""),
@@ -591,7 +591,11 @@ compile_times_julia <- function(sfm, keep_unit) {
     .sdbuildR_env[["P"]][["savefrom_name"]], sfm[["sim_specs"]][["save_from"]],
     ifelse(keep_unit, paste0(" .* ", .sdbuildR_env[["P"]][["time_units_name"]]), ""),
     .sdbuildR_env[["P"]][["savefrom_name"]], .sdbuildR_env[["P"]][["savefrom_name"]],
-    .sdbuildR_env[["P"]][["saveat_name"]], .sdbuildR_env[["P"]][["times_name"]]
+    .sdbuildR_env[["P"]][["saveat_name"]], .sdbuildR_env[["P"]][["times_name"]],
+    .sdbuildR_env[["P"]][["tstops_name"]],
+    .sdbuildR_env[["P"]][["times_name"]],
+    .sdbuildR_env[["P"]][["timestep_name"]],
+    .sdbuildR_env[["P"]][["times_name"]]
   )
 
   return(list(script = script))
@@ -1286,9 +1290,9 @@ function %s!(%s, %s%s, %s)",
       .sdbuildR_env[["P"]][["change_state_name"]], .sdbuildR_env[["P"]][["state_name"]],
       paste0(", ", .sdbuildR_env[["P"]][["parameter_name"]]), .sdbuildR_env[["P"]][["time_name"]]
     ),
-    "\n\n\t# Round t to deal with inaccuracies in floating point arithmetic\n\t",
-    .sdbuildR_env[["P"]][["time_name"]], " = round_(",
-    .sdbuildR_env[["P"]][["time_name"]], ", digits = 12)",
+    # "\n\n\t# Round t to deal with inaccuracies in floating point arithmetic\n\t",
+    # .sdbuildR_env[["P"]][["time_name"]], " = round_(",
+    # .sdbuildR_env[["P"]][["time_name"]], ", digits = 12)",
     "\n\n\t# Unpack state variables\n\t",
     unpack_state_str,
     # Assign units to stocks
@@ -1324,8 +1328,8 @@ function %s(%s, %s, integrator)",
         .sdbuildR_env[["P"]][["callback_func_name"]],
         .sdbuildR_env[["P"]][["state_name"]], .sdbuildR_env[["P"]][["time_name"]]
       ),
-      "\n\n\t# Round t to deal with inaccuracies in floating point arithmetic\n\t",
-      .sdbuildR_env[["P"]][["time_name"]], " = round_(", .sdbuildR_env[["P"]][["time_name"]], ", digits = 12)",
+      # "\n\n\t# Round t to deal with inaccuracies in floating point arithmetic\n\t",
+      # .sdbuildR_env[["P"]][["time_name"]], " = round_(", .sdbuildR_env[["P"]][["time_name"]], ", digits = 12)",
       "\n\n\t# Unpack state variables\n\t",
       unpack_state_str,
       # Assign units to stocks
@@ -1408,6 +1412,7 @@ compile_run_ode_julia <- function(sfm,
       paste0(
         ", dt = ", .sdbuildR_env[["P"]][["timestep_name"]],
         ", saveat = ", .sdbuildR_env[["P"]][["savefrom_name"]],
+        ", tstops = ", .sdbuildR_env[["P"]][["tstops_name"]],
         ", adaptive = false"
       ),
       ifelse(!only_stocks,
@@ -1512,6 +1517,7 @@ compile_run_ode_julia <- function(sfm,
       ifelse(ensemble_pars[["threaded"]], ", EnsembleThreads()", ""),
       ", dt = ", .sdbuildR_env[["P"]][["timestep_name"]],
       ", saveat = ", .sdbuildR_env[["P"]][["savefrom_name"]],
+      ", tstops = ", .sdbuildR_env[["P"]][["tstops_name"]],
       ", adaptive = false, trajectories = ",
       .sdbuildR_env[["P"]][["ensemble_total_n"]], ");\n"
     )

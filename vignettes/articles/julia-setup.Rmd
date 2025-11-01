@@ -82,7 +82,7 @@ You need to locate the **bin directory** of your Julia installation (not the Jul
 If you can start Julia from your terminal/command prompt, run this inside Julia:
 
 ```julia
-juliaBase.julia_cmd()[1]
+Base.julia_cmd()[1]
 ```
 
 This returns something like:

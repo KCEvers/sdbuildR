@@ -4,8 +4,8 @@
 #' @noRd
 julia_setup_ok <- function() {
   JuliaConnectoR::juliaSetupOk() &&
-    isTRUE(.sdbuildR_env[["jl"]][["init"]]) &&
-    !is.null(.sdbuildR_env[["JULIA_BINDIR"]])
+    isTRUE(.sdbuildR_env[["jl"]][["init"]]) # &&
+    # !is.null(.sdbuildR_env[["JULIA_BINDIR"]])
 }
 
 
@@ -55,7 +55,6 @@ julia_init_ok <- function() {
 #'
 #' @returns A list with components:
 #'   \item{julia_found}{Logical. TRUE if Julia installation found.}
-#'   \item{julia_path}{Character. Path to Julia bin, or "" if not found.}
 #'   \item{julia_version}{Character. Julia version string, or "" if not found.}
 #'   \item{env_exists}{Logical. TRUE if Project.toml exists in sdbuildR package, which specifies the Julia packages and versions needed to instantiate the Julia environment for sdbuildR.}
 #'   \item{env_instantiated}{Logical. TRUE if Manifest.toml exists (i.e., Julia environment was instantiated).}
@@ -79,7 +78,6 @@ julia_init_ok <- function() {
 julia_status <- function(verbose = TRUE) {
   result <- list(
     julia_found = FALSE,
-    julia_path = "",
     julia_version = "",
     env_exists = FALSE,
     env_instantiated = FALSE,
@@ -87,12 +85,13 @@ julia_status <- function(verbose = TRUE) {
   )
 
   # Find Julia installation
-  julia_loc <- tryCatch({
-    find_julia()
+  julia_version <- tryCatch({
+    getJuliaVersionViaCmd(getJuliaExecutablePath())
   }, error = function(e){
-    return(list(path = NULL))
+    return(list(version = NULL))
   })
-  result[["julia_found"]] <- !is.null(julia_loc[["path"]]) && nzchar(julia_loc[["path"]]) && file.exists(julia_loc[["path"]]) #&& JuliaConnectoR::juliaSetupOk()
+  # result[["julia_found"]] <- !is.null(julia_loc[["version"]]) && nzchar(julia_loc[["version"]]) && file.exists(julia_loc[["path"]]) #&& JuliaConnectoR::juliaSetupOk()
+  result[["julia_found"]] <- !is.null(julia_version) && nzchar(julia_version)
 
   if (!result[["julia_found"]]) {
     result$status <- "julia_not_installed"
@@ -102,8 +101,8 @@ julia_status <- function(verbose = TRUE) {
     return(result)
   }
 
-  result[["julia_path"]] <- julia_loc[["path"]]
-  result[["julia_version"]] <- julia_loc[["version"]]
+  # result[["julia_path"]] <- julia_loc[["path"]]
+  result[["julia_version"]] <- julia_version
 
   # Required Julia version for sdbuildR
   required_jl_version <- .sdbuildR_env[["jl"]][["required_version"]]
@@ -328,6 +327,7 @@ install_julia_env <- function(remove = FALSE) {
   status <- julia_status(verbose = FALSE)
 
   if (!status[["status"]] %in% c("install_julia_env", "ready")) {
+    status <- julia_status()
     stop()
   }
 
@@ -366,7 +366,7 @@ install_julia_env <- function(remove = FALSE) {
     # Run the setup script
     setup_script <- system.file("setup.jl", package = "sdbuildR")
     JuliaConnectoR::juliaEval(sprintf('include("%s")', setup_script))
-    julia_status()
+    status <- julia_status()
   }
 
   # Stop Julia
@@ -421,25 +421,26 @@ use_julia <- function(
     return(invisible())
   }
 
-  status <- julia_status()
+  status <- julia_status(verbose = FALSE)
 
   if (status[["status"]] != "ready") {
+    status <- julia_status()
     stop()
   }
 
-  # Set JULIA_BINDIR to ensure JuliaConnectoR uses the right Julia version for sdbuildR
-  JULIA_HOME <- status[["julia_path"]]
-  old_option <- Sys.getenv("JULIA_BINDIR", unset = NA)
-  Sys.setenv("JULIA_BINDIR" = JULIA_HOME)
-  .sdbuildR_env[["JULIA_BINDIR"]] <- JULIA_HOME
-
-  on.exit({
-    if (is.na(old_option)) {
-      Sys.unsetenv("JULIA_BINDIR")
-    } else {
-      Sys.setenv("JULIA_BINDIR" = old_option)
-    }
-  })
+  # # Set JULIA_BINDIR to ensure JuliaConnectoR uses the right Julia version for sdbuildR
+  # JULIA_HOME <- status[["julia_path"]]
+  # old_option <- Sys.getenv("JULIA_BINDIR", unset = NA)
+  # Sys.setenv("JULIA_BINDIR" = JULIA_HOME)
+  # .sdbuildR_env[["JULIA_BINDIR"]] <- JULIA_HOME
+  #
+  # on.exit({
+  #   if (is.na(old_option)) {
+  #     Sys.unsetenv("JULIA_BINDIR")
+  #   } else {
+  #     Sys.setenv("JULIA_BINDIR" = old_option)
+  #   }
+  # })
 
   if (!JuliaConnectoR::juliaSetupOk()) {
     stop("JuliaConnectoR setup of Julia FAILED!")
@@ -551,68 +552,24 @@ run_init <- function() {
 }
 
 
-#' Find Julia installation and version
-#'
-#' @returns List with path to Julia installation (bin directory, not executable) and Julia version
-#' @noRd
-find_julia <- function() {
-
-  julia_paths <- getJuliaExecutablePath()
-  julia_version <- getJuliaVersionViaCmd(julia_paths$juliaCmd)
-
-  return(list(
-    path = julia_paths$juliaBindir,
-    version = julia_version
-  ))
-}
-
-
 getJuliaExecutablePath <- function() {
   juliaBindir <- Sys.getenv("JULIA_BINDIR")
   if (juliaBindir == "") {
     if (Sys.which("julia") == "") {
-      juliaBindir <- juliaCmd <- fallbackOnDefaultJuliaupPath()
+      juliaCmd <- fallbackOnDefaultJuliaupPath()
     } else { # Julia is on the PATH, simply use the command "julia"
-      juliaBindir <- Sys.which("julia")
       juliaCmd <- "julia"
     }
   } else { # use the JULIA_BINDIR variable, as it is specified
     juliaExe <- list.files(path = juliaBindir, pattern = "^julia.*")
     if (length(juliaExe) == 0) {
-      stop(paste0(
-        "No Julia executable file found in supposed bin directory \"",
-        juliaBindir, "\""
-      ))
+      stop(paste0("No Julia executable file found in supposed bin directory \"" ,
+                  juliaBindir, "\""))
     }
     juliaCmd <- file.path(juliaBindir, "julia")
   }
-
-  # Ensure juliaBindir ends in Julia
-
-  # If juliaBindir already points to bin directory, keep it
-  if (basename(juliaBindir) == "bin") {
-    # Already pointing to bin, nothing to do
-  } else {
-    # Look for bin subdirectory
-    juliaBindir0 <- juliaBindir
-    dirs <- list.dirs(dirname(juliaBindir), full.names = TRUE)
-    bin_dirs <- dirs[grepl("bin$", dirs)]
-
-    if (length(bin_dirs) == 0) {
-      stop("No bin directory found in ", juliaBindir0)
-    } else if (length(bin_dirs) > 1) {
-      stop("Multiple bin directories found in ", juliaBindir0)
-    } else {
-      juliaBindir <- bin_dirs[1]
-    }
-  }
-
-  return(list(
-    juliaBindir = juliaBindir,
-    juliaCmd = juliaCmd
-  ))
+  return(juliaCmd)
 }
-
 
 fallbackOnDefaultJuliaupPath <- function() {
   # If Julia is not found on the PATH, check the default Juliaup installation location
