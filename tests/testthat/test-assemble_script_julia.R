@@ -302,3 +302,4 @@ test_that("functions in Julia work", {
     build("a", "stock", eqn = "cos(u('10radians'))")
   expect_no_error(simulate(sfm))
 })
+

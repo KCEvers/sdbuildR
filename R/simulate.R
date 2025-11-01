@@ -904,17 +904,17 @@ ensemble <- function(sfm,
     {
       use_julia()
 
-      # Set Julia BINDIR
-      old_option <- Sys.getenv("JULIA_BINDIR", unset = NA)
-      Sys.setenv("JULIA_BINDIR" = .sdbuildR_env[["JULIA_BINDIR"]])
-
-      on.exit({
-        if (is.na(old_option)) {
-          Sys.unsetenv("JULIA_BINDIR")
-        } else {
-          Sys.setenv("JULIA_BINDIR" = old_option)
-        }
-      })
+      # # Set Julia BINDIR
+      # old_option <- Sys.getenv("JULIA_BINDIR", unset = NA)
+      # Sys.setenv("JULIA_BINDIR" = .sdbuildR_env[["JULIA_BINDIR"]])
+      #
+      # on.exit({
+      #   if (is.na(old_option)) {
+      #     Sys.unsetenv("JULIA_BINDIR")
+      #   } else {
+      #     Sys.setenv("JULIA_BINDIR" = old_option)
+      #   }
+      # })
 
       # Evaluate script
       start_t <- Sys.time()

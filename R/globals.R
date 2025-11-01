@@ -29,6 +29,7 @@ if (!exists(".sdbuildR_env")) {
     timestep_name = "dt",
     saveat_name = "saveat",
     savefrom_name = "savefrom",
+    tstops_name = "tstops",
     units_name = "units",
     time_units_name = "time_units",
     conveyor_suffix = "_conv",
