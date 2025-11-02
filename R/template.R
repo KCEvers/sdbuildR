@@ -175,7 +175,7 @@ template <- function(name) {
 
     sfm <- xmile() |>
       header(name = "Coffee cup", caption = "Coffee cup cooling or heating from Meadows' Thinking in Systems (Chapter 1)") |>
-      sim_specs(stop = 100, dt = 1, time_units = "minute") |>
+      sim_specs(stop = 100, dt = 1, time_units = "minute", language = "Julia") |>
       build("coffee_temperature", "stock", eqn = "100", units = "Celsius", label = "Coffee temperature") |>
       build("cooling", "flow", eqn = "discrepancy * .1 / u('min')", units = "Celsius/min", to = "coffee_temperature", label = "Cooling or heating") |>
       build("discrepancy", "aux", eqn = "room_temperature - coffee_temperature", units = "Celsius", label = "Discrepancy") |>
@@ -188,7 +188,7 @@ template <- function(name) {
         name = "Bank account with interest",
         caption = "Bank account with compounding interest from Meadows' Thinking in Systems (Chapter 1)"
       ) |>
-      sim_specs(start = 0, stop = 12, dt = 1, time_units = "year") |>
+      sim_specs(start = 0, stop = 12, dt = 1, time_units = "year", language = "Julia") |>
       build("money_in_bank_account", "stock",
         eqn = "100",
         label = "Money in bank account", units = "dollar"
