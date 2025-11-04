@@ -276,7 +276,7 @@ juliaup default 1.11.3
 ```
 #### Switch versions temporarily
 
-By default, sdbuildR uses your default Julia version. To use a different version:
+sdbuildR uses your default Julia version. To use a different version:
 
 ```{r eval=FALSE}
 Sys.setenv(JULIA_BINDIR = "C:/Users/YourName/.julia/juliaup/julia-1.11.3+0.x64.w64.mingw32/bin")

@@ -1,5 +1,7 @@
 # sdbuildR (development version)
 
+# sdbuildR 1.0.7
+
 # sdbuildR 1.0.6
 
 * Fixed error in finding Julia installation 
