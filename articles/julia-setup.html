@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.6.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,7 +64,7 @@
       <h1>Setting up Julia</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/main/vignettes/articles/julia-setup.Rmd" class="external-link"><code>vignettes/articles/julia-setup.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/v1.0.7/vignettes/articles/julia-setup.Rmd" class="external-link"><code>vignettes/articles/julia-setup.Rmd</code></a></small>
       <div class="d-none name"><code>julia-setup.Rmd</code></div>
     </div>
 
@@ -333,8 +333,8 @@ modifying <code>.Renviron</code>:</p>
 <div class="section level4">
 <h4 id="switch-versions-temporarily">Switch versions temporarily<a class="anchor" aria-label="anchor" href="#switch-versions-temporarily"></a>
 </h4>
-<p>By default, sdbuildR uses your default Julia version. To use a
-different version:</p>
+<p>sdbuildR uses your default Julia version. To use a different
+version:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>JULIA_BINDIR <span class="op">=</span> <span class="st">"C:/Users/YourName/.julia/juliaup/julia-1.11.3+0.x64.w64.mingw32/bin"</span><span class="op">)</span></span></code></pre></div>
 <p>Note: This only affects the current R session and is not
