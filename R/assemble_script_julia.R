@@ -11,10 +11,10 @@ simulate_julia <- function(sfm,
                            keep_unit,
                            only_stocks,
                            verbose) {
-  # Collect arguments
-  argg <- c(as.list(environment()))
-  # Remove NULL arguments
-  argg <- argg[!lengths(argg) == 0]
+  # # Collect arguments
+  # argg <- c(as.list(environment()))
+  # # Remove NULL arguments
+  # argg <- argg[!lengths(argg) == 0]
 
   # Get output filepaths
   filepath_sim <- get_tempfile(fileext = ".csv")
@@ -36,18 +36,6 @@ simulate_julia <- function(sfm,
   sim <- tryCatch(
     {
       use_julia()
-
-      # # Set Julia BINDIR
-      # old_option <- Sys.getenv("JULIA_BINDIR", unset = NA)
-      # Sys.setenv("JULIA_BINDIR" = .sdbuildR_env[["JULIA_BINDIR"]])
-      #
-      # on.exit({
-      #   if (is.na(old_option)) {
-      #     Sys.unsetenv("JULIA_BINDIR")
-      #   } else {
-      #     Sys.setenv("JULIA_BINDIR" = old_option)
-      #   }
-      # })
 
       # Evaluate script
       start_t <- Sys.time()
@@ -79,27 +67,43 @@ simulate_julia <- function(sfm,
       file.remove(filepath)
       file.remove(filepath_sim)
 
-      list(
+      # list(
+      #   success = TRUE,
+      #   df = df,
+      #   init = init,
+      #   constants = constants,
+      #   script = script,
+      #   duration = end_t - start_t
+      # ) |>
+      #   # utils::modifyList(argg) |>
+      #   structure(class = "sdbuildR_sim")
+
+      new_sdbuildR_sim(
         success = TRUE,
+        sfm = sfm,
         df = df,
         init = init,
         constants = constants,
         script = script,
         duration = end_t - start_t
-      ) |>
-        utils::modifyList(argg) |>
-        structure(class = "sdbuildR_sim")
+      )
     },
     error = function(e) {
       warning("\nAn error occurred while running the Julia script.")
-      list(
-        success = FALSE, error_message = e[["message"]], script = script
-      ) |>
-        utils::modifyList(argg) |>
-        structure(class = "sdbuildR_sim")
+      # list(
+      #   success = FALSE, error_message = e[["message"]], script = script
+      # ) |>
+      #   # utils::modifyList(argg) |>
+      #   structure(class = "sdbuildR_sim")
+
+      new_sdbuildR_sim(
+        success = FALSE,
+        error_message = e[["message"]],
+        script = script,
+        sfm = sfm
+      )
     }
   )
-
 
   return(sim)
 }
@@ -345,9 +349,9 @@ check_no_keyword_arg <- function(sfm, var_names) {
 
     if (any(named_idxs)) {
       stop(
-        "The following variables were used as functions with named arguments in the Julia translated equation: ",
+        paste0("The following variables were used as functions with named arguments in the Julia translated equation: ",
         paste0(names(named_idxs)[unname(named_idxs)], collapse = ", "), ".\n",
-        "This is not allowed in Julia. Please use arguments without naming them."
+        "This is not allowed in Julia. Please use arguments without naming them."), call. = FALSE
       )
     }
   }
@@ -423,7 +427,8 @@ prep_delayN_smoothN <- function(sfm, delayN_smoothN) {
 
         # Check whether the variable is in the model
         if (!bare_var %in% names_df[["name"]]) {
-          stop(paste0("The variable '", bare_var, "' used in delayN() or smoothN() is not defined in the model."))
+          stop(paste0("The variable '", bare_var,
+                      "' used in delayN() or smoothN() is not defined in the model."), call. = FALSE)
         }
 
         # # Check whether variable is either a stock, flow, or aux
@@ -432,7 +437,7 @@ prep_delayN_smoothN <- function(sfm, delayN_smoothN) {
         # }
         # Check whether variable is either a stock, flow, aux, or gf
         if (!bare_var %in% allowed_delay_var) {
-          stop(paste0(x[["name"]], " attempts to delay a constant ('", bare_var, "') in a delayN() or smoothN() function. Please only use dynamic variables (stock, flow, aux, or gf) in delayN() or smoothN()."))
+          stop(paste0(x[["name"]], " attempts to delay a constant ('", bare_var, "') in a delayN() or smoothN() function. Please only use dynamic variables (stock, flow, aux, or gf) in delayN() or smoothN()."), call. = FALSE)
         }
 
         # Unit is the same as the delayed variable
@@ -802,12 +807,12 @@ prep_intermediary_variables_julia <- function(sfm, ordering) {
 
     idx <- !(extra_intermediary_var %in% names_df[["name"]])
     if (any(idx)) {
-      stop(paste0("The following variables used in delay() or past() are not defined in the model: ", paste0(extra_intermediary_var[idx], collapse = ", ")))
+      stop(paste0("The following variables used in delay() or past() are not defined in the model: ", paste0(extra_intermediary_var[idx], collapse = ", ")), call. = FALSE)
     }
 
     idx <- !(extra_intermediary_var %in% allowed_intermediary_var)
     if (any(idx)) {
-      stop(paste0("The following variables used in delay() or past() are not stocks, flows, or auxiliaries: ", paste0(extra_intermediary_var[idx], collapse = ", ")))
+      stop(paste0("The following variables used in delay() or past() are not stocks, flows, or auxiliaries: ", paste0(extra_intermediary_var[idx], collapse = ", ")), call. = FALSE)
     }
 
     # Get unique intermediary variables to add

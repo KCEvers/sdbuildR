@@ -746,7 +746,6 @@ prep_plot <- function(sfm, type_sim, df, constants, add_constants, vars, palette
     )
   }
 
-
   # Ensure only variables which are in the dataframe are included
   names_df <- names_df[names_df[["name"]] %in% unique(df[["variable"]]), ,
     drop = FALSE
@@ -861,10 +860,12 @@ plot.sdbuildR_sim <- function(x,
     stop("No simulation data provided! Use simulate() to run a simulation.")
   }
 
-  # Check whether it is an xmile object
-  if (!inherits(x, "sdbuildR_sim")) {
-    stop("This is not an object of class sdbuildR_sim! Simulate a stock-and-flow model with simulate().")
-  }
+  # # Check whether it is an sdbuildR_sim object
+  # if (!inherits(x, "sdbuildR_sim")) {
+  #   stop("This is not an object of class sdbuildR_sim! Simulate a stock-and-flow model with simulate().")
+  # }
+
+  validate_sdbuildR_sim(x)
 
   if (x[["success"]] == FALSE) {
     stop("Simulation failed!")

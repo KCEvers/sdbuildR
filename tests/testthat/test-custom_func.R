@@ -132,6 +132,16 @@ test_that("logistic works", {
 })
 
 
+test_that("alias sigmoid for logistic works", {
+  expect_equal(sigmoid(0), 0.5)
+  expect_equal(sigmoid(0.9, midpoint = .9), 0.5)
+  expect_equal(sigmoid(-1.59, midpoint = -1.59), 0.5)
+  expect_equal(sigmoid(1, slope = 50), 1)
+  expect_equal(sigmoid(1, slope = -50), 0)
+  expect_equal(sigmoid(1, slope = 50, upper = 10), 10)
+})
+
+
 test_that("step works", {
   times <- seq(0, 10, by = .1)
 

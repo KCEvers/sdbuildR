@@ -104,18 +104,20 @@ test_that("simulate with different components works", {
 
   # Without stocks throws error
   sfm <- xmile()
-  expect_error(
-    simulate(sfm |> sim_specs(language = "Julia")),
+  expect_warning(
+    sim <- simulate(sfm |> sim_specs(language = "Julia")),
     "Your model has no stocks."
   )
+  expect_false(sim$success)
 
   sfm <- xmile() |>
     build("a", "stock") |>
     build("b", "flow")
-  expect_error(
-    simulate(sfm |> sim_specs(language = "Julia")),
+  expect_warning(
+    sim <- simulate(sfm |> sim_specs(language = "Julia")),
     "These flows are not connected to any stock:\\n- b"
   )
+  expect_false(sim$success)
 
   # With one stock and no flows and no parameters
   sfm <- xmile() |>
@@ -171,7 +173,8 @@ test_that("simulate with different components works", {
   sim <- simulate(sfm |> sim_specs(stop = 10, dt = 0.1, language = "Julia"),
     only_stocks = TRUE
   )
-  expect_equal(length(unique(as.data.frame(sim)$variable)), length(names(sfm$model$variables$stock)))
+  expect_equal(length(unique(as.data.frame(sim)$variable)),
+               length(names(sfm$model$variables$stock)))
 
   # All variables should be kept if only_stocks = FALSE
   sfm <- xmile("SIR")

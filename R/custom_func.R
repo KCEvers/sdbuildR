@@ -563,6 +563,12 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
 }
 
 
+#' @rdname logistic
+#' @examples sigmoid(0)
+#' @export
+sigmoid <- logistic
+
+
 #' Internal function to save data frame at specific times
 #'
 #' Internal function used to save the data frame at specific times in case save_at is not equal to dt in the simulation specifications.

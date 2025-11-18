@@ -239,7 +239,8 @@ clean_unit_in_u <- function(x, regex_units) {
 
   # Throw error if a match includes u(''): units cannot be nested
   if (any(stringr::str_detect(matches_no_u, "u\\([\"|']"))) {
-    stop("Nested units u(' u('') ') are not allowed. Please remove the u() from the unit string.")
+    stop("Nested units u(' u('') ') are not allowed. Please remove the u() from the unit string.",
+         call. = FALSE)
   }
 
 

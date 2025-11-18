@@ -740,7 +740,7 @@ get_range_pairs <- function(eqn, var_names,
       } else {
         sprintf("%d %s", length(open_locs), opening_bare)
       }
-    ))
+    ), call. = FALSE)
   }
 
   # Return empty data frame if no brackets

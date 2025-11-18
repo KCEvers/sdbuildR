@@ -66,7 +66,7 @@ convert_equations_julia <- function(type, name, eqn, var_names, regex_units) {
   }
 
   if (length(eqn) > 1) {
-    stop("eqn must be of length 1!")
+    stop("eqn must be of length 1!", call. = FALSE)
   }
 
   default_out <- list(
@@ -95,15 +95,17 @@ convert_equations_julia <- function(type, name, eqn, var_names, regex_units) {
   )
 
   if ("error" %in% class(out)) {
-    stop(paste0("Parsing equation of ", name, " failed:\n", out[["message"]]))
+    stop(paste0("Parsing equation of ", name, " failed:\n", out[["message"]]), call. = FALSE)
   }
 
   if (any(grepl("%%", eqn))) {
-    stop("The modulus operator a %% b is not supported in sdbuildR. Please use mod(a, b) instead.")
+    stop("The modulus operator a %% b is not supported in sdbuildR. Please use mod(a, b) instead.",
+         call. = FALSE)
   }
 
   if (any(grepl("na\\.rm", eqn))) {
-    stop("na.rm is not supported as an argument in sdbuildR. Please use na.omit(x) instead.")
+    stop("na.rm is not supported as an argument in sdbuildR. Please use na.omit(x) instead.",
+         call. = FALSE)
   }
 
   # Remove comments we don't keep these
@@ -555,7 +557,7 @@ convert_all_statements_julia <- function(eqn, var_names) {
             # error when there are non-default arguments between default argumens or when default argument is not at the end
             if (any(!is.na(names_arg))) {
               if (any(diff(which(!is.na(names_arg))) > 1) | max(which(!is.na(names_arg))) != length(names_arg)) {
-                stop(paste0("Please change the function definition of ", pair[["func_name"]], ". All arguments with defaults have to be placed at the end of the function arguments."))
+                stop(paste0("Please change the function definition of ", pair[["func_name"]], ". All arguments with defaults have to be placed at the end of the function arguments."), call. = FALSE)
               }
             }
 
@@ -629,7 +631,7 @@ convert_all_statements_julia <- function(eqn, var_names) {
       # error when there are non-default arguments between default argumens or when default argument is not at the end
       if (any(!is.na(names_arg))) {
         if (any(diff(which(!is.na(names_arg))) > 1) | max(which(!is.na(names_arg))) != length(names_arg)) {
-          stop(paste0("Please change the function definition of ", pair[["first_word"]], ". All arguments with defaults have to be placed at the end of the function arguments."))
+          stop(paste0("Please change the function definition of ", pair[["first_word"]], ". All arguments with defaults have to be placed at the end of the function arguments."), call. = FALSE)
         }
       }
 
@@ -1069,7 +1071,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             stop(paste0(
               "Adjust equation of ", name,
               ": delay() cannot be used for a ", type, "."
-            ))
+            ), call. = FALSE)
           }
 
           # Check arguments
@@ -1078,7 +1080,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             stop(paste0(
               "Adjust equation of ", name,
               ": the delay length in delay() must be greater than 0."
-            ))
+            ), call. = FALSE)
           }
 
           func_name <- paste0(name, .sdbuildR_env[["P"]][["delay_suffix"]], length(add_Rcode[["func"]][[idx_func[["syntax"]]]]) + 1)
@@ -1108,7 +1110,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             stop(paste0(
               "Adjust equation of ", name,
               ": past() cannot be used for a ", type, "."
-            ))
+            ), call. = FALSE)
           }
 
           # Check arguments
@@ -1117,7 +1119,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             stop(paste0(
               "Adjust equation of ", name,
               ": the past interval in past() must be greater than 0."
-            ))
+            ), call. = FALSE)
           }
 
           arg2 <- ifelse(length(arg) > 1, arg[2], "nothing")
@@ -1143,7 +1145,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             stop(paste0(
               "Adjust equation of ", name,
               ": delayN() cannot be used for a ", type, "."
-            ))
+            ), call. = FALSE)
           }
 
           # Check arguments
@@ -1152,14 +1154,14 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             stop(paste0(
               "Adjust equation of ", name,
               ": the delay length in delayN() must be greater than 0."
-            ))
+            ), call. = FALSE)
           }
 
           if (arg[3] == "0" || arg[3] == "0.0" || arg[3] == "0L") {
             stop(paste0(
               "Adjust equation of ", name,
               ": the delay order in delayN() must be greater than 0."
-            ))
+            ), call. = FALSE)
           }
 
           arg4 <- ifelse(length(arg) > 3, arg[4], arg[1])
@@ -1202,7 +1204,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             stop(paste0(
               "Adjust equation of ", name,
               ": smoothN() cannot be used for a ", type, "."
-            ))
+            ), call. = FALSE)
           }
 
           # Check arguments
@@ -1211,7 +1213,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             stop(paste0(
               "Adjust equation of ", name,
               ": the smoothing time in smoothN() must be greater than 0."
-            ))
+            ), call. = FALSE)
           }
 
           arg[3] <- trimws(arg[3])
@@ -1219,7 +1221,7 @@ convert_builtin_functions_julia <- function(type, name, eqn, var_names) {
             stop(paste0(
               "Adjust equation of ", name,
               ": the smoothing order in smoothN() must be greater than 0."
-            ))
+            ), call. = FALSE)
           }
 
           arg4 <- ifelse(length(arg) > 3, arg[4], arg[1])
@@ -1309,7 +1311,7 @@ conv_distribution <- function(arg, R_func, julia_func, distribution) {
   arg[[1]] <- safe_convert(arg[[1]], "integer")
 
   if (!is.integer(arg[[1]])) {
-    stop("The first argument of ", R_func, "() must be an integer!")
+    stop("The first argument of ", R_func, "() must be an integer!", call. = FALSE)
   }
 
   # If n = 1, don't include it, as rand(..., 1) generates a vector. n is the first argument.
@@ -1534,16 +1536,20 @@ scientific_notation <- function(eqn, task = c("remove", "add")[1], digits_max = 
 
     # Format to scientific notation if maximum digits are exceeded
     if (task == "add") {
-      if (nchar(format(num, scientific = FALSE)) > digits_max) {
-        replacement <- paste0(
+
+      # Vectorized check - use ifelse instead of if
+      exceeds_max <- nchar(format(num, scientific = FALSE)) > digits_max
+
+      replacement <- ifelse(
+        exceeds_max,
+        paste0(
           ifelse(is.na(leading_whitespace), "", leading_whitespace),
           format(num, scientific = TRUE, trim = TRUE),
           ifelse(is.na(following_whitespace), "", following_whitespace)
-        )
-      } else {
-        # Change nothing otherwise
-        replacement <- match
-      }
+        ),
+        match  # Change nothing if not exceeding max
+      )
+
     } else if (task == "remove") {
       replacement <- paste0(
         ifelse(is.na(leading_whitespace), "", leading_whitespace),

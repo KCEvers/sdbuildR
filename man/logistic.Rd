@@ -2,9 +2,12 @@
 % Please edit documentation in R/custom_func.R
 \name{logistic}
 \alias{logistic}
+\alias{sigmoid}
 \title{Logistic function}
 \usage{
 logistic(x, slope = 1, midpoint = 0, upper = 1)
+
+sigmoid(x, slope = 1, midpoint = 0, upper = 1)
 }
 \arguments{
 \item{x}{Value}
@@ -24,5 +27,6 @@ Logistic function
 \examples{
 logistic(0)
 logistic(1, slope = 5, midpoint = 0.5)
+sigmoid(0)
 }
 \concept{custom}

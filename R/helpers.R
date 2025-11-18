@@ -251,16 +251,6 @@ clean_name <- function(new, existing, protected = c()) {
     as.character(stats::na.omit(existing))
   ) |> unique()
 
-  # stock_names <- names_df[names_df[["type"]] == "stock", "name"]
-  # if (length(stock_names) > 0) {
-  #   if (all(!is.null(stock_names) & !is.na(stock_names))) {
-  #     protected_names <- c(
-  #       protected_names,
-  #       paste0(.sdbuildR_env[["P"]][["change_prefix"]], stock_names)
-  #     )
-  #   }
-  # }
-
   # Make syntactically valid and unique names out of character vectors; Insight Maker allows names to be double, so make unique
   new_names <- make.names(c(protected_names, trimws(new)), unique = TRUE)
   # For Julia translation, remove names with a period
@@ -461,8 +451,6 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
     } else if (func_name == "seq_len") {
       default_arg <- list("length.out" = "1.0")
     }
-
-    # default_arg_Julia = JuliaCall::julia_eval(sprintf("using Distributions; params(%s())", Julia_func))
   }
 
   # Find names and values of arguments
@@ -504,7 +492,6 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
       names_arg[idx] <- new_names[seq_along(idx)] # Assign new names to unnamed arguments; only select as many as there are unnamed arguments
     }
 
-
     # Check for missing obligatory arguments
     # obligatory arguments without a default (class == "name" or is.symbol, e.g. n in formals(rnorm) is a symbol)
     obligatory_args <- unlist(lapply(default_arg, is.symbol))
@@ -544,7 +531,6 @@ sort_args <- function(arg, func_name, default_arg = NULL, var_names = NULL) {
         if (is.language(arg_R[[name]]) && !is.name(arg_R[[name]])) {
           # Evaluate the expression in the context of merged_args
           env <- list2env(arg_R_num, parent = baseenv())
-          # arg_R[[name]] <- eval(arg_R_correct_class[[name]], envir = env)
 
           # Substitute values into the expression
           arg_R[[name]] <- deparse(eval(bquote(substitute(.(arg_R[[name]]), env))))

@@ -101,14 +101,13 @@ julia_status <- function(verbose = TRUE) {
     return(result)
   }
 
-  # result[["julia_path"]] <- julia_loc[["path"]]
   result[["julia_version"]] <- julia_version
 
   # Required Julia version for sdbuildR
   required_jl_version <- .sdbuildR_env[["jl"]][["required_version"]]
 
   # Check if version is sufficient
-  if (package_version(result[["julia_version"]]) <= package_version(required_jl_version)) {
+  if (package_version(result[["julia_version"]]) < package_version(required_jl_version)) {
     result$status <- "julia_needs_update"
     if (verbose) {
       message(
