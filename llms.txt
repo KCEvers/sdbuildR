@@ -1,0 +1,275 @@
+# sdbuildR: Easily Build, Simulate, and Visualise Stock-and-Flow Models in R
+
+Model systems as stock-and-flow models in R. Stock-and-flow models are
+foundational to system dynamics, and help to understand systems
+complicated by nonlinearities, delays, and feedback loops. sdbuildR aims
+to make stock-and-flow modeling accessible and effortless, enabling you
+to dedicate your expertise to what matters most: building insightful,
+high-quality models. Get started at
+<https://kcevers.github.io/sdbuildR/>!
+
+## Features
+
+- **Accessibility**: Get started with stock-and-flow models with limited
+  knowledge.
+- **Flexibility**: Modify your models easily and robustly.
+- **Insight Maker integration**: Import models from [Insight
+  Maker](https://insightmaker.com/).
+- **Julia backend**: Use Julia for high-performance simulations, without
+  any knowledge of Julia.
+- **Unit support**: Use standard or custom units to verify and interpret
+  your model.
+
+All package capabilities are described in the vignettes:
+
+- [Build](https://kcevers.github.io/sdbuildR/articles/build.html): Learn
+  how to build, modify, and debug stock-and-flow models.
+- [Julia
+  setup](https://kcevers.github.io/sdbuildR/articles/julia-setup.html):
+  Install and set up the Julia environment for running ensemble
+  simulations and using units.
+- [Ensemble](https://kcevers.github.io/sdbuildR/articles/ensemble.html):
+  Learn how to assess a model’s sensitivity, uncertainty and robustness
+  with ensemble simulations.
+- [Units](https://kcevers.github.io/sdbuildR/articles/units.html): Learn
+  why and how to use (custom) units.
+
+## Installation
+
+The release version can be installed from CRAN:
+
+``` r
+install.packages("sdbuildR")
+```
+
+The development version can be installed from GitHub:
+
+``` r
+if (!require("remotes")) install.packages("remotes")
+remotes::install_github("KCEvers/sdbuildR")
+```
+
+sdbuildR offers two simulation engines: R and Julia (supported by
+[JuliaConnectoR](https://github.com/stefan-m-lenz/JuliaConnectoR/)). If
+you would like to run ensemble simulations and use units, you will need
+to install and set up the Julia environment. See [this
+vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html)
+for guidance.
+
+## Citation
+
+To cite sdbuildR, please use:
+
+``` r
+citation("sdbuildR")
+#> To cite package 'sdbuildR' in publications use:
+#> 
+#>   Evers K (2025). _sdbuildR: Easily Build, Simulate, and Visualise
+#>   Stock-and-Flow Models_. R package version 1.0.7.9000,
+#>   https://github.com/KCEvers/sdbuildR,
+#>   <https://kcevers.github.io/sdbuildR/>.
+#> 
+#> A BibTeX entry for LaTeX users is
+#> 
+#>   @Manual{,
+#>     title = {sdbuildR: Easily Build, Simulate, and Visualise Stock-and-Flow Models},
+#>     author = {Kyra Caitlin Evers},
+#>     year = {2025},
+#>     note = {R package version 1.0.7.9000, https://github.com/KCEvers/sdbuildR},
+#>     url = {https://kcevers.github.io/sdbuildR/},
+#>   }
+```
+
+## Limitations
+
+- Unlike in other system dynamics software, sdbuildR provides only
+  minimal support for non-negative stocks and flows. Specifically,
+  setting stocks to non-negative will constrain the stocks to remain
+  non-negative, but will not adjust the corresponding flows. In any
+  case, enforcing either stocks or flows to be non-negative is not
+  recommended, as it may mask model misspecification. Stocks and flows
+  that logically cannot be negative (e.g., animals or deaths) should
+  ideally remain non-negative as a result of the model’s equations and
+  parameters, rather than by forcing them to be non-negative.
+
+- sdbuildR does not support vectorized operations, destructuring
+  assignment, or minimum and maximum constraints for variables.
+
+- sdbuildR does not support the Insight Maker functions Stop(),
+  Prompt(), Confirm(), Pause(), Fix(), Map(), Filter(), and Repeat(),
+  nor the delay and past functions. A message is issued if any of these
+  are detected.
+
+## Other system dynamics software
+
+sdbuildR is heavily based on common system dynamics software such as
+[Vensim](https://en.wikipedia.org/wiki/Vensim),
+[Powersim](https://powersim.com/),
+[Stella](https://www.iseesystems.com/), and [Insight
+Maker](https://insightmaker.com/). To translate xmile models to R, see
+the R package [readsdr](https://CRAN.R-project.org/package=readsdr). To
+build stock-and-flow models with the R package
+[deSolve](https://CRAN.R-project.org/package=deSolve), the book [System
+Dynamics Modeling with
+R](https://link.springer.com/book/10.1007/978-3-319-34043-2) by Jim
+Duggan will prove useful. In Python, stock-and-flow models are supported
+by [PySD](https://doi.org/10.21105/joss.04329).
+
+## Troubleshooting
+
+sdbuildR is under active development. While thoroughly tested, the
+package may have bugs, particularly in complex model translations. We
+encourage users to report [issues on
+GitHub](https://github.com/KCEvers/sdbuildR/issues) - your input helps
+the package improve! Use
+[`debugger()`](https://kcevers.github.io/sdbuildR/reference/debugger.md)
+to diagnose model errors, and use the vignettes for guidance.
+
+# Package index
+
+## Building stock-and-flow models
+
+- [`as.data.frame(`*`<sdbuildR_sim>`*`)`](https://kcevers.github.io/sdbuildR/reference/as.data.frame.sdbuildR_sim.md)
+  : Create data frame of simulation results
+- [`as.data.frame(`*`<sdbuildR_xmile>`*`)`](https://kcevers.github.io/sdbuildR/reference/as.data.frame.sdbuildR_xmile.md)
+  : Convert stock-and-flow model to data frame
+- [`build()`](https://kcevers.github.io/sdbuildR/reference/build.md) :
+  Create, modify or remove variables
+- [`debugger()`](https://kcevers.github.io/sdbuildR/reference/debugger.md)
+  : Debug stock-and-flow model
+- [`find_dependencies()`](https://kcevers.github.io/sdbuildR/reference/find_dependencies.md)
+  : Find dependencies
+- [`get_build_code()`](https://kcevers.github.io/sdbuildR/reference/get_build_code.md)
+  : Generate code to build stock-and-flow model
+- [`header()`](https://kcevers.github.io/sdbuildR/reference/header.md) :
+  Modify header of stock-and-flow model
+- [`macro()`](https://kcevers.github.io/sdbuildR/reference/macro.md) :
+  Create, modify or remove a global variable or function
+- [`plot(`*`<sdbuildR_xmile>`*`)`](https://kcevers.github.io/sdbuildR/reference/plot.sdbuildR_xmile.md)
+  : Plot stock-and-flow diagram
+- [`print(`*`<summary.sdbuildR_xmile>`*`)`](https://kcevers.github.io/sdbuildR/reference/print.summary.sdbuildR_xmile.md)
+  : Print method for summary.sdbuildR_xmile
+- [`summary(`*`<sdbuildR_xmile>`*`)`](https://kcevers.github.io/sdbuildR/reference/summary.sdbuildR_xmile.md)
+  : Print overview of stock-and-flow model
+- [`xmile()`](https://kcevers.github.io/sdbuildR/reference/xmile.md) :
+  Create a new stock-and-flow model
+
+## Simulate stock-and-flow models
+
+- [`ensemble()`](https://kcevers.github.io/sdbuildR/reference/ensemble.md)
+  : Run ensemble simulations
+- [`export_plot()`](https://kcevers.github.io/sdbuildR/reference/export_plot.md)
+  : Save plot to a file
+- [`plot(`*`<sdbuildR_ensemble>`*`)`](https://kcevers.github.io/sdbuildR/reference/plot.sdbuildR_ensemble.md)
+  : Plot timeseries of ensemble
+- [`plot(`*`<sdbuildR_sim>`*`)`](https://kcevers.github.io/sdbuildR/reference/plot.sdbuildR_sim.md)
+  : Plot timeseries of simulation
+- [`sim_specs()`](https://kcevers.github.io/sdbuildR/reference/sim_specs.md)
+  : Modify simulation specifications
+- [`simulate()`](https://kcevers.github.io/sdbuildR/reference/simulate.md)
+  : Simulate stock-and-flow model
+- [`solvers()`](https://kcevers.github.io/sdbuildR/reference/solvers.md)
+  : Check or translate between deSolve and Julia DifferentialEquations
+  solvers
+
+## Set-up and use Julia
+
+- [`install_julia_env()`](https://kcevers.github.io/sdbuildR/reference/install_julia_env.md)
+  : Install, update, or remove Julia environment
+- [`julia_status()`](https://kcevers.github.io/sdbuildR/reference/julia_status.md)
+  : Check status of Julia installation and environment
+- [`use_julia()`](https://kcevers.github.io/sdbuildR/reference/use_julia.md)
+  : Start Julia and activate environment
+- [`use_threads()`](https://kcevers.github.io/sdbuildR/reference/use_threads.md)
+  : Set up threaded ensemble simulations
+
+## Insight Maker
+
+- [`insightmaker_to_sfm()`](https://kcevers.github.io/sdbuildR/reference/insightmaker_to_sfm.md)
+  : Import Insight Maker model
+- [`url_to_IM()`](https://kcevers.github.io/sdbuildR/reference/url_to_IM.md)
+  : Extract Insight Maker model from URL
+
+## Input functions
+
+- [`pulse()`](https://kcevers.github.io/sdbuildR/reference/pulse.md) :
+  Create pulse function
+- [`ramp()`](https://kcevers.github.io/sdbuildR/reference/ramp.md) :
+  Create ramp function
+- [`seasonal()`](https://kcevers.github.io/sdbuildR/reference/seasonal.md)
+  : Create a seasonal wave function
+- [`step()`](https://kcevers.github.io/sdbuildR/reference/step.md) :
+  Create step function
+
+## Custom functions
+
+- [`contains_IM()`](https://kcevers.github.io/sdbuildR/reference/contains_IM.md)
+  : Check if needle is in haystack
+- [`expit()`](https://kcevers.github.io/sdbuildR/reference/expit.md) :
+  Expit function
+- [`indexof()`](https://kcevers.github.io/sdbuildR/reference/indexof.md)
+  : Find index of needle in haystack
+- [`length_IM()`](https://kcevers.github.io/sdbuildR/reference/length_IM.md)
+  : Length of vector or string
+- [`logistic()`](https://kcevers.github.io/sdbuildR/reference/logistic.md)
+  [`sigmoid()`](https://kcevers.github.io/sdbuildR/reference/logistic.md)
+  : Logistic function
+- [`logit()`](https://kcevers.github.io/sdbuildR/reference/logit.md) :
+  Logit function
+- [`rbool()`](https://kcevers.github.io/sdbuildR/reference/rbool.md) :
+  Generate random logical value
+- [`rdist()`](https://kcevers.github.io/sdbuildR/reference/rdist.md) :
+  Generate random number from custom distribution
+- [`rem()`](https://kcevers.github.io/sdbuildR/reference/rem_mod.md)
+  [`mod()`](https://kcevers.github.io/sdbuildR/reference/rem_mod.md)
+  [`` `%REM%` ``](https://kcevers.github.io/sdbuildR/reference/rem_mod.md)
+  : Remainder and modulus
+- [`round_IM()`](https://kcevers.github.io/sdbuildR/reference/round_IM.md)
+  : Round Half-Up (as in Insight Maker)
+
+## Delay functions
+
+## Units
+
+- [`convert_u()`](https://kcevers.github.io/sdbuildR/reference/convert_u.md)
+  : Convert unit in equation
+- [`drop_u()`](https://kcevers.github.io/sdbuildR/reference/drop_u.md) :
+  Drop unit in equation
+- [`get_regex_time_units()`](https://kcevers.github.io/sdbuildR/reference/get_regex_time_units.md)
+  : Get regular expressions for time units in Julia
+- [`get_regex_units()`](https://kcevers.github.io/sdbuildR/reference/get_regex_units.md)
+  : Get regular expressions for units in Julia
+- [`get_units()`](https://kcevers.github.io/sdbuildR/reference/get_units.md)
+  : View all standard units
+- [`model_units()`](https://kcevers.github.io/sdbuildR/reference/model_units.md)
+  : Create, modify or remove custom units
+- [`u()`](https://kcevers.github.io/sdbuildR/reference/u.md) : Specify
+  unit in equations
+- [`unit_prefixes()`](https://kcevers.github.io/sdbuildR/reference/unit_prefixes.md)
+  : Show unit prefixes
+
+## Internal functions
+
+- [`clean_name()`](https://kcevers.github.io/sdbuildR/reference/clean_name.md)
+  : Clean variable name(s)
+- [`has_internet()`](https://kcevers.github.io/sdbuildR/reference/has_internet.md)
+  : Check if user has internet
+- [`nonnegative()`](https://kcevers.github.io/sdbuildR/reference/nonnegative.md)
+  : Safely check whether x is less than zero
+- [`saveat_func()`](https://kcevers.github.io/sdbuildR/reference/saveat_func.md)
+  : Internal function to save data frame at specific times
+
+# Articles
+
+### Vignettes
+
+- [Building stock-and-flow
+  models](https://kcevers.github.io/sdbuildR/articles/build.md):
+- [Formalizing Job Demands-Resources
+  Theory](https://kcevers.github.io/sdbuildR/articles/jdr.md):
+- [Setting up
+  Julia](https://kcevers.github.io/sdbuildR/articles/julia-setup.md):
+- [Ensemble
+  simulations](https://kcevers.github.io/sdbuildR/articles/ensemble.md):
+- [Using (custom)
+  units](https://kcevers.github.io/sdbuildR/articles/units.md):

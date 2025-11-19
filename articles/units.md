@@ -1,0 +1,483 @@
+# Using (custom) units
+
+Units, such as seconds, kilograms, or BMI, refer to the measurement
+units assigned to variables to quantify their magnitudes and ensure
+consistency in the model. Specifying units may seem like an unnecessary
+burden, because as we’ve seen in [this
+vignette](https://kcevers.github.io/sdbuildR/articles/build.html),
+stock-and-flow models can run without units. We’ll first motivate the
+need and use of units for model verification and interpretation, after
+which we’ll show how to use units in sdbuildR.
+
+## Why units?
+
+### Model verification
+
+Units help to verify the model, as all equations have to be
+dimensionally consistent. Dimensional consistency requires that the
+units on both sides of the equation match. For instance, if we define
+productivity as the number of tasks completed per hour, and it is
+determined by the amount of caffeine we have consumed, we ensure the
+equation is dimensionally consistent like so:
+
+$$\text{Productivity} = \text{Caffeine consumed} \cdot \text{Productivity from caffeine}$$
+
+$$\frac{\text{tasks}}{\text{hr}} = \frac{\text{mg}}{\text{hr}} \cdot \frac{\text{tasks}}{\text{mg}}$$
+
+Dimensional consistency is also required between stocks and flows. A
+stock can only be connected to flows with a matching unit measured over
+a period of time. For example, a stock with the unit kilocalories can be
+connected to flows with the unit kilocalories per hour. This is
+dimensionally consistent, as flows are measured over a certain period of
+time:
+
+$$\text{kcal} = \frac{\text{kcal}}{\text{hr}} \cdot \text{hr}$$
+
+However, note that the left and right hand side of the equation do not
+need to be in exactly the same units in order to match. For example, we
+may measure the flow over a period of minutes:
+
+$$\text{kcal} = \frac{\text{kcal}}{\text{hr}} \cdot \text{min}$$
+
+Such an equation is still dimensionally consistent, as minutes and hours
+match and can be converted to one another. There is no need to add an
+additional factor to convert minutes to hours. In sdbuildR, Julia’s
+*Unitful* package takes care of the conversion between matching units.
+
+Mathematical operations differ in their unit compatibility requirements.
+Addition and subtraction can only be applied to variables that have the
+same unit, as these operations combine or compare quantities directly.
+For instance, it is not possible to add kilocalories to body fat in
+kilograms, $\text{kg} + \text{kcal}$. To specify how consuming food can
+add body fat, we need to translate kilocalories to kilograms. A correct
+formulation divides the number of kilocalories consumed by the number of
+kilocalories in a kilogram of body fat, which is dimensionally
+consistent with $\text{kg}$:
+
+$$\frac{\text{kcal}}{\frac{7700\text{kcal}}{\text{kg}}}$$
+
+Conversely, variables do not need to have matching units for division
+and multiplication, as these operations transform the unit. For example,
+labour cost can be computed by multiplying the number of employees with
+income per month:
+
+$$\text{employees} \cdot \frac{€}{\text{month}} = \frac{\text{employees} \cdot €}{\text{month}}$$
+
+Exponentiation changes the unit itself, such as when squaring the amount
+of meters in a space, $\text{m}^{2}$.
+
+Not all variables need to have units, though. Some are unitless
+(i.e. dimensionless), such as fractions or ratios. For example, the
+interest rate on a bank account is unitless, as
+$€ \cdot \text{interest} = €$. Similarly, variables can be rendered
+unitless by division and multiplication. For instance, dividing the
+number of infected individuals by the total population yields a
+dimensionless ratio:
+
+$$\frac{\text{Infected population}}{\text{Total population}} = \frac{\text{people}}{\text{people}} = 1$$
+
+In summary, units help ensure equations are correctly formulated. If
+equations are not dimensionally consistent, this exposes an error in the
+model. Variables may be missing or ill-conceptualized. For instance, a
+variable such as sleep does not have the unit of hours, but hours over a
+certain period of time, such as hours per day. Savings in your bank
+account do not have the unit euros per month, but simply euros, as they
+can be counted at a single moment in time. Units additionally help to
+distinguish between stocks and flows and understand how variables relate
+to one another.
+
+### Model interpretation & communication
+
+In addition to verifying the model is dimensionally consistent, units
+help keep variables interpretable. Units give meaning and a timescale to
+variables. For instance, a variable such as productivity could be
+defined in numerous ways. Specifying its unit as
+$\frac{\text{tasks}}{\text{hr}}$ clearly communicates what higher or
+lower productivity means and how it can be measured. Equations with
+puzzling constructions of units without a clear interpretation are
+immediately suspect, such as $\text{kcal}^{3}/\text{s}^{2}/\text{m}$. As
+such, units help to relate your model to the real world, and make it
+possible to compare your model results with empirical data.
+
+Moreover, units help identify and differentiate between time scales in
+the system. It may not feel natural to define each variable on the same
+timescale, where for instance the number of hours slept is typically
+defined on a daily basis, but attention is more naturally thought of on
+the timescale of milliseconds. Units help keep these timescales
+preserved without needing to scale every variable to the same time
+scale.
+
+## Units with sdbuildR
+
+``` r
+library(sdbuildR)
+```
+
+Units thus help to verify and interpret our models. Next, we’ll use the
+simple example of a coffee cup to explore how to specify the simulation
+time unit, units of variables, and units in equations. We will finish
+with how to define and use your own custom units. Note that using units
+is only supported for running models with
+`sim_specs(language = 'Julia')`, not in R (see *Why are units not
+supported in R?* below). Activate the Julia environment first:
+
+``` r
+use_julia()
+#> Starting Julia ...
+#> Connecting to Julia TCP server at localhost:11980 ...
+#> Setting up Julia environment for sdbuildR...
+```
+
+For guidance on installing and setting up the Julia environment, see
+[this
+vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html).
+For all models, the simulation engine has to be changed to Julia:
+
+``` r
+sfm <- xmile() |>
+  sim_specs(language = "Julia")
+```
+
+The following example is taken from Meadows’ *Thinking in Systems*. We
+model the temperature of a coffee cup adjusting to room temperature. The
+temperature of the coffee cup is a stock, which either cools down or
+heats up, depending on the difference between the temperature of the
+coffee cup and the room temperature.
+
+### Simulation time unit
+
+We first specify the simulation time unit. Think of the time axis of
+your simulation plot - if it spans from 0 to 100, are these a hundred
+hours, days, years? The simulation time unit can be modified using
+[`sim_specs()`](https://kcevers.github.io/sdbuildR/reference/sim_specs.md).
+
+``` r
+# Simulation time unit of a day
+sfm <- sim_specs(sfm, time_units = "day")
+
+# Simulation time unit of a year
+sfm <- sim_specs(sfm, time_units = "year")
+```
+
+The simulation specifications can be viewed using
+[`summary()`](https://rdrr.io/r/base/summary.html):
+
+``` r
+summary(sfm)
+#> Your model contains:
+#> * 0 Stocks
+#> * 0 Flows
+#> * 0 Constants
+#> * 0 Auxiliaries
+#> * 0 Graphical Functions
+#> * 0 Custom model units
+#> * 0 Macros
+#> 
+#> Simulation time: 0.0 to 100.0 years (dt = 0.01)
+#> Simulation settings: solver Euler() in Julia
+```
+
+Note that units can be specified with full words, but that they are
+converted to standard units of the *Unitful* package using regular
+expressions. For example, `day` is converted to `d`, `week` to `wk`, and
+`year` to `yr`. However, `minute` and `month` stay unchanged. Perhaps
+unexpectedly, a year in the *Unitful* package is defined not as 365
+days, but 365.25 days, as it accounts for leap years. To use time units
+that are not affected by leap years, such as the common year, which is
+365 days, use `common_year`, `common_quarter`, `common_month`.
+
+For our example of the coffee cup, we’ll set the simulation time unit to
+minutes.
+
+``` r
+sfm <- sim_specs(sfm, time_units = "minute")
+```
+
+### Units of variables
+
+By default, variables are unitless, as indicated by `units = "1"`. To
+set the unit of a variable, specify the `units` property in
+[`build()`](https://kcevers.github.io/sdbuildR/reference/build.md). We
+now add the stock coffee temperature and the constant room temperature,
+which both have units of Celsius:
+
+``` r
+sfm <- build(sfm, "coffee_temperature", "stock",
+  eqn = "100",
+  units = "Celsius", label = "Coffee temperature"
+) |>
+  build("room_temperature", "constant",
+    eqn = "18",
+    units = "Celsius", label = "Room temperature"
+  )
+```
+
+The unit is translated to a standard unit, which can be viewed with
+[`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html):
+
+``` r
+as.data.frame(sfm)
+#>       type               name eqn units              label non_negative
+#> 1    stock coffee_temperature 100  degC Coffee temperature        FALSE
+#> 2 constant   room_temperature  18  degC   Room temperature        FALSE
+#>   eqn_julia
+#> 1     100.0
+#> 2      18.0
+```
+
+All standard units can be found with
+[`get_units()`](https://kcevers.github.io/sdbuildR/reference/get_units.md).
+Units may also have power-of-ten prefixes, such as milli, kilo, or nano.
+For example, the contents of the coffee cup could be specified in
+milliliters:
+
+``` r
+sfm <- build(sfm, "coffee_amount", "aux",
+  eqn = "250",
+  units = "milliliters", label = "Coffee amount"
+)
+```
+
+All possible prefixes can be found using
+[`unit_prefixes()`](https://kcevers.github.io/sdbuildR/reference/unit_prefixes.md).
+Note that these only work for units compatible with prefixes, where for
+instance the unit `inch` does not allow prefixes.
+
+Similarly, we can use powers in units. For example, if we wanted to
+instead specify the volume of coffee in the cup in cubic centimeters, we
+could change it like this:
+
+``` r
+sfm <- build(sfm, "coffee_amount", units = "cm^3")
+
+# or:
+
+sfm <- build(sfm, "coffee_amount", units = "cubed centimeters")
+```
+
+We leave out the coffee amount for now, as it is not relevant for the
+example.
+
+``` r
+sfm <- build(sfm, "coffee_amount", erase = TRUE)
+```
+
+### Units in equations
+
+Sometimes, it may be necessary to use units within equations. For
+example, a flow to the stock `coffee_temperature` in degrees Celsius
+needs to have compatible units, such as degrees Celsius per minute. We
+first set up the flow in the model:
+
+``` r
+sfm <- build(sfm, "change", "flow",
+  units = "Celsius/minute",
+  to = "coffee_temperature",
+  label = "Cooling or heating"
+)
+```
+
+The coffee temperature adapts to the room temperature. However, the
+equation `room_temperature - coffee_temperature` evaluates to Celsius,
+and the equation of the flow needs to match the specified units
+`Celsius/minute`. We are missing a rate - the speed at which the coffee
+temperature adjusts to the room temperature. To do so, we can divide the
+difference by time, such as 10 minutes. To use units in equations,
+enclose them in
+[`u()`](https://kcevers.github.io/sdbuildR/reference/u.md):
+
+``` r
+sfm <- build(sfm, "change",
+  eqn = "(room_temperature - coffee_temperature) / u('10minutes')"
+)
+```
+
+The model is now dimensionally consistent: the units on both sides of
+the equation match. Note that the units on both sides of the equation
+need to be compatible, but do not need to be the same. For example, the
+equation could also evaluate to degrees Celsius per hour:
+
+``` r
+sfm <- build(sfm, "change",
+  eqn = "(room_temperature - coffee_temperature) / u('1/6 * hour')"
+)
+```
+
+When specifying fractions, take care to use the correct syntax. For
+example, `1/6 * hour` is interpreted as one sixth of an hour, but
+`1/6 hour` is interpreted as one sixth of $\frac{1}{\text{hr}}$, which
+thus takes the inverse of the unit hour.
+
+In rare cases, you may want to change the units of a variable within an
+equation. For example, if we have an auxiliary variable `rate` which is
+defined in minutes, but we’d like to use it in hours, we can do so with
+[`convert_u()`](https://kcevers.github.io/sdbuildR/reference/convert_u.md):
+
+``` r
+sfm <- build(sfm, "rate", "constant", eqn = "10", units = "minutes") |>
+  build("change",
+    eqn = "(room_temperature - coffee_temperature) / convert_u(rate, u('hour'))"
+  )
+```
+
+In other rare cases, it may be necessary to drop units in a part of the
+equation. For example, the cosine function only accepts unitless
+arguments or arguments with units in radians or degrees. To compute the
+cosine of another type of argument, enclose the variable in
+[`drop_u()`](https://kcevers.github.io/sdbuildR/reference/drop_u.md),
+e.g. `cos(drop_u(a))`.
+
+We have now fully specified all units in the model, and are ready to
+simulate! We repeat the full model here for clarity:
+
+``` r
+sfm <- xmile() |>
+  header(name = "Coffee cup") |>
+  sim_specs(time_units = "minute", language = "Julia") |>
+  build("coffee_temperature", "stock",
+    eqn = "100",
+    units = "Celsius", label = "Coffee temperature"
+  ) |>
+  build("room_temperature", "constant",
+    eqn = "18",
+    units = "Celsius", label = "Room temperature"
+  ) |>
+  build("change", "flow",
+    eqn = "(room_temperature - coffee_temperature) / u('10minutes')",
+    units = "Celsius/minute", to = "coffee_temperature",
+    label = "Cooling or heating"
+  )
+sim <- simulate(sfm)
+plot(sim)
+```
+
+### Custom units
+
+For convenience, you may want to define custom units. Custom units can
+be added to your model with
+[`model_units()`](https://kcevers.github.io/sdbuildR/reference/model_units.md).
+Some examples:
+
+``` r
+sfm <- xmile() |>
+  model_units("BMI",
+    eqn = "kilograms/meters^2",
+    doc = "Body Mass Index"
+  ) |>
+  model_units("BAC",
+    eqn = "grams/deciliter",
+    doc = "Blood Alcohol Concentration"
+  ) |>
+  model_units("bottle", eqn = "2liters") |>
+  model_units("meal", eqn = "700kcal")
+```
+
+To keep track of the meaning of your units, document them with the `doc`
+property.
+
+However, you may not have a definition for your custom unit in terms of
+other units. For example, the definition of employee morale, motivation,
+or self-efficacy is not straight-forward. In this case, simply leave out
+the `eqn` argument or specify `eqn = 1`:
+
+``` r
+sfm <- model_units(sfm, "BDI", doc = "Beck Depression Inventory")
+```
+
+Custom units may also be defined in terms of each other.
+
+``` r
+sfm <- model_units(sfm, "quality",
+  doc = "Quality of life; also known as utility"
+) |>
+  model_units("QALY", eqn = "years*quality", doc = "Quality-adjusted life year")
+```
+
+Note that custom units are case-sensitive, and may be modified to create
+syntactically valid names. For example, special characters such as ^,
+&, - are not allowed in unit names:
+
+``` r
+sfm <- model_units(sfm, "CO^2")
+#> Warning in model_units(sfm, "CO^2"): The custom unit name CO^2 was modified to CO_2 to comply with Julia's syntactic rules.
+#> Use sfm |> model_units('old_name', change_name = 'new_name') to update the name in your model.
+```
+
+Similarly, custom unit names cannot be the same as existing units in
+*Unitful*:
+
+``` r
+sfm <- model_units(sfm, "kg")
+#> Error in model_units(sfm, "kg"): The custom unit name kg matches the standard unit kg, which cannot be overwritten.
+#> Please choose a unique name for: kg
+```
+
+``` r
+sfm <- model_units(sfm, "kilograms")
+#> Error in model_units(sfm, "kilograms"): The custom unit name kilograms matches the standard unit kg, which cannot be overwritten.
+#> Please choose a unique name for: kilograms
+```
+
+Changing the name of a custom unit is also possible with
+[`model_units()`](https://kcevers.github.io/sdbuildR/reference/model_units.md),
+which will ensure that any uses of the unit in the model are updated:
+
+``` r
+sfm <- model_units(sfm, "CO_2", change_name = "CO2")
+```
+
+Previously added model units can be removed by setting `erase = TRUE`:
+
+``` r
+sfm <- model_units(sfm, "BDI", erase = TRUE)
+```
+
+For an overview of all custom units in the model, use
+[`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html):
+
+``` r
+as.data.frame(sfm, type = "model_units")
+#>          type    name        eqn                                    doc
+#> 1 model_units     BMI     kg/m^2                        Body Mass Index
+#> 2 model_units     BAC       g/dL            Blood Alcohol Concentration
+#> 3 model_units  bottle         2L                                   <NA>
+#> 4 model_units    meal    700kcal                                   <NA>
+#> 5 model_units quality          1 Quality of life; also known as utility
+#> 6 model_units    QALY yr*quality             Quality-adjusted life year
+#> 7 model_units     CO2          1                                   <NA>
+```
+
+The simulation will not run in case any units are undefined. Find
+undefined units with
+[`debugger()`](https://kcevers.github.io/sdbuildR/reference/debugger.md):
+
+``` r
+sfm <- xmile() |> build("health", "stock", units = "BMI")
+debugger(sfm)
+#> Problems:
+#> * These units are not defined:
+#> - BMI
+#> 
+#> Potentially problematic:
+#> * Your model has no flows.
+#> 
+#> * These variables have an equation of 0:
+#> - health
+```
+
+### Why are units not supported in R?
+
+sdbuildR only supports units in Julia, not in R. Though technically, the
+*units* package in R could provide unit support for system dynamics
+models in R, it is practically unfeasible. The *deSolve* package strips
+units from state variables and derivatives, such that units need to be
+reassigned in each iteration. This massively slows down computation,
+rendering unit support in R unworkable. Conversely, the *Unitful*
+package in Julia offers unit support without additional runtime cost, as
+well as compatibility with the *DifferentialEquations* package.
+
+Units of variables are thus omitted when simulating in R. An error is
+thrown in case any equation contains a unit string `u('')`. When
+simulating in Julia, use of units can be turned off by calling
+[`simulate()`](https://kcevers.github.io/sdbuildR/reference/simulate.md)
+with `keep_unit = FALSE`.
