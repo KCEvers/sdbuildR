@@ -86,8 +86,10 @@ test_that("sim_specs() works", {
   expect_equal(sim_specs(sfm, seed = NULL)$sim_specs$seed, NULL)
 
   # Check that dt must be smaller than stop - start
-  expect_error(xmile() |> sim_specs(start = 0, stop = .05, dt = .1), "dt must be smaller than the difference between start and stop!")
-  expect_error(xmile() |> sim_specs(start = 0, stop = 1, save_at = 2), "save_at must be smaller than the difference between start and stop!")
+  expect_error(xmile() |> sim_specs(start = 0, stop = .05, dt = .1),
+               "dt must be smaller than the difference between start and stop!")
+  expect_error(xmile() |> sim_specs(start = 0, stop = 1, save_at = 2),
+               "save_at must be smaller than the difference between start and stop!")
 
   # save_at and dt
   expect_no_error(xmile() |> sim_specs(dt = .1))
@@ -817,7 +819,7 @@ test_that("debugger() works", {
       debugger(sfm = xmile() |> build("Prey", "stock", eqn = "Predator") |>
         build("Predator", "stock", eqn = "Prey"))
     },
-    "Ordering static equations failed. Circular dependencies detected involving variables: Predator, Prey"
+    "Circular dependencies detected involving variables: Predator, Prey"
   )
 
   sfm <- xmile("logistic_model")
@@ -829,7 +831,9 @@ test_that("debugger() works", {
 
   # Dependency on itself
   sfm <- xmile() |> build("a", "stock", eqn = "cos(a)")
-  expect_error(simulate(sfm), "The variable 'a' is referenced in a\\$eqn but hasn't been defined")
+  expect_warning(sim <- simulate(sfm),
+                        "The variable 'a' is referenced in a\\$eqn but hasn't been defined")
+  expect_false(sim$success)
 })
 
 
@@ -1198,7 +1202,9 @@ test_that("graphical functions accept source parameter", {
 
   sfm <- build(sfm, "lookup_with_source", source = "stock2")
 
-  expect_error(simulate(sfm), "The variable 'stock2' is referenced in lookup_with_source\\$source but hasn't been defined")
+  expect_warning(sim <- simulate(sfm),
+               "The variable 'stock2' is referenced in lookup_with_source\\$source but hasn't been defined")
+  expect_false(sim$success)
 })
 
 test_that("graphical functions reject multiple sources", {

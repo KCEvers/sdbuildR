@@ -2,27 +2,43 @@
 % Please edit documentation in R/custom_func.R
 \name{logistic}
 \alias{logistic}
+\alias{sigmoid}
 \title{Logistic function}
 \usage{
 logistic(x, slope = 1, midpoint = 0, upper = 1)
+
+sigmoid(x, slope = 1, midpoint = 0, upper = 1)
 }
 \arguments{
-\item{x}{Value}
+\item{x}{Value at which to evaluate the function}
 
-\item{slope}{Slope of logistic function. Defaults to 1.}
+\item{slope}{Slope of logistic function at the midpoint. Defaults to 1.}
 
-\item{midpoint}{Midpoint of logistic function where the output is .5. Defaults to 0.}
+\item{midpoint}{Midpoint of logistic function where the output is \code{upper/2}. Defaults to 0.}
 
-\item{upper}{Maximal value returned by logistic function. Defaults to 1.}
+\item{upper}{Upper asymptote (maximal value) of the logistic function. Defaults to 1.}
 }
 \value{
-f(x), where f is the logistic function
+Numeric value given by \deqn{f(x) = \frac{upper}{1 + e^{-slope \cdot (x - midpoint)}}}
 }
 \description{
-Logistic function
+Computes the logistic (i.e., sigmoid) function with configurable slope, midpoint, and upper asymptote.
+}
+\details{
+The logistic function is a smooth S-shaped curve bounded between 0 and \code{upper}.
+It transitions from near 0 to near \code{upper} around the \code{midpoint}, with the steepness
+of this transition controlled by \code{slope}.
 }
 \examples{
 logistic(0)
-logistic(1, slope = 5, midpoint = 0.5)
+# equivalent:
+sigmoid(0)
+logistic(1, slope = 5, midpoint = 0.5, upper = 10)
+
+# Visualize different slopes
+x <- seq(-5, 5, length.out = 100)
+plot(x, logistic(x, slope = 1), type = "l", ylab = "f(x)")
+lines(x, logistic(x, slope = 5), col = "blue")
+lines(x, logistic(x, slope = 50), col = "red")
 }
 \concept{custom}

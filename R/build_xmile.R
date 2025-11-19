@@ -157,10 +157,11 @@ get_flow_df <- function(sfm) {
 as.data.frame.sdbuildR_sim <- function(x,
                                        row.names = NULL, optional = FALSE,
                                        direction = "long", ...) {
-  # Check whether it is the correct object
-  if (!inherits(x, "sdbuildR_sim")) {
-    stop("This is not an object of class sdbuildR_sim! Simulate a stock-and-flow model with simulate().")
-  }
+  # # Check whether it is the correct object
+  # if (!inherits(x, "sdbuildR_sim")) {
+  #   stop("This is not an object of class sdbuildR_sim! Simulate a stock-and-flow model with simulate().")
+  # }
+  validate_sdbuildR_sim(x)
 
   direction <- trimws(tolower(direction))
   if (direction != "long" & direction != "wide") {
@@ -186,7 +187,8 @@ as.data.frame.sdbuildR_sim <- function(x,
   # Handle row.names if provided
   if (!is.null(row.names)) {
     if (length(row.names) != nrow(df)) {
-      stop("Length of row.names (", length(row.names), ") does not match number of rows (", nrow(df), ")")
+      stop("Length of row.names (", length(row.names),
+           ") does not match number of rows (", nrow(df), ")")
     }
     rownames(df) <- row.names
   }
@@ -261,7 +263,7 @@ get_delay_past <- function(sfm) {
 check_xmile <- function(sfm) {
   # Check whether it is an xmile object
   if (!inherits(sfm, "sdbuildR_xmile")) {
-    stop("This is not an object of class sdbuildR_xmile! Create a stock-and-flow model with xmile() or insightmaker_to_sfm().")
+    stop("This is not an object of class sdbuildR_xmile! Create a stock-and-flow model with xmile() or insightmaker_to_sfm().", call. = FALSE)
   }
 }
 
@@ -2027,15 +2029,15 @@ add_from_df <- function(sfm, df) {
   nec_prop <- c("type", "name")
 
   if (!all(nec_prop %in% colnames(df))) {
-    stop("Please specify ", paste0(nec_prop, collapse = ", "))
+    stop("Please specify ", paste0(nec_prop, collapse = ", "), call. = FALSE)
   }
 
   # Check whether dataframe has columns only in prop
   idx <- !colnames(df) %in% unique(unlist(prop))
   if (any(idx)) {
     stop(
-      "The following column names are not valid properties: ",
-      paste0(colnames(df)[idx], collapse = ", ")
+      paste0("The following column names are not valid properties: ",
+      paste0(colnames(df)[idx], collapse = ", ")), call. = FALSE
     )
   }
 
@@ -2210,7 +2212,9 @@ debugger <- function(sfm, quietly = FALSE) {
     compact_()
 
   if (length(zero_eqn) > 0) {
-    potential_problems <- c(potential_problems, paste0("* These variables have an equation of 0:\n- ", paste0(unname(zero_eqn), collapse = ", ")))
+    potential_problems <- c(potential_problems,
+                            paste0("* These variables have an equation of 0:\n- ",
+                                   paste0(unname(zero_eqn), collapse = ", ")))
   }
 
   ### Detect undefined variable references in equations
@@ -2230,13 +2234,17 @@ debugger <- function(sfm, quietly = FALSE) {
   if (out[["static"]][["issue"]]) {
     problems <- c(
       problems,
-      paste0("* Ordering static equations failed. ", out[["static"]][["msg"]], collapse = "")
+      paste0("* ",
+        # "* Ordering static equations failed. ",
+             out[["static"]][["msg"]], collapse = "")
     )
   }
   if (out[["dynamic"]][["issue"]]) {
     problems <- c(
       problems,
-      paste0("* Ordering dynamic equations failed. ", out[["dynamic"]][["msg"]], collapse = "")
+      paste0("* ",
+        # "* Ordering dynamic equations failed. ",
+        out[["dynamic"]][["msg"]], collapse = "")
     )
   }
 

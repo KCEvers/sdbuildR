@@ -53,20 +53,27 @@ plot(sim)
 
 ### Build a model from scratch
 
-Lastly, a stock-and-flow model can be created from scratch. We first initialize an empty stock and flow model with `xmile()`, and then use `build()` to create a logistic model of population growth. The simulation specifications, such as the start time, stop time, and simulation time step (`dt`), are set with `sim_specs()`. Custom units such as people can be added with `model_units()`. Below, we make use of the convenient pipe operator `|>`, which simply passes the result of an expression to the next expression as a first argument. 
+Lastly, a stock-and-flow model can be created from scratch. We first initialize an empty stock and flow model with `xmile()`, and then use `build()` to create a logistic model of population growth. The simulation specifications, such as the start time, stop time, simulation time step (`dt`), and time units, are set with `sim_specs()`. Below, we make use of the convenient pipe operator `|>`, which simply passes the result of an expression to the next expression as a first argument. 
 
-```{r logistic_plot, fig.width=8, fig.height=4}
+```{r}
 sfm <- xmile() |>
   header(name = "Population growth") |>
-  build("X", "stock", eqn = ".01", label = "Population size") |>
+  build("X", "stock", eqn = "100", label = "Population size") |>
   build("change", "flow",
-    eqn = "r * (1 - X/K)", to = "X",
-    label = "Births and Deaths"
+        eqn = "r * (1 - X/K)", to = "X",
+        label = "Births and Deaths"
   ) |>
-  build("r", "constant", eqn = "0.1", label = "Growth rate") |>
-  build("K", "constant", eqn = "1", label = "Carrying capacity") |>
-  sim_specs(stop = 200)
-plot(simulate(sfm))
+  build("r", "constant", eqn = "5", label = "Growth rate") |>
+  build("K", "constant", eqn = "10000", label = "Carrying capacity") |>
+  sim_specs(stop = 10000, time_units = "days")
+```
+
+```{r}
+sim <- simulate(sfm)
+```
+
+```{r logistic_plot, fig.width=8, fig.height=4}
+plot(sim)
 ```
 
 An overview of the model components and simulation specifications can be accessed with `summary()`:

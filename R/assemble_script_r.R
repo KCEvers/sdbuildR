@@ -10,12 +10,12 @@ simulate_R <- function(sfm,
                        keep_nonnegative_stock,
                        verbose,
                        only_stocks) {
-  # Collect arguments
-  argg <- c(
-    as.list(environment())
-  )
-  # Remove NULL arguments
-  argg <- argg[!lengths(argg) == 0]
+  # # Collect arguments
+  # argg <- c(
+  #   as.list(environment())
+  # )
+  # # Remove NULL arguments
+  # argg <- argg[!lengths(argg) == 0]
 
   # Compile script without plot
   script <- compile_r(sfm,
@@ -40,29 +40,49 @@ simulate_R <- function(sfm,
         message(paste0("Simulation took ", round(end_t - start_t, 4), " seconds"))
       }
 
-      out <- list()
-      out[[.sdbuildR_env[["P"]][["sim_df_name"]]]] <- envir[[.sdbuildR_env[["P"]][["sim_df_name"]]]]
-      out[["init"]] <- unlist(envir[[.sdbuildR_env[["P"]][["initial_value_name"]]]])
-      out[["constants"]] <- unlist(envir[[.sdbuildR_env[["P"]][["parameter_name"]]]])
-      out[["keep_unit"]] <- FALSE
-      out[["script"]] <- script
-      out[["success"]] <- TRUE
-      out[["duration"]] <- end_t - start_t
+      # out <- list()
+      # out[[.sdbuildR_env[["P"]][["sim_df_name"]]]] <- envir[[.sdbuildR_env[["P"]][["sim_df_name"]]]]
+      # out[["init"]] <- unlist(envir[[.sdbuildR_env[["P"]][["initial_value_name"]]]])
+      # out[["constants"]] <- unlist(envir[[.sdbuildR_env[["P"]][["parameter_name"]]]])
+      # out[["keep_unit"]] <- FALSE
+      # out[["script"]] <- script
+      # out[["success"]] <- TRUE
+      # out[["duration"]] <- end_t - start_t
+      #
+      # out |>
+      #   utils::modifyList(argg) |>
+      #   structure(class = "sdbuildR_sim")
 
-      out |>
-        utils::modifyList(argg) |>
-        structure(class = "sdbuildR_sim")
+      df <- envir[[.sdbuildR_env[["P"]][["sim_df_name"]]]]
+      init <- unlist(envir[[.sdbuildR_env[["P"]][["initial_value_name"]]]])
+      constants <- unlist(envir[[.sdbuildR_env[["P"]][["parameter_name"]]]])
+
+      new_sdbuildR_sim(
+        success = TRUE,
+        sfm = sfm,
+        df = df,
+        init = init,
+        constants = constants,
+        script = script,
+        duration = end_t - start_t
+      )
     },
     error = function(e) {
       warning("\nAn error occurred while running the R script.")
-      list(
+      # list(
+      #   success = FALSE,
+      #   error_message = e[["message"]], script = script
+      # ) |>
+      #   structure(class = "sdbuildR_sim")
+
+      new_sdbuildR_sim(
         success = FALSE,
-        error_message = e[["message"]], script = script
-      ) |>
-        structure(class = "sdbuildR_sim")
+        error_message = e[["message"]],
+        script = script,
+        sfm = sfm
+      )
     }
   )
-
 
   return(sim)
 }
@@ -98,28 +118,6 @@ compile_r <- function(sfm,
       return(x)
     }
   )
-
-  # Check model for unit strings
-  eqn_units <- find_unit_strings(sfm)
-
-  # Stop if equations contain unit strings
-  if (length(eqn_units) > 0) {
-    stop(paste0("The model contains unit strings u(''), which are not supported for simulations in R.\nSet sim_specs(sfm, language = 'Julia') or modify the equations of these variables:\n\n", paste0(names(eqn_units), collapse = ", ")))
-  }
-
-  # Check model for delayN() and smoothN() functions
-  delayN_smoothN <- get_delayN_smoothN(sfm)
-
-  # Check model for delay() and past() functions
-  delay_past <- get_delay_past(sfm)
-
-  if (length(delayN_smoothN) > 0) {
-    stop(paste0("The model contains either delayN() or smoothN(), which are not supported for simulations in R.\nSet sfm |> sim_specs(language = 'Julia') or modify the equations of these variables: ", paste0(names(delayN_smoothN), collapse = ", ")))
-  }
-
-  if (length(delay_past) > 0) {
-    stop(paste0("The model contains either delay() or past(), which are not supported for simulations in R.\nSet sfm |> sim_specs(language = 'Julia') or modify the equations of these variables: ", paste0(names(delay_past), collapse = ", ")))
-  }
 
   # # Convert conveyors
   # sfm = convert_conveyor(sfm)

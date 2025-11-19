@@ -29,13 +29,15 @@ test_that("simulate R for templates", {
 test_that("simulate with different components works", {
   # Without stocks throws error
   sfm <- xmile() |> sim_specs(language = "R")
-  expect_error(simulate(sfm), "Your model has no stocks.")
+  expect_warning(sim <- simulate(sfm), "Your model has no stocks.")
+  expect_false(sim$success)
 
   sfm <- xmile() |>
     sim_specs(language = "R") |>
     build("a", "stock") |>
     build("b", "flow")
-  expect_error(simulate(sfm), "These flows are not connected to any stock:\\n- b")
+  expect_warning(sim <- simulate(sfm), "These flows are not connected to any stock:\\n- b")
+  expect_false(sim$success)
 
   # With one stock and no flows and no parameters
   sfm <- xmile() |>
@@ -106,10 +108,12 @@ test_that("simulate with different components works", {
 test_that("equations that refer to the variable itself throw error", {
   sfm <- xmile() %>%
     build("E", "stock", eqn = "E")
-  expect_error(
-    simulate(sfm),
+  expect_warning(
+    sim <- simulate(sfm),
     "Please define these missing variables or correct any spelling mistakes"
   )
+  expect_false(sim$success)
+
 })
 
 

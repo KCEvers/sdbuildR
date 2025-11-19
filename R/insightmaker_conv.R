@@ -106,7 +106,7 @@ IM_to_xmile <- function(xml_file) {
 
   # Check whether the model has any components
   if (!any(c("Variable", "Stock", "Flow") %in% node_names)) {
-    stop("This model does not contain any variables, stocks, or flows! Note that sdbuildR does not support importing Causal Loop Diagrams.")
+    stop("This model does not contain any variables, stocks, or flows!\nNote that sdbuildR only supports importing stock-and-flow models.", call. = FALSE)
   }
 
   if ("header" %in% node_names) {

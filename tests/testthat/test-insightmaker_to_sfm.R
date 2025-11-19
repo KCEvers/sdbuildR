@@ -44,10 +44,11 @@ test_that("downloading and simulating Insight Maker models works", {
   expect_equal("xpts" %in% names(df), TRUE)
   expect_equal("ypts" %in% names(df), TRUE)
 
-  expect_error(
-    simulate(sfm |> sim_specs(language = "R")),
+  expect_warning(
+    sim <- simulate(sfm |> sim_specs(language = "R")),
     "The model contains unit strings u\\(''\\), which are not supported for simulations in R"
   )
+  expect_false(sim$success)
 
   URL <- "https://insightmaker.com/insight/5LxQr0waZGgBcPJcNTC029/Crielaard-et-al-2022"
   sfm_list[[2]] <- sfm <- expect_no_error(insightmaker_to_sfm(URL = URL))
@@ -62,6 +63,7 @@ test_that("downloading and simulating Insight Maker models works", {
   )))
   expect_equal(sim$success, TRUE)
   expect_equal(nrow(sim$df) > 0, TRUE)
+  expect_no_error(expect_no_warning(expect_no_message(plot(sim))))
 
   URL <- "https://insightmaker.com/insight/75PvtT7zp43wI7ofBOM9Sm/Clone-of-HYSTERESIS"
   sfm_list[[3]] <- sfm <- expect_no_error(insightmaker_to_sfm(URL = URL))
@@ -70,11 +72,13 @@ test_that("downloading and simulating Insight Maker models works", {
   expect_equal("macro" %in% df$type, TRUE)
 
   # This model uses unit strings u(''), which are not supported in R
-  expect_error(
-    simulate(sfm |> sim_specs(language = "R")),
+  expect_warning(
+    sim <- simulate(sfm |> sim_specs(language = "R")),
     "The model contains unit strings u\\(''\\), which are not supported for simulations in R"
   )
+  expect_false(sim$success)
 
+  # Check all models in Julia
   lapply(sfm_list, function(sfm) {
     # For some models with units, save_at and save_from create error
     sim <- expect_no_error(simulate(sfm |> sim_specs(
@@ -134,6 +138,7 @@ test_that("translating Insight Maker models works (cran)", {
     expect_equal(nrow(sim$df) > 0, TRUE)
     expect_no_error(expect_no_warning(expect_no_message(plot(sim))))
   }
+
 })
 
 

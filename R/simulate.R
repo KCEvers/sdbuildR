@@ -57,7 +57,47 @@ simulate <- function(sfm,
   # First assess whether the model is valid
   problems <- debugger(sfm, quietly = TRUE)
   if (nzchar(problems[["problems"]])) {
-    stop(problems[["problems"]])
+    txt <- problems[["problems"]]
+    warning(paste(txt, collapse = "\n"))
+    return(new_sdbuildR_sim(
+      success = FALSE,
+      error_message = txt,
+      sfm = sfm
+    ))
+  }
+
+  # Check model for delayN() and smoothN() functions
+  delayN_smoothN <- get_delayN_smoothN(sfm)
+
+  # Check model for delay() and past() functions
+  delay_past <- get_delay_past(sfm)
+
+  if (length(delayN_smoothN) > 0) {
+    txt <- "The model contains either delayN() or smoothN(), which are not supported."
+    # stop(paste0(
+      # "The model contains either delayN() or smoothN(), which are not supported for simulations in R.\nSet sfm |> sim_specs(language = 'Julia') or modify the equations of these variables: ",
+      #           paste0(names(delayN_smoothN), collapse = ", ")
+    # ))
+    warning(paste(txt, collapse = "\n"))
+    return(new_sdbuildR_sim(
+      success = FALSE,
+      error_message = txt,
+      sfm = sfm
+    ))
+  }
+
+  if (length(delay_past) > 0) {
+    txt <- "The model contains either delay() or past(), which are not supported."
+    # stop(paste0(
+      # "The model contains either delay() or past(), which are not supported for simulations in R.\nSet sfm |> sim_specs(language = 'Julia') or modify the equations of these variables: ",
+      #           paste0(names(delay_past), collapse = ", ")
+    # ))
+    warning(paste(txt, collapse = "\n"))
+    return(new_sdbuildR_sim(
+      success = FALSE,
+      error_message = txt,
+      sfm = sfm
+    ))
   }
 
   if (tolower(sfm[["sim_specs"]][["language"]]) == "julia") {
@@ -68,10 +108,23 @@ simulate <- function(sfm,
       verbose = verbose
     ))
   } else if (tolower(sfm[["sim_specs"]][["language"]]) == "r") {
-    # Remove - deSolve is now a required installation
-    # if (!requireNamespace("deSolve", quietly = TRUE)){
-    #   stop("deSolve is not installed! Please install deSolve to simulate in R,\nor simulate in Julia by setting\nsfm |> sim_specs(language = 'Julia')")
-    # }
+
+    # Check model for unit strings
+    eqn_units <- find_unit_strings(sfm)
+
+    # Stop if equations contain unit strings
+    if (length(eqn_units) > 0) {
+      # stop(paste0("The model contains unit strings u(''), which are not supported for simulations in R.\nSet sim_specs(sfm, language = 'Julia') or modify the equations of these variables:\n\n",
+      #             paste0(names(eqn_units), collapse = ", ")))
+      txt <- paste0("The model contains unit strings u(''), which are not supported for simulations in R.\nSet sim_specs(sfm, language = 'Julia') or modify the equations of these variables:\n\n",
+                    paste0(names(eqn_units), collapse = ", "))
+      warning(paste(txt, collapse = "\n"))
+      return(new_sdbuildR_sim(
+        success = FALSE,
+        error_message = txt,
+        sfm = sfm
+      ))
+    }
 
     return(simulate_R(sfm,
       keep_nonnegative_flow = keep_nonnegative_flow,
@@ -80,10 +133,85 @@ simulate <- function(sfm,
       verbose = verbose
     ))
   } else {
-    stop("Language not supported.\nPlease run either sim_specs(sfm, language = 'Julia') (recommended) or sim_specs(sfm, language = 'R') (no unit or ensemble support).")
+    txt <- "Simulation language not supported.\nPlease run either sim_specs(sfm, language = 'Julia') (recommended) or sim_specs(sfm, language = 'R') (no unit or ensemble support)."
+    warning(txt)
+    return(new_sdbuildR_sim(
+      success = FALSE,
+      error_message = txt,
+      sfm = sfm
+    ))
   }
 }
 
+#' Create new object of class [`sdbuildR_sim`][simulate]
+#'
+#' @returns A simulation of a stock-and-flow model of class [`sdbuildR_sim`][simulate]
+#' @noRd
+#'
+new_sdbuildR_sim <- function(success = FALSE,
+                             error_message = NULL,
+                             sfm = NULL,
+                             df = NULL,
+                             init = NULL,
+                             constants = NULL,
+                             script = NULL,
+                             duration = NULL,
+                             ...) {
+  obj <- list(
+    success = success,
+    error_message = error_message,
+    sfm = sfm,
+    df = df,
+    init = init,
+    constants = constants,
+    script = script,
+    duration = duration,
+    ...
+  )
+
+  structure(obj, class = "sdbuildR_sim")
+}
+
+
+#' Validate class [`sdbuildR_sim`][simulate]
+#'
+#' @param x A simulation of a stock-and-flow model of class [`sdbuildR_sim`][simulate]
+#'
+#' @returns A simulation of a stock-and-flow model of class [`sdbuildR_sim`][simulate]
+#' @noRd
+#'
+validate_sdbuildR_sim <- function(x) {
+  if (!inherits(x, "sdbuildR_sim")) {
+    stop("Object must be of class 'sdbuildR_sim'")
+  }
+
+  if (!is.logical(x$success) || length(x$success) != 1) {
+    stop("`success` must be a single logical value")
+  }
+
+  if (x$success) {
+    # Successful simulation must have these components
+    if (is.null(x$df) || !is.data.frame(x$df)) {
+      stop("Successful simulation must have a data frame in `df`")
+    }
+    if (is.null(x$init)) {
+      stop("Successful simulation must have `init`")
+    }
+    # if (is.null(x$constants) || !is.numeric(x$constants)) {
+    #   stop("Successful simulation must have numeric `constants`")
+    # }
+    if (is.null(x$duration)) {
+      stop("Successful simulation must have `duration`")
+    }
+  } else {
+    # Failed simulation should have error message
+    if (is.null(x$error_message)) {
+      warning("Failed simulation should have `error_message`")
+    }
+  }
+
+  x
+}
 
 #' Detect undefined variables in equations
 #'
@@ -904,18 +1032,6 @@ ensemble <- function(sfm,
     {
       use_julia()
 
-      # # Set Julia BINDIR
-      # old_option <- Sys.getenv("JULIA_BINDIR", unset = NA)
-      # Sys.setenv("JULIA_BINDIR" = .sdbuildR_env[["JULIA_BINDIR"]])
-      #
-      # on.exit({
-      #   if (is.na(old_option)) {
-      #     Sys.unsetenv("JULIA_BINDIR")
-      #   } else {
-      #     Sys.setenv("JULIA_BINDIR" = old_option)
-      #   }
-      # })
-
       # Evaluate script
       start_t <- Sys.time()
 
@@ -975,6 +1091,7 @@ ensemble <- function(sfm,
 
       list(
         success = TRUE,
+        # sfm = sfm,
         df = df,
         summary = summary,
         n = n,
@@ -992,8 +1109,19 @@ ensemble <- function(sfm,
     error = function(e) {
       warning("\nAn error occurred while running the Julia script.")
       list(
-        success = FALSE, error_message = e[["message"]],
-        script = script
+        success = FALSE,
+        error_message = e[["message"]],
+        df = NULL,
+        summary = NULL,
+        n = n,
+        n_total = n_total,
+        n_conditions = n_conditions,
+        conditions = NULL,
+        init = NULL,
+        constants = NULL,
+        script = script,
+        duration = end_t - start_t
+        # sfm = sfm
       ) |>
         utils::modifyList(argg) |>
         structure(class = "sdbuildR_ensemble")
