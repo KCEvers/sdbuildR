@@ -393,10 +393,10 @@ sfm <- build(sfm, "r_P_E", "constant",
   build("P", eqn = "D * (r_P_E * E + r_P_X * X)")
 ```
 
-In order to give $r_{X_{D}}$ the unit $\frac{1}{\text{day}}$, we need to
-add an additional factor, $r_{R_{D}}$ with the units $\frac{uR}{uD}$,
-indicating how many unit resources are needed per unit demand to buffer
-energy depletion.
+In order to give r\_{X_D} the unit \frac{1}{\text{day}}, we need to add
+an additional factor, r\_{R_D} with the units \frac{uR}{uD}, indicating
+how many unit resources are needed per unit demand to buffer energy
+depletion.
 
 ``` r
 sfm <- build(sfm, "r_R_D", "constant",
@@ -414,8 +414,8 @@ sfm <- build(sfm, "X_D", eqn = "r_X_D * r_R_D * X * D / (u('1uR') + R)")
 ```
 
 Proactive behaviour now increases resources and decreases demands with
-the same constant $r_{A}$, creating dimensional inconsistency. We create
-a new constant for the outflow from job demands:
+the same constant r_A, creating dimensional inconsistency. We create a
+new constant for the outflow from job demands:
 
 ``` r
 sfm <- build(sfm, "r_A_D", "constant",
@@ -609,13 +609,13 @@ sfm <- sfm0
 
 sims <- ensemble(sfm, n = 1000)
 #> Running a total of 1000 simulations
-#> Simulation took 9.0683 seconds
+#> Simulation took 8.8792 seconds
 plot(sims, vars = c("E", "D"))
 ```
 
 #### Parameter Variation
 
-Vary $r_{X_{D}}$: the rate of energy depletion from demand.
+Vary r\_{X_D}: the rate of energy depletion from demand.
 
 ``` r
 sims <- ensemble(sfm,
@@ -624,7 +624,7 @@ sims <- ensemble(sfm,
   return_sims = TRUE
 )
 #> Running a total of 300 simulations for 3 conditions (100 simulations per condition)
-#> Simulation took 1.9272 seconds
+#> Simulation took 1.9032 seconds
 
 plot(sims,
   type = "sims", i = 1:100, alpha = .25,
@@ -653,7 +653,7 @@ plot(sim)
 # Simulation study
 sims <- ensemble(sfm, n = 100, return_sims = TRUE)
 #> Running a total of 100 simulations
-#> Simulation took 1.1262 seconds
+#> Simulation took 1.0881 seconds
 plot(sims,
   type = "sims", i = 1:100, alpha = .25, central_tendency = FALSE,
   vars = c("E", "D", "r_X_D")
@@ -667,7 +667,7 @@ compute the effectiveness of the intervention.
 sfm <- sfm |> sim_specs(stop = 1000, save_from = 1000)
 sims <- ensemble(sfm, n = 1000, return_sims = TRUE)
 #> Running a total of 1000 simulations
-#> Simulation took 20.5202 seconds
+#> Simulation took 20.3872 seconds
 y <- sims$df[sims$df$variable == "X", "value"]
 tab <- table(round(y, 4)) |>
   prop.table() |>
@@ -685,7 +685,7 @@ A later intervention is not effective.
 sfm <- build(sfm, "start", eqn = 28)
 sims <- ensemble(sfm, n = 1000, return_sims = TRUE)
 #> Running a total of 1000 simulations
-#> Simulation took 20.6512 seconds
+#> Simulation took 20.4361 seconds
 
 y <- sims$df[sims$df$variable == "X", "value"]
 tab <- table(round(y, 4)) |>

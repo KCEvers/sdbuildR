@@ -103,7 +103,7 @@ function:
 ``` r
 sims <- ensemble(sfm, n = 100)
 #> Running a total of 100 simulations
-#> Simulation took 5.8012 seconds
+#> Simulation took 5.6052 seconds
 ```
 
 ``` r
@@ -118,7 +118,7 @@ which we first have to rerun the simulation and set
 ``` r
 sims <- ensemble(sfm, n = 30, return_sims = TRUE)
 #> Running a total of 30 simulations
-#> Simulation took 0.5962 seconds
+#> Simulation took 0.5892 seconds
 ```
 
 ``` r
@@ -139,7 +139,7 @@ By default, only the stocks are saved. To save all variables, set
 ``` r
 sims <- ensemble(sfm, n = 100, only_stocks = FALSE)
 #> Running a total of 100 simulations
-#> Simulation took 2.0442 seconds
+#> Simulation took 1.9902 seconds
 ```
 
 ``` r
@@ -163,8 +163,8 @@ To stop using parallel simulations, run `use_threads(stop = TRUE)`.
 
 Instead of generating an ensemble with random initial conditions, we can
 also specify ensembles with exact parameter values. For example, we
-could vary the $a_{2}$ parameter, which determines how strongly having
-eaten increases compensatory behaviour.
+could vary the a_2 parameter, which determines how strongly having eaten
+increases compensatory behaviour.
 
 ``` r
 sims <- ensemble(sfm,
@@ -172,7 +172,7 @@ sims <- ensemble(sfm,
   range = list("a2" = c(0.2, 0.4, 0.6, 0.8))
 )
 #> Running a total of 400 simulations for 4 conditions (100 simulations per condition)
-#> Simulation took 2.7962 seconds
+#> Simulation took 2.7732 seconds
 ```
 
 ``` r
@@ -180,10 +180,10 @@ plot(sims)
 ```
 
 We can also vary multiple parameters at once. For example, we can vary
-both $a_{2}$ and $a_{1}$, where the latter influences how strongly food
-intake leads to more food intake. `n` now specifies the number of
-simulations per condition. By default, `cross = TRUE`, which means that
-all possible combinations of parameters are simulated.
+both a_2 and a_1, where the latter influences how strongly food intake
+leads to more food intake. `n` now specifies the number of simulations
+per condition. By default, `cross = TRUE`, which means that all possible
+combinations of parameters are simulated.
 
 ``` r
 sims <- ensemble(sfm,
@@ -194,7 +194,7 @@ sims <- ensemble(sfm,
   n = 100
 )
 #> Running a total of 400 simulations for 4 conditions (100 simulations per condition)
-#> Simulation took 1.5972 seconds
+#> Simulation took 1.5762 seconds
 ```
 
 ``` r
@@ -202,9 +202,9 @@ plot(sims)
 ```
 
 The plot shows similarity within columns but differences between
-columns. As $a_{1}$ differs between columns, it appears that $a_{1}$ has
-a larger effect than $a_{2}$. To view the parameter combination
-corresponding to each condition $j$, view `conditions` in `sims`:
+columns. As a_1 differs between columns, it appears that a_1 has a
+larger effect than a_2. To view the parameter combination corresponding
+to each condition j, view `conditions` in `sims`:
 
 ``` r
 sims$conditions
@@ -227,7 +227,7 @@ sims <- ensemble(sfm,
   n = 100, cross = FALSE, return_sims = TRUE
 )
 #> Running a total of 300 simulations for 3 conditions (100 simulations per condition)
-#> Simulation took 1.1462 seconds
+#> Simulation took 1.1382 seconds
 ```
 
 ``` r
@@ -248,9 +248,9 @@ which is a list containing, among others: - `summary`: summary
 statistics across all simulations per condition - `df`: individual
 simulation data (if `return_sims = TRUE`) - `init`: initial values of
 stocks - `constants`: parameter values used - `conditions`: matrix
-showing parameter combinations for each $j$
+showing parameter combinations for each j
 
-You can access the summary statistics per condition $j$ and per time
+You can access the summary statistics per condition j and per time
 point, such as the mean and confidence intervals, using:
 
 ``` r
@@ -274,7 +274,7 @@ head(sims$summary)
 If you have set have set `return_sims = TRUE`, you can find the
 individual simulation runs in `sims$df`. These are in long format,
 containing the value of each variable for each time point in each
-simulation $i$ per condition $j$.
+simulation i per condition j.
 
 ``` r
 head(sims$df)
@@ -287,8 +287,7 @@ head(sims$df)
 #> 6 1 1   11                 Hunger 0.8578220356
 ```
 
-To view the initial values of each simulation $i$ per condition $j$,
-run:
+To view the initial values of each simulation i per condition j, run:
 
 ``` r
 head(sims$init$df)
@@ -321,8 +320,8 @@ head(sims$init$summary)
 #> 6 0.01777176 0.9714317
 ```
 
-Finally, to access the parameters (i.e. constants) of each simulation
-$i$ per condition $j$, run:
+Finally, to access the parameters (i.e. constants) of each simulation i
+per condition j, run:
 
 ``` r
 head(sims$constants$df)

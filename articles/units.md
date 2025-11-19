@@ -20,9 +20,11 @@ productivity as the number of tasks completed per hour, and it is
 determined by the amount of caffeine we have consumed, we ensure the
 equation is dimensionally consistent like so:
 
-$$\text{Productivity} = \text{Caffeine consumed} \cdot \text{Productivity from caffeine}$$
+\text{Productivity} = \text{Caffeine consumed} \cdot \text{Productivity
+from caffeine}
 
-$$\frac{\text{tasks}}{\text{hr}} = \frac{\text{mg}}{\text{hr}} \cdot \frac{\text{tasks}}{\text{mg}}$$
+\frac{\text{tasks}}{\text{hr}} = \frac{\text{mg}}{\text{hr}} \cdot
+\frac{\text{tasks}}{\text{mg}}
 
 Dimensional consistency is also required between stocks and flows. A
 stock can only be connected to flows with a matching unit measured over
@@ -31,13 +33,13 @@ connected to flows with the unit kilocalories per hour. This is
 dimensionally consistent, as flows are measured over a certain period of
 time:
 
-$$\text{kcal} = \frac{\text{kcal}}{\text{hr}} \cdot \text{hr}$$
+\text{kcal} = \frac{\text{kcal}}{\text{hr}} \cdot \text{hr}
 
 However, note that the left and right hand side of the equation do not
 need to be in exactly the same units in order to match. For example, we
 may measure the flow over a period of minutes:
 
-$$\text{kcal} = \frac{\text{kcal}}{\text{hr}} \cdot \text{min}$$
+\text{kcal} = \frac{\text{kcal}}{\text{hr}} \cdot \text{min}
 
 Such an equation is still dimensionally consistent, as minutes and hours
 match and can be converted to one another. There is no need to add an
@@ -48,33 +50,34 @@ Mathematical operations differ in their unit compatibility requirements.
 Addition and subtraction can only be applied to variables that have the
 same unit, as these operations combine or compare quantities directly.
 For instance, it is not possible to add kilocalories to body fat in
-kilograms, $\text{kg} + \text{kcal}$. To specify how consuming food can
+kilograms, \text{kg} + \text{kcal}. To specify how consuming food can
 add body fat, we need to translate kilocalories to kilograms. A correct
 formulation divides the number of kilocalories consumed by the number of
 kilocalories in a kilogram of body fat, which is dimensionally
-consistent with $\text{kg}$:
+consistent with \text{kg}:
 
-$$\frac{\text{kcal}}{\frac{7700\text{kcal}}{\text{kg}}}$$
+\frac{\text{kcal}}{\frac{7700\text{kcal}}{\text{kg}}}
 
 Conversely, variables do not need to have matching units for division
 and multiplication, as these operations transform the unit. For example,
 labour cost can be computed by multiplying the number of employees with
 income per month:
 
-$$\text{employees} \cdot \frac{€}{\text{month}} = \frac{\text{employees} \cdot €}{\text{month}}$$
+\text{employees} \cdot \frac{€}{\text{month}} = \frac{\text{employees}
+\cdot €}{\text{month}}
 
 Exponentiation changes the unit itself, such as when squaring the amount
-of meters in a space, $\text{m}^{2}$.
+of meters in a space, \text{m}^2.
 
 Not all variables need to have units, though. Some are unitless
 (i.e. dimensionless), such as fractions or ratios. For example, the
-interest rate on a bank account is unitless, as
-$€ \cdot \text{interest} = €$. Similarly, variables can be rendered
-unitless by division and multiplication. For instance, dividing the
-number of infected individuals by the total population yields a
-dimensionless ratio:
+interest rate on a bank account is unitless, as € \cdot \text{interest}
+= €. Similarly, variables can be rendered unitless by division and
+multiplication. For instance, dividing the number of infected
+individuals by the total population yields a dimensionless ratio:
 
-$$\frac{\text{Infected population}}{\text{Total population}} = \frac{\text{people}}{\text{people}} = 1$$
+\frac{\text{Infected population}}{\text{Total population}} =
+\frac{\text{people}}{\text{people}} = 1
 
 In summary, units help ensure equations are correctly formulated. If
 equations are not dimensionally consistent, this exposes an error in the
@@ -92,12 +95,12 @@ In addition to verifying the model is dimensionally consistent, units
 help keep variables interpretable. Units give meaning and a timescale to
 variables. For instance, a variable such as productivity could be
 defined in numerous ways. Specifying its unit as
-$\frac{\text{tasks}}{\text{hr}}$ clearly communicates what higher or
-lower productivity means and how it can be measured. Equations with
-puzzling constructions of units without a clear interpretation are
-immediately suspect, such as $\text{kcal}^{3}/\text{s}^{2}/\text{m}$. As
-such, units help to relate your model to the real world, and make it
-possible to compare your model results with empirical data.
+\frac{\text{tasks}}{\text{hr}} clearly communicates what higher or lower
+productivity means and how it can be measured. Equations with puzzling
+constructions of units without a clear interpretation are immediately
+suspect, such as \text{kcal}^3/\text{s}^2/\text{m}. As such, units help
+to relate your model to the real world, and make it possible to compare
+your model results with empirical data.
 
 Moreover, units help identify and differentiate between time scales in
 the system. It may not feel natural to define each variable on the same
@@ -305,7 +308,7 @@ sfm <- build(sfm, "change",
 
 When specifying fractions, take care to use the correct syntax. For
 example, `1/6 * hour` is interpreted as one sixth of an hour, but
-`1/6 hour` is interpreted as one sixth of $\frac{1}{\text{hr}}$, which
+`1/6 hour` is interpreted as one sixth of \frac{1}{\text{hr}}, which
 thus takes the inverse of the unit hour.
 
 In rare cases, you may want to change the units of a variable within an

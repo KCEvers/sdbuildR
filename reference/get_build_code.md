@@ -30,7 +30,7 @@ get_build_code(sfm)
 #> `?styler::print.vertical()` for more information.
 #> sfm <- xmile() |>
 #>   sim_specs(method = "euler", start = "0.0", stop = "20.0", dt = "0.01", save_at = "0.01", save_from = "0.0", seed = NULL, time_units = "wk", language = "R") |>
-#>   header(name = "Susceptible-Infected-Recovered (SIR)", created = "2025-11-19 09:58:07.961948") |>
+#>   header(name = "Susceptible-Infected-Recovered (SIR)", created = "2025-11-19 11:25:14.973238") |>
 #>   build(name = "Susceptible", type = "stock", eqn = "99999", label = "Susceptible") |>
 #>   build(name = "Infected", type = "stock", eqn = "1", label = "Infected") |>
 #>   build(name = "Recovered", type = "stock", label = "Recovered") |>
