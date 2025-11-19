@@ -563,13 +563,17 @@ mod <- function(a, b) {
 #' logistic(0)
 #' # equivalent:
 #' sigmoid(0)
-#' logistic(1, slope = 5, midpoint = 0.5, upper = 10)
+#'
+#' # Adjust parameters
+#' logistic(0, slope = 5, midpoint = 0.5, upper = 10)
 #'
 #' # Visualize different slopes
-#' x <- seq(-5, 5, length.out = 100)
-#' plot(x, logistic(x, slope = 1), type = "l", ylab = "f(x)")
+#' x <- seq(-5, 5, length.out = 1000)
+#' plot(x, logistic(x, slope = 1), type = "l", ylab = "f(x)", ylim = c(0, 1))
 #' lines(x, logistic(x, slope = 5), col = "blue")
 #' lines(x, logistic(x, slope = 50), col = "red")
+#' legend("topleft", legend = c("slope = 1", "slope = 5", "slope = 50"),
+#'        col = c("black", "blue", "red"), lty = 1)
 logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
   stopifnot("slope must be numeric!" = is.numeric(slope))
   stopifnot("midpoint must be numeric!" = is.numeric(midpoint))
