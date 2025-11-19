@@ -1,6 +1,7 @@
 url: https://kcevers.github.io/sdbuildR/
 template:
   bootstrap: 5
+  math-rendering: katex
 articles:
 - title: Vignettes
   navbar: ~
