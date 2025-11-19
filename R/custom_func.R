@@ -542,18 +542,34 @@ mod <- function(a, b) {
 
 #' Logistic function
 #'
-#' @param x Value
-#' @param slope Slope of logistic function. Defaults to 1.
-#' @param midpoint Midpoint of logistic function where the output is .5. Defaults to 0.
-#' @param upper Maximal value returned by logistic function. Defaults to 1.
+#' Computes the logistic (i.e., sigmoid) function with configurable slope, midpoint, and upper asymptote.
 #'
-#' @returns f(x), where f is the logistic function
+#' @param x Value at which to evaluate the function
+#' @param slope Slope of logistic function at the midpoint. Defaults to 1.
+#' @param midpoint Midpoint of logistic function where the output is `upper/2`. Defaults to 0.
+#' @param upper Upper asymptote (maximal value) of the logistic function. Defaults to 1.
+#'
+#' @returns Numeric value given by \deqn{f(x) = \frac{upper}{1 + e^{-slope \cdot (x - midpoint)}}}
+#'
+#' @details
+#' The logistic function is a smooth S-shaped curve bounded between 0 and `upper`.
+#' It transitions from near 0 to near `upper` around the `midpoint`, with the steepness
+#' of this transition controlled by `slope`.
+#'
 #' @concept custom
 #' @export
 #'
 #' @examples
 #' logistic(0)
-#' logistic(1, slope = 5, midpoint = 0.5)
+#' # equivalent:
+#' sigmoid(0)
+#' logistic(1, slope = 5, midpoint = 0.5, upper = 10)
+#'
+#' # Visualize different slopes
+#' x <- seq(-5, 5, length.out = 100)
+#' plot(x, logistic(x, slope = 1), type = "l", ylab = "f(x)")
+#' lines(x, logistic(x, slope = 5), col = "blue")
+#' lines(x, logistic(x, slope = 50), col = "red")
 logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
   stopifnot("slope must be numeric!" = is.numeric(slope))
   stopifnot("midpoint must be numeric!" = is.numeric(midpoint))
@@ -564,7 +580,6 @@ logistic <- function(x, slope = 1, midpoint = 0, upper = 1) {
 
 
 #' @rdname logistic
-#' @examples sigmoid(0)
 #' @export
 sigmoid <- logistic
 
