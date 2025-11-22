@@ -103,7 +103,7 @@ function:
 ``` r
 sims <- ensemble(sfm, n = 100)
 #> Running a total of 100 simulations
-#> Simulation took 5.6052 seconds
+#> Simulation took 5.7252 seconds
 ```
 
 ``` r
@@ -118,7 +118,7 @@ which we first have to rerun the simulation and set
 ``` r
 sims <- ensemble(sfm, n = 30, return_sims = TRUE)
 #> Running a total of 30 simulations
-#> Simulation took 0.5892 seconds
+#> Simulation took 0.5982 seconds
 ```
 
 ``` r
@@ -139,7 +139,7 @@ By default, only the stocks are saved. To save all variables, set
 ``` r
 sims <- ensemble(sfm, n = 100, only_stocks = FALSE)
 #> Running a total of 100 simulations
-#> Simulation took 1.9902 seconds
+#> Simulation took 2.0392 seconds
 ```
 
 ``` r
@@ -172,7 +172,7 @@ sims <- ensemble(sfm,
   range = list("a2" = c(0.2, 0.4, 0.6, 0.8))
 )
 #> Running a total of 400 simulations for 4 conditions (100 simulations per condition)
-#> Simulation took 2.7732 seconds
+#> Simulation took 2.7442 seconds
 ```
 
 ``` r
@@ -194,7 +194,7 @@ sims <- ensemble(sfm,
   n = 100
 )
 #> Running a total of 400 simulations for 4 conditions (100 simulations per condition)
-#> Simulation took 1.5762 seconds
+#> Simulation took 1.5372 seconds
 ```
 
 ``` r
@@ -227,7 +227,7 @@ sims <- ensemble(sfm,
   n = 100, cross = FALSE, return_sims = TRUE
 )
 #> Running a total of 300 simulations for 3 conditions (100 simulations per condition)
-#> Simulation took 1.1382 seconds
+#> Simulation took 1.1172 seconds
 ```
 
 ``` r

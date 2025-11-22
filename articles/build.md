@@ -420,7 +420,7 @@ get_build_code(xmile("logistic_model"))
 #> `?styler::print.vertical()` for more information.
 #> sfm <- xmile() |>
 #>   sim_specs(method = "euler", start = "0.0", stop = "200.0", dt = "0.01", save_at = "0.01", save_from = "0.0", seed = NULL, time_units = "s", language = "R") |>
-#>   header(name = "Logistic model", created = "2025-11-19 11:26:27.175056") |>
+#>   header(name = "Logistic model", created = "2025-11-22 11:09:38.854383") |>
 #>   build(name = "X", type = "stock", eqn = ".01", label = "Population size") |>
 #>   build(name = "r", type = "constant", eqn = "0.1", label = "Growth rate") |>
 #>   build(name = "K", type = "constant", eqn = "1", label = "Carrying capacity") |>
