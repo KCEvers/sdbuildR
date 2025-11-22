@@ -609,7 +609,7 @@ sfm <- sfm0
 
 sims <- ensemble(sfm, n = 1000)
 #> Running a total of 1000 simulations
-#> Simulation took 8.8372 seconds
+#> Simulation took 8.7662 seconds
 plot(sims, vars = c("E", "D"))
 ```
 
@@ -624,7 +624,7 @@ sims <- ensemble(sfm,
   return_sims = TRUE
 )
 #> Running a total of 300 simulations for 3 conditions (100 simulations per condition)
-#> Simulation took 1.8632 seconds
+#> Simulation took 1.8492 seconds
 
 plot(sims,
   type = "sims", i = 1:100, alpha = .25,
@@ -653,7 +653,7 @@ plot(sim)
 # Simulation study
 sims <- ensemble(sfm, n = 100, return_sims = TRUE)
 #> Running a total of 100 simulations
-#> Simulation took 1.1013 seconds
+#> Simulation took 1.1182 seconds
 plot(sims,
   type = "sims", i = 1:100, alpha = .25, central_tendency = FALSE,
   vars = c("E", "D", "r_X_D")
@@ -667,7 +667,7 @@ compute the effectiveness of the intervention.
 sfm <- sfm |> sim_specs(stop = 1000, save_from = 1000)
 sims <- ensemble(sfm, n = 1000, return_sims = TRUE)
 #> Running a total of 1000 simulations
-#> Simulation took 20.7032 seconds
+#> Simulation took 20.5432 seconds
 y <- sims$df[sims$df$variable == "X", "value"]
 tab <- table(round(y, 4)) |>
   prop.table() |>
@@ -685,7 +685,7 @@ A later intervention is not effective.
 sfm <- build(sfm, "start", eqn = 28)
 sims <- ensemble(sfm, n = 1000, return_sims = TRUE)
 #> Running a total of 1000 simulations
-#> Simulation took 20.6612 seconds
+#> Simulation took 20.7132 seconds
 
 y <- sims$df[sims$df$variable == "X", "value"]
 tab <- table(round(y, 4)) |>
@@ -753,7 +753,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] sdbuildR_1.0.8
+#> [1] sdbuildR_1.0.8.9000
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] styler_1.11.0        DiagrammeR_1.0.11    tidyr_1.3.1         

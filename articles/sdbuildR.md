@@ -138,7 +138,7 @@ citation("sdbuildR")
 #> To cite package 'sdbuildR' in publications use:
 #> 
 #>   Evers K (2025). _sdbuildR: Easily Build, Simulate, and Visualise
-#>   Stock-and-Flow Models_. R package version 1.0.8,
+#>   Stock-and-Flow Models_. R package version 1.0.8.9000,
 #>   <https://kcevers.github.io/sdbuildR/>.
 #> 
 #> A BibTeX entry for LaTeX users is
@@ -147,7 +147,7 @@ citation("sdbuildR")
 #>     title = {sdbuildR: Easily Build, Simulate, and Visualise Stock-and-Flow Models},
 #>     author = {Kyra Caitlin Evers},
 #>     year = {2025},
-#>     note = {R package version 1.0.8},
+#>     note = {R package version 1.0.8.9000},
 #>     url = {https://kcevers.github.io/sdbuildR/},
 #>   }
 ```
