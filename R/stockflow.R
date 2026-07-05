@@ -33,7 +33,7 @@
 #' summary(sfm)
 #'
 #' \dontshow{
-#' sfm <- sim_settings(sfm, save_at = 1)
+#' sfm <- sim_settings(sfm, save_by = 1)
 #' }
 #'
 #' # Load a template
@@ -114,7 +114,7 @@ input_var_cols <- function() {
 # settings (seed, vars, only_stocks, save_sims) are intentionally excluded.
 codegen_sim_setting_names <- function() {
   c(
-    "method", "start", "stop", "dt", "save_type", "save_at", "save_n",
+    "method", "start", "stop", "dt", "save_by", "save_times", "save_length",
     "time_units", "language", "keep_nonnegative_stock", "keep_nonnegative_flow"
   )
 }
@@ -278,11 +278,12 @@ new_sim_settings <- function() {
   spec_defaults <- as.list(formals(sim_settings))
   spec_defaults <- spec_defaults[!names(spec_defaults) %in% c("object", "...")]
 
-  # Flat save fields: save_type discriminates mode; save_at and save_n are NULL
-  # (meaning "save all dt steps") by default
-  spec_defaults[["save_type"]] <- "all"
-  spec_defaults["save_at"] <- list(NULL)
-  spec_defaults["save_n"] <- list(NULL)
+  # Save fields save_by / save_times / save_length are NULL (meaning "save all dt
+  # steps") by default; at most one is ever non-NULL. Set explicitly so the named
+  # NULL entries always exist regardless of how formals() carries the defaults.
+  spec_defaults["save_by"] <- list(NULL)
+  spec_defaults["save_times"] <- list(NULL)
+  spec_defaults["save_length"] <- list(NULL)
 
   # Ensemble summary defaults: formals() yields unevaluated c(...) calls for
   # these, so set the realised vectors explicitly.
@@ -762,7 +763,7 @@ get_building_block_prop <- function() {
 #'
 #' @inheritParams plot.stockflow
 #' @param vars Variable names to retain in the data frame. Defaults to `NULL` to include all variables.
-#' @param type Variable types to retain in the data frame. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', or 'func'. Defaults to `NULL` to include all types.
+#' @param type Variable types to retain in the data frame. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'lookup', or 'func'. Defaults to `NULL` to include all types.
 #' @param properties Variable properties to retain in the data frame. Defaults to `NULL` to include all properties.
 #' @param row.names `NULL` or a character vector giving the row names for the data frame. Missing values are not allowed.
 #' @param optional Ignored parameter.
@@ -1000,7 +1001,7 @@ print.stockflow <- function(x, ...) {
 
   # Stock-flow structure
   if (n_stocks > 0 || n_flows > 0) {
-    cli::cli_h2("Stock-Flow Structure")
+    cli_h2_tight("Stock-Flow Structure")
 
     stock_rows <- vars[types == "stock", , drop = FALSE]
     all_flow_names <- vars[types == "flow", "name"]
@@ -1039,7 +1040,7 @@ print.stockflow <- function(x, ...) {
   # Other variables
   has_others <- n_constants > 0 || n_aux > 0 || n_lookup > 0
   if (has_others) {
-    cli::cli_h2("Other Variables")
+    cli_h2_tight("Other Variables")
     if (n_constants > 0) {
       const_names <- vars[types == "constant", "name"]
       cli::cli_text("  {.strong Constants}:   {.code {const_names}}")
@@ -1055,22 +1056,16 @@ print.stockflow <- function(x, ...) {
   }
 
   # Simulation settings
-  cli::cli_h2("Simulation Settings")
+  cli_h2_tight("Simulation Settings")
   ss <- x[["sim_settings"]]
   time_unit <- ss[["time_units"]]
 
-  save_type <- ss[["save_type"]]
-  if (save_type == "all") {
-    save_suffix <- ""
-  } else if (save_type == "at") {
-    l_save_at <- length(ss[["save_at"]])
-    if (l_save_at > 1) {
-      save_suffix <- paste0(", save_at = ", l_save_at, " time points")
-    } else {
-      save_suffix <- paste0(", save_at = ", ss[["save_at"]])
-    }
-  } else if (save_type == "n") {
-    save_suffix <- paste0(", save_n = ", ss[["save_n"]])
+  if (!is.null(ss[["save_by"]])) {
+    save_suffix <- paste0(", save_by = ", ss[["save_by"]])
+  } else if (!is.null(ss[["save_times"]])) {
+    save_suffix <- paste0(", save_times = ", length(ss[["save_times"]]), " time points")
+  } else if (!is.null(ss[["save_length"]])) {
+    save_suffix <- paste0(", save_length = ", ss[["save_length"]])
   } else {
     save_suffix <- ""
   }

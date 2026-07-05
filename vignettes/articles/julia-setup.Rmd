@@ -29,6 +29,12 @@ options(sdbuildR.webgl = FALSE)
 ```
 
 
+```{r, echo = FALSE}
+font_family <- "stix-two-text"
+options(sdbuildR.font_family = font_family)
+# getOption("sdbuildR.font_family")
+```
+
 sdbuildR supports simulating stock-and-flow models with Julia as the backend. Julia is a modern, open-source programming language that reaches performance comparable to lower-level languages like C while maintaining higher-level syntax similar to R and Python. To simulate with Julia, sdbuildR translates R to Julia code and uses [`JuliaConnectoR`](https://github.com/stefan-m-lenz/JuliaConnectoR/) to call Julia from R, so that users may benefit from Julia's computational speed without interacting with Julia directly.This guide will help you install Julia and configure it to work with sdbuildR.
 
 

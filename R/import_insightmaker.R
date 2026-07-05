@@ -155,7 +155,7 @@ finalize_imported_IM_object <- function(ctx, object, keep_nonnegative_flow, keep
 #' plot(sfm)
 #'
 #' \dontshow{
-#' sfm <- sim_settings(sfm, save_at = .5)
+#' sfm <- sim_settings(sfm, save_by = .5)
 #' }
 #'
 #' # Simulate the model

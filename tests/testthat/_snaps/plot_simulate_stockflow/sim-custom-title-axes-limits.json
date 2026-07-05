@@ -133,7 +133,7 @@
       "range": [0, 800]
     },
     "font": {
-      "family": "Times New Roman",
+      "family": "stix-two-text",
       "size": 16
     },
     "hovermode": "closest",

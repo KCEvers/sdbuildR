@@ -11,7 +11,7 @@ change_type(object, name, new_type)
 
 \item{name}{Variable name. Accepts a bare symbol (e.g., \code{population}), a string (\code{"population"}), or a vector via \code{c()} (e.g., \code{c(a, b)} or \code{c("a", "b")}). Use \verb{!!} to inject from a variable.}
 
-\item{new_type}{New variable type; one of \code{'stock'}, \code{'flow'}, \code{'constant'}, \code{'aux'}, \code{'gf'}, or \code{'func'}. Character vector of the same length as name.}
+\item{new_type}{New variable type; one of \code{'stock'}, \code{'flow'}, \code{'constant'}, \code{'aux'}, \code{'lookup'}, or \code{'func'}. Character vector of the same length as name.}
 }
 \value{
 A stock-and-flow model object of class \code{\link{stockflow}} with the variable type changed throughout the model. Note that changing the type may result in changes to other properties (e.g., a flow must have "to" and/or "from" properties, so these will be added if not already present), and may require changes to the equations of connected variables.

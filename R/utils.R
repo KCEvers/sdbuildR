@@ -249,6 +249,18 @@ near <- function(x, y, tol = .Machine$double.eps^0.5) {
 }
 
 
+#' Print a cli h2 header without a blank line below it
+#'
+#' @param text Header text, may contain glue/cli interpolation
+#' @param .envir Environment for interpolation
+#' @noRd
+cli_h2_tight <- function(text, .envir = parent.frame()) {
+  cli::cli_div(theme = list(h2 = list("margin-bottom" = 0)))
+  cli::cli_h2(text, .envir = .envir)
+  cli::cli_end()
+}
+
+
 #' Switch names and values of list, handling different lengths in entries
 #'
 #' @param x List
@@ -636,7 +648,7 @@ clean_vars <- function(vars) {
   if (length(vars) == 0L) {
     cli::cli_abort(c(
       "x" = "Invalid {.arg vars} argument.",
-      "i" = "Cannot be empty after trimming whitespace.",
+      "i" = "Cannot be empty.",
       ">" = "Provide one or more variable names."
     ))
   }
@@ -861,6 +873,13 @@ vars_not_saved <- function(vars, names_df = NULL, arg = "vars",
 validate_sim_vars <- function(object, vars) {
   if (is.null(vars)) {
     return(NULL)
+  }
+
+  if (is.character(vars)) {
+    trimmed_vars <- trimws(vars)
+    if (length(trimmed_vars) == 0L || all(!is.na(trimmed_vars) & !nzchar(trimmed_vars))) {
+      return(NULL)
+    }
   }
 
   vars <- clean_vars(vars)

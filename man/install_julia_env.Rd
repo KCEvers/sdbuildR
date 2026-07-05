@@ -4,10 +4,12 @@
 \alias{install_julia_env}
 \title{Install, update, or remove Julia environment}
 \usage{
-install_julia_env(remove = FALSE)
+install_julia_env(remove = FALSE, quiet = FALSE)
 }
 \arguments{
 \item{remove}{If \code{TRUE}, remove Julia environment for sdbuildR. This will remove the SystemDynamicsBuildR.jl package and delete the environment directory (containing Project.toml and Manifest.toml). All other Julia packages remain untouched.}
+
+\item{quiet}{If \code{TRUE}, suppress informational messages such as progress and status updates. Warnings and errors are always shown. Defaults to \code{FALSE}.}
 }
 \value{
 Invisibly returns \code{NULL} after instantiating the Julia environment.

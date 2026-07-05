@@ -5,7 +5,7 @@
 
 test_that("ensemble() runs in R", {
   sfm <- make_r_ensemble_random_sfm()
-  sims <- silence(ensemble(sfm, n = 2, verbose = FALSE))
+  sims <- silence(ensemble(sfm, n = 2, quiet = TRUE))
 
   # ensemble() R returns correct structure
   expect_successful_ensemble(sims, c(
@@ -17,12 +17,12 @@ test_that("ensemble() runs in R", {
 
 test_that("ensemble() R handles models with no constants", {
   sfm <- make_basic_sfm() |>
-    sim_settings(language = "R", start = 0, stop = 10, dt = 0.1, save_at = 1)
+    sim_settings(language = "R", start = 0, stop = 10, dt = 0.1, save_by = 1)
 
   sims <- silence(ensemble(sfm,
     n = 2, save_sims = TRUE,
     central = c("mean", "median"), spread = c("quantile", "sd", "range"),
-    verbose = FALSE
+    quiet = TRUE
   ))
 
   expect_true(sims[["success"]])
@@ -40,13 +40,13 @@ test_that("ensemble() R handles models with no constants", {
 
 test_that("ensemble() accepts lenient central/spread spellings", {
   sfm <- make_basic_sfm() |>
-    sim_settings(language = "R", start = 0, stop = 10, dt = 0.1, save_at = 1)
+    sim_settings(language = "R", start = 0, stop = 10, dt = 0.1, save_by = 1)
 
   # Plurals and case variants canonicalise to the catalog column names.
   # "range" expands to min/max columns.
   sims <- silence(ensemble(sfm,
     n = 2, central = c("Means", "medians"), spread = c("SDs", "ranges"),
-    verbose = FALSE
+    quiet = TRUE
   ))
 
   expect_true(sims[["success"]])
@@ -54,11 +54,11 @@ test_that("ensemble() accepts lenient central/spread spellings", {
 
   # Unrecognised choices are still rejected.
   expect_error(
-    silence(ensemble(sfm, n = 2, spread = "iqr", verbose = FALSE)),
+    silence(ensemble(sfm, n = 2, spread = "iqr", quiet = TRUE)),
     "Invalid"
   )
   expect_error(
-    silence(ensemble(sfm, n = 2, central = "avg2", verbose = FALSE)),
+    silence(ensemble(sfm, n = 2, central = "avg2", quiet = TRUE)),
     "Invalid"
   )
 })
@@ -68,7 +68,7 @@ test_that("ensemble() R respects only_stocks = TRUE", {
   df <- as.data.frame(sfm, properties = "eqn")
   n_stocks <- nrow(df[df[["type"]] == "stock", ])
 
-  sims <- silence(ensemble(sfm, n = 2, only_stocks = TRUE, verbose = FALSE))
+  sims <- silence(ensemble(sfm, n = 2, only_stocks = TRUE, quiet = TRUE))
   expect_true(sims[["success"]])
   expect_equal(
     length(unique(sims[["summary"]][["variable"]])),
@@ -83,7 +83,7 @@ test_that("ensemble() R returns all variables with only_stocks = FALSE", {
 
   sims <- silence(ensemble(sfm,
     n = 2, only_stocks = FALSE,
-    verbose = FALSE
+    quiet = TRUE
   ))
   expect_true(sims[["success"]])
   expect_equal(
@@ -99,7 +99,7 @@ test_that("ensemble() R filters outputs to vars", {
   sims <- silence(ensemble(sfm,
     n = 2,
     save_sims = TRUE,
-    verbose = FALSE
+    quiet = TRUE
   ))
 
   expect_true(sims[["success"]])
@@ -113,7 +113,7 @@ test_that("ensemble() R returns correct n properties", {
 
   sims <- silence(ensemble(sfm,
     n = nr_sims, save_sims = TRUE,
-    verbose = FALSE
+    quiet = TRUE
   ))
   expect_equal(sims[["n"]], nr_sims)
   expect_equal(sims[["n_total"]], nr_sims)
@@ -127,7 +127,7 @@ test_that("ensemble() R custom quantiles", {
   sfm <- make_r_ensemble_random_sfm()
   sims <- silence(ensemble(sfm,
     n = 2, quantiles = c(0.1, 0.5, 0.9, 1),
-    verbose = FALSE
+    quiet = TRUE
   ))
   expect_true(sims[["success"]])
   q_cols <- grep("^q", colnames(sims[["summary"]]), value = TRUE)
@@ -141,7 +141,7 @@ test_that("ensemble() R works with single variable conditions", {
   sfm <- make_r_ensemble_random_sfm()
   sims <- silence(ensemble(sfm,
     conditions = list("contact_rate" = c(1.5, 2, 2.5)),
-    n = 2, verbose = FALSE
+    n = 2, quiet = TRUE
   ))
   expect_true(sims[["success"]])
   expect_equal(sims[["n_conditions"]], 3)
@@ -155,7 +155,7 @@ test_that("ensemble() R crossed design computes correct conditions", {
       "contact_rate" = c(1.5, 2.5),
       "infection_rate" = c(1, 3)
     ),
-    cross = TRUE, n = n, verbose = FALSE
+    cross = TRUE, n = n, quiet = TRUE
   ))
   expect_true(sims[["success"]])
   expect_equal(sims[["n"]], n)
@@ -173,7 +173,7 @@ test_that("ensemble() R non-crossed design pairs values", {
       "contact_rate" = c(1.5, 2, 2.5),
       "infection_rate" = c(1, 2, 3)
     ),
-    cross = FALSE, n = nr_sims, save_sims = TRUE, verbose = FALSE
+    cross = FALSE, n = nr_sims, save_sims = TRUE, quiet = TRUE
   ))
   expect_true(sims[["success"]])
   expect_equal(sims[["n"]], nr_sims)
@@ -196,7 +196,7 @@ test_that("ensemble() R non-crossed design pairs values", {
 
 test_that("ensemble() R result works with as.data.frame(), summary() and print()", {
   sfm <- make_r_ensemble_random_sfm()
-  sims <- silence(ensemble(sfm, n = 2, save_sims = TRUE, verbose = FALSE))
+  sims <- silence(ensemble(sfm, n = 2, save_sims = TRUE, quiet = TRUE))
 
   df_summary <- as.data.frame(sims, which = "summary")
   expect_s3_class(df_summary, "data.frame")
@@ -205,6 +205,21 @@ test_that("ensemble() R result works with as.data.frame(), summary() and print()
   df_sims <- as.data.frame(sims, which = "sims")
   expect_s3_class(df_sims, "data.frame")
   expect_true(all(c("sim", "condition", "variable", "time", "value") %in% names(df_sims)))
+
+  df_constants <- as.data.frame(sims, which = "sims", type = "constant")
+  expect_s3_class(df_constants, "data.frame")
+  expect_equal(df_constants, sims[["constants"]][["df"]])
+  expect_gt(nrow(df_constants), 0L)
+  expect_true(all(c("sim", "condition", "variable", "value") %in% names(df_constants)))
+
+  h_constants <- head(sims, n = 1L, which = "sims", type = "constant")
+  expect_s3_class(h_constants, "data.frame")
+  expect_equal(h_constants, head(sims[["constants"]][["df"]], 1L))
+
+  summary_constants <- as.data.frame(sims, which = "summary", type = "constant")
+  expect_s3_class(summary_constants, "data.frame")
+  expect_equal(summary_constants, sims[["constants"]][["summary"]])
+  expect_gt(nrow(summary_constants), 0L)
 
   # Check that head() and tail() work on the ensemble result
   h <- head(sims, n = 3L)
@@ -224,15 +239,85 @@ test_that("ensemble() R result works with as.data.frame(), summary() and print()
 })
 
 
-# Verbose messages --------------------------------------------------------
+# Quiet messages ----------------------------------------------------------
 
-test_that("ensemble() R prints simulation count", {
+test_that("ensemble() R verbosity is controlled by quiet", {
   sfm <- make_r_ensemble_random_sfm()
 
   expect_message(
-    ensemble(sfm, n = 2, verbose = TRUE),
+    ensemble(sfm, n = 2, quiet = FALSE),
     "Starting"
   )
+  expect_no_message(ensemble(sfm, n = 2, quiet = TRUE))
+})
+
+test_that("ensemble() R accepts deprecated verbose argument", {
+  sfm <- make_r_ensemble_random_sfm()
+
+  expect_warning(
+    expect_no_message(ensemble(sfm, n = 2, verbose = FALSE)),
+    "deprecated"
+  )
+})
+
+test_that("progressr_lapply() signals one progress update per task when not quiet", {
+  events <- character()
+  handler <- progressr::make_progression_handler(
+    name = "test",
+    enable = TRUE,
+    reporter = list(
+      update = function(config, state, progression, ...) {
+        if (progression$amount > 0) {
+          events <<- c(events, paste0("update:", state$step))
+        }
+      }
+    )
+  )
+
+  out <- progressr_lapply(
+    as.list(1:3),
+    function(x) x * 2,
+    quiet = FALSE,
+    handler = handler
+  )
+
+  expect_equal(out, list(2, 4, 6))
+  expect_equal(events, c("update:1", "update:2", "update:3"))
+})
+
+test_that("progressr_lapply() suppresses progress updates when quiet", {
+  events <- character()
+  handler <- progressr::make_progression_handler(
+    name = "test",
+    enable = TRUE,
+    reporter = list(
+      update = function(config, state, progression, ...) {
+        if (progression$amount > 0) {
+          events <<- c(events, paste0("update:", state$step))
+        }
+      }
+    )
+  )
+
+  out <- progressr_lapply(
+    as.list(1:3),
+    function(x) x * 2,
+    quiet = TRUE,
+    handler = handler
+  )
+
+  expect_equal(out, list(2, 4, 6))
+  expect_equal(events, character(0))
+})
+
+test_that("progressr_lapply() default cli handler runs without type errors", {
+  out <- expect_no_error(progressr_lapply(
+    as.list(1:3),
+    function(x) x * 2,
+    quiet = FALSE
+  ))
+
+  expect_equal(out, list(2, 4, 6))
 })
 
 
@@ -240,7 +325,7 @@ test_that("ensemble() R prints simulation count", {
 
 test_that("ensemble() R works with n = 1", {
   sfm <- make_r_ensemble_random_sfm()
-  sims <- silence(ensemble(sfm, n = 1, verbose = FALSE))
+  sims <- silence(ensemble(sfm, n = 1, quiet = TRUE))
   expect_true(sims[["success"]])
   expect_equal(sims[["n"]], 1)
   expect_equal(sims[["n_total"]], 1)
@@ -251,7 +336,7 @@ test_that("ensemble() R works with conditions and n = 1", {
   sims <- silence(ensemble(sfm,
     n = 1,
     conditions = list("contact_rate" = c(1.5, 2.5)),
-    verbose = FALSE
+    quiet = TRUE
   ))
   expect_true(sims[["success"]])
   expect_equal(sims[["n"]], 1)
@@ -266,8 +351,8 @@ test_that("ensemble() in R respects seed", {
   withr::local_seed(123) # ensure .Random.seed exists before capturing it
   orig_seed <- .Random.seed
 
-  sims1 <- silence(ensemble(sfm, n = 2, verbose = FALSE, save_sims = TRUE))
-  sims2 <- silence(ensemble(sfm, n = 2, verbose = FALSE, save_sims = TRUE))
+  sims1 <- silence(ensemble(sfm, n = 2, quiet = TRUE, save_sims = TRUE))
+  sims2 <- silence(ensemble(sfm, n = 2, quiet = TRUE, save_sims = TRUE))
 
   new_seed <- .Random.seed
   expect_true(identical(orig_seed, new_seed))
@@ -289,8 +374,6 @@ test_that("ensemble() in R respects seed", {
 
 
 test_that("ensemble() in R with parallel execution respects seed", {
-  skip_if_not_installed("future")
-  skip_if_not_installed("future.apply")
   skip_on_cran()
 
   sfm <- make_r_ensemble_random_sfm() |> sim_settings(seed = 123)
@@ -302,8 +385,8 @@ test_that("ensemble() in R with parallel execution respects seed", {
   withr::local_seed(123) # ensure .Random.seed exists before capturing it
   orig_seed <- .Random.seed
 
-  sims1 <- silence(ensemble(sfm, n = 2, verbose = FALSE, save_sims = TRUE))
-  sims2 <- silence(ensemble(sfm, n = 2, verbose = FALSE, save_sims = TRUE))
+  sims1 <- silence(ensemble(sfm, n = 2, quiet = TRUE, save_sims = TRUE))
+  sims2 <- silence(ensemble(sfm, n = 2, quiet = TRUE, save_sims = TRUE))
 
   new_seed <- .Random.seed
   expect_equal(orig_seed, new_seed)
@@ -326,8 +409,8 @@ test_that("ensemble() in R with parallel execution respects seed", {
 
 test_that("ensemble() in R without seed", {
   sfm <- make_r_ensemble_random_sfm() |> sim_settings(seed = NULL)
-  sims1 <- silence(ensemble(sfm, n = 2, verbose = FALSE, save_sims = TRUE))
-  sims2 <- silence(ensemble(sfm, n = 2, verbose = FALSE, save_sims = TRUE))
+  sims1 <- silence(ensemble(sfm, n = 2, quiet = TRUE, save_sims = TRUE))
+  sims2 <- silence(ensemble(sfm, n = 2, quiet = TRUE, save_sims = TRUE))
 
   tol <- 1e-5
   df1 <- as.data.frame(sims1, which = "summary")
@@ -344,22 +427,17 @@ test_that("ensemble() in R without seed", {
 # Parallel execution via user-managed future plan -------------------------
 
 test_that("ensemble() R runs sequentially with future::sequential plan", {
-  skip_if_not_installed("future")
-  skip_if_not_installed("future.apply")
-
   future::plan(future::sequential)
   on.exit(future::plan(future::sequential), add = TRUE)
 
   sfm <- make_r_ensemble_random_sfm()
-  sims <- silence(ensemble(sfm, n = 2, verbose = FALSE))
+  sims <- silence(ensemble(sfm, n = 2, quiet = TRUE))
 
   expect_true(sims[["success"]])
   expect_equal(future::nbrOfWorkers(), 1L)
 })
 
 test_that("ensemble() R uses parallel path when future plan has multiple workers", {
-  skip_if_not_installed("future")
-  skip_if_not_installed("future.apply")
   skip_on_cran()
 
   future::plan(future::multisession, workers = 2)
@@ -367,10 +445,23 @@ test_that("ensemble() R uses parallel path when future plan has multiple workers
 
   n <- 4
   sfm <- make_r_ensemble_random_sfm()
-  sims <- silence(ensemble(sfm, n = n, verbose = FALSE))
+  sims <- silence(ensemble(sfm, n = n, quiet = TRUE))
 
   expect_true(sims[["success"]])
   expect_equal(sims[["n"]], n)
+  expect_gt(future::nbrOfWorkers(), 1L)
+})
+
+test_that("ensemble() R reports progress without error under future plan", {
+  skip_on_cran()
+
+  future::plan(future::multisession, workers = 2)
+  on.exit(future::plan(future::sequential), add = TRUE)
+
+  sfm <- make_r_ensemble_random_sfm()
+  sims <- suppressWarnings(expect_no_error(ensemble(sfm, n = 2, quiet = FALSE)))
+
+  expect_true(sims[["success"]])
   expect_gt(future::nbrOfWorkers(), 1L)
 })
 

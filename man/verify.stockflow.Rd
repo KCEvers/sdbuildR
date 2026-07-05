@@ -26,9 +26,8 @@ tests, which appear with \code{status = "skip"}). Each entry has \code{label},
 \item{object}{The \code{stockflow} model the tests were run against.}
 \item{sims}{Nested list of \code{simulate_stockflow} objects used internally by
 \code{\link[=plot.verify_stockflow]{plot.verify_stockflow()}}. Always present (never \code{NULL}).}
-\item{j}{Named integer vector mapping each test label to its condition index.
-Used internally by \code{\link[=plot.verify_stockflow]{plot.verify_stockflow()}}.}
-\item{n}{Number of simulations run per condition.}
+\item{condition}{Named integer vector mapping each test label to its condition
+index. Used internally by \code{\link[=plot.verify_stockflow]{plot.verify_stockflow()}}.}
 \item{n_conditions}{Number of unique simulation conditions.}
 \item{test_indices}{Integer vector of the original 1-based test numbers that
 were run (as shown by \code{\link[=unit_tests]{unit_tests()}}). Equal to \code{seq_along(results)} when

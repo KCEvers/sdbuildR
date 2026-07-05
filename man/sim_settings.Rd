@@ -10,8 +10,9 @@ sim_settings(
   start = 0,
   stop = 100,
   dt = 0.01,
-  save_at = 0.1,
-  save_n = NULL,
+  save_by = NULL,
+  save_times = NULL,
+  save_length = NULL,
   seed = NULL,
   time_units = "seconds",
   language = "R",
@@ -22,7 +23,8 @@ sim_settings(
   save_sims = FALSE,
   central = c("mean", "median"),
   spread = "quantile",
-  quantiles = c(0.025, 0.975)
+  quantiles = c(0.025, 0.975),
+  ...
 )
 }
 \arguments{
@@ -37,21 +39,25 @@ sim_settings(
 \item{dt}{Timestep of solver; controls simulation accuracy. Smaller = more
 accurate but slower. Defaults to \code{0.01}.}
 
-\item{save_at}{Controls which time points are saved in the output. Either:
-\itemize{
-\item A single number: save every N time units (interval). Must be >= \code{dt}.
-Use larger than \code{dt} to reduce output size without sacrificing accuracy.
-Example: \code{dt = 0.01}, \code{save_at = 1} saves every 100th computed point.
-\item A numeric vector: explicit time points to include in output.
-Values must lie within \verb{[start, stop]}.
-}
-Pass \code{NA}, \code{NULL}, or \code{""} to reset to saving all dt steps.
-Mutually exclusive with \code{save_n}. Defaults to \code{NULL} (save all).}
+\item{save_by}{Save output at a regular interval, mirroring the \code{by} argument
+of \code{\link[=seq]{seq()}}: output times are \code{seq(start, stop, by = save_by)}. Must be a
+single number \verb{>= dt}. Use a value larger than \code{dt} to reduce output size
+without sacrificing accuracy. Example: \code{dt = 0.01}, \code{save_by = 1} saves every
+100th computed point. Pass \code{NA}, \code{NULL}, or \code{""} to reset to saving all dt
+steps. Mutually exclusive with \code{save_times} and \code{save_length}. Defaults to
+\code{NULL} (save all).}
 
-\item{save_n}{Save exactly N evenly-spaced time points from \code{start} to \code{stop}.
-\code{save_n = 1} saves only the final time point (stop).
-Pass \code{NA}, \code{NULL}, or \code{""} to reset to saving all dt steps.
-Mutually exclusive with \code{save_at}. Defaults to \code{NULL} (save all).}
+\item{save_times}{Numeric vector of explicit output times to save. Values must
+lie within \verb{[start, stop]}. Example: \code{save_times = c(0, 10)} saves exactly
+those two times. Pass \code{NA}, \code{NULL}, or \code{""} to reset to saving all dt steps.
+Mutually exclusive with \code{save_by} and \code{save_length}. Defaults to \code{NULL}
+(save all).}
+
+\item{save_length}{Number of output times to save, mirroring the \code{length.out}
+argument of \code{\link[=seq]{seq()}}: output times are \code{seq(start, stop, length.out = save_length)}. Must be a single whole positive number. \code{save_length = 1}
+saves only the final time point (stop). Pass \code{NA}, \code{NULL}, or \code{""} to reset
+to saving all dt steps. Mutually exclusive with \code{save_by} and \code{save_times}.
+Defaults to \code{NULL} (save all).}
 
 \item{seed}{Seed number to ensure reproducibility across runs in case of
 random elements. Must be an integer. Defaults to \code{NULL} (no seed).}
@@ -67,7 +73,8 @@ down the simulation. Defaults to \code{TRUE}.}
 
 \item{vars}{Character vector of variable names to save in simulation output.
 Use this to keep selected flows or auxiliaries without saving every model
-variable. If specified, this overrides \code{only_stocks}.}
+variable. If specified, this overrides \code{only_stocks}. Pass \code{NULL}, \code{""},
+or an empty character vector to clear a previous \code{vars} setting.}
 
 \item{keep_nonnegative_stock}{If \code{TRUE}, keeps original non-negativity setting
 of stocks. Defaults to \code{FALSE}.}
@@ -96,6 +103,9 @@ no spread). Defaults to \code{"quantile"}. Can be overridden per call via the
 \code{quant2}, ... in the order given. At least two unique values are required.
 Defaults to \code{c(0.025, 0.975)}. Can be overridden per call via the
 \code{quantiles} argument of \code{\link[=ensemble]{ensemble()}}.}
+
+\item{...}{Reserved for future use. Passing unknown arguments (including the
+removed \code{save_at} and \code{save_n}) raises an error.}
 }
 \value{
 A stock-and-flow model object of class \code{\link{stockflow}}
@@ -117,15 +127,20 @@ sfm <- sim_settings(sfm, method = "rk4")
 # Change the time units to "years", such that one time unit is one year
 sfm <- sim_settings(sfm, time_units = "years")
 
-# Save at an interval to reduce output size without affecting accuracy
-sfm <- sim_settings(sfm, save_at = 1)
+# Save at a regular interval to reduce output size without affecting accuracy
+sfm <- sim_settings(sfm, save_by = 1)
 sim <- simulate(sfm)
 head(as.data.frame(sim))
 
 # Save exactly 11 evenly-spaced time points (t=0, 5, 10, ..., 50)
-sfm <- sim_settings(sfm, save_n = 11)
+sfm <- sim_settings(sfm, save_length = 11)
 sim <- simulate(sfm)
 head(as.data.frame(sim))
+
+# Save only specific time points
+sfm <- sim_settings(sfm, save_times = c(0, 25, 50))
+sim <- simulate(sfm)
+as.data.frame(sim)
 
 # Add stochastic initial condition but specify seed to obtain same result
 sfm <- sim_settings(sfm, seed = 1) |>

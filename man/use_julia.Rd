@@ -4,7 +4,7 @@
 \alias{use_julia}
 \title{Start Julia and activate environment}
 \usage{
-use_julia(stop = FALSE, restart = FALSE, nthreads = NULL)
+use_julia(stop = FALSE, restart = FALSE, nthreads = NULL, quiet = FALSE)
 }
 \arguments{
 \item{stop}{If \code{TRUE}, stop active Julia session. Defaults to \code{FALSE}.}
@@ -12,9 +12,11 @@ use_julia(stop = FALSE, restart = FALSE, nthreads = NULL)
 \item{restart}{If \code{TRUE}, force Julia session to restart.}
 
 \item{nthreads}{If not \code{NULL}, set the number of threads for Julia to use. This will temporarily set the environment variable \code{JULIA_NUM_THREADS} and restart Julia if it is already running to apply the new thread setting. See \href{https://docs.julialang.org/en/v1/manual/parallel-computing/#man-parallel-computing}{this page} for more details on threading in Julia.}
+
+\item{quiet}{If \code{TRUE}, suppress informational messages such as progress and status updates. Warnings and errors are always shown. Defaults to \code{FALSE}.}
 }
 \value{
-Returns \code{NULL} invisibly, used for side effects
+Returns \code{TRUE} invisibly after setting up the Julia environment, and \code{NULL} invisibly if Julia was already set up or when stopping Julia with \code{stop = TRUE}. Used for side effects.
 }
 \description{
 Start Julia session and activate Julia environment to simulate stock-and-flow models. To do so, Julia needs to be installed (see \url{https://julialang.org/install/}) and findable from within R. See \href{https://kcevers.github.io/sdbuildR/articles/julia-setup.html}{this vignette} for guidance. In addition, the Julia environment specifically for sdbuildR needs to have been instantiated. This can be set up with \code{\link[=install_julia_env]{install_julia_env()}}.

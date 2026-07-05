@@ -189,7 +189,7 @@ test_that("translating .InsightMaker models works", {
   keep_nonnegative_stock <- FALSE # TRUE
   only_stocks <- TRUE
   dt <- .1
-  save_at <- 1
+  save_by <- 1
   seed <- 123
 
   folder <- test_path("testdata", "insightmaker", "cran")
@@ -240,7 +240,7 @@ test_that("translating .InsightMaker models works", {
     if (contains_stocks) {
       sim_IM <- expect_successful_simulation(
         sim_settings(sfm_IM,
-          seed = seed, dt = dt, save_at = save_at
+          seed = seed, dt = dt, save_by = save_by
         ),
         only_stocks = only_stocks
       )
@@ -269,7 +269,7 @@ test_that("translating .InsightMaker models works", {
     if (contains_stocks) {
       sim_json <- expect_successful_simulation(
         sim_settings(sfm_json,
-          seed = seed, dt = dt, save_at = save_at
+          seed = seed, dt = dt, save_by = save_by
         ),
         only_stocks = only_stocks
       )

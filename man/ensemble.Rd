@@ -12,7 +12,7 @@ ensemble(
   central,
   spread,
   quantiles,
-  verbose = TRUE,
+  quiet = FALSE,
   ...
 )
 }
@@ -58,7 +58,10 @@ includes \code{"quantile"}, e.g. \code{c(0.025, 0.975)}. They become columns
 quantile and \code{quant2} the 97.5\%); the probabilities themselves are kept in
 \code{sims$quantiles}. Defaults to the model's \code{quantiles} setting.}
 
-\item{verbose}{If \code{TRUE} (default), print details and duration of simulation.}
+\item{quiet}{If \code{TRUE}, suppress informational messages such as progress and
+status updates. Warnings and errors are always shown. Defaults to \code{FALSE}.
+R ensembles show a cli progress bar via \code{\link[progressr:handler_cli]{progressr::handler_cli()}},
+including when simulations run through a parallel \code{\link[future:plan]{future::plan()}}.}
 
 \item{...}{Optional arguments passed to \code{\link[=sim_settings]{sim_settings()}}; these can be used to override the simulation specifications set in the model object.}
 }
@@ -101,7 +104,8 @@ conditions and/or constants specified in \code{conditions}.
 }
 \details{
 It is strongly recommended to reduce the size of the simulation output by
-saving fewer values with \code{save_at} or \code{save_n} in \code{\link[=sim_settings]{sim_settings()}}.
+saving fewer values with \code{save_by}, \code{save_times}, or \code{save_length} in
+\code{\link[=sim_settings]{sim_settings()}}.
 
 By default, only summary statistics across simulations are returned.
 To return individual simulations, set \code{save_sims = TRUE} in \code{\link[=sim_settings]{sim_settings()}} or
@@ -132,7 +136,7 @@ sfm <- update(sfm, c(predator, prey),
 
 # For ensemble simulations, it is highly recommended to reduce the
 # returned output. For example, to save only 20 values per simulation:
-sfm <- sim_settings(sfm, save_n = 20)
+sfm <- sim_settings(sfm, save_length = 20)
 
 # Run ensemble simulation with a small number of simulations
 sims <- ensemble(sfm, n = 3)
@@ -151,10 +155,7 @@ plot(sims, which = "sims", sim = 1)
 plot(sims, central = "median", which = "sims", alpha = 0.1)
 
 # For larger ensembles, we can use parallelization with future
-if (requireNamespace("future", quietly = TRUE) &&
-  requireNamespace("future.apply", quietly = TRUE)) {
-  future::plan(future::multisession, workers = 4)
-}
+future::plan(future::multisession, workers = 4)
 
 # Ensembles can also be run with exact values for the initial conditions
 # and parameters. Below, we vary the initial values of the predator and the
@@ -184,10 +185,7 @@ sims <- ensemble(sfm,
 plot(sims, nrows = 3)
 
 # Stop parallelization after use
-if (requireNamespace("future", quietly = TRUE) &&
-  requireNamespace("future.apply", quietly = TRUE)) {
-  future::plan(future::sequential)
-}
+future::plan(future::sequential)
 \dontshow{\}) # examplesIf}
 }
 \seealso{

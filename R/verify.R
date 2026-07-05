@@ -41,9 +41,8 @@ verify <- function(object, ...) {
 #'     \item{object}{The `stockflow` model the tests were run against.}
 #'     \item{sims}{Nested list of `simulate_stockflow` objects used internally by
 #'       [plot.verify_stockflow()]. Always present (never `NULL`).}
-#'     \item{j}{Named integer vector mapping each test label to its condition index.
-#'       Used internally by [plot.verify_stockflow()].}
-#'     \item{n}{Number of simulations run per condition.}
+#'     \item{condition}{Named integer vector mapping each test label to its condition
+#'       index. Used internally by [plot.verify_stockflow()].}
 #'     \item{n_conditions}{Number of unique simulation conditions.}
 #'     \item{test_indices}{Integer vector of the original 1-based test numbers that
 #'       were run (as shown by [unit_tests()]). Equal to `seq_along(results)` when
@@ -968,7 +967,7 @@ print.verify_stockflow <- function(x, ...) {
 #' @param vars Variable names to retain in the data frame. Only applies when
 #'   `which = "sims"`. Defaults to `NULL` to include all variables.
 #' @param type Variable types to retain in the data frame. Must be one or more of
-#'   'stock', 'flow', 'constant', 'aux', 'gf', or 'func'. Only applies when
+#'   'stock', 'flow', 'constant', 'aux', 'lookup', or 'func'. Only applies when
 #'   `which = "sims"`. Defaults to `NULL` to include all types.
 #' @inheritParams unit_tests
 #' @param ... Additional arguments (unused).

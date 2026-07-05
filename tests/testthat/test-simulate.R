@@ -57,15 +57,15 @@ test_that("simulate() returns data frame with time column", {
   expect_equal(max(df$time), 10)
 })
 
-test_that("simulate() respects save_at interval", {
+test_that("simulate() respects save_by interval", {
   sfm <- stockflow()
   sfm1 <- update(sfm, "X", type = "stock", eqn = "1")
   sfm2 <- update(sfm1, "Flow", type = "flow", from = "X", eqn = "0")
-  sfm3 <- sim_settings(sfm2, language = "R", start = 0, stop = 10, dt = 0.1, save_at = 1)
+  sfm3 <- sim_settings(sfm2, language = "R", start = 0, stop = 10, dt = 0.1, save_by = 1)
 
   result <- simulate(sfm3, only_stocks = FALSE)
 
-  # With save_at = 1, should have roughly (10-0)/1 + 1 = 11 time points
+  # With save_by = 1, should have roughly (10-0)/1 + 1 = 11 time points
   # But may have more depending on solver output
   expect_true(nrow(result$df) >= 11)
   expect_true(nrow(result$df) <= 25)
@@ -185,7 +185,7 @@ test_that("simulate() with Julia filters output to vars", {
       start = 0,
       stop = 5,
       dt = 0.1,
-      save_at = 1,
+      save_by = 1,
       vars = c("susceptible", "new_infections")
     )
 
@@ -203,7 +203,7 @@ test_that("simulate() with Julia vars overrides only_stocks", {
       start = 0,
       stop = 5,
       dt = 0.1,
-      save_at = 1,
+      save_by = 1,
       only_stocks = TRUE,
       vars = c("new_recoveries")
     )
@@ -232,7 +232,7 @@ test_that("simulate() with Julia saves intermediaries with integer start and fra
 })
 
 # Precision / accuracy tests for simulate.R
-# Covers: analytical solutions, conservation laws, save_at, save_n, seed
+# Covers: analytical solutions, conservation laws, save_by, save_length, seed
 
 
 # ============================================================================
@@ -318,13 +318,13 @@ test_that("logistic_model: stock reaches K within 2% at long times", {
 
 
 # ============================================================================
-# save_at: exact output times
+# save_times: exact output times
 # ============================================================================
 
-test_that("simulate with save_at vector returns ONLY exactly those times", {
+test_that("simulate with save_times returns ONLY exactly those times", {
   target_times <- c(0, 1, 2.5, 5, 10)
   sfm <- sim_settings(
-    sim_settings(make_verifiable_sfm(), save_at = target_times),
+    sim_settings(make_verifiable_sfm(), save_times = target_times),
     start = 0, stop = 10, dt = 0.01
   )
   sim <- simulate(sfm)
@@ -333,10 +333,10 @@ test_that("simulate with save_at vector returns ONLY exactly those times", {
   expect_equal(nrow(wide), length(target_times))
 })
 
-test_that("simulate with scalar save_at returns regular grid of times", {
+test_that("simulate with save_by returns regular grid of times", {
   sfm <- sim_settings(make_verifiable_sfm(),
     start = 0, stop = 10,
-    dt = 0.01, save_at = 1
+    dt = 0.01, save_by = 1
   )
   sim <- simulate(sfm)
   wide <- as.data.frame(sim, direction = "wide")
@@ -346,23 +346,23 @@ test_that("simulate with scalar save_at returns regular grid of times", {
 
 
 # ============================================================================
-# save_n: exact row count
+# save_length: exact row count
 # ============================================================================
 
-test_that("simulate with save_n returns exactly N rows", {
+test_that("simulate with save_length returns exactly N rows", {
   n_save <- 25
   sfm <- sim_settings(make_verifiable_sfm(),
     start = 0, stop = 10,
-    save_n = n_save, dt = 0.01
+    save_length = n_save, dt = 0.01
   )
   sim <- simulate(sfm)
   expect_equal(nrow(as.data.frame(sim, direction = "wide")), n_save)
 })
 
-test_that("simulate with save_n = 1 returns a single-row data frame", {
+test_that("simulate with save_length = 1 returns a single-row data frame", {
   sfm <- sim_settings(make_verifiable_sfm(),
     start = 0, stop = 5,
-    save_n = 1, dt = 0.01
+    save_length = 1, dt = 0.01
   )
   sim <- simulate(sfm)
   expect_equal(nrow(as.data.frame(sim, direction = "wide")), 1)

@@ -322,6 +322,56 @@ test_that("plot.verify_stockflow(condition_display = 'dropdown') builds a dropdo
   expect_equal(length(layout$updatemenus[[1]]$buttons), res[["n_conditions"]])
 })
 
+test_that("plot.verify_stockflow() labels runs by overrides and tests everywhere", {
+  res <- make_verify_model(n_tests = 2)
+
+  # Subplot titles describe the run (overrides or "Baseline" + tests), not an
+  # opaque condition index.
+  pl <- plot(res)
+  ann <- vapply(
+    plotly::plotly_build(pl)$x$layout$annotations,
+    function(a) a$text, character(1)
+  )
+  expect_true("Baseline (test 1)" %in% ann)
+  expect_true("rate = 0 (test 2)" %in% ann)
+  expect_false(any(grepl("^Condition", ann)))
+
+  # Slider steps and dropdown buttons carry the same labels as the subplots.
+  ps <- plot(res, condition_display = "slider")
+  slider_labs <- vapply(
+    plotly_layout(ps)$sliders[[1]]$steps,
+    function(s) s$label, character(1)
+  )
+  expect_equal(slider_labs, c("Baseline (test 1)", "rate = 0 (test 2)"))
+
+  pd <- plot(res, condition_display = "dropdown")
+  button_labs <- vapply(
+    plotly_layout(pd)$updatemenus[[1]]$buttons,
+    function(b) b$label, character(1)
+  )
+  expect_equal(button_labs, slider_labs)
+
+  # When nothing is varied there is no contrast to draw: no "Baseline", just
+  # the test number(s). (A single panel carries no label annotation at all;
+  # check the label builder directly.)
+  res1 <- make_verify_model(n_tests = 1)
+  df1 <- as.data.frame(res1, which = "sims")
+  expect_equal(
+    make_verify_condition_labels(df1, unique(df1[["condition"]])),
+    "Test 1"
+  )
+})
+
+test_that("plot.verify_stockflow() reverts condition controls for a single condition", {
+  res <- make_verify_model(n_tests = 1) # a single condition
+  expect_message(
+    pl <- plot(res, condition_display = "slider"),
+    "subplots"
+  )
+  expect_plotly(pl)
+  expect_length(plotly_layout(pl)$sliders, 0)
+})
+
 test_that("plot.verify_stockflow(animation = 'time') builds frames for one condition", {
   res <- make_verify_model(n_tests = 1)
   pl <- plot(res, animation = "time")

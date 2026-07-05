@@ -294,53 +294,6 @@ test_that("plotly_theme legend font scales with base font size", {
 })
 
 # ============================================================================
-# diagram_theme TESTS
-# ============================================================================
-
-test_that("diagram_theme returns list with expected structure", {
-  theme <- diagram_theme()
-
-  expect_type(theme, "list")
-  expect_true(all(c(
-    "font_family", "font_size", "aux_font_size",
-    "stock_col", "flow_col", "dependency_col"
-  ) %in% names(theme)))
-})
-
-test_that("diagram_theme uses custom font family", {
-  theme <- diagram_theme(font_family = "Helvetica")
-
-  expect_equal(theme$font_family, "Helvetica")
-})
-
-test_that("diagram_theme uses custom font size", {
-  theme <- diagram_theme(font_size = 24)
-
-  expect_equal(theme$font_size, 24)
-})
-
-test_that("diagram_theme calculates aux font size", {
-  theme <- diagram_theme(font_size = 20)
-
-  expect_equal(theme$aux_font_size, 18)
-})
-
-test_that("diagram_theme enforces minimum aux font size", {
-  theme <- diagram_theme(font_size = 8)
-
-  # Should not go below 8pt
-  expect_gte(theme$aux_font_size, 8)
-})
-
-test_that("diagram_theme has default colors", {
-  theme <- diagram_theme()
-
-  expect_equal(theme$stock_col, "#83d3d4")
-  expect_equal(theme$flow_col, "#f48153")
-  expect_equal(theme$dependency_col, "#999999")
-})
-
-# ============================================================================
 # extract_plot_params TESTS
 # ============================================================================
 

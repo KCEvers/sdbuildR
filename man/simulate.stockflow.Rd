@@ -4,7 +4,7 @@
 \alias{simulate.stockflow}
 \title{Simulate stock-and-flow model}
 \usage{
-\method{simulate}{stockflow}(object, nsim = 1, seed = NULL, ...)
+\method{simulate}{stockflow}(object, nsim = 1, seed = NULL, quiet = FALSE, ...)
 }
 \arguments{
 \item{object}{Stock-and-flow model, object of class \code{\link{stockflow}}.}
@@ -13,6 +13,8 @@
 
 \item{seed}{Seed number to ensure reproducibility across runs in case of
 random elements. Must be an integer. Defaults to \code{NULL} (no seed).}
+
+\item{quiet}{If \code{TRUE}, suppress informational messages such as progress and status updates. Warnings and errors are always shown. Defaults to \code{FALSE}.}
 
 \item{...}{Optional arguments passed to \code{\link[=sim_settings]{sim_settings()}}; these can be used to override the simulation specifications set in the model object.}
 }

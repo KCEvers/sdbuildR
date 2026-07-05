@@ -155,10 +155,10 @@ Nothing",
 
     # -- compile_run_ode: R saveat interpolation --------------------------------
 
-    saveat_interval_r = "\n# Save at interval\nnew_times = seq(%(start)s, %(stop)s, by = %(save_at_val)s)\n%(sim_df_name)s = %(saveat_func)s(%(sim_df_name)s, 'time', new_times)\n",
-    saveat_n_r = "\n# Save n evenly-spaced points\nnew_times = seq(%(start)s, %(stop)s, length.out = %(save_n_val)s)\n%(sim_df_name)s = %(saveat_func)s(%(sim_df_name)s, 'time', new_times)\n",
-    saveat_n1_r = "\n# Save only stop\nnew_times = c(%(stop)s)\n%(sim_df_name)s = %(saveat_func)s(%(sim_df_name)s, 'time', new_times)\n",
-    saveat_explicit_r = "\n# Explicit save times\nnew_times = c(%(save_at_str)s)\n%(sim_df_name)s = %(saveat_func)s(%(sim_df_name)s, 'time', new_times)\n",
+    saveat_interval_r = "\n# Save at interval\nnew_times = seq(%(start)s, %(stop)s, by = %(save_by_val)s)\n%(sim_df_name)s = %(saveat_func)s(%(sim_df_name)s, 'time', new_times)\n",
+    saveat_length_r = "\n# Save a fixed number of evenly-spaced points\nnew_times = seq(%(start)s, %(stop)s, length.out = %(save_length_val)s)\n%(sim_df_name)s = %(saveat_func)s(%(sim_df_name)s, 'time', new_times)\n",
+    saveat_length1_r = "\n# Save only stop\nnew_times = c(%(stop)s)\n%(sim_df_name)s = %(saveat_func)s(%(sim_df_name)s, 'time', new_times)\n",
+    saveat_explicit_r = "\n# Explicit save times\nnew_times = c(%(save_times_str)s)\n%(sim_df_name)s = %(saveat_func)s(%(sim_df_name)s, 'time', new_times)\n",
 
     # -- compile_static: Julia ensemble definition --------------------------
 

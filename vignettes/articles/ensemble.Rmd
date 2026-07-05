@@ -26,7 +26,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r, echo=TRUE, message=FALSE}
-library(sdbuildR)
+# library(sdbuildR)
 ```
 
 
@@ -37,11 +37,17 @@ options(sdbuildR.webgl = FALSE)
 ```
 
 
+```{r, echo = FALSE}
+font_family <- "stix-two-text"
+options(sdbuildR.font_family = font_family)
+# getOption("sdbuildR.font_family")
+```
+
 ```{r, echo = FALSE, eval = interactive()}
-# Check if the Julia environment is set up, and if not, install it (for local pkgdown::build_site())
-if (!nzchar(system.file("Manifest.toml", package = "sdbuildR"))) {
-  install_julia_env()
-}
+# # Check if the Julia environment is set up, and if not, install it (for local pkgdown::build_site())
+# if (!nzchar(system.file("Manifest.toml", package = "sdbuildR"))) {
+#   install_julia_env()
+# }
 ```
 
 After having built a stock-and-flow model, you may want to explore how different parameter values affect the model's behaviour. Running multiple simulations with varying parameters is also called an ensemble, which provides insight into the range of possible outcomes and uncertainty associated with your model. In this vignette, we will explore how to set up and run ensemble simulations using the sdbuildR package. 
@@ -51,7 +57,7 @@ After having built a stock-and-flow model, you may want to explore how different
 For this example, we will use Crielaard et al.'s (2022) model of eating behaviour, including the stocks hunger, eating, and compensatory behaviour (i.e., disordered eating behaviour such as purging and overexercising). For more details, see Crielaard et al. (2022). We can load this example from the model library and look what is inside:
 
 ```{r}
-sfm <- stockflow("Crielaard2022")
+sfm <- stockflow("crielaard2022")
 print(sfm)
 ```
 
@@ -91,13 +97,13 @@ sfm <- update(sfm, c(Food_intake, Hunger, Compensatory_behaviour),
 )
 ```
 
-With random initial conditions, multiple runs of the same model will be different. As running ensemble simulations can be quite memory intensive, it is highly recommended to reduce the size of the returned timeseries. This will save memory and speed up the simulation. For example, we can only save the timeseries every 1 time units:
+With random initial conditions, multiple runs of the same model will be different. As running ensemble simulations can be quite memory intensive, it is highly recommended to reduce the size of the returned timeseries. This will save memory and speed up the simulation. For example, we can save only 50 evenly-spaced time points per run with `save_length`:
 
 ```{r}
-sfm <- sim_settings(sfm, save_at = 1)
+sfm <- sim_settings(sfm, save_length = 50)
 ```
 
-The model is now ready for running ensemble simulations. We complete 100 runs using the `ensemble()` function:
+With random initial conditions and reduced output, the model is now ready for running ensemble simulations. We complete 100 runs using the `ensemble()` function:
 
 ```{r}
 sims <- ensemble(sfm, n = 100)
@@ -110,6 +116,8 @@ plot(sims)
 The plot shows the mean and confidence interval of the stocks (mean with 95% confidence interval). We can also plot the individual runs, for which we first have to rerun the simulation with `save_sims = TRUE`:
 
 ```{r}
+sfm <- sim_settings(sfm, save_sims = TRUE)
+# or pass `save_sims = TRUE` directly to `ensemble()`:
 sims <- ensemble(sfm, n = 30, save_sims = TRUE)
 ```
 
@@ -118,29 +126,47 @@ sims <- ensemble(sfm, n = 30, save_sims = TRUE)
 plot(sims, which = "sims")
 ```
 
-This automatically only plots the first ten simulations, as plotting a large number of simulations can be quite slow. We can change which simulations we plot by specifying the `i` argument:
+We can change which simulations we plot by specifying the `sim` argument:
 
 ```{r }
 plot(sims, which = "sims", sim = 15:30)
 ```
 
-By default, only the stocks are saved. If you need one or two flows or auxiliaries, prefer selecting them with `vars`; to save every model variable for exploratory diagnostics, set `only_stocks = FALSE`:
+### Selecting variables to save
+
+By default, only the stocks are saved. We can save all variables by updating the simulation settings:
 
 ```{r}
-sims <- ensemble(sfm, n = 100, only_stocks = FALSE)
+sfm <- sim_settings(sfm, only_stocks = FALSE)
+```
+
+Alternatively, we can specify which variables to save with the `vars` argument. For example, to save only the stocks Hunger and Food_intake, we can run:
+
+```{r}
+sfm <- sim_settings(sfm, vars = c("Hunger", "Food_intake"))
 ```
 
 ```{r}
-plot(sims)
+sims <- ensemble(sfm, n = 100)
 ```
 
-### Choosing which summaries to keep
+```{r}
+head(sims, direction = "wide", which = "sims", n = 1)
+```
 
-Storing every simulation is expensive, so by default `ensemble()` keeps only summaries statistics across runs at each time point: the mean and a 95% interval (the 2.5% and 97.5% quantiles). The quantile levels can be changed as follows:
+Resetting `vars` to `NULL` will save all variables again:
+
+```{r}
+sfm <- sim_settings(sfm, vars = NULL, only_stocks = TRUE)
+```
+
+### Selecting summary statistics
+
+By default, `ensemble()` computes as summary statistics the mean and median, together with a 95% interval (the 2.5% and 97.5% quantiles), across runs at each time point. The quantile levels can be changed as follows:
 
 ```{r}
 sims <- ensemble(sfm,
-  n = 100,   
+  n = 100,
   quantiles = c(0.1, 0.9)
 )
 head(sims)
@@ -148,7 +174,7 @@ head(sims)
 
 Here, quantiles appear as columns `quant1`, `quant2` which correspond to `sims$quantiles`.
 
-To change which summary statistics are computed, use `central` (defining the central tendency) and `spread` (defining the measure of dispersion). For example, to summarise each run by its median together with a standard deviation:
+To change which summary statistics are computed, use `central` (defining the central tendency) and `spread` (defining the measure of dispersion). For example, to summarize each run by its median together with a standard deviation:
 
 ```{r}
 sims <- ensemble(sfm,
@@ -160,10 +186,6 @@ head(sims)
 ```
 
 
-```{r}
-plot(sims)
-```
-
 All available summary statistics can be computed with:
 
 ```{r}
@@ -172,7 +194,7 @@ sims <- ensemble(sfm,
   central = c("mean", "median"),
   spread = c("quantile", "sd", "range")
 )
-head(sims)
+head(sims, n = 1)
 ```
 
 Plots can then switch between summary statistics:
@@ -185,22 +207,21 @@ plot(sims, central = "none", spread = "range")
 
 
 
-### Parallel simulations (R)
+### Computational efficiency
 
-By default, R ensemble simulations run sequentially. To run simulations in parallel, use the `future` package to control parallel execution. First, check that the `future` and `future.apply` packages are available:
+#### Parallel simulations (R)
+
+By default, R ensemble simulations run sequentially. To run simulations in parallel, use the `future` package to control parallel execution:
 
 ```{r, eval=FALSE}
-if (requireNamespace("future", quietly = TRUE) &&
-  requireNamespace("future.apply", quietly = TRUE)) {
-  # Set up parallel execution with 4 workers
-  future::plan(future::multisession, workers = 4)
+# Set up parallel execution with 4 workers
+future::plan(future::multisession, workers = 4)
 
-  # Run 1000 simulations in parallel
-  sims <- ensemble(sfm, n = 100)
+# Run 100 simulations in parallel
+sims <- ensemble(sfm, n = 100)
 
-  # Restore sequential execution
-  future::plan(future::sequential)
-}
+# Restore sequential execution
+future::plan(future::sequential)
 ```
 
 The `workers` argument specifies how many parallel processes to use; adjust this based on your system's capabilities. On Windows, `multisession` is the recommended backend. On POSIX systems (Linux, macOS), you can also use `multicore` for potentially better performance, though `multisession` will work on those systems as well. 
@@ -222,8 +243,6 @@ sfm <- sim_settings(sfm, language = "julia")
 ```
 
 
-##### Parallel simulations (Julia)
-
 We can also enable parallel execution in Julia by setting the number of threads:
 
 ```{r, eval=FALSE}
@@ -236,9 +255,9 @@ To stop using threaded simulations, run:
 use_julia(restart = TRUE)
 ```
 
-## Specifying ranges
+## Specifying conditions
 
-Instead of generating an ensemble with random initial conditions, we can also specify ensembles with exact parameter values. For example, we could vary the $a_2$ parameter, which determines how strongly having eaten increases compensatory behaviour.
+Instead of generating an ensemble with random initial conditions, we can also specify exact constant and initial stock values to vary. For example, we could vary the `a2` parameter, which determines how strongly having eaten increases compensatory behaviour.
 
 ```{r}
 sims <- ensemble(sfm,
@@ -252,7 +271,10 @@ sims <- ensemble(sfm,
 plot(sims)
 ```
 
-We can also vary multiple parameters at once. For example, we can vary both $a_2$ and $a_1$, where the latter influences how strongly food intake leads to more food intake. `n` now specifies the number of simulations per condition. By default, `cross = TRUE`, which means that all possible combinations of parameters are simulated.
+
+### Varying multiple parameters
+
+We can also vary multiple parameters at once. For example, we can vary both `a2` and `a1`, where the latter influences how strongly food intake leads to more food intake. `n` now specifies the number of simulations per condition. By default, `cross = TRUE`, which means that all possible combinations of parameters are simulated.
 
 ```{r}
 sims <- ensemble(sfm,
@@ -268,13 +290,23 @@ sims <- ensemble(sfm,
 plot(sims)
 ```
 
-The plot shows similarity within columns but differences between columns. As $a_1$ differs between columns, it appears that $a_1$ has a larger effect than $a_2$. To view the parameter combination corresponding to each condition, view `conditions` in `sims`: 
+The plot shows similarity within columns but differences between columns. As `a1` differs between columns, it appears that `a1` has a larger effect than `a2`. 
+
+To view the parameter combination corresponding to each condition, view `conditions` in `sims`: 
 
 ```{r}
 sims$conditions
 ```
 
-To generate a non-crossed designed, set `cross = FALSE`. In this case, the length of each conditions vector needs to be the same.
+To explore the effect of each parameter interactively, use `condition_display = "slider"` or `condition_display = "dropdown"`:
+
+```{r, fig.height = 6}
+plot(sims, condition_display = "slider")
+```
+
+### Crossed vs non-crossed designs
+
+To generate a non-crossed designed, set `cross = FALSE`. In this case, the length of each vector in `conditions` needs to be the same.
 
 ```{r}
 sims <- ensemble(sfm,
@@ -298,44 +330,45 @@ plot(sims, sim = 1:15, condition = 1:2, which = "sims", nrows = 1)
 
 ### Accessing simulation results
 
-The results of the ensemble simulation are stored in the `sims` object, which is a list containing, among others:
+The results of the ensemble simulation are stored in the `sims` object.
+ <!-- which is a list containing, among others:
 - `summary`: summary statistics across all simulations per condition
 - `df`: individual simulation data (if `save_sims = TRUE`)
 - `init`: initial values of stocks
 - `constants`: parameter values used
-- `conditions`: matrix showing parameter combinations for each condition
+- `conditions`: matrix showing parameter combinations for each condition -->
 
 You can access the summary statistics per condition and per time point, such as the mean and confidence intervals, using:
 
 ```{r}
-head(sims)
+head(sims, n = 1)
 # or
-sims |> as.data.frame() |> head()
+# sims |> as.data.frame() |> head()
 ```
 
 By default, simulations are returned in long format, but can also be shaped in wide format as well: 
 
 ```{r}
-head(sims, direction = "wide")
+head(sims, n = 1, direction = "wide")
 ```
 
-If you have set `save_sims = TRUE`, you can access the individual simulation runs as well. The dataframe contains the value of each variable, for each time point, for each simulation, for each condition. 
+With `save_sims = TRUE`, the individual simulation runs can be accessed by specifying `which = "sims"`. The dataframe contains the value of each variable, for each time point, for each simulation, for each condition. 
 
 ```{r}
-head(sims, which = "sims", direction = "long")
+head(sims, n = 1, which = "sims", direction = "long")
 ```
 
 
 Finally, to access the parameters (i.e., constants) of each simulation per condition, run:
 
 ```{r}
-head(sims, which = "sims", type = "constant")
+head(sims, n = 1, which = "sims", type = "constant")
 ```
 
 To view their summary statistics, run:
 
 ```{r}
-head(sims, which = "summary", type = "constant")
+head(sims, n = 1, which = "summary", type = "constant")
 ```
 
 ## Close Julia session

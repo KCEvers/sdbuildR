@@ -256,15 +256,15 @@ make_ensemble_error_sfm <- function() {
 
 # Helper: standard sfm for method tests
 make_jl_ensemble_sfm <- function() {
-  stockflow("Crielaard2022") |>
-    sim_settings(start = 0, stop = 10, dt = 0.1, save_at = 1, language = "Julia")
+  stockflow("crielaard2022") |>
+    sim_settings(start = 0, stop = 10, dt = 0.1, save_by = 1, language = "Julia")
 }
 
 
 make_r_ensemble_random_sfm <- function() {
   stockflow("sir") |>
     update(c(susceptible, infected, recovered), eqn = "runif(1, 1, 1000)") |>
-    sim_settings(language = "R", start = 0, stop = 10, dt = 0.1, save_at = 1, seed = 42)
+    sim_settings(language = "R", start = 0, stop = 10, dt = 0.1, save_by = 1, seed = 42)
 }
 
 
@@ -295,7 +295,7 @@ make_verifiable_sfm <- function(language = "R") {
     update("S", type = "stock", eqn = runif(1, 1, 100)) |>
     update("drain", type = "flow", eqn = "rate * S", from = "S") |>
     update("rate", type = "constant", eqn = "0.1") |>
-    sim_settings(stop = 10, dt = 0.1, save_at = 1, language = language, seed = 123)
+    sim_settings(stop = 10, dt = 0.1, save_by = 1, language = language, seed = 123)
 }
 
 
@@ -327,7 +327,7 @@ make_verify_model <- function(n_tests = 1, with_fail = FALSE) {
 # conditions          → optional named list passed to ensemble().
 make_r_ens <- function(n = 5, save_sims = FALSE, conditions = NULL, ...) {
   sfm <- make_r_ensemble_random_sfm()
-  args <- list(sfm, n = n, save_sims = save_sims, verbose = FALSE, ...)
+  args <- list(sfm, n = n, save_sims = save_sims, quiet = TRUE, ...)
   if (!is.null(conditions)) args$conditions <- conditions
   silence(do.call(ensemble, args))
 }
@@ -793,7 +793,7 @@ expect_input_sim_equal <- function(input_eqn, tolerance = 1e-4) {
     update("a", "stock") |>
     update("input", "constant", eqn = !!input_eqn) |>
     update("inflow", "flow", eqn = "input(t)", to = "a") |>
-    sim_settings(start = 0, stop = 20, dt = 0.1, save_at = 1)
+    sim_settings(start = 0, stop = 20, dt = 0.1, save_by = 1)
 
   r <- silence(simulate(sim_settings(sfm, language = "R"), only_stocks = FALSE))
   j <- silence(simulate(sim_settings(sfm, language = "Julia"), only_stocks = FALSE))

@@ -26,6 +26,12 @@ options(sdbuildR.webgl = FALSE)
 ```
 
 
+```{r, echo = FALSE}
+font_family <- "stix-two-text"
+options(sdbuildR.font_family = font_family)
+# getOption("sdbuildR.font_family")
+```
+
 sdbuildR can exchange models with several external tools. This vignette covers
 three workflows:
 
@@ -141,7 +147,7 @@ print(sfm)
 ```
 
 ```{r}
-sfm <- sim_settings(sfm, save_at = 5)
+sfm <- sim_settings(sfm, save_by = 5)
 sfm |> simulate() |> plot()
 ```
 
@@ -153,8 +159,8 @@ any supported format.
 
 ## Exporting models
 
-`export_model()` converts an `stockflow` object to another format. The currently
-supported export formats are 'sdbuildR` to generate the build code of the model, `deSolve` to return a complete script for simulating a model with `deSolve`, and `psychomodels`.
+`export_model()` converts a `stockflow` object to another format. The currently
+supported export formats are `sdbuildR` to generate the build code of the model, `deSolve` to return a complete script for simulating a model with `deSolve`, and `psychomodels`.
 
 Use `file = "path"` to write directly to disk; omit `file` to return the
 result in memory.

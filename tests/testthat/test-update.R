@@ -610,15 +610,16 @@ test_that("change_type() to stock keeps dSdt[] indices aligned with stock order"
 test_that("change_type() to stock keeps dSdt[] aligned in a realistic model", {
   # Regression for the JDR template: change_type(motivation_rate -> stock) used
   # to leave resources pointing at dSdt[4] while the state vector put it at 5.
-  sfm <- stockflow("JDR") |>
+  sfm <- stockflow("crielaard2022") |>
     sim_settings(language = "Julia") |>
-    change_type("motivation_rate", new_type = "stock")
+    change_type("a2", new_type = "stock")
 
   expect_stock_indices_aligned(sfm)
 
-  mr <- sfm[["variables"]][sfm[["variables"]][["name"]] == "motivation_rate", ]
+  mr <- sfm[["variables"]][sfm[["variables"]][["name"]] == "a2", ]
   expect_equal(mr[["sum_eqn"]], "0.0") # no flows -> constant
 })
+
 
 
 test_that("discard() reindexes remaining stock dSdt[] contiguously", {
@@ -675,13 +676,13 @@ test_that("change_type() to stock simulates correctly in Julia (no-flow stock is
   # and must not absorb another stock's dynamics via a misaligned dSdt[] index.
   skip_if_julia_not_ready()
 
-  sfm <- stockflow("JDR") |>
+  sfm <- stockflow("crielaard2022") |>
     sim_settings(language = "Julia") |>
-    change_type("motivation_rate", new_type = "stock")
+    change_type("a0", new_type = "stock")
 
   sim <- simulate(sfm)
   df <- as.data.frame(sim)
-  mr <- df[df[["variable"]] == "motivation_rate", "value"]
+  mr <- df[df[["variable"]] == "a0", "value"]
 
   expect_true(length(mr) > 0)
   expect_equal(diff(range(mr)), 0) # no flows -> perfectly constant

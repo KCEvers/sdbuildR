@@ -66,9 +66,9 @@ test_that("pre_assemble_components() validates layout while (re)building", {
 test_that("incrementally built model compiles identically to a fresh rebuild", {
   # The original dSdt[] bug was a cache/order interaction: an incrementally
   # updated model diverged from one rebuilt from scratch. Assert they match.
-  sfm <- stockflow("JDR") |>
+  sfm <- stockflow("predator_prey") |>
     sim_settings(language = "Julia") |>
-    change_type("motivation_rate", new_type = "stock") |>
+    change_type("delta", new_type = "stock") |>
     update("extra", type = "stock", eqn = "1")
 
   script_incremental <- compile(sfm, filepath_sim = "sim.csv")$script

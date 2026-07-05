@@ -27,8 +27,8 @@ test_that("stocks change over time in Julia", {
 })
 
 test_that("switching Julia -> R works", {
-  skip_if_no_internet()
   skip_if_julia_not_ready()
+  skip_if_no_internet()
 
   sfm <- suppressWarnings(import_insightmaker(
     url = "https://insightmaker.com/insight/43tz1nvUgbIiIOGSGtzIzj/Romeo-Juliet"
@@ -89,7 +89,7 @@ test_that("R and Julia produce consistent results", {
     update(name = "Population", type = "stock", eqn = "100") |>
     update(name = "births", type = "flow", eqn = "0.05 * Population", to = "Population") |>
     update(name = "deaths", type = "flow", eqn = "0.03 * Population", from = "Population") |>
-    sim_settings(stop = 10, dt = 0.1, save_at = 0.5)
+    sim_settings(stop = 10, dt = 0.1, save_by = 0.5)
 
   # Simulate with R
   sfm_r <- sim_settings(sfm, language = "R")

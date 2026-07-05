@@ -7,7 +7,6 @@
       -- Stock-and-Flow Simulation: Susceptible-Infected-Recovered (SIR) -------------
       
       -- Data (first rows) --
-      
     Output
         time infected  recovered susceptible
       1 0.00 1.000000 0.00000000    99999.00
@@ -28,7 +27,6 @@
       -- Stock-and-Flow Simulation: My SIR Model -------------------------------------
       
       -- Data (first rows) --
-      
     Output
         time infected  recovered susceptible
       1 0.00 1.000000 0.00000000    99999.00

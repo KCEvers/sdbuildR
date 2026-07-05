@@ -432,7 +432,7 @@
       {
         "text": "Condition 1",
         "font": {
-          "family": "Times New Roman",
+          "family": "stix-two-text",
           "size": 12
         },
         "bgcolor": "white",
@@ -447,7 +447,7 @@
       {
         "text": "Condition 2",
         "font": {
-          "family": "Times New Roman",
+          "family": "stix-two-text",
           "size": 12
         },
         "bgcolor": "white",
@@ -462,7 +462,7 @@
       {
         "text": "Time (weeks)",
         "font": {
-          "family": "Times New Roman"
+          "family": "stix-two-text"
         },
         "xref": "paper",
         "yref": "paper",
@@ -498,7 +498,7 @@
       "text": "Ensemble of Susceptible-Infected-Recovered (SIR)<span style='font-size:16px;'><br />Mean with [0.025, 0.975] confidence interval of 3 simulations<\/span>"
     },
     "font": {
-      "family": "Times New Roman",
+      "family": "stix-two-text",
       "size": 16
     }
   }

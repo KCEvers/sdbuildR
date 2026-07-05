@@ -11,7 +11,7 @@
   palette = "Dark 2",
   colors = NULL,
   line_width = 2,
-  font_family = "Times New Roman",
+  font_family = default_font_family(),
   font_size = 16,
   wrap_width = 25,
   showlegend = TRUE,
@@ -40,7 +40,14 @@ value applied to all variables, a named per-variable vector (names are
 variable names), or an unnamed vector with one value per variable in plot
 order. Defaults to \code{2}.}
 
-\item{font_family}{Font family. Defaults to "Times New Roman".}
+\item{font_family}{Font family. Kebab-case names (e.g. \code{"eb-garamond"})
+are Fontsource ids (browse them at \url{https://fontsource.org/}), loaded as
+webfonts: no installation is needed, but internet access is required to
+display them. Other fonts must be installed on the system viewing the
+plot. Defaults to the \code{sdbuildR.font_family} option, or
+the \code{"stix-two-text"} webfont when the option is unset; use
+\code{options(sdbuildR.font_family = )} to change the default for all plots,
+e.g. in your .Rprofile.}
 
 \item{font_size}{Font size. Defaults to 16.}
 

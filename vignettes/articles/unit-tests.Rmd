@@ -35,6 +35,12 @@ options(sdbuildR.webgl = FALSE)
 ```
 
 
+```{r, echo = FALSE}
+font_family <- "stix-two-text"
+options(sdbuildR.font_family = font_family)
+# getOption("sdbuildR.font_family")
+```
+
 Stock-and-flow models can easily become complex, producing unexpected behaviours as the model is developed. To ensure a model behaves as intended, we may make use of unit tests, a concept from software engineering. A unit test compares the behaviour of a small aspect of the model (i.e., a unit) to an explicitly formulated expectation. By implementing an exhaustive test suite, we can systematically and routinely check the model. In this vignette, we will demonstrate how to use `sdbuildR` to create and run unit tests for a simple model.
 
 
@@ -86,7 +92,7 @@ sfm <- sfm |>
 verify(sfm)
 ```
 
-Unit tests are most useful when kept small, readable, and tied to a specific
+Unit tests are most useful when kept small, easily understood, and tied to a specific
 model expectation.
 
 ## Test behaviour under a condition
@@ -222,6 +228,12 @@ res <- verify(sfm)
 plot(res)
 ```
 
+Interactively browse through conditions:
+
+```{r}
+plot(res, condition_display = "slider")
+```
+
 Plot the simulation used for a specific test:
 
 ```{r}
@@ -251,7 +263,7 @@ head(as.data.frame(res, which = "sims", test = 1))
 
 ## Inspect failed tests
 
-We will first deliberately break the model by making the susceptible population negative:
+We will first deliberately break the model by making the susceptible population negative (which is not physically possible):
 
 ```{r}
 sfm <- update(sfm, susceptible, eqn = -10)

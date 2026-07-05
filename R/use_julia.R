@@ -14,6 +14,7 @@
 #' Note that this may take 10-25 minutes the first time as Julia downloads and compiles packages.
 #'
 #' @param remove If `TRUE`, remove Julia environment for sdbuildR. This will remove the SystemDynamicsBuildR.jl package and delete the environment directory (containing Project.toml and Manifest.toml). All other Julia packages remain untouched.
+#' @param quiet If `TRUE`, suppress informational messages such as progress and status updates. Warnings and errors are always shown. Defaults to `FALSE`.
 #'
 #' @returns Invisibly returns `NULL` after instantiating the Julia environment.
 #' @export
@@ -27,7 +28,7 @@
 #' # Remove Julia environment
 #' install_julia_env(remove = TRUE)
 #' }
-install_julia_env <- function(remove = FALSE) {
+install_julia_env <- function(remove = FALSE, quiet = FALSE) {
   # Track whether setup ran to completion. If an error or a user interrupt
   # (likely during the 10-25 min install) stops us partway, the Manifest.toml
   # may have been deleted without being rebuilt, leaving a broken environment.
@@ -62,6 +63,7 @@ install_julia_env <- function(remove = FALSE) {
   .sdbuildR_env[["jl"]][["env_checked"]] <- FALSE
 
   env_dir <- julia_env_dir()
+  project_file <- file.path(env_dir, "Project.toml")
   manifest_file <- file.path(env_dir, "Manifest.toml")
 
   if (remove) {
@@ -72,12 +74,15 @@ install_julia_env <- function(remove = FALSE) {
     # Is there anything to remove? (the package, or leftover environment files)
     status <- is_julia_env_setup(force = TRUE, error = FALSE)
     env_present <- isTRUE(status) ||
+      file.exists(project_file) ||
       file.exists(manifest_file) ||
       file.exists(julia_env_marker_file()) ||
-      (!julia_env_in_package() && dir.exists(env_dir))
+      dir.exists(env_dir)
 
     if (!env_present) {
-      cli::cli_inform(c("i" = paste0(P[["jl_pkg_name"]], ".jl not found in Julia environment; no need to remove.")))
+      if (!quiet) {
+        cli::cli_inform(c("i" = paste0(P[["jl_pkg_name"]], ".jl not found in Julia environment; no need to remove.")))
+      }
       return(invisible())
     }
 
@@ -90,33 +95,40 @@ install_julia_env <- function(remove = FALSE) {
       julia_eval("Pkg.gc()")
     }
 
-    # Remove the environment files. When the environment lives in its own
+    # Remove the environment files. The environment lives in its own
     # directory (R_user_dir), delete the whole directory so nothing is left
-    # behind; in-package mode keeps the shipped Project.toml.
-    if (julia_env_in_package()) {
-      remove_files(c(manifest_file, julia_env_marker_file()))
-    } else {
-      unlink(env_dir, recursive = TRUE, force = TRUE)
-    }
+    # behind.
+    unlink(env_dir, recursive = TRUE, force = TRUE)
+    
 
     status <- is_julia_env_setup(force = TRUE, error = FALSE)
 
     if (isTRUE(status)) {
       cli::cli_inform(c("x" = "Failed to remove Julia environment."))
     } else {
-      cli::cli_inform(c("v" = "Julia environment removed."))
+      if (!quiet) {
+        cli::cli_inform(c("v" = "Julia environment removed."))
+      }
     }
   } else {
     # First stop Julia for a clean installation
     JuliaConnectoR::stopJulia()
 
+    # For a clean installation, remove the environment files. 
+    # The environment lives in its own
+    # directory (R_user_dir), delete the whole directory so nothing is left
+    # behind.
+    if (dir.exists(env_dir)) {
+      unlink(env_dir, recursive = TRUE, force = TRUE)
+    }
+
     # Ensure the environment directory exists and holds a fresh copy of the
     # shipped Project.toml
     env_dir <- prepare_julia_env_dir()
-    manifest_file <- file.path(env_dir, "Manifest.toml")
+    # manifest_file <- file.path(env_dir, "Manifest.toml")
 
-    # For a clean installation, remove the Manifest.toml file
-    remove_files(manifest_file)
+    # # For a clean installation, remove the Manifest.toml file
+    # remove_files(manifest_file)
 
     # Tell setup.jl which environment directory to activate
     julia_eval(sprintf('sdbuildR_env_path = "%s"', jl_path(env_dir)))
@@ -130,7 +142,10 @@ install_julia_env <- function(remove = FALSE) {
       # Record provenance (sdbuildR version + Project.toml hash) so a future
       # version with changed dependencies can detect a stale environment
       write_julia_env_marker()
-      cli::cli_inform(c("v" = "Julia environment installed."))
+      if (!quiet) {
+        cli::cli_inform(c("v" = "Julia environment installed.",
+        ">" = "Run {.fn use_julia} to start a Julia session and activate the environment."))
+      }
     } else {
       cli::cli_inform(c("x" = "Failed to install Julia environment."))
     }
@@ -151,8 +166,9 @@ install_julia_env <- function(remove = FALSE) {
 #' @param stop If `TRUE`, stop active Julia session. Defaults to `FALSE`.
 #' @param restart If `TRUE`, force Julia session to restart.
 #' @param nthreads If not `NULL`, set the number of threads for Julia to use. This will temporarily set the environment variable `JULIA_NUM_THREADS` and restart Julia if it is already running to apply the new thread setting. See [this page](https://docs.julialang.org/en/v1/manual/parallel-computing/#man-parallel-computing) for more details on threading in Julia.
+#' @param quiet If `TRUE`, suppress informational messages such as progress and status updates. Warnings and errors are always shown. Defaults to `FALSE`.
 #'
-#' @returns Returns `NULL` invisibly, used for side effects
+#' @returns Returns `TRUE` invisibly after setting up the Julia environment, and `NULL` invisibly if Julia was already set up or when stopping Julia with `stop = TRUE`. Used for side effects.
 #' @export
 #' @seealso [install_julia_env()]
 #' @concept julia
@@ -173,13 +189,16 @@ install_julia_env <- function(remove = FALSE) {
 use_julia <- function(
   stop = FALSE,
   restart = FALSE,
-  nthreads = NULL
+  nthreads = NULL,
+  quiet = FALSE
 ) {
   if (stop || restart) {
     .sdbuildR_env[["jl"]][["use_threads"]] <- FALSE
     JuliaConnectoR::stopJulia()
 
-    cli::cli_inform(c("v" = "Closed Julia session."))
+    if (!quiet) {
+      cli::cli_inform(c("v" = "Closed Julia session."))
+    }
 
     if (stop) {
       return(invisible())
@@ -213,7 +232,6 @@ use_julia <- function(
     }
   }
 
-
   # First check if Julia environment was already initialized. If so, we know:
   # - Julia is working
   # - Julia version is ok
@@ -228,7 +246,7 @@ use_julia <- function(
 
   # If Julia environment is set up, it just has not been initialized
   if (!status && env_checked) {
-    run_init_julia_env()
+    run_init_julia_env(quiet = quiet)
     status <- is_julia_init()
   }
 
@@ -242,10 +260,14 @@ use_julia <- function(
         ">" = "Check that your Julia installation supports threading and that JULIA_NUM_THREADS is set correctly in your environment variables."
       ))
     } else {
-      cli::cli_inform(c("v" = "Julia environment ready with {nthreads} threads."))
+      if (!quiet) {
+        cli::cli_inform(c("v" = "Julia environment ready with {nthreads} threads."))
+      }
     }
   } else if (status) {
-    cli::cli_inform(c("v" = "Julia environment ready."))
+    if (!quiet) {
+      cli::cli_inform(c("v" = "Julia environment ready."))
+    }
   } else {
     cli::cli_abort(c("x" = "Julia environment setup failed."))
   }
@@ -350,19 +372,6 @@ is_julia_version_ok <- function() {
 }
 
 
-#' Whether to keep the Julia environment inside the installed package
-#'
-#' Single toggle controlling where the Julia environment lives. Defaults to
-#' `FALSE` (persistent user directory via [tools::R_user_dir()]). Set
-#' `options(sdbuildR.julia_env_in_package = TRUE)` to revert to the pre-2.x
-#' behaviour of storing the environment inside the installed package directory
-#' (for example if a persistent user directory is undesirable).
-#'
-#' @returns Logical.
-#' @noRd
-julia_env_in_package <- function() {
-  isTRUE(getOption("sdbuildR.julia_env_in_package", FALSE))
-}
 
 
 #' Location of the sdbuildR Julia environment
@@ -371,15 +380,11 @@ julia_env_in_package <- function() {
 #' Manifest.toml, and provenance marker) lives. By default this is a
 #' persistent, user-writable directory via [tools::R_user_dir()] which, unlike
 #' the installed package directory, survives package reinstalls and works on
-#' read-only/system libraries. Everything else keys off this one function, so
-#' switching back to the in-package location only requires julia_env_in_package().
+#' read-only/system libraries.
 #'
 #' @returns Path to the environment directory.
 #' @noRd
 julia_env_dir <- function() {
-  if (julia_env_in_package()) {
-    return(norm_path(dirname(system.file("Project.toml", package = "sdbuildR"))))
-  }
   norm_path(file.path(tools::R_user_dir("sdbuildR", which = "data"), "julia"))
 }
 
@@ -404,10 +409,6 @@ julia_env_marker_file <- function() {
 #' @noRd
 prepare_julia_env_dir <- function() {
   env_dir <- julia_env_dir()
-
-  if (julia_env_in_package()) {
-    return(env_dir)
-  }
 
   if (!dir.exists(env_dir)) {
     dir.create(env_dir, recursive = TRUE, showWarnings = FALSE)
@@ -573,7 +574,7 @@ is_julia_env_setup <- function(force = FALSE, error = TRUE) {
   if (!is_julia_project_current()) {
     if (error) {
       cli::cli_abort(c(
-        "x" = "The sdbuildR Julia environment is out of date with this version of the package.",
+        "x" = "The sdbuildR Julia environment is out of date.",
         ">" = "Run {.fn install_julia_env} to rebuild the environment."
       ))
     } else {
@@ -862,15 +863,19 @@ jl_path <- function(path) {
 #'
 #' @returns NULL
 #' @noRd
-run_init_julia_env <- function() {
+run_init_julia_env <- function(quiet = FALSE) {
   # Find set-up location for sdbuildR in Julia
   env_path <- julia_env_dir()
 
-  cli::cli_inform(c("i" = "Activating Julia environment for {.pkg sdbuildR} at {.file {env_path}}..."))
+  if (!quiet) {
+    cli::cli_inform(c("i" = "Activating Julia environment for {.pkg sdbuildR} at {.file {env_path}}..."))
+  }
 
   # Activate the Julia environment for sdbuildR
   julia_cmd <- sprintf("using Pkg; Pkg.activate(\"%s\"; io=devnull)", jl_path(env_path))
   julia_eval(julia_cmd)
+
+  julia_eval("Pkg.precompile()")
 
   # # Install all dependencies from Project.toml
   # julia_eval("Pkg.instantiate()")

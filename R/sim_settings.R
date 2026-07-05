@@ -10,20 +10,24 @@
 #' @param stop End time of simulation. Defaults to `100`.
 #' @param dt Timestep of solver; controls simulation accuracy. Smaller = more
 #'   accurate but slower. Defaults to `0.01`.
-#' @param save_at Controls which time points are saved in the output. Either:
-#'   \itemize{
-#'     \item A single number: save every N time units (interval). Must be >= `dt`.
-#'       Use larger than `dt` to reduce output size without sacrificing accuracy.
-#'       Example: `dt = 0.01`, `save_at = 1` saves every 100th computed point.
-#'     \item A numeric vector: explicit time points to include in output.
-#'       Values must lie within `[start, stop]`.
-#'   }
-#'   Pass `NA`, `NULL`, or `""` to reset to saving all dt steps.
-#'   Mutually exclusive with `save_n`. Defaults to `NULL` (save all).
-#' @param save_n Save exactly N evenly-spaced time points from `start` to `stop`.
-#'   `save_n = 1` saves only the final time point (stop).
-#'   Pass `NA`, `NULL`, or `""` to reset to saving all dt steps.
-#'   Mutually exclusive with `save_at`. Defaults to `NULL` (save all).
+#' @param save_by Save output at a regular interval, mirroring the `by` argument
+#'   of [seq()]: output times are `seq(start, stop, by = save_by)`. Must be a
+#'   single number `>= dt`. Use a value larger than `dt` to reduce output size
+#'   without sacrificing accuracy. Example: `dt = 0.01`, `save_by = 1` saves every
+#'   100th computed point. Pass `NA`, `NULL`, or `""` to reset to saving all dt
+#'   steps. Mutually exclusive with `save_times` and `save_length`. Defaults to
+#'   `NULL` (save all).
+#' @param save_times Numeric vector of explicit output times to save. Values must
+#'   lie within `[start, stop]`. Example: `save_times = c(0, 10)` saves exactly
+#'   those two times. Pass `NA`, `NULL`, or `""` to reset to saving all dt steps.
+#'   Mutually exclusive with `save_by` and `save_length`. Defaults to `NULL`
+#'   (save all).
+#' @param save_length Number of output times to save, mirroring the `length.out`
+#'   argument of [seq()]: output times are `seq(start, stop, length.out =
+#'   save_length)`. Must be a single whole positive number. `save_length = 1`
+#'   saves only the final time point (stop). Pass `NA`, `NULL`, or `""` to reset
+#'   to saving all dt steps. Mutually exclusive with `save_by` and `save_times`.
+#'   Defaults to `NULL` (save all).
 #' @param seed Seed number to ensure reproducibility across runs in case of
 #'   random elements. Must be an integer. Defaults to `NULL` (no seed).
 #' @param time_units Simulation time unit. Defaults to `"seconds"`.
@@ -34,7 +38,8 @@
 #'   down the simulation. Defaults to `TRUE`.
 #' @param vars Character vector of variable names to save in simulation output.
 #'   Use this to keep selected flows or auxiliaries without saving every model
-#'   variable. If specified, this overrides `only_stocks`.
+#'   variable. If specified, this overrides `only_stocks`. Pass `NULL`, `""`,
+#'   or an empty character vector to clear a previous `vars` setting.
 #' @param keep_nonnegative_stock If `TRUE`, keeps original non-negativity setting
 #'   of stocks. Defaults to `FALSE`.
 #' @param keep_nonnegative_flow If `TRUE`, keeps original non-negativity setting
@@ -57,6 +62,8 @@
 #'   `quant2`, ... in the order given. At least two unique values are required.
 #'   Defaults to `c(0.025, 0.975)`. Can be overridden per call via the
 #'   `quantiles` argument of [ensemble()].
+#' @param ... Reserved for future use. Passing unknown arguments (including the
+#'   removed `save_at` and `save_n`) raises an error.
 #'
 #' @returns A stock-and-flow model object of class [`stockflow`][stockflow]
 #' @concept simulate
@@ -75,15 +82,20 @@
 #' # Change the time units to "years", such that one time unit is one year
 #' sfm <- sim_settings(sfm, time_units = "years")
 #'
-#' # Save at an interval to reduce output size without affecting accuracy
-#' sfm <- sim_settings(sfm, save_at = 1)
+#' # Save at a regular interval to reduce output size without affecting accuracy
+#' sfm <- sim_settings(sfm, save_by = 1)
 #' sim <- simulate(sfm)
 #' head(as.data.frame(sim))
 #'
 #' # Save exactly 11 evenly-spaced time points (t=0, 5, 10, ..., 50)
-#' sfm <- sim_settings(sfm, save_n = 11)
+#' sfm <- sim_settings(sfm, save_length = 11)
 #' sim <- simulate(sfm)
 #' head(as.data.frame(sim))
+#'
+#' # Save only specific time points
+#' sfm <- sim_settings(sfm, save_times = c(0, 25, 50))
+#' sim <- simulate(sfm)
+#' as.data.frame(sim)
 #'
 #' # Add stochastic initial condition but specify seed to obtain same result
 #' sfm <- sim_settings(sfm, seed = 1) |>
@@ -94,9 +106,9 @@ sim_settings <- function(object,
                          start = 0,
                          stop = 100,
                          dt = 0.01,
-                         save_at = 0.1,
-                         # save_at = NULL,
-                         save_n = NULL,
+                         save_by = NULL,
+                         save_times = NULL,
+                         save_length = NULL,
                          seed = NULL,
                          time_units = "seconds",
                          language = "R",
@@ -107,12 +119,32 @@ sim_settings <- function(object,
                          save_sims = FALSE,
                          central = c("mean", "median"),
                          spread = "quantile",
-                         quantiles = c(0.025, 0.975)) {
+                         quantiles = c(0.025, 0.975),
+                         ...) {
   # Basic check
   if (missing(object)) {
     missing_arg("object")
   }
   check_stockflow(object)
+
+  # Hard-deprecate legacy save arguments and reject unknown arguments with a
+  # helpful message rather than a generic "unused argument" error.
+  dots <- list(...)
+  if (length(dots) > 0) {
+    dot_names <- names(dots) %||% rep("", length(dots))
+    legacy <- intersect(dot_names, c("save_at", "save_n"))
+    if (length(legacy) > 0) {
+      cli::cli_abort(c(
+        "{.arg {legacy}} {?is/are} no longer supported.",
+        "i" = "Use {.arg save_by} (regular interval, mirrors {.code seq(by=)}), {.arg save_times} (explicit output times), or {.arg save_length} (number of output times, mirrors {.code seq(length.out=)}).",
+        ">" = "Replace {.code save_at = <interval>} with {.arg save_by}, {.code save_at = <vector>} with {.arg save_times}, and {.code save_n} with {.arg save_length}."
+      ))
+    }
+    unknown <- dot_names[!nzchar(dot_names) | !dot_names %in% c("save_at", "save_n")]
+    cli::cli_abort(c(
+      "Unknown argument{?s} passed to {.fn sim_settings}: {.arg {unknown}}."
+    ))
+  }
 
 
   # --- Time argument validation ---
@@ -136,38 +168,38 @@ sim_settings <- function(object,
 
   # --- Save parameter handling ---
 
-  # Error: both save_at and save_n set (neither is an unset sentinel)
-  if (!missing(save_at) && !.is_unset(save_at) &&
-    !missing(save_n) && !.is_unset(save_n)) {
+  # The public API exposes three mutually exclusive ways to choose which time
+  # points are saved (save_by / save_times / save_length). These are stored under
+  # the same names internally; at most one is ever non-NULL.
+  save_set <- character(0)
+  if (!missing(save_by) && !.is_unset(save_by)) save_set <- c(save_set, "save_by")
+  if (!missing(save_times) && !.is_unset(save_times)) save_set <- c(save_set, "save_times")
+  if (!missing(save_length) && !.is_unset(save_length)) save_set <- c(save_set, "save_length")
+
+  if (length(save_set) > 1) {
     cli::cli_abort(c(
-      "Cannot specify both {.arg save_at} and {.arg save_n}.",
-      "i" = "Pass {.val {NA}} to one of them to unset it."
+      "Cannot specify more than one of {.arg save_by}, {.arg save_times}, and {.arg save_length}.",
+      "x" = "You set {.arg {save_set}}.",
+      ">" = "Choose one method for specifying which time points are saved."
     ))
   }
 
   # save argg: entries added here go into object$sim_settings
   argg <- time_vals
 
-  if (!missing(save_at)) {
-    if (.is_unset(save_at)) {
-      argg[["save_type"]] <- "all"
-      argg["save_at"] <- list(NULL)
-      argg["save_n"] <- list(NULL)
-    } else {
-      validated <- .validate_save_at(save_at, object, time_vals)
-      argg[["save_type"]] <- "save_at"
-      argg[["save_at"]] <- validated
-      argg["save_n"] <- list(NULL)
-    }
-  } else if (!missing(save_n)) {
-    if (.is_unset(save_n)) {
-      argg[["save_type"]] <- "all"
-      argg["save_at"] <- list(NULL)
-      argg["save_n"] <- list(NULL)
-    } else {
-      argg[["save_type"]] <- "save_n"
-      argg[["save_n"]] <- .validate_save_n(save_n)
-      argg["save_at"] <- list(NULL)
+  save_passed <- !missing(save_by) || !missing(save_times) || !missing(save_length)
+  if (save_passed) {
+    # Clear all three; at most one is set below. Absence of all three means
+    # "save every dt step".
+    argg["save_by"] <- list(NULL)
+    argg["save_times"] <- list(NULL)
+    argg["save_length"] <- list(NULL)
+    if (identical(save_set, "save_by")) {
+      argg[["save_by"]] <- .validate_save_by(save_by, object, time_vals)
+    } else if (identical(save_set, "save_times")) {
+      argg[["save_times"]] <- .validate_save_times(save_times, object, time_vals)
+    } else if (identical(save_set, "save_length")) {
+      argg[["save_length"]] <- .validate_save_length(save_length)
     }
   }
 
@@ -259,7 +291,7 @@ sim_settings <- function(object,
   if (!missing(time_units)) argg$time_units <- time_units
   if (!missing(language)) argg$language <- language
   if (!missing(only_stocks)) argg$only_stocks <- only_stocks
-  if (!missing(vars)) argg$vars <- vars
+  if (!missing(vars)) argg["vars"] <- list(vars)
   if (!missing(keep_nonnegative_stock)) argg$keep_nonnegative_stock <- keep_nonnegative_stock
   if (!missing(keep_nonnegative_flow)) argg$keep_nonnegative_flow <- keep_nonnegative_flow
   if (!missing(central)) argg$central <- central
@@ -388,99 +420,123 @@ sim_settings <- function(object,
 }
 
 
-#' Validate the save_at argument
+#' Validate the save_by argument (regular save interval)
 #'
-#' Returns a character scalar (interval) or character vector (explicit times).
+#' Returns a character scalar (interval). Mirrors `seq(..., by = save_by)`.
 #'
-#' @param save_at Numeric scalar or vector supplied by the user.
+#' @param save_by Numeric scalar supplied by the user.
 #' @param object A `stockflow` model object (for fallback effective values).
 #' @param time_vals Named list of validated time args (start/stop/dt), may be empty.
 #' @noRd
-.validate_save_at <- function(save_at, object, time_vals) {
+.validate_save_by <- function(save_by, object, time_vals) {
   eff_start <- as.numeric(time_vals[["start"]] %||% object[["sim_settings"]][["start"]])
   eff_stop <- as.numeric(time_vals[["stop"]] %||% object[["sim_settings"]][["stop"]])
   eff_dt <- as.numeric(time_vals[["dt"]] %||% object[["sim_settings"]][["dt"]])
 
-  if (length(save_at) == 1) {
-    val <- suppressWarnings(as.numeric(save_at))
-    if (is.na(val)) {
-      cli::cli_abort(c(
-        "Invalid {.arg save_at} argument.",
-        "x" = "{.arg save_at} must be numeric."
-      ))
-    }
-    if (val <= 0) {
-      cli::cli_abort(c(
-        "Invalid {.arg save_at} argument.",
-        "x" = "{.arg save_at} argument must be positive."
-      ))
-    }
-
-    # save_at < dt → auto-correct to dt
-    if (val < eff_dt) {
-      cli::cli_warn(c(
-        "Invalid {.arg save_at} and {.arg dt} relationship.",
-        "x" = "{.arg save_at} ({.val {val}}) must be >= {.arg dt} ({.val {eff_dt}}).",
-        "i" = "Automatically setting {.arg save_at} equal to {.arg dt}."
-      ))
-      val <- eff_dt
-    }
-
-    # Warn if stop doesn't align with the interval
-    remainder <- (eff_stop - eff_start) %% val
-    tol <- sqrt(.Machine$double.eps) * max(abs(eff_stop), 1)
-    if (remainder > tol && abs(remainder - val) > tol) {
-      cli::cli_warn(c(
-        "Endpoint may be missing.",
-        "i" = paste0(
-          "{.arg stop} ({.val {eff_stop}}) may not appear in output ",
-          "({.arg stop} is not a multiple of {.arg save_at} = {.val {val}})."
-        ),
-        ">" = "If {.arg stop} should be included, specify {.arg save_n} instead of {.arg save_at}, or specify explicit time points to save with a vector {.arg save_at}."
-      ))
-    }
-
-    replace_digits_with_floats(scientific_notation(val), NULL)
-  } else {
-    vals <- suppressWarnings(as.numeric(save_at))
-    if (any(is.na(vals))) {
-      cli::cli_abort(c(
-        "Invalid {.arg save_at} argument.",
-        "x" = "All {.arg save_at} values must be numeric."
-      ))
-    }
-    vals <- sort(unique(vals))
-    out_of_range <- vals < eff_start | vals > eff_stop
-    if (any(out_of_range)) {
-      bad <- vals[out_of_range]
-      cli::cli_abort(c(
-        "Invalid {.arg save_at} values.",
-        "x" = "All values must be within [{.val {eff_start}}, {.val {eff_stop}}].",
-        ">" = "Out-of-range: {.val {bad}}."
-      ))
-    }
-    vapply(vals, function(x) {
-      replace_digits_with_floats(scientific_notation(x), NULL)
-    }, character(1))
+  if (length(save_by) != 1) {
+    cli::cli_abort(c(
+      "Invalid {.arg save_by} argument.",
+      "x" = "{.arg save_by} must be a single number (a regular save interval).",
+      ">" = "To save specific time points, use {.arg save_times} instead."
+    ))
   }
+
+  val <- suppressWarnings(as.numeric(save_by))
+  if (is.na(val)) {
+    cli::cli_abort(c(
+      "Invalid {.arg save_by} argument.",
+      "x" = "{.arg save_by} must be numeric."
+    ))
+  }
+  if (val <= 0) {
+    cli::cli_abort(c(
+      "Invalid {.arg save_by} argument.",
+      "x" = "{.arg save_by} argument must be positive."
+    ))
+  }
+
+  # save_by < dt → auto-correct to dt
+  if (val < eff_dt) {
+    cli::cli_warn(c(
+      "Invalid {.arg save_by} and {.arg dt} relationship.",
+      "x" = "{.arg save_by} ({.val {val}}) must be >= {.arg dt} ({.val {eff_dt}}).",
+      "i" = "Automatically setting {.arg save_by} equal to {.arg dt}."
+    ))
+    val <- eff_dt
+  }
+
+  # Warn if stop doesn't align with the interval
+  remainder <- (eff_stop - eff_start) %% val
+  tol <- sqrt(.Machine$double.eps) * max(abs(eff_stop), 1)
+  if (remainder > tol && abs(remainder - val) > tol) {
+    cli::cli_warn(c(
+      "Endpoint may be missing.",
+      "i" = paste0(
+        "{.arg stop} ({.val {eff_stop}}) may not appear in output ",
+        "({.arg stop} is not a multiple of {.arg save_by} = {.val {val}})."
+      ),
+      ">" = "If {.arg stop} should be included, use {.arg save_length} instead of {.arg save_by}, or list explicit time points with {.arg save_times}."
+    ))
+  }
+
+  replace_digits_with_floats(scientific_notation(val), NULL)
 }
 
 
-#' Validate the save_n argument
+#' Validate the save_times argument (explicit output times)
 #'
-#' Returns a character integer string.
+#' Returns a character vector of output times (sorted, deduplicated).
 #'
-#' @param save_n Integer (or coercible) supplied by the user.
+#' @param save_times Numeric vector supplied by the user.
+#' @param object A `stockflow` model object (for fallback effective values).
+#' @param time_vals Named list of validated time args (start/stop/dt), may be empty.
 #' @noRd
-.validate_save_n <- function(save_n) {
-  n <- suppressWarnings(as.integer(save_n))
-  if (is.na(n) || n < 1) {
+.validate_save_times <- function(save_times, object, time_vals) {
+  eff_start <- as.numeric(time_vals[["start"]] %||% object[["sim_settings"]][["start"]])
+  eff_stop <- as.numeric(time_vals[["stop"]] %||% object[["sim_settings"]][["stop"]])
+
+  vals <- suppressWarnings(as.numeric(save_times))
+  if (any(is.na(vals))) {
     cli::cli_abort(c(
-      "Invalid {.arg save_n} argument.",
-      "x" = "Must be a positive integer ({.arg save_n} = 1 saves only the final time point)."
+      "Invalid {.arg save_times} argument.",
+      "x" = "All {.arg save_times} values must be numeric."
     ))
   }
-  as.character(n)
+  vals <- sort(unique(vals))
+  out_of_range <- vals < eff_start | vals > eff_stop
+  if (any(out_of_range)) {
+    bad <- vals[out_of_range]
+    cli::cli_abort(c(
+      "Invalid {.arg save_times} values.",
+      "x" = "All values must be within [{.val {eff_start}}, {.val {eff_stop}}].",
+      ">" = "Out-of-range: {.val {bad}}."
+    ))
+  }
+  vapply(vals, function(x) {
+    replace_digits_with_floats(scientific_notation(x), NULL)
+  }, character(1))
+}
+
+
+#' Validate the save_length argument (number of output times)
+#'
+#' Returns a character integer string. Mirrors `seq(..., length.out = save_length)`.
+#'
+#' @param save_length Single whole positive number supplied by the user.
+#' @noRd
+.validate_save_length <- function(save_length) {
+  bad <- function() {
+    cli::cli_abort(c(
+      "Invalid {.arg save_length} argument.",
+      "x" = "{.arg save_length} must be a single whole positive number (the number of output times).",
+      "i" = "Output times are {.code seq(start, stop, length.out = save_length)}; {.arg save_length} = 1 saves only the final time point."
+    ))
+  }
+
+  if (length(save_length) != 1) bad()
+  val <- suppressWarnings(as.numeric(save_length))
+  if (is.na(val) || val < 1 || val != round(val)) bad()
+  as.character(as.integer(val))
 }
 
 

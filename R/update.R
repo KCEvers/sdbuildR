@@ -1136,7 +1136,7 @@ lookup <- function(object, name,
 #' sfm <- stockflow()
 #' print(sfm)
 #' \dontshow{
-#' sfm <- sim_settings(sfm, save_at = .5)
+#' sfm <- sim_settings(sfm, save_by = .5)
 #' }
 #'
 #' # Add two stocks. Specify their initial values in the "eqn" property
@@ -1573,7 +1573,7 @@ change_name <- function(object, name, new_name) {
 #' Change the type of a variable in a stock-and-flow model.
 #'
 #' @inheritParams update.stockflow
-#' @param new_type New variable type; one of `'stock'`, `'flow'`, `'constant'`, `'aux'`, `'gf'`, or `'func'`. Character vector of the same length as name.
+#' @param new_type New variable type; one of `'stock'`, `'flow'`, `'constant'`, `'aux'`, `'lookup'`, or `'func'`. Character vector of the same length as name.
 #'
 #' @returns A stock-and-flow model object of class [`stockflow`][stockflow()] with the variable type changed throughout the model. Note that changing the type may result in changes to other properties (e.g., a flow must have "to" and/or "from" properties, so these will be added if not already present), and may require changes to the equations of connected variables.
 #' @seealso [update()]

@@ -60,7 +60,7 @@ For \code{which = "tests"}, keeps only tests belonging to those conditions.}
 \code{which = "sims"}. Defaults to \code{NULL} to include all variables.}
 
 \item{type}{Variable types to retain in the data frame. Must be one or more of
-'stock', 'flow', 'constant', 'aux', 'gf', or 'func'. Only applies when
+'stock', 'flow', 'constant', 'aux', 'lookup', or 'func'. Only applies when
 \code{which = "sims"}. Defaults to \code{NULL} to include all types.}
 
 \item{...}{Additional arguments (unused).}

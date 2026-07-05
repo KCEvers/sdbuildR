@@ -13,10 +13,6 @@ using Statistics
 using StatsBase
 using SystemDynamicsBuildR
 
-# Extend min/max: when applied to a single vector, use minimum, like in R
-Base.min(v::AbstractVector) = minimum(v)
-Base.max(v::AbstractVector) = maximum(v)
-
 # Add initialization of sdbuildR
 init_sdbuildR = true
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulate.R
 \name{summary.simulate_stockflow}
 \alias{summary.simulate_stockflow}
-\title{Summarise simulation results}
+\title{Summarize simulation results}
 \usage{
 \method{summary}{simulate_stockflow}(object, ...)
 }

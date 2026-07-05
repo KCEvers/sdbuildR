@@ -4,7 +4,8 @@
 #' conditions and/or constants specified in `conditions`.
 #'
 #' It is strongly recommended to reduce the size of the simulation output by
-#' saving fewer values with `save_at` or `save_n` in [sim_settings()].
+#' saving fewer values with `save_by`, `save_times`, or `save_length` in
+#' [sim_settings()].
 #'
 #' By default, only summary statistics across simulations are returned.
 #' To return individual simulations, set `save_sims = TRUE` in [sim_settings()] or
@@ -60,7 +61,10 @@
 #'   `quant1`, `quant2`, ... in the order given (so here `quant1` is the 2.5%
 #'   quantile and `quant2` the 97.5%); the probabilities themselves are kept in
 #'   `sims$quantiles`. Defaults to the model's `quantiles` setting.
-#' @param verbose If `TRUE` (default), print details and duration of simulation.
+#' @param quiet If `TRUE`, suppress informational messages such as progress and
+#'   status updates. Warnings and errors are always shown. Defaults to `FALSE`.
+#'   R ensembles show a cli progress bar via [progressr::handler_cli()],
+#'   including when simulations run through a parallel [future::plan()].
 #' @param ... Optional arguments passed to [sim_settings()]; these can be used to override the simulation specifications set in the model object.
 #'
 #' @returns Object of class [`ensemble_stockflow`][ensemble()], which is a list
@@ -111,7 +115,7 @@
 #'
 #' # For ensemble simulations, it is highly recommended to reduce the
 #' # returned output. For example, to save only 20 values per simulation:
-#' sfm <- sim_settings(sfm, save_n = 20)
+#' sfm <- sim_settings(sfm, save_length = 20)
 #'
 #' # Run ensemble simulation with a small number of simulations
 #' sims <- ensemble(sfm, n = 3)
@@ -130,10 +134,7 @@
 #' plot(sims, central = "median", which = "sims", alpha = 0.1)
 #'
 #' # For larger ensembles, we can use parallelization with future
-#' if (requireNamespace("future", quietly = TRUE) &&
-#'   requireNamespace("future.apply", quietly = TRUE)) {
-#'   future::plan(future::multisession, workers = 4)
-#' }
+#' future::plan(future::multisession, workers = 4)
 #'
 #' # Ensembles can also be run with exact values for the initial conditions
 #' # and parameters. Below, we vary the initial values of the predator and the
@@ -163,10 +164,7 @@
 #' plot(sims, nrows = 3)
 #'
 #' # Stop parallelization after use
-#' if (requireNamespace("future", quietly = TRUE) &&
-#'   requireNamespace("future.apply", quietly = TRUE)) {
-#'   future::plan(future::sequential)
-#' }
+#' future::plan(future::sequential)
 #'
 ensemble <- function(object,
                      n = 10,
@@ -175,12 +173,22 @@ ensemble <- function(object,
                      central,
                      spread,
                      quantiles,
-                     verbose = TRUE, ...) {
+                     quiet = FALSE, ...) {
   check_stockflow(object)
 
   # Override sim_settings with any arguments passed via ... or via the
   # central/spread/quantiles arguments (which mirror sim_settings()).
   varargs <- list(...)
+  if ("verbose" %in% names(varargs)) {
+    cli::cli_warn(c(
+      "{.arg verbose} is deprecated.",
+      "i" = "Use {.arg quiet} instead."
+    ))
+    if (missing(quiet)) {
+      quiet <- !isTRUE(varargs[["verbose"]])
+    }
+    varargs[["verbose"]] <- NULL
+  }
   if (!missing(central)) varargs[["central"]] <- central
   if (!missing(spread)) varargs[["spread"]] <- spread
   if (!missing(quantiles)) varargs[["quantiles"]] <- quantiles
@@ -222,7 +230,7 @@ ensemble <- function(object,
   n_conditions <- normalized_conditions[["n_conditions"]]
 
   total_sims <- n * n_conditions
-  if (verbose) {
+  if (!quiet) {
     sim_word <- ifelse(total_sims == 1, "simulation", "simulations")
     if (is.null(conditions)) {
       msg <- c(
@@ -245,7 +253,7 @@ ensemble <- function(object,
       object = object, n = n, save_sims = save_sims,
       conditions = conditions, cross = cross, quantiles = quantiles,
       summary_stats = summary_stats,
-      only_stocks = only_stocks, vars = vars, verbose = verbose,
+      only_stocks = only_stocks, vars = vars, quiet = quiet,
       n_conditions = n_conditions, total_sims = total_sims
     )
   } else if (language == "r") {
@@ -253,7 +261,7 @@ ensemble <- function(object,
       object = object, n = n, save_sims = save_sims,
       conditions = conditions, cross = cross, quantiles = quantiles,
       summary_stats = summary_stats,
-      only_stocks = only_stocks, vars = vars, verbose = verbose,
+      only_stocks = only_stocks, vars = vars, quiet = quiet,
       n_conditions = n_conditions, total_sims = total_sims
     )
   } else {
@@ -592,14 +600,36 @@ as.data.frame.ensemble_stockflow <- function(
     .check_condition_index(condition, x[["n_conditions"]])
   }
 
+  constants_requested <- FALSE
+  if (is.null(vars) && !is.null(type)) {
+    type <- .validate_type_arg(type, arg_name = "type")
+    constants_requested <- "constant" %in% type
+    if (constants_requested && length(type) > 1L) {
+      cli::cli_abort(c(
+        "Invalid {.arg type} argument.",
+        "x" = "Constants are stored separately from time-series output.",
+        "i" = "Use {.code type = 'constant'} by itself to return constants."
+      ))
+    }
+  }
+
   if (which == "sims") {
-    if (is.null(x[["df"]])) {
+    if (constants_requested) {
+      df <- x[["constants"]][["df"]]
+      if (is.null(df)) {
+        cli::cli_abort(c(
+          "No individual constant data available.",
+          "!" = "Re-run {.fn ensemble} with {.code save_sims = TRUE}."
+        ))
+      }
+    } else if (is.null(x[["df"]])) {
       cli::cli_abort(c(
         "No individual simulation data available.",
         "!" = "Re-run {.fn ensemble} with {.code save_sims = TRUE}."
       ))
+    } else {
+      df <- x[["df"]]
     }
-    df <- x[["df"]]
 
     # Validate and apply sim filter
     if (!is.null(sim)) {
@@ -612,12 +642,15 @@ as.data.frame.ensemble_stockflow <- function(
       df <- df[df[["condition"]] %in% condition, , drop = FALSE]
     }
 
-    # Filter by variable and/or type
-    df <- .filter_long_by_vars_type(df, x[["object"]], vars = vars, type = type)
+    if (!constants_requested) {
+      # Filter by variable and/or type
+      df <- .filter_long_by_vars_type(df, x[["object"]], vars = vars, type = type)
+    }
 
     if (direction == "wide") {
       df <- stats::reshape(df,
-        timevar = "variable", idvar = c("condition", "sim", "time"),
+        timevar = "variable",
+        idvar = if (constants_requested) c("condition", "sim") else c("condition", "sim", "time"),
         direction = "wide"
       )
       names(df) <- sub("^value\\.", "", names(df))
@@ -630,19 +663,22 @@ as.data.frame.ensemble_stockflow <- function(
         ">" = "Set {.code which = 'sims'} to filter by individual trajectory."
       ))
     }
-    df <- x[["summary"]]
+    df <- if (constants_requested) x[["constants"]][["summary"]] else x[["summary"]]
 
     # Apply condition filter
     if (!is.null(condition)) {
       df <- df[df[["condition"]] %in% condition, , drop = FALSE]
     }
 
-    # Filter by variable and/or type
-    df <- .filter_long_by_vars_type(df, x[["object"]], vars = vars, type = type)
+    if (!constants_requested) {
+      # Filter by variable and/or type
+      df <- .filter_long_by_vars_type(df, x[["object"]], vars = vars, type = type)
+    }
 
     if (direction == "wide") {
       df <- stats::reshape(df,
-        timevar = "variable", idvar = c("condition", "time"),
+        timevar = "variable",
+        idvar = if (constants_requested) "condition" else c("condition", "time"),
         direction = "wide"
       )
       rownames(df) <- NULL

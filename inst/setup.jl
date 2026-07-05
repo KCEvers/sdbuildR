@@ -19,8 +19,8 @@ Pkg.add(url="https://github.com/kcevers/SystemDynamicsBuildR.jl", rev = "v0.3.3"
 println("\nInstalling dependencies from Project.toml...")
 Pkg.instantiate()
 
-# Resolve dependencies without installing
-Pkg.resolve()
+## Resolve dependencies without installing
+# Pkg.resolve()
 
 # Precompile packages for faster loading
 println("\nPrecompiling packages...")

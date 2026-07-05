@@ -224,17 +224,29 @@ build_stockflow_code_ <- function(object) {
   sim_settings_list <- object[["sim_settings"]]
   ss_defaults <- new_sim_settings()
 
+  # Save fields (save_by/save_times/save_length) are stored under their public
+  # names but as character strings; emit them as unquoted numbers instead.
+  save_args <- list()
+  if (!is.null(sim_settings_list[["save_by"]])) {
+    save_args[["save_by"]] <- as.numeric(sim_settings_list[["save_by"]])
+  } else if (!is.null(sim_settings_list[["save_times"]])) {
+    save_args[["save_times"]] <- as.numeric(sim_settings_list[["save_times"]])
+  } else if (!is.null(sim_settings_list[["save_length"]])) {
+    save_args[["save_length"]] <- as.integer(sim_settings_list[["save_length"]])
+  }
+
+  # Drop the (string-valued) save fields before filtering the remaining settings.
+  sim_settings_list <- sim_settings_list[
+    !names(sim_settings_list) %in% c("save_by", "save_times", "save_length")
+  ]
+
   sim_settings_list <- sim_settings_list[vapply(names(sim_settings_list), function(nm) {
     val <- sim_settings_list[[nm]]
-    # Omit save_type = "all" (the default) and NULL save_at/save_n
-    if (nm == "save_type") {
-      return(!identical(val, "all"))
-    }
-    if (nm %in% c("save_at", "save_n")) {
-      return(!is.null(val))
-    }
     !nm %in% names(ss_defaults) || !identical(val, ss_defaults[[nm]])
   }, logical(1))]
+
+  # Append the public save arguments (if any) after the default-filtered settings.
+  sim_settings_list <- c(sim_settings_list, save_args)
 
   # Serialize each value to R source, handling character/numeric scalars and
   # vectors (e.g. central = c("mean", "median"), quantiles = c(0.025, 0.975)).
