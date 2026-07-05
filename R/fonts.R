@@ -11,10 +11,12 @@
 # (e.g. "Times New Roman") is passed through untouched and resolved as a
 # system font.
 #
-# R itself never downloads any fonts: a small CSS @font-face rule pointing at
-# the hosted woff2 files is attached to the widget, and whatever displays the
-# plot fetches them at render time. Without internet, the plot falls back to
-# a default font.
+# The package's default font (see default_font_family()) is bundled under
+# inst/fonts/ and embedded directly in the widget as a data: URI, so plots
+# render in it even without internet. For any other Fontsource id, R itself
+# still never downloads the font: a small CSS @font-face rule pointing at the
+# hosted woff2 files is attached to the widget, and whatever displays the plot
+# fetches them at render time, falling back to a default font when offline.
 
 
 #' Default font family for plots and diagrams
@@ -49,41 +51,73 @@ is_webfont_id <- function(font_family) {
 }
 
 
-#' URLs of the four woff2 faces for a webfont id
+#' The four woff2 faces declared for every webfont
 #'
-#' Fontsource file paths follow directly from the font id; the URLs are
-#' pinned to a major version so the paths cannot change underneath us.
+#' Maps to plotly/DiagrammeR's regular, bold, italic and bold-italic text.
+#' Each `stem` is the "<weight>-<style>" part of the Fontsource woff2
+#' filename (`<id>-latin-<stem>.woff2`).
 #'
-#' The four faces map to plotly/DiagrammeR's regular, <b>, and <i> text.
-#'
-#' @param font_family Webfont id, e.g. "stix-two-text".
-#' @returns Named character vector of URLs, keyed as style_weight.
+#' @returns A list of faces, each a list(style, weight, stem).
 #' @noRd
-webfont_files <- function(font_family) {
-  url <- function(weight, style) {
-    sprintf(
-      "https://cdn.jsdelivr.net/npm/@fontsource/%s@5/files/%s-latin-%s-%s.woff2",
-      font_family, font_family, weight, style
-    )
-  }
-  c(
-    "normal_400" = url(400, "normal"),
-    "normal_700" = url(700, "normal"),
-    "italic_400" = url(400, "italic"),
-    "italic_700" = url(700, "italic")
+webfont_faces <- function() {
+  list(
+    list(style = "normal", weight = "400", stem = "400-normal"),
+    list(style = "normal", weight = "700", stem = "700-normal"),
+    list(style = "italic", weight = "400", stem = "400-italic"),
+    list(style = "italic", weight = "700", stem = "700-italic")
   )
+}
+
+
+#' Directory of bundled woff2 files for a webfont id, or "" if not bundled
+#'
+#' The package ships its default font (see default_font_family()) under
+#' `inst/fonts/<id>/` so plots render in it without internet access. Any
+#' other webfont id is not bundled and is loaded from the Fontsource CDN.
+#'
+#' @param font_family Webfont id.
+#' @returns Absolute path to the font directory, or "" if not bundled.
+#' @noRd
+webfont_local_dir <- function(font_family) {
+  system.file("fonts", font_family, package = "sdbuildR")
+}
+
+
+#' A woff2 file's bytes encoded as a data: URI
+#'
+#' Embedding the font bytes directly in the `@font-face` `src` lets the
+#' browser render the font with no network request, so a bundled font works
+#' offline.
+#'
+#' @param path Path to a woff2 file.
+#' @returns A "data:font/woff2;base64,..." string.
+#' @noRd
+woff2_data_uri <- function(path) {
+  raw <- readBin(path, "raw", n = file.info(path)$size)
+  # jsonlite line-wraps its base64 output; a data URI must be unbroken
+  b64 <- gsub("[\r\n]", "", jsonlite::base64_enc(raw))
+  sprintf("data:font/woff2;base64,%s", b64)
 }
 
 
 #' Build the @font-face CSS for a webfont id
 #'
-#' Each non-regular face lists the regular file as a fallback src: if a font
+#' For a bundled font (shipped under `inst/fonts/`), the woff2 bytes are
+#' embedded as data: URIs so the font renders without internet access. For
+#' any other webfont id, the faces are linked to the Fontsource CDN, which
+#' the browser fetches at render time (falling back to a default font when
+#' offline).
+#'
+#' Each CDN face also lists the regular file as a fallback src: if a font
 #' lacks that face (e.g. display fonts without italics), a declared face
 #' whose only source fails would otherwise make the browser skip the family
-#' entirely for that text (falling back to the default font, so e.g. all
-#' <i> text would render in the wrong family). With the fallback src, the
-#' browser activates the regular file for that face instead, keeping the
-#' text in-family.
+#' entirely for that text (so e.g. all <i> text would render in the wrong
+#' family). With the fallback src, the browser activates the regular file
+#' for that face instead. Bundled faces are known to exist, so they need no
+#' fallback (and a duplicated data URI would needlessly bloat the CSS).
+#'
+#' The assembled CSS is cached per font id, since encoding a bundled font is
+#' not free and `plot()` may be called many times in a session.
 #'
 #' @param font_family Font family name.
 #' @returns A character string of CSS rules, or NULL if `font_family` is not
@@ -94,22 +128,58 @@ webfont_css <- function(font_family) {
     return(NULL)
   }
 
-  files <- webfont_files(font_family)
-  regular <- files[["normal_400"]]
-  rules <- vapply(names(files), function(key) {
-    style <- sub("_.*", "", key)
-    weight <- sub(".*_", "", key)
-    src <- sprintf("url(%s) format('woff2')", files[[key]])
-    if (files[[key]] != regular) {
-      src <- paste0(src, sprintf(", url(%s) format('woff2')", regular))
+  cache <- .sdbuildR_env[["webfont_css"]]
+  if (!is.null(cache) && !is.null(cache[[font_family]])) {
+    return(cache[[font_family]])
+  }
+
+  faces <- webfont_faces()
+  local_dir <- webfont_local_dir(font_family)
+
+  if (nzchar(local_dir)) {
+    # Bundled: embed the font bytes so the plot renders offline
+    srcs <- vapply(faces, function(face) {
+      path <- file.path(
+        local_dir, sprintf("%s-latin-%s.woff2", font_family, face$stem)
+      )
+      sprintf("url(%s) format('woff2')", woff2_data_uri(path))
+    }, character(1))
+  } else {
+    # Not bundled: link the Fontsource CDN, with the regular as a fallback
+    cdn <- function(stem) {
+      sprintf(
+        "https://cdn.jsdelivr.net/npm/@fontsource/%s@5/files/%s-latin-%s.woff2",
+        font_family, font_family, stem
+      )
     }
+    regular <- cdn("400-normal")
+    srcs <- vapply(faces, function(face) {
+      url <- cdn(face$stem)
+      src <- sprintf("url(%s) format('woff2')", url)
+      if (url != regular) {
+        src <- paste0(src, sprintf(", url(%s) format('woff2')", regular))
+      }
+      src
+    }, character(1))
+  }
+
+  rules <- vapply(seq_along(faces), function(i) {
+    face <- faces[[i]]
     sprintf(
       "@font-face { font-family: '%s'; font-style: %s; font-weight: %s; src: %s; }",
-      font_family, style, weight, src
+      font_family, face$style, face$weight, srcs[[i]]
     )
   }, character(1))
 
-  paste(rules, collapse = "\n")
+  css <- paste(rules, collapse = "\n")
+
+  if (is.null(cache)) {
+    cache <- list()
+  }
+  cache[[font_family]] <- css
+  .sdbuildR_env[["webfont_css"]] <- cache
+
+  css
 }
 
 

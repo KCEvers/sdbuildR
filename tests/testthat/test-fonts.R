@@ -48,6 +48,37 @@ test_that("webfont_css() is NULL for system fonts", {
 })
 
 
+test_that("the default font is bundled and embedded offline", {
+  # The shipped default must be present on disk so plots render without
+  # internet; if this fails the font files are missing from inst/fonts/
+  default <- default_font_family()
+  dir <- webfont_local_dir(default)
+  expect_true(nzchar(dir))
+  faces <- vapply(webfont_faces(), function(f) f$stem, character(1))
+  for (stem in faces) {
+    expect_true(file.exists(
+      file.path(dir, sprintf("%s-latin-%s.woff2", default, stem))
+    ))
+  }
+
+  # A bundled font embeds its bytes as data: URIs, with no CDN request
+  css <- webfont_css(default)
+  expect_equal(stringr::str_count(css, stringr::fixed("@font-face")), 4)
+  expect_true(grepl("data:font/woff2;base64,", css, fixed = TRUE))
+  expect_false(grepl("jsdelivr", css, fixed = TRUE))
+  # The base64 in each data URI must be unbroken (no whitespace)
+  expect_false(grepl("base64,[A-Za-z0-9+/=]*\\s", css))
+})
+
+
+test_that("non-bundled webfont ids link the CDN, not a data URI", {
+  expect_equal(webfont_local_dir("eb-garamond"), "")
+  css <- webfont_css("eb-garamond")
+  expect_true(grepl("jsdelivr", css, fixed = TRUE))
+  expect_false(grepl("data:font", css, fixed = TRUE))
+})
+
+
 test_that("apply_webfont() attaches CSS and marks the widget", {
   pl <- plotly::plot_ly()
   pl2 <- apply_webfont(pl, "eb-garamond")
@@ -151,6 +182,16 @@ test_that("export_plot() validates font_family", {
   file <- tempfile(fileext = ".png")
   expect_error(export_plot(pl, file, font_family = 2), "font_family")
   expect_error(export_plot(pl, file, font_family = c("a", "b")), "font_family")
+})
+
+
+test_that("export_plot() validates close_browser", {
+  sfm <- stockflow("sir")
+  pl <- plot(sfm)
+  file <- tempfile(fileext = ".png")
+  expect_error(export_plot(pl, file, close_browser = "yes"), "close_browser")
+  expect_error(export_plot(pl, file, close_browser = NA), "close_browser")
+  expect_error(export_plot(pl, file, close_browser = c(TRUE, FALSE)), "close_browser")
 })
 
 

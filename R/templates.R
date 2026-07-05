@@ -333,12 +333,11 @@ template_registry <- function() {
         stockflow() |>
           sim_settings(start = "0.0", stop = round(365 / 2), dt = "0.01", time_units = "days", only_stocks = FALSE) |>
           meta(name = "Burnout") |>
-          stock("energy", eqn = 0.3, label = "Energy") |>
-          constant("recovery_rate", eqn = 0.3, label = "Recovery Rate") |>
-          flow("recovery", eqn = "recovery_rate", to = "energy", label = "Recovery") |>
-          flow("depletion", eqn = "depletion_rate * energy", from = "energy", label = "Depletion") |>
-          constant("depletion_rate", eqn = 0.05, label = "Depletion Rate") |>
-          aux("net_flow", eqn = "recovery - depletion", label = "Net flow to energy")
+          stock("engagement", eqn = 0.3, label = "Engagement") |>
+          constant("enjoyment", eqn = 0.3, label = "Enjoyment") |>
+          flow("motivation", eqn = "enjoyment", to = "engagement", label = "Motivation") |>
+          flow("decay", eqn = "decay_rate * engagement", from = "engagement", label = "Decay") |>
+          constant("decay_rate", eqn = 0.05, label = "Decay Rate")
       }
     ),
     list(
@@ -349,13 +348,13 @@ template_registry <- function() {
         stockflow() |>
           sim_settings(start = "0.0", stop = round(365 / 2), dt = "0.01", time_units = "days", only_stocks = FALSE) |>
           meta(name = "Burnout") |>
-          stock("energy", eqn = 0.3, label = "Energy") |>
-          stock("recovery_rate", eqn = 0.3, label = "Recovery Rate") |>
-          flow("erosion", eqn = "recovery_rate * depletion", from = "recovery_rate", label = "Erosion") |>
-          flow("recovery", eqn = "recovery_rate", to = "energy", label = "Recovery") |>
-          flow("depletion", eqn = "depletion_rate * energy", from = "energy", label = "Depletion") |>
-          constant("depletion_rate", eqn = 0.05, label = "Depletion Rate") |>
-          aux("net_flow", eqn = "recovery - depletion", label = "Net flow to energy")
+          stock("engagement", eqn = 0.3, label = "Engagement") |>
+          stock("enjoyment", eqn = 0.3, label = "Enjoyment") |>
+          flow("overcommitment", eqn = "enjoyment * new_projects", from = "enjoyment", label = "Overcommitment") |>
+          flow("motivation", eqn = "enjoyment", to = "engagement", label = "Motivation") |>
+          flow("decay", eqn = "decay_rate * engagement", from = "engagement", label = "Decay") |>
+          constant("decay_rate", eqn = 0.05, label = "Decay Rate") |>
+          aux("new_projects", eqn = "0.1 * engagement", label = "New Projects")
       }
     ),
     list(

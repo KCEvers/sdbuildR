@@ -11,7 +11,8 @@ export_plot(
   height = 4,
   units = "cm",
   dpi = 300,
-  font_family = NULL
+  font_family = NULL,
+  close_browser = TRUE
 )
 }
 \arguments{
@@ -31,12 +32,26 @@ export_plot(
 the plot was created with. Kebab-case names (e.g. \code{"eb-garamond"}) are
 loaded as webfonts (see Details); any other name must be installed on
 your system. Defaults to \code{NULL}, which keeps the plot's own font.}
+
+\item{close_browser}{If \code{TRUE} (default), browser-based exports run in a
+separate short-lived R process, so the headless browser is closed when
+the export finishes and leaves no state behind in your R session. Set to
+\code{FALSE} to render in a persistent browser session instead, which is
+faster when exporting many plots in a row; the browser then stays open
+in the background until your R session ends. Ignored for exports that do
+not use a browser.}
 }
 \value{
 Invisibly returns the file path of the exported plot, called for side effects.
 }
 \description{
 Save a plot of a stock-and-flow diagram or a simulation to a specified file path. Note that saving plots requires additional packages to be installed (see below).
+}
+\details{
+Exports that render in a headless browser (plotly plots, and diagrams
+using a webfont) require the suggested packages webshot2 and callr, plus a
+Chrome-based browser on your system. See \code{close_browser} for how the
+browser's lifetime is managed.
 }
 \section{Fonts}{
 When \code{font_family} (either passed here or to the \code{plot()} call that
@@ -60,7 +75,10 @@ if (requireNamespace("DiagrammeRsvg", quietly = TRUE) &&
   requireNamespace("rsvg", quietly = TRUE)) {
   sfm <- stockflow("sir")
   file <- tempfile(fileext = ".png")
-  export_plot(plot(sfm), file)
+
+  # With a system font the diagram is rendered by rsvg; the default
+  # webfont would instead require webshot2 and a headless browser
+  export_plot(plot(sfm, font_family = "serif"), file)
 
   # Remove plot
   file.remove(file)

@@ -1,11 +1,18 @@
 # Developmental version
 
+* Renamed several `plot.stockflow()` arguments to clearer, more intuitive names:
+  `minlen` is now `flow_length`, `nodesep` is now `spacing`, `pad` is now
+  `margin`, `dependency_col` is now `color_dependency`, and `label_col` is now
+  `font_color`. The old names are no longer recognised.
+
 * Fixed a bug in the `animation = "time"` cumulative reveal where a variable
   starting at `NaN` (e.g. a `0/0` ratio at initialization) corrupted the
   initial frame and triggered a plotly warning ("number of items to replace is
-  not a multiple of replacement length") when the plot was built. The
-  animation no longer emits a frame at the very first time point, which held
-  only a single (invisible) point per line.
+  not a multiple of replacement length") when the plot was built. The animation
+  still starts from an empty plot at the first time point; the non-finite
+  starting value is backfilled with the series' first finite value so its
+  (invisible) line stays present, which is what plotly needs to keep the trace
+  counts consistent.
 
 * The speed of the `animation = "time"` cumulative reveal can now be tuned via
   `control_options` in `plot.simulate_stockflow()` (which gains the argument),
@@ -44,7 +51,7 @@
   arguments are ignored if supplied.
 
 * Dependency arrows in `plot.stockflow()` changed their default from filled to
-  open arrow heads. The new `dependency_arrowhead` argument allows for adjusting the arrowhead
+  open arrow heads. The new `arrowhead_dependency` argument allows for adjusting the arrowhead
   shape (`"open"`, `"normal"`, `"vee"`, `"diamond"`, `"dot"`,
   `"box"`, `"crow"`, `"curve"`, `"inv"`, `"tee"`, or `"none"`).
 

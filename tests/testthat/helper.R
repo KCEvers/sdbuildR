@@ -103,7 +103,13 @@ expect_snapshot_plot <- function(name, code, fileext = NULL, width = 4, height =
       img_path <- tempfile(fileext = fileext[[i]])
       tryCatch(
         {
-          export_plot(plots[[i]], file = img_path, width = width[[i]], height = height[[i]])
+          # This block never runs on CRAN, so reuse one browser session
+          # across the loop for speed instead of spawning a subprocess per
+          # export; the browser is cleaned up when the test process exits.
+          export_plot(plots[[i]],
+            file = img_path, width = width[[i]], height = height[[i]],
+            close_browser = FALSE
+          )
           expect_snapshot_file(img_path,
             name = paste0(name[[i]], fileext[[i]]),
             compare = function(old, new) TRUE

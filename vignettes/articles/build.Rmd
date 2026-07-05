@@ -74,11 +74,10 @@ if (recreate_figs) {
   dir.create(filepath_figs, showWarnings = FALSE)
 }
 
-# VARS <- c("engagement", "performance", "energy", "demands", "resources", "motivation_rate")
 VARS <- c(
-  "energy", "recovery_rate",
-  "depletion", "recovery",
-  "net_flow", "erosion"
+  "engagement", "enjoyment",
+  "decay", "motivation",
+  "net_projects", "overcommitment"
 )
 PALETTE <- c("Geyser", "Temps", "Spectral", "Zissou 1", "Roma")[5]
 COLORS <- grDevices::hcl.colors(n = 50, palette = PALETTE)
@@ -521,7 +520,7 @@ sfm <- stockflow("burnout", version = 1)
 print(sfm)
 ```
 
-`sfm` is a stock-and-flow model object, containing a single stock representing energy, an inflow for recovery, and an outflow for energy depletion. 
+`sfm` is a stock-and-flow model object, containing a single stock representing engagement, an inflow for motivation, and an outflow for engagement decay. 
 In addition, the model contains two other variable types: constants and auxiliaries. Throughout the tutorial, we use the term "variable" for any part of the system, be that a stock, flow, constant, or auxiliary. Though this usage may differ from other scientific fields, we here choose to adhere to system dynamics terminology [@ford_system_2019; @Sterman2000BusinessWorld].
 Constants are static parameters that do not change over the time course of the simulation. In contrast, auxiliaries are dynamic, meaning they are computed anew at each step. They are intermediate variables used in flow equations or to monitor other dynamic quantities. To illustrate the difference, a constant defined as `runif(1)` will be fixed to a random number at the beginning of the simulation, whereas an equivalently defined auxiliary will draw a new number each time step.
 Lastly, the object contains simulation settings such as the total duration, the timestep (`dt`) specifying the temporal resolution of the simulation, and a solver (`euler`) indicating the numerical technique used to generate output from the model [for more details, see @deSolve]. All variables are saved in the simulation output, which can be reduced to saving only stocks or specific variables for computational efficiency.
@@ -541,7 +540,7 @@ sfm |>
 ```
 
 
-Above, we use the pipe operator `|>` to pass the result of an expression to the next expression as its first argument. As shown above, energy increases over time but then stabilizes at a fixed level when the outflow of energy depletion meets the constant inflow of recovery. 
+Above, we use the pipe operator `|>` to pass the result of an expression to the next expression as its first argument. As shown above, engagement increases over time but then stabilizes at a fixed level when the outflow of engagement decay meets the constant inflow of motivation. 
 
 
 
@@ -551,16 +550,16 @@ We now build this same model from scratch in iterative steps. The table below pr
 ```{r echo = FALSE}
 eqn_interpretation_table <- data.frame(
   Panel = LETTERS[1:5],
-  `Stocks` = c("energy", "energy", "energy", "energy", "energy, recovery_rate"),
-  `Constants` = c("", "`depletion_rate`", "`depletion_rate`", "`depletion_rate`, `recovery_rate`", "`depletion_rate`"),
-  `Recovery eqn (inflow)` = c("", "", "", "`recovery_rate`", "`recovery_rate`"),
-  `Depletion eqn (outflow)` = c("", "`depletion_rate`", "`depletion_rate * energy`", "`depletion_rate * energy`", "`depletion_rate * energy`"),
+  `Stocks` = c("engagement", "engagement", "engagement", "engagement", "engagement, enjoyment"),
+  `Constants` = c("", "`decay_rate`", "`decay_rate`", "`decay_rate`, `enjoyment`", "`decay_rate`"),
+  `Recovery eqn (inflow)` = c("", "", "", "`enjoyment`", "`enjoyment`"),
+  `Depletion eqn (outflow)` = c("", "`decay_rate`", "`decay_rate * engagement`", "`decay_rate * engagement`", "`decay_rate * engagement`"),
   Interpretation = c(
     "No process of change",
-    "Energy decreases at a constant rate",
-    "Energy decreases at a rate proportional to its current value",
-    "Energy changes at a rate equal to a constant minus a rate proportional to its current value",
-    "Energy recovers at a rate which itself changes over time"
+    "Engagement decreases at a constant rate",
+    "Engagement decreases at a rate proportional to its current value",
+    "Engagement changes at a rate equal to a constant minus a rate proportional to its current value",
+    "Engagement recovers at a rate which itself changes over time"
   ),
   Behaviour = c(
     "Static",
@@ -584,7 +583,7 @@ sfm <- stockflow()
 print(sfm)
 ```
 
-We update the simulation settings to model energy over the course of half a year (i.e., specified in days; note that the time unit merely changes the labels on the axes of the resulting plots, and does not affect the model's behaviour). Additionally, we set `only_stocks = FALSE` to return all variables in the simulation output, not just the stocks:
+We update the simulation settings to model engagement over the course of half a year (i.e., specified in days; note that the time unit merely changes the labels on the axes of the resulting plots, and does not affect the model's behaviour). Additionally, we set `only_stocks = FALSE` to return all variables in the simulation output, not just the stocks:
 
 ```{r}
 sfm <- sim_settings(sfm,
@@ -599,12 +598,12 @@ A model name can be supplied with `meta()`.
 sfm <- meta(sfm, name = "Burnout")
 ```
 
-Next, we introduce a stock to the model to represent energy. Each variable requires a `name` such as `energy`, which serves as its identifier in equations. Each name should be unique and adhere to the same naming rules as R variables (e.g., no spaces or special characters). An optional `label` can be supplied for use in plots and diagrams (e.g., `label = "Energy Level"`); when omitted, the name is used.
+Next, we introduce a stock to the model to represent engagement. Each variable requires a `name` such as `engagement`, which serves as its identifier in equations. Each name should be unique and adhere to the same naming rules as R variables (e.g., no spaces or special characters). An optional `label` can be supplied for use in plots and diagrams (e.g., `label = "Engagement Level"`); when omitted, the name is used.
 
-Every stock also needs an *initial condition*: the value of the stock at the start of the simulation. This is set via the `eqn` argument, where here, we initialize energy at .3:
+Every stock also needs an *initial condition*: the value of the stock at the start of the simulation. This is set via the `eqn` argument, where here, we initialize engagement at .3:
 
 ```{r}
-sfm <- stock(sfm, name = energy, eqn = .3, label = "Energy")
+sfm <- stock(sfm, name = engagement, eqn = .3, label = "Engagement")
 ```
 
 
@@ -631,20 +630,20 @@ sfm |>
   plot()
 ```
 
-Across the entirety of the simulation, energy remains at its initial state. Stocks without flows are static, as there is no process specifying how they change. To deplete energy, we introduce an outflow representing energy depletion. For simplicity, we specify that depletion occurs at a constant rate over time, such as `.05`. Rather than defining the flow's `eqn` to be `.05` directly, we add a constant to the model, so that it can easily be changed later. This also helps to keep track of how parametrized the model is. 
+Across the entirety of the simulation, engagement remains at its initial state. Stocks without flows are static, as there is no process specifying how they change. To deplete engagement, we introduce an outflow representing engagement decay. For simplicity, we specify that decay occurs at a constant rate over time, such as `.05`. Rather than defining the flow's `eqn` to be `.05` directly, we add a constant to the model, so that it can easily be changed later. This also helps to keep track of how parametrized the model is. 
 
 ```{r}
-sfm <- constant(sfm, depletion_rate, eqn = .05, label = "Depletion Rate")
+sfm <- constant(sfm, decay_rate, eqn = .05, label = "Decay Rate")
 ```
 
 `eqn` is a generic argument used for all variable types, denoting the initial condition for a stock, a static value for a constant, and an equation that is recomputed at each time step in the simulation for flows and auxiliaries. `eqn` accepts any valid R expression that evaluates to a scalar, including functions (e.g., `sqrt()`, `min()`, `runif(1)`) and arithmetic operators (e.g., `*`, `+`). `eqn` can reference other variables defined in the model. 
 
-`depletion_rate` can now be used as a variable in the equation for the outflow from energy:
+`decay_rate` can now be used as a variable in the equation for the outflow from engagement:
 
 ```{r}
-sfm <- flow(sfm, depletion,
-  eqn = depletion_rate, from = energy,
-  label = "Depletion"
+sfm <- flow(sfm, decay,
+  eqn = decay_rate, from = engagement,
+  label = "Decay"
 )
 ```
 
@@ -658,7 +657,7 @@ if (recreate_figs) {
 
 
 Aside from requiring a `name` and `eqn`, flows further need to be connected to a stock, at least as either an inflow (`to`) or an outflow (`from`).
-Variable properties can be modified with `update()`. Note that by definition, outflows are subtracted from the stock, and as such do not need a minus sign in `eqn` to indicate that they decrease the stock. We simulate the model to check whether energy indeed depletes:
+Variable properties can be modified with `update()`. Note that by definition, outflows are subtracted from the stock, and as such do not need a minus sign in `eqn` to indicate that they decrease the stock. We simulate the model to check whether engagement indeed decays:
 
 ```{r}
 sfm |>
@@ -666,13 +665,13 @@ sfm |>
   plot()
 ```
 
-As a stock with a constant outflow decreases linearly, energy becomes negative. To rectify this implausible behaviour, a naive solution may be to include a logical statement such as `ifelse(energy < 0, 0, energy)`. However, this computational trick would mask model misspecification. Ideally, stocks should remain within bounds due to plausible equations and parameters. For instance, we can prevent negative energy by making `depletion` proportional to the amount of available energy: `depletion_rate * energy`. In this way, when `energy` is zero, the outflow is also zero.
+As a stock with a constant outflow decreases linearly, engagement becomes negative. To rectify this implausible behaviour, a naive solution may be to include a logical statement such as `ifelse(engagement < 0, 0, engagement)`. However, this computational trick would mask model misspecification. Ideally, stocks should remain within bounds due to plausible equations and parameters. For instance, we can prevent negative engagement by making `decay` proportional to the amount of available engagement: `decay_rate * engagement`. In this way, when `engagement` is zero, the outflow is also zero.
 
 To assess whether this produces more plausible model behaviour, we modify the outflow using `update()`:
 
 
 ```{r}
-sfm <- update(sfm, depletion, eqn = depletion_rate * energy)
+sfm <- update(sfm, decay, eqn = decay_rate * engagement)
 
 sfm |>
   simulate() |>
@@ -687,13 +686,13 @@ if (recreate_figs) {
 ```
 
 
-Energy now follows an exponential decay pattern, where depletion now depletes energy until it is zero, but not beyond this point. In other words, we have introduced a *feedback loop* to the system [@Meadows2008ThinkingPrimer]. Positive feedback loops amplify change, whereas negative feedback loops bring the system back to a target state [@Sterman2000BusinessWorld]. In our model, energy and depletion form a negative feedback loop that pulls energy to zero: the higher energy is, the more its outflow decreases it, until it reaches the implicit target state of zero.
+Engagement now follows an exponential decay pattern, where decay now reduces engagement until it is zero, but not beyond this point. In other words, we have introduced a *feedback loop* to the system [@Meadows2008ThinkingPrimer]. Positive feedback loops amplify change, whereas negative feedback loops bring the system back to a target state [@Sterman2000BusinessWorld]. In our model, engagement and decay form a negative feedback loop that pulls engagement to zero: the higher engagement is, the more its outflow decreases it, until it reaches the implicit target state of zero.
 
-To allow energy to recover, we introduce an inflow, again specified as a simple constant rate:
+To allow engagement to recover, we introduce an inflow, again specified as a simple constant rate:
 
 ```{r}
-sfm <- constant(sfm, recovery_rate, eqn = .3, label = "Recovery Rate") |>
-  flow(recovery, eqn = recovery_rate, to = energy, label = "Recovery")
+sfm <- constant(sfm, enjoyment, eqn = .3, label = "Work Enjoyment") |>
+  flow(recovery, eqn = enjoyment, to = engagement, label = "Motivation")
 
 sfm |>
   simulate() |>
@@ -708,10 +707,11 @@ if (recreate_figs) {
 }
 ```
 
-We finally add an auxiliary to keep track of net flow to energy (inflow - outflow):
+<!-- 
+We finally add an auxiliary to keep track of net flow to engagement (inflow - outflow):
 
 ```{r}
-sfm <- aux(sfm, net_flow, eqn = recovery - depletion, label = "Net flow to energy")
+sfm <- aux(sfm, net_flow, eqn = recovery - decay, label = "Net flow to engagement")
 
 sfm |>
   simulate() |>
@@ -719,9 +719,9 @@ sfm |>
 
 sfm |>
   simulate() |>
-  plot(vars = c("depletion", "recovery", "net_flow"))
+  plot(vars = c("decay", "recovery", "net_flow"))
 ```
-
+ -->
 
 
 ```{r include=FALSE, eval = has_internet(), error = TRUE}
@@ -729,9 +729,9 @@ if (recreate_figs) {
   ylim1 <- c(0, 6.1)
   ylim2 <- c(0, 0.35)
   vars <- c(
-    "energy",
-    "depletion", "recovery",
-    "net_flow"
+    "engagement",
+    "decay", "motivation"
+    # "net_flow"
   )
   # colors <- c(stock_col, inflow_col, outflow_col, flow_col)
   colors <- COLORS[match(vars, VARS)]
@@ -784,7 +784,7 @@ if (recreate_figs) {
     ) |>
     plotly::layout(annotations = list(
       utils::modifyList(annot_, list(x = x1, y = y1, text = "<i>Timeseries of Stock</i>")),
-      utils::modifyList(annot_, list(x = x2, y = y1, text = "<i>Timeseries of Flows and Auxiliary</i>"))
+      utils::modifyList(annot_, list(x = x2, y = y1, text = "<i>Timeseries of Flows</i>"))
     ))
 
   export_plot(pl, file.path(filepath_figs, "build_burnout_version1_sim.pdf"),
@@ -799,86 +799,22 @@ if (recreate_figs) {
 ```{r include = FALSE}
 if (recreate_figs) {
   pl <- plot(sfm,
-    minlen = 1, pad = .1,
-    nodesep = .4,
-    show_constants = TRUE,
-    order = c("net_flow", "energy"), align = c("net_flow", "energy")
+    flow_length = 1, margin = .1,
+    spacing = .4,
+    show_constants = TRUE
+    # order = c("net_flow", "engagement"), align = c("net_flow", "engagement")
   )
 
   cat(pl$x$diagram)
 
   # Replace xlabel with label
-  # label=<Net flow to energy<BR/><FONT POINT-SIZE="13" COLOR="black">Equation = recovery - depletion</FONT><BR/><BR/><BR/><FONT COLOR="white">.</FONT>>,
+  # label=<Net flow to engagement<BR/><FONT POINT-SIZE="13" COLOR="black">Equation = recovery - depletion</FONT><BR/><BR/><BR/><FONT COLOR="white">.</FONT>>,
 
 
   {
     viz_str <- '
    digraph sfm {
-
-      graph [layout = dot, rankdir = LR, center=true, outputorder="edgesfirst", pad=0.1, nodesep=0.4, splines = true, concentrate = false]
-
-      # Shared across all nodes (persists until overridden)
-      node [fontsize=18,fontname="Times New Roman",fontcolor="black"]
-
-      # Define stock nodes
-      node [shape=box,style=filled,fillcolor="#83d3d4"]
-      "energy" [id="energy",label=<Energy<BR/><FONT POINT-SIZE="13" COLOR="black">Initial value = 0.3</FONT>>, tooltip = "Stock: Energy\nName: energy\nInitial value: 0.3\nInflows: Recovery\nOutflows: Depletion"]
-
-      # Define flow nodes (intermediate nodes for flows)
-      node [style = "",shape=plaintext, fontsize=16, width=0.6, height=0.3]
-      "depletion" [id="depletion",label=<Depletion<BR/><FONT POINT-SIZE="13" COLOR="black">Rate = depletion_rate *<BR/>energy</FONT>>, tooltip = "Flow: Depletion\nName: depletion\nRate: depletion_rate * energy\nFrom: Energy\nTo: outside model boundary"]
-        "recovery" [id="recovery",label=<Recovery<BR/><FONT POINT-SIZE="13" COLOR="black">Rate = recovery_rate</FONT>>, tooltip = "Flow: Recovery\nName: recovery\nRate: recovery_rate\nFrom: outside model boundary\nTo: Energy"]
-
-      # Define external cloud nodes
-      node [shape=doublecircle, fixedsize=true, width = .25, height = .25, orientation=15]
-      "Cloud1" [label="", tooltip = "Outside model boundary\nSink of: Depletion"]
-        "Cloud2" [label="", tooltip = "Outside model boundary\nSource of: Recovery"]
-
-      # Define auxiliary nodes
-      node [shape=circle,fontsize=16, width=0.15, height=0.15, fixedsize=true, style=filled, fillcolor="grey90"]
-      "net_flow" [id="net_flow",
-
-  label=%(label_net_flow)s,
-
-      #label=<Net flow to energy<BR/><FONT POINT-SIZE="13" COLOR="black">Equation = recovery - depletion</FONT>>,
-      xlabel="",
-      tooltip = "Auxiliary: Net flow to energy\nName: net_flow\nEquation: recovery - depletion"]
-
-      # Define constant nodes
-      node [shape=diamond,fontsize=16,width=0.15, height=0.15, fixedsize=true, style=filled, fillcolor="grey90"]
-      "depletion_rate" [id="depletion_rate",xlabel=<<I>Depletion Rate</I><BR/><FONT POINT-SIZE="13" COLOR="black">Value = 0.05</FONT>>,label="", tooltip = "Constant: Depletion Rate\nName: depletion_rate\nValue: 0.05"]
-        "recovery_rate" [id="recovery_rate",xlabel=<<I>Recovery Rate</I><BR/><FONT POINT-SIZE="13" COLOR="black">Value = 0.3</FONT>>,label="", tooltip = "Constant: Recovery Rate\nName: recovery_rate\nValue: 0.3"]
-
-      # Define flow edges (stock -> flow_node)
-      edge [style = "", arrowhead="none", color="black:#f48153:black", penwidth=1.1, minlen=1, tailport="e", headport="w"]
-      "energy" -> "depletion"
-        "Cloud2" -> "recovery"
-
-      # Define flow edges (flow_node -> stock)
-      edge [style = "", arrowhead="normal", color="black:#f48153:black", arrowsize=1.5, penwidth=1.1, minlen=1, tailport="e", headport="w"]
-      "depletion" -> "Cloud1"
-        "recovery" -> "energy"
-
-      # Define dependency edges
-      edge [style = "", color="#999999", arrowhead="open", arrowsize=0.8, penwidth=1, constraint=false, tailport = "_", headport="_"]
-      "depletion_rate" -> "depletion"
-        "energy" -> "depletion" [headport = "s", tailport = "s"]
-        "recovery_rate" -> "recovery"
-        "recovery" -> "net_flow"
-        "depletion" -> "net_flow"
-
-      # Ordering hints (invisible edges)
-      edge [style=invis, constraint=true]
-      "net_flow" -> "energy"
-
-
-      # Rank groupings
-      {rank=same; "depletion_rate"; "depletion" }
-      {rank=same; "recovery_rate"; "recovery" }
-      {rank=same; "net_flow"; "energy" }
-
-    }
-  '
+}'
 
     viz_str <- sprintf_arg(
       viz_str,
@@ -902,29 +838,30 @@ if (recreate_figs) {
 }
 ```
 
-As a result of the new inflow, energy now stabilizes at a fixed level, as energy recovery and depletion balance out. 
+As a result of the new inflow, engagement now stabilizes at a fixed level, as motivation and decay balance out. 
 
-Though the model no longer produces a negative energy state, our goal was to produce a burnout pattern. We thus need to revise the model.
-What if the ability to recover is not static, but erodes over time? Put differently, what if the recovery rate is not a constant, but a stock? To implement this idea, we change the type of `recovery_rate`:
+Though the model no longer produces a negative engagement state, our goal was to produce a burnout pattern. We thus need to revise the model.
+What if work enjoyment is not static, but erodes over time? Put differently, what if the work enjoyment is not a constant, but a stock? To implement this idea, we change the type of `enjoyment`:
 
 ```{r}
-sfm <- change_type(sfm, recovery_rate, new_type = stock)
+sfm <- change_type(sfm, enjoyment, new_type = stock)
 ```
 
 We then add a new outflow that depletes the recovery rate in proportion to the amount worked:
 
 ```{r}
-sfm <- flow(sfm, erosion,
-  eqn = recovery_rate * depletion,
-  from = recovery_rate, label = "Recovery Erosion"
-)
+sfm <- flow(sfm, overcommitment,
+  eqn = new_projects * enjoyment,
+  from = enjoyment, label = "Overcommitment"
+) |>
+  aux(new_projects, eqn = .1 * engagement, label = "New Projects")
 sfm |>
   simulate() |>
   plot()
 ```
 
 
-The plot shows how the erosion of the ability to recover produces a characteristic burnout pattern: a steep initial rise followed by a collapse of energy.
+The plot shows how the erosion of work enjoyment produces a characteristic burnout pattern: a steep initial rise followed by a collapse of engagement.
 
 ```{r include=FALSE}
 if (recreate_figs) {
@@ -942,11 +879,6 @@ if (recreate_figs) {
   pl_list <- list()
   max_letter <- max(names(sfm_list))
 
-  # vars <- c(
-  #   "energy",
-  #   "depletion", "recovery",
-  #   "net_flow"
-  # )
   vars <- "energy"
 
   # # Recovery = recovery_rate so plot as one line
@@ -1018,8 +950,6 @@ if (recreate_figs) {
         "Constant Outflow",
         "Stock-Dependent Outflow",
         "Constant Inflow"
-        # "Erosion of Recovery Rate"
-        # "Auxiliary variable tracking net flow to energy"
       ), "</i>"
     )
   )
@@ -1084,9 +1014,9 @@ if (recreate_figs) {
   ylim1 <- c(0, 2.1)
   ylim2 <- c(-0.06, 0.31)
   vars <- c(
-    "energy", "recovery_rate",
-    "depletion", "recovery",
-    "net_flow", "erosion"
+    "energy", "enjoyment",
+    "decay", "motivation",
+    "new_projects", "overcommitment"
   )
   colors <- COLORS[match(vars, VARS)]
 
@@ -1153,12 +1083,13 @@ if (recreate_figs) {
 
 ```{r include = FALSE}
 if (recreate_figs) {
+  order_vars <- c("new_projects", "engagement", "enjoyment")
   pl <- plot(sfm,
-    minlen = 1, pad = .1,
-    nodesep = .75,
+    flow_length = 1, margin = .1,
+    spacing = .75,
     show_constants = TRUE,
     wrap_width = 25,
-    order = c("net_flow", "energy", "recovery_rate"), align = c("net_flow", "energy", "recovery_rate")
+    order = order_vars, align = order_vars
   )
 
   pl
@@ -1259,7 +1190,7 @@ if (recreate_figs) {
 ```{r include = FALSE}
 # if (recreate_figs) {
 
-#   cat(plot(sfm, minlen = 1, nodesep = .15, pad = .1,
+#   cat(plot(sfm, flow_length = 1, spacing = .15, margin = .1,
 #   show_constants = TRUE,
 #   order = c("net_flow", "energy", "recovery_rate"), align = c("net_flow", "energy", "recovery_rate"))$x$diagram)
 

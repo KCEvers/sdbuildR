@@ -577,7 +577,7 @@ test_that("validate_vars_in_model passes on valid variables", {
 # accumulate_by_time TESTS
 # ============================================================================
 
-test_that("accumulate_by_time accumulates rows and skips the first-time frame", {
+test_that("accumulate_by_time reveals cumulatively and starts at the first time", {
   df <- data.frame(
     time = rep(0:10, times = 2),
     variable = rep(c("a", "b"), each = 11),
@@ -587,24 +587,58 @@ test_that("accumulate_by_time accumulates rows and skips the first-time frame", 
   out <- accumulate_by_time(df)
   frames <- sort(unique(out[[".frame"]]))
 
-  # No frame at the very first time point: a single point per variable draws
-  # nothing under mode = "lines", and an all-NaN first frame makes plotly drop
-  # the trace from the initial data but not from the frames (trace-count
-  # mismatch warning). The first frame spans the first two time points.
-  expect_equal(frames, 1:10)
-  expect_equal(sort(unique(out[out[[".frame"]] == 1, "time"])), c(0, 1))
+  # The animation starts at the first time point (an empty plot: a single point
+  # per series draws nothing under mode = "lines") and reveals cumulatively.
+  expect_equal(frames, 0:10)
+  expect_equal(sort(unique(out[out[[".frame"]] == 0, "time"])), 0)
 
   # Cumulative reveal: the last frame contains all rows
   expect_equal(nrow(out[out[[".frame"]] == 10, ]), nrow(df))
 })
 
-test_that("accumulate_by_time caps frames while keeping the last time", {
+test_that("accumulate_by_time backfills non-finite starting values in the first frame", {
+  # A series that is NaN at the first time point (e.g. a 0/0 ratio) would be an
+  # all-NaN trace in the first frame, which plotly drops from the initial data
+  # but pads back into the frame -- a trace-count mismatch that warns. It is
+  # backfilled with the series' first finite value so the (invisible) trace
+  # stays present.
+  df <- data.frame(
+    time = rep(0:3, times = 2),
+    variable = rep(c("a", "ratio"), each = 4),
+    value = c(1, 1, 1, 1, NaN, 0.9, 0.8, 0.7)
+  )
+
+  out <- accumulate_by_time(df)
+  first <- out[out[[".frame"]] == 0, ]
+
+  # Every series has a finite value in the first frame (ratio backfilled to 0.9)
+  expect_true(all(is.finite(first[["value"]])))
+  expect_equal(first[first[["variable"]] == "ratio", "value"], 0.9)
+
+  # Later frames keep the real (non-finite) starting value
+  ratio_f3 <- out[out[[".frame"]] == 3 & out[["variable"]] == "ratio", ]
+  expect_true(is.nan(ratio_f3[ratio_f3[["time"]] == 0, "value"]))
+})
+
+test_that("accumulate_by_time leaves a never-finite series untouched", {
+  df <- data.frame(
+    time = rep(0:3, times = 2),
+    variable = rep(c("a", "empty"), each = 4),
+    value = c(1, 2, 3, 4, NaN, NaN, NaN, NaN)
+  )
+
+  out <- accumulate_by_time(df)
+  empty_first <- out[out[[".frame"]] == 0 & out[["variable"]] == "empty", "value"]
+  expect_true(all(is.nan(empty_first)))
+})
+
+test_that("accumulate_by_time caps frames while keeping first and last time", {
   df <- data.frame(time = seq(0, 10, by = 0.01), variable = "a", value = 1)
 
   out <- accumulate_by_time(df, max_frames = 50)
   frames <- sort(unique(out[[".frame"]]))
 
   expect_lte(length(frames), 50)
-  expect_false(min(df$time) %in% frames)
+  expect_equal(frames[1], min(df$time))
   expect_equal(frames[length(frames)], max(df$time))
 })

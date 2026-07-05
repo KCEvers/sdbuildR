@@ -54,7 +54,7 @@ if (!file.exists(dirname(filepath))) {
   dir.create(dirname(filepath), recursive = TRUE)
 }
 export_plot(
-  plot(sfm, minlen = 1),
+  plot(sfm, flow_length = 1),
   filepath,
   width = 6, height = 1, units = "cm"
 )

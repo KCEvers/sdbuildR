@@ -1,9 +1,11 @@
 Package: sdbuildR
 Title: An Accessible Interface for Stock-and-Flow Modelling
 Version: 2.1.0
-Authors@R: 
+Authors@R: c(
     person("Kyra Caitlin", "Evers", , "kyra.c.evers@gmail.com", role = c("aut", "cre", "cph"),
-           comment = c(ORCID = "0000-0001-6890-3482"))
+           comment = c(ORCID = "0000-0001-6890-3482")),
+    person("STIX Fonts Project Authors", role = c("ctb", "cph"),
+           comment = "Bundled STIX Two Text font (inst/fonts/), SIL Open Font License 1.1"))
 Description: Stock-and-flow models are a computational method from the
     field of system dynamics. They represent how systems change over time
     and are mathematically equivalent to ordinary differential equations.
@@ -42,7 +44,8 @@ Imports:
     utils,
     withr,
     xml2
-Suggests: 
+Suggests:
+    callr,
     DiagrammeRsvg,
     kableExtra,
     knitr,

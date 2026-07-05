@@ -333,7 +333,7 @@ test_that("plot() applies custom dependency color", {
   sfm <- stockflow("sir")
   dependency_color <- "#FFE66D"
   df <- as.data.frame(sfm, properties = "type")
-  pl <- plot(sfm, dependency_col = dependency_color, show_dependencies = TRUE)
+  pl <- plot(sfm, color_dependency = dependency_color, show_dependencies = TRUE)
   edges <- extract_diagram_edges(pl)
   # dependency_edges <- edges[edges$rel == "dependency", ]
   # expect_true(all(dependency_edges$color == dependency_color))
@@ -386,7 +386,7 @@ test_that("plot.stockflow() with format_label = TRUE removes underscores", {
 })
 
 # ============================================================================
-# show_eqn AND label_col TESTS
+# show_eqn AND font_color TESTS
 # ============================================================================
 
 test_that("plot() with show_eqn = TRUE (default) shows equations beneath labels", {
@@ -496,13 +496,13 @@ test_that("plot.stockflow() cloud tooltips state they are outside the model boun
   expect_true(any(grepl("Source of: births", cloud$tooltip, fixed = TRUE)))
 })
 
-test_that("plot() show_eqn uses label_col for the equation text", {
+test_that("plot() show_eqn uses font_color for the equation text", {
   sfm <- stockflow("sir")
   label_color <- "#123456"
-  pl <- plot(sfm, show_eqn = TRUE, label_col = label_color)
+  pl <- plot(sfm, show_eqn = TRUE, font_color = label_color)
   d <- pl[["x"]][["diagram"]]
 
-  # Equation FONT colour and node fontcolor both use label_col.
+  # Equation FONT colour and node fontcolor both use font_color.
   expect_true(grepl(paste0("COLOR=\"", label_color, "\""), d, fixed = TRUE))
   expect_true(grepl(label_color, d, fixed = TRUE))
 
@@ -524,10 +524,10 @@ test_that("plot() validates show_eqn", {
   expect_error(plot(sfm, show_eqn = NA), "show_eqn")
 })
 
-test_that("plot() applies label_col to node fontcolor", {
+test_that("plot() applies font_color to node fontcolor", {
   sfm <- stockflow("sir")
   label_color <- "#654321"
-  pl <- plot(sfm, label_col = label_color)
+  pl <- plot(sfm, font_color = label_color)
   d <- pl[["x"]][["diagram"]]
 
   expect_true(grepl(label_color, d, fixed = TRUE))

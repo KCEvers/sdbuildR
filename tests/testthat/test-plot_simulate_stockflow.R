@@ -608,6 +608,23 @@ test_that("time animation builds cleanly when a variable is NaN at time zero", {
   expect_true(all(
     vapply(built$x$frames, function(frame) length(frame$data), integer(1)) == n_traces
   ))
+
+  # The animation still starts from an empty plot at the first time point: the
+  # first frame is at the earliest time and draws no line (a line needs two
+  # consecutive finite points).
+  all_times <- sort(unique(sim[["df"]][["time"]]))
+  expect_equal(built$x$frames[[1]]$name, as.character(min(all_times)))
+  max_consecutive_finite <- function(y) {
+    fin <- is.finite(unlist(y))
+    if (!any(fin)) return(0L)
+    runs <- rle(fin)
+    max(runs$lengths[runs$values])
+  }
+  draws_line <- vapply(
+    built$x$frames[[1]]$data,
+    function(trace) max_consecutive_finite(trace$y) >= 2, logical(1)
+  )
+  expect_false(any(draws_line))
 })
 
 test_that("plot.simulate_stockflow() is static by default (no frames)", {

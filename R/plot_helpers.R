@@ -1315,13 +1315,19 @@ set_plotly_export_format <- function(pl, format = "svg") {
 #' `time <= t`. This produces the "line drawing itself" effect when the frame
 #' column is mapped to a Plotly animation frame. All other columns (e.g.
 #' `variable`, `condition`, `sim`) are preserved, including factor levels.
-#' There is no frame at the very first time point (a single point per variable
-#' renders as an empty line plot, and an all-NaN first frame corrupts plotly's
-#' initial trace data), so the first frame already contains a line segment.
+#'
+#' The first frame (at the earliest time point) holds a single point per series,
+#' which draws nothing under `mode = "lines"`, so the animation starts from an
+#' empty plot at the initial state. Non-finite starting values (e.g. a `0/0`
+#' ratio at initialization) are backfilled in that first frame with the series'
+#' first finite value -- see the inline note for why this is necessary.
 #'
 #' @param df Data frame with a time column, or NULL.
 #' @param time_col Name of the time column. Defaults to "time".
 #' @param frame_col Name of the frame column to create. Defaults to ".frame".
+#' @param value_col Name of the value column, used to backfill non-finite
+#'   starting values in the first frame. Defaults to "value"; backfilling is
+#'   skipped if the column is absent.
 #' @param max_frames Maximum number of animation frames. When the data has more
 #'   unique time points than this, evenly spaced thresholds are used (always
 #'   keeping the last time so the final frame is complete). This keeps the
@@ -1331,7 +1337,7 @@ set_plotly_export_format <- function(pl, format = "svg") {
 #' @returns Data frame with a `frame_col` column, or `df` unchanged if empty/NULL.
 #' @noRd
 accumulate_by_time <- function(df, time_col = "time", frame_col = ".frame",
-                               max_frames = 50) {
+                               value_col = "value", max_frames = 50) {
   if (is.null(df) || nrow(df) == 0L) {
     return(df)
   }
@@ -1360,16 +1366,6 @@ accumulate_by_time <- function(df, time_col = "time", frame_col = ".frame",
     }
   }
 
-  # Drop the degenerate frame at the very first time point: it holds a single
-  # point per variable, which draws nothing under mode = "lines" and, when a
-  # variable starts at NaN (e.g. a 0/0 at initialization), makes plotly drop
-  # that trace from the initial data but not from the frames. The resulting
-  # trace-count mismatch corrupts the first frame with a "number of items to
-  # replace is not a multiple of replacement length" warning.
-  if (length(times) > 1L) {
-    times <- times[-1L]
-  }
-
   out <- lapply(times, function(time_value) {
     d <- df[df[[time_col]] <= time_value, , drop = FALSE]
     d[[frame_col]] <- time_value
@@ -1378,6 +1374,41 @@ accumulate_by_time <- function(df, time_col = "time", frame_col = ".frame",
 
   out <- do.call(rbind, out)
   rownames(out) <- NULL
+
+  # Keep every series' trace alive in the first frame. That frame holds a single
+  # point per series (an invisible dot under mode = "lines"), so the animation
+  # starts from an empty plot. But a series that is non-finite there -- e.g. an
+  # auxiliary defined as a 0/0 ratio at t = 0 -- yields an all-NaN trace, which
+  # plotly drops from the initial data while still padding it back into the
+  # first frame. That trace-count mismatch both warns ("number of items to
+  # replace is not a multiple of replacement length") and corrupts the initial
+  # frame. Backfilling those values with each series' first finite value keeps
+  # the trace present without changing what is drawn (a single point draws no
+  # line). Series with no finite value anywhere are left as-is: they are dropped
+  # from every frame consistently, so no mismatch arises.
+  if (value_col %in% names(out)) {
+    key_cols <- setdiff(names(df), c(time_col, value_col, frame_col))
+    series_key <- function(d) {
+      if (length(key_cols) == 0L) {
+        return(rep("", nrow(d)))
+      }
+      do.call(paste, c(lapply(key_cols, function(k) as.character(d[[k]])), sep = "\r"))
+    }
+    bad <- which(out[[frame_col]] == times[1] & !is.finite(out[[value_col]]))
+    if (length(bad) > 0L) {
+      fin <- df[is.finite(df[[value_col]]), , drop = FALSE]
+      fin <- fin[order(fin[[time_col]]), , drop = FALSE]
+      k_fin <- series_key(fin)
+      first_finite <- fin[[value_col]][!duplicated(k_fin)]
+      names(first_finite) <- k_fin[!duplicated(k_fin)]
+      repl <- first_finite[series_key(out[bad, , drop = FALSE])]
+      # Series with no finite value anywhere have no replacement; leave them as
+      # they are (they are dropped from every frame, so no mismatch arises).
+      keep <- is.finite(repl)
+      out[[value_col]][bad[keep]] <- repl[keep]
+    }
+  }
+
   out
 }
 

@@ -701,6 +701,7 @@ create_julia_project_toml_init <- function(use_github_release = TRUE) {
   }
 
   # Insert dependency on SystemDynamicsBuildR.jl
+  deps_start <- which(lines == "[deps]")
   lines <- append(lines, paste0(P[["jl_pkg_name"]], " = \"", uuid, "\""), after = deps_start)
   deps_names <- c(deps_names, P[["jl_pkg_name"]])
 

@@ -12,8 +12,20 @@
 #'   the plot was created with. Kebab-case names (e.g. `"eb-garamond"`) are
 #'   loaded as webfonts (see Details); any other name must be installed on
 #'   your system. Defaults to `NULL`, which keeps the plot's own font.
+#' @param close_browser If `TRUE` (default), browser-based exports run in a
+#'   separate short-lived R process, so the headless browser is closed when
+#'   the export finishes and leaves no state behind in your R session. Set to
+#'   `FALSE` to render in a persistent browser session instead, which is
+#'   faster when exporting many plots in a row; the browser then stays open
+#'   in the background until your R session ends. Ignored for exports that do
+#'   not use a browser.
 #'
 #' @details
+#' Exports that render in a headless browser (plotly plots, and diagrams
+#' using a webfont) require the suggested packages webshot2 and callr, plus a
+#' Chrome-based browser on your system. See `close_browser` for how the
+#' browser's lifetime is managed.
+#'
 #' # Fonts
 #'
 #' When `font_family` (either passed here or to the `plot()` call that
@@ -40,7 +52,10 @@
 #'   requireNamespace("rsvg", quietly = TRUE)) {
 #'   sfm <- stockflow("sir")
 #'   file <- tempfile(fileext = ".png")
-#'   export_plot(plot(sfm), file)
+#'
+#'   # With a system font the diagram is rendered by rsvg; the default
+#'   # webfont would instead require webshot2 and a headless browser
+#'   export_plot(plot(sfm, font_family = "serif"), file)
 #'
 #'   # Remove plot
 #'   file.remove(file)
@@ -60,7 +75,14 @@
 #'   file.remove(file)
 #' }
 #' }
-export_plot <- function(pl, file, width = 3, height = 4, units = "cm", dpi = 300, font_family = NULL) {
+export_plot <- function(pl, file, width = 3, height = 4, units = "cm", dpi = 300, font_family = NULL, close_browser = TRUE) {
+  if (!is.logical(close_browser) || length(close_browser) != 1 || is.na(close_browser)) {
+    cli::cli_abort(c(
+      "x" = "Invalid {.arg close_browser} argument.",
+      ">" = "The {.arg close_browser} argument must be a single {.code TRUE} or {.code FALSE}."
+    ))
+  }
+
   if (!is.null(font_family)) {
     if (!is.character(font_family) || length(font_family) != 1 || !nzchar(font_family)) {
       cli::cli_abort(c(
@@ -94,12 +116,14 @@ export_plot <- function(pl, file, width = 3, height = 4, units = "cm", dpi = 300
 
   if ("grViz" %in% class(pl)) {
     export_diagram(pl, file, format,
-      width = width_px, height = height_px
+      width = width_px, height = height_px,
+      close_browser = close_browser
     )
   } else if ("plotly" %in% class(pl)) {
     export_widget(pl, file,
       format = format,
-      width = width_px, height = height_px
+      width = width_px, height = height_px,
+      close_browser = close_browser
     )
   } else {
     cli::cli_abort(c(
@@ -143,6 +167,11 @@ set_plot_font <- function(pl, font_family) {
     pl$x$layout$font$family <- font_family
   }
 
+  # Drop any webfont attached at plot creation; apply_webfont() re-adds it
+  # when the new family is a webfont id, so a system-font override does not
+  # force the browser-based export path
+  attr(pl, "sdbuildR_webfont") <- NULL
+
   apply_webfont(pl, font_family)
 }
 
@@ -184,7 +213,7 @@ replace_font_family <- function(x, font_family) {
 #' @returns Returns `NULL` invisibly.
 #' @noRd
 #'
-export_diagram <- function(pl, file, format, width, height) {
+export_diagram <- function(pl, file, format, width, height, close_browser = TRUE) {
   # Diagrams carrying a webfont cannot go through rsvg (librsvg resolves
   # system fonts only, not @font-face rules), so they are rendered in a
   # headless browser like plotly exports. SVG keeps the vector pipeline, with
@@ -207,7 +236,9 @@ export_diagram <- function(pl, file, format, width, height) {
         "</head><body>", svg, "</body></html>"
       ), temp_html)
 
-      return(webshot_html(temp_html, file, format, width, height))
+      return(webshot_html(temp_html, file, format, width, height,
+        close_browser = close_browser
+      ))
     } else if (format == "svg") {
       rlang::check_installed("DiagrammeRsvg", reason = "to export stock-and-flow diagrams to image files.")
       svg <- DiagrammeRsvg::export_svg(pl)
@@ -262,7 +293,7 @@ export_diagram <- function(pl, file, format, width, height) {
 #' @returns Returns `NULL` invisibly.
 #' @noRd
 #'
-export_widget <- function(pl, file, format, width, height) {
+export_widget <- function(pl, file, format, width, height, close_browser = TRUE) {
   rlang::check_installed("htmlwidgets",
     reason = "to export plots to image files."
   )
@@ -272,7 +303,9 @@ export_widget <- function(pl, file, format, width, height) {
   on.exit(remove_files(temp_html), add = TRUE)
   htmlwidgets::saveWidget(pl, temp_html, selfcontained = TRUE)
 
-  webshot_html(temp_html, file, format, width, height)
+  webshot_html(temp_html, file, format, width, height,
+    close_browser = close_browser
+  )
 }
 
 
@@ -285,8 +318,9 @@ export_widget <- function(pl, file, format, width, height) {
 #' @returns Returns `NULL` invisibly.
 #' @noRd
 #'
-webshot_html <- function(url, file, format, width, height) {
-  rlang::check_installed("webshot2",
+webshot_html <- function(url, file, format, width, height, close_browser = TRUE) {
+  needed <- if (close_browser) c("webshot2", "callr") else "webshot2"
+  rlang::check_installed(needed,
     reason = "to export plots to image files."
   )
 
@@ -296,8 +330,7 @@ webshot_html <- function(url, file, format, width, height) {
     file = file,
     vwidth = width,
     vheight = height,
-    delay = 1,
-    quiet = TRUE # Doesn't seem to work
+    delay = 1
   )
 
   # Format-specific settings
@@ -308,24 +341,30 @@ webshot_html <- function(url, file, format, width, height) {
     ))
   }
 
-  # Overwrite quiet option temporarily
-  old_option <- getOption("webshot.quiet")
-  options("webshot.quiet" = TRUE)
-  on.exit(
-    {
-      if (is.null(old_option)) {
-        options("webshot.quiet" = NULL)
-      } else {
-        options("webshot.quiet" = old_option)
-      }
-    },
-    add = TRUE
-  )
+  # With close_browser = TRUE the screenshot is taken in a short-lived R
+  # subprocess, so the headless browser and its supervisor (with their open
+  # connections) live and die with the subprocess instead of lingering in the
+  # user's session. With FALSE the browser is reused in the current session,
+  # which is faster across many exports but leaves it running until R exits.
+  take_shot <- function() {
+    if (close_browser) {
+      callr::r(
+        function(params) {
+          options(webshot.quiet = TRUE)
+          do.call(webshot2::webshot, params)
+        },
+        args = list(params = webshot_params)
+      )
+    } else {
+      old_option <- getOption("webshot.quiet")
+      options(webshot.quiet = TRUE)
+      on.exit(options(webshot.quiet = old_option), add = TRUE)
+      do.call(webshot2::webshot, webshot_params)
+    }
+  }
 
-
-  # Convert to specified format
   tryCatch(
-    do.call(webshot2::webshot, webshot_params),
+    take_shot(),
     error = function(e) {
       cli::cli_abort(c(
         "x" = "Failed to export plot.",
@@ -367,16 +406,19 @@ webshot_html <- function(url, file, format, width, height) {
 #'   their type default. Stocks, constants, and auxiliaries are coloured by
 #'   their node fill; flows by the coloured band of their flow arrows.
 #'   Defaults to `NULL` (the default type colours).
-#' @param dependency_col Colour of dependency arrows. Defaults to "#999999".
-#' @param label_col Colour of variable labels (and of the equation text when `show_eqn = TRUE`). Defaults to "black".
-#' @param show_eqn If `TRUE`, show each variable's equation on a new line beneath its label, in a smaller font and the same colour as the label (`label_col`). The equation is prefixed by what it defines for that variable type: `Initial value =` for stocks, `Rate =` for flows, `Value =` for constants, and `Equation =` for auxiliaries. Defaults to `TRUE`.
+#' @param color_dependency Colour of dependency arrows. Defaults to "#999999".
+#' @param font_color Colour of variable labels (and of the equation text when `show_eqn = TRUE`). Defaults to "black".
+#' @param show_eqn If `TRUE`, show each variable's equation on a new line beneath its label, in a smaller font and the same colour as the label (`font_color`). The equation is prefixed by what it defines for that variable type: `Initial value =` for stocks, `Rate =` for flows, `Value =` for constants, and `Equation =` for auxiliaries. Defaults to `TRUE`.
 #' @param show_tooltip If `TRUE`, show each variable's equation as a tooltip when hovering over it. Defaults to `TRUE`.
 #' @param show_dependencies If TRUE, show dependencies between variables. Defaults to TRUE.
 #' @param show_constants If TRUE, show constants. Defaults to FALSE.
 #' @param show_aux If TRUE, show auxiliary variables. Defaults to TRUE.
-#' @param minlen Minimum length of edges; must be an integer. Defaults to 1.
-#' @param pad Padding around the graph. Defaults to 0.1.
-#' @param nodesep Minimum distance between nodes. Defaults to 0.3.
+#' @param flow_length Minimum length of flow arrows; controls how far apart
+#'   connected variables sit along the flow direction. Must be an integer.
+#'   Defaults to 1.
+#' @param margin Padding around the diagram. Defaults to 0.1.
+#' @param spacing Minimum space between adjacent variables placed side by side
+#'   (across the flow direction). Defaults to 0.5.
 #' @param direction Overall flow direction of the layout, passed to Graphviz's
 #'   `rankdir`. One of `"LR"` (left-to-right, the default), `"TB"` (top-to-bottom),
 #'   `"RL"` (right-to-left), or `"BT"` (bottom-to-top).
@@ -397,7 +439,7 @@ webshot_html <- function(url, file, format, width, height) {
 #'   line variables up in a single rank and control their order *within* it,
 #'   combine `order` with `align` (the `align` group sets the rank, `order` sets
 #'   the position within it). Same validation as `align`. Defaults to `NULL`.
-#' @param dependency_arrowhead Shape of the arrowhead on dependency arrows,
+#' @param arrowhead_dependency Shape of the arrowhead on dependency arrows,
 #'   passed to Graphviz's `arrowhead`. One of `"open"` (the default, an open
 #'   V-shape), `"normal"`, `"vee"`, `"diamond"`, `"dot"`, `"box"`, `"crow"`,
 #'   `"curve"`, `"inv"`, `"tee"`, or `"none"`. See
@@ -427,7 +469,7 @@ webshot_html <- function(url, file, format, width, height) {
 #' plot(sfm, show_tooltip = FALSE)
 #'
 #' # Custom label colour
-#' plot(sfm, label_col = "#333333")
+#' plot(sfm, font_color = "#333333")
 #'
 #' # Colour every variable the same
 #' plot(sfm, colors = "lightblue")
@@ -454,20 +496,20 @@ plot.stockflow <- function(x,
                            font_size = 18,
                            font_family = default_font_family(),
                            colors = NULL,
-                           dependency_col = "#999999",
-                           label_col = "black",
+                           color_dependency = "#999999",
+                           font_color = "black",
                            show_eqn = TRUE,
                            show_tooltip = TRUE,
                            show_dependencies = TRUE,
                            show_constants = FALSE,
                            show_aux = TRUE,
-                           minlen = 1,
-                           pad = 0.1,
-                           nodesep = 0.3,
+                           flow_length = 1,
+                           margin = 0.1,
+                           spacing = 0.5,
                            direction = "LR",
                            align = NULL,
                            order = NULL,
-                           dependency_arrowhead = "open",
+                           arrowhead_dependency = "open",
                            ...) {
   check_stockflow(x)
 
@@ -497,11 +539,11 @@ plot.stockflow <- function(x,
     "open", "normal", "vee", "diamond", "dot",
     "box", "crow", "curve", "inv", "tee", "none"
   )
-  if (!is.character(dependency_arrowhead) || length(dependency_arrowhead) != 1L ||
-    !dependency_arrowhead %in% valid_arrowhead) {
+  if (!is.character(arrowhead_dependency) || length(arrowhead_dependency) != 1L ||
+    !arrowhead_dependency %in% valid_arrowhead) {
     cli::cli_abort(c(
-      "x" = "Invalid {.arg dependency_arrowhead} argument.",
-      ">" = "The {.arg dependency_arrowhead} argument must be one of {.val {valid_arrowhead}}."
+      "x" = "Invalid {.arg arrowhead_dependency} argument.",
+      ">" = "The {.arg arrowhead_dependency} argument must be one of {.val {valid_arrowhead}}."
     ))
   }
 
@@ -606,7 +648,7 @@ plot.stockflow <- function(x,
   # Shared node style
   style_node <- sprintf(
     "node [fontsize=%s,fontname='%s',fontcolor='%s']",
-    font_size, font_family, label_col
+    font_size, font_family, font_color
   )
 
   # Font size for the equation line (shown beneath the label when show_eqn = TRUE)
@@ -667,7 +709,7 @@ plot.stockflow <- function(x,
     if (show_eqn) {
       stock_label <- sprintf(
         "label=<%s>",
-        make_eqn_label("stock", dict[stock_names], dict_eqn[stock_names], eqn_font_size, label_col, wrap_width)
+        make_eqn_label("stock", dict[stock_names], dict_eqn[stock_names], eqn_font_size, font_color, wrap_width)
       )
     } else {
       stock_label <- sprintf("label='%s'", dict[stock_names])
@@ -695,7 +737,7 @@ plot.stockflow <- function(x,
     if (show_eqn) {
       aux_xlabel <- sprintf(
         "xlabel=<%s>",
-        make_eqn_label("aux", dict[aux_names], dict_eqn[aux_names], eqn_font_size, label_col, wrap_width)
+        make_eqn_label("aux", dict[aux_names], dict_eqn[aux_names], eqn_font_size, font_color, wrap_width)
       )
     } else {
       aux_xlabel <- sprintf("xlabel='%s'", dict[aux_names])
@@ -717,7 +759,7 @@ plot.stockflow <- function(x,
   if (length(const_names) > 0) {
     if (show_eqn) {
       formatted_labels <- make_eqn_label(
-        "constant", dict[const_names], dict_eqn[const_names], eqn_font_size, label_col, wrap_width,
+        "constant", dict[const_names], dict_eqn[const_names], eqn_font_size, font_color, wrap_width,
         italic = TRUE
       )
     } else {
@@ -810,7 +852,7 @@ plot.stockflow <- function(x,
   }
 
   # User-specified ordering along the flow direction: invisible edges between
-  # consecutive names. A soft hint (constraint = true, no minlen bump) so Graphviz
+  # consecutive names. A soft hint (constraint = true, no flow_length bump) so Graphviz
   # balances it against the real flows rather than forcing the order.
   order_groups <- prepare_layout_groups(order, plot_var, model_var_names, "order")
   order_statements <- ""
@@ -890,7 +932,7 @@ plot.stockflow <- function(x,
     if (show_eqn) {
       flow_label <- sprintf(
         "label=<%s>",
-        make_eqn_label("flow", dict[flow_names], dict_eqn[flow_names], eqn_font_size, label_col, wrap_width)
+        make_eqn_label("flow", dict[flow_names], dict_eqn[flow_names], eqn_font_size, font_color, wrap_width)
       )
     } else {
       flow_label <- sprintf("label='%s'", dict[flow_names])
@@ -910,13 +952,13 @@ plot.stockflow <- function(x,
 
     style_flow_edges_from_source <- sprintf(
       "edge [style = '', arrowhead='none', penwidth=1.1, minlen=%s, tailport='%s', headport='%s']",
-      minlen,
+      flow_length,
       flow_ports[["tail"]],
       flow_ports[["head"]]
     )
     style_flow_edges_to_destination <- sprintf(
       "edge [style = '', arrowhead='normal', arrowsize=1.5, penwidth=1.1, minlen=%s, tailport='%s', headport='%s']",
-      minlen,
+      flow_length,
       flow_ports[["tail"]],
       flow_ports[["head"]]
     )
@@ -955,8 +997,8 @@ plot.stockflow <- function(x,
     style_dependency <- sprintf(
       # "edge [style = '', color='%s', arrowsize=0.8, penwidth=1, splines=true, constraint=false, tailport = '_', headport='_']",
       "edge [style = '', color='%s', arrowhead='%s', arrowsize=0.8, penwidth=1, constraint=false, tailport = '_', headport='_']",
-      dependency_col,
-      dependency_arrowhead
+      color_dependency,
+      arrowhead_dependency
     )
 
     # Only keep dependencies in plot_var
@@ -1063,8 +1105,8 @@ plot.stockflow <- function(x,
     }
           ",
     direction,
-    pad = as.character(pad),
-    nodesep = as.character(nodesep),
+    pad = as.character(margin),
+    nodesep = as.character(spacing),
     style_node,
     style_stock,
     stock_nodes |> paste0(collapse = "\n\t"),
