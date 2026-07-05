@@ -46,6 +46,7 @@ Imports:
     xml2
 Suggests:
     callr,
+    gt,
     DiagrammeRsvg,
     kableExtra,
     knitr,
