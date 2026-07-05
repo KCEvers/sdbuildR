@@ -1642,29 +1642,29 @@ sfm <- sim_settings(sfm, seed = NULL)
 Variable names can easily be changed:
 
 ```{r}
-sfm <- change_name(sfm, recovery_rate, new_name = recovery_store)
+sfm <- change_name(sfm, enjoyment, new_name = work_enjoyment)
 ```
 
-This will ensure that all references to `recovery_rate` are changed to `recovery_store`. 
+This will ensure that all references to `enjoyment` are changed to `work_enjoyment`. 
 
 ### Allowed variable names
 
 When creating variables or changing variable names, a warning may be issued that the name was modified to be syntactically valid and unique. For example:
 
 ```{r error = TRUE, warning = TRUE}
-sfm <- change_name(sfm, recovery_store, new_name = t)
+sfm <- change_name(sfm, work_enjoyment, new_name = t)
 ```
 
 The name `t` is not usable, as this already refers to the current time step. Similarly, names cannot contain spaces or special characters:
 
 ```{r error = TRUE}
-sfm <- change_name(sfm, t_1, new_name = recovery - rate)
+sfm <- change_name(sfm, t_1, new_name = a - b)
 ```
 
 Names also cannot be duplicated:
 
 ```{r error = TRUE, warning = TRUE}
-sfm <- change_name(sfm, energy, new_name = recovery)
+sfm <- change_name(sfm, engagement, new_name = motivation)
 ```
 
 ### Removing variables
@@ -1672,7 +1672,7 @@ sfm <- change_name(sfm, energy, new_name = recovery)
 To remove a variable from the model, use `discard()`:
 
 ```{r}
-sfm <- discard(sfm, net_flow)
+sfm <- discard(sfm, new_projects)
 ```
 
 Note that this cannot be undone!

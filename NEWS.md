@@ -1,7 +1,5 @@
 # sdbuildR 2.2.0
 
-# Developmental version
-
 * Renamed several `plot.stockflow()` arguments for clarity: `minlen` is now
   `flow_length`, `nodesep` is now `spacing`, `pad` is now `margin`,
   `dependency_col` is now `color_dependency`, and `label_col` is now
