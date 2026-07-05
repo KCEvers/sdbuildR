@@ -1,80 +1,50 @@
+# sdbuildR 2.2.0
+
 # Developmental version
 
-* Renamed several `plot.stockflow()` arguments to clearer, more intuitive names:
-  `minlen` is now `flow_length`, `nodesep` is now `spacing`, `pad` is now
-  `margin`, `dependency_col` is now `color_dependency`, and `label_col` is now
+* Renamed several `plot.stockflow()` arguments for clarity: `minlen` is now
+  `flow_length`, `nodesep` is now `spacing`, `pad` is now `margin`,
+  `dependency_col` is now `color_dependency`, and `label_col` is now
   `font_color`. The old names are no longer recognised.
 
-* Fixed a bug in the `animation = "time"` cumulative reveal where a variable
-  starting at `NaN` (e.g. a `0/0` ratio at initialization) corrupted the
-  initial frame and triggered a plotly warning ("number of items to replace is
-  not a multiple of replacement length") when the plot was built. The animation
-  still starts from an empty plot at the first time point; the non-finite
-  starting value is backfilled with the series' first finite value so its
-  (invisible) line stays present, which is what plotly needs to keep the trace
-  counts consistent.
+* Fixed time animations for variables that start with non-finite values, such
+  as `NaN` from a `0/0` ratio at initialization. These plots now build without
+  plotly trace-length warnings.
 
-* The speed of the `animation = "time"` cumulative reveal can now be tuned via
-  `control_options` in `plot.simulate_stockflow()` (which gains the argument),
-  `plot.ensemble_stockflow()`, and `plot.verify_stockflow()`: set `duration`
-  (total animation length in seconds) or `frame_ms` (milliseconds per frame),
-  plus `transition_ms` (smoothing between frames) and `max_frames` (frame-count
-  cap, trading smoothness for rendering speed). For example,
-  `plot(sim, animation = "time", control_options = list(duration = 10))`.
+* Time animations can now be tuned with `control_options` in
+  `plot.simulate_stockflow()`, `plot.ensemble_stockflow()`, and
+  `plot.verify_stockflow()`. Use `duration`, `frame_ms`, `transition_ms`, or
+  `max_frames` to control speed and smoothness.
 
-* In `plot.stockflow()` diagrams, the equation shown beneath each label
-  (`show_eqn = TRUE`) is now prefixed by what it defines for that variable
-  type — `Initial value =` for stocks, `Rate =` for flows, `Value =` for
-  constants, and `Equation =` for auxiliaries — instead of a uniform `eqn =`.
-  Hover tooltips use the same vocabulary (flows now show `Rate:` instead of
-  `Equation:`). This clarifies, for instance, that a stock's equation is only
-  its starting value, and distinguishes constants from auxiliaries.
+* `plot.stockflow(show_eqn = TRUE)` now labels equations by variable type:
+  `Initial value =` for stocks, `Rate =` for flows, `Value =` for constants,
+  and `Equation =` for auxiliaries. Hover tooltips use the same wording.
 
-* `install_julia_env()` now first removes the entire directory 
-   `tools::R_user_dir("sdbuildR", which = "data")` before re-installing the 
-    Julia environment for a cleaner installation.
+* `install_julia_env()` now reinstalls the Julia environment from a clean
+  sdbuildR user data directory.
 
-* Informational output is now controlled consistently with `quiet = FALSE` on
+* Informational messages are now controlled consistently with `quiet` in
   `ensemble()`, `simulate()`, `use_julia()`, and `install_julia_env()`.
-  `ensemble(verbose = )` is deprecated; use `quiet = !verbose` instead. These
-  messages remain suppressible with `suppressMessages()`, and warnings and
-  errors are always shown.
+  `ensemble(verbose = )` is deprecated.
 
-* *Breaking:* `plot.stockflow()` replaces the `stock_col` and `flow_col`
-  arguments with a `colors` argument that follows the same grammar as the other
-  plot methods, with variable types playing the role of layers. Pass a single
-  colour (applied to every variable), a list keyed by variable type
-  (`colors = list(stock = , flow = , constant = , aux = )`; unspecified types
-  keep their defaults), or a named vector keyed by variable name to recolour
-  individual variables (e.g. `colors = c(susceptible = "red")`). Constants and
-  auxiliaries, previously always grey, can now be coloured. The removed
-  arguments are ignored if supplied.
+* *Breaking:* `plot.stockflow()` now uses `colors` instead of `stock_col` and
+  `flow_col`. `colors` accepts a single colour, a list keyed by variable type,
+  or a named vector keyed by variable name. Constants and auxiliaries can now
+  be coloured as well.
 
-* Dependency arrows in `plot.stockflow()` changed their default from filled to
-  open arrow heads. The new `arrowhead_dependency` argument allows for adjusting the arrowhead
-  shape (`"open"`, `"normal"`, `"vee"`, `"diamond"`, `"dot"`,
-  `"box"`, `"crow"`, `"curve"`, `"inv"`, `"tee"`, or `"none"`).
+* Dependency arrows in `plot.stockflow()` now default to open arrow heads. Use
+  the new `arrowhead_dependency` argument to choose a different shape.
 
-* Plots and diagrams can now use any font from the Fontsource catalogue
-  (<https://fontsource.org/>): passing its id in
-  kebab-case (e.g. `font_family = "eb-garamond"` or `"source-serif-4"`) to
-  the `plot()` methods or to
-  `export_plot()` attaches the font as a *webfont*, fetched from the jsDelivr
-  CDN by the browser that displays or exports the plot (internet required at
-  display/export time; R downloads nothing and falls back to a default font
-  when offline). Any other `font_family` (e.g. `"Times New Roman"`) is
-  resolved as a system font, as before. *Breaking:* the default font of all plots changed
-  from `"Times New Roman"` to the `"stix-two-text"` webfont (STIX Two Text), and is now configurable via the
-  new `sdbuildR.font_family` option (e.g.
-  `options(sdbuildR.font_family = "Times New Roman")` in your .Rprofile
-  restores the old default and avoids webfonts entirely).
+* Plots and diagrams can now use Fontsource webfonts by passing a Fontsource id
+  such as `"eb-garamond"` or `"source-serif-4"` to `font_family`. System fonts,
+  such as `"Times New Roman"`, still work as before. *Breaking:* the default
+  plot font changed from `"Times New Roman"` to `"stix-two-text"`; set
+  `options(sdbuildR.font_family = "Times New Roman")` to restore the old
+  default.
 
-* *Breaking:* `sim_settings()` renames the output-saving arguments to be similar to
-  `seq()`. Use `save_by` for a regular interval (mirrors
-  `seq(by = )`), `save_times` for an explicit vector of output times, and
-  `save_length` for a number of evenly-spaced output times (mirrors
-  `seq(length.out = )`). The old `save_at` and `save_n` arguments are removed and
-  now raise an error pointing to the replacements.
+* *Breaking:* `sim_settings()` now uses `save_by`, `save_times`, and
+  `save_length` for output times. These replace the removed `save_at` and
+  `save_n` arguments.
 
 # sdbuildR 2.1.0
 
