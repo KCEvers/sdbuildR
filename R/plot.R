@@ -369,7 +369,7 @@ webshot_html <- function(url, file, format, width, height) {
 #'   Defaults to `NULL` (the default type colours).
 #' @param dependency_col Colour of dependency arrows. Defaults to "#999999".
 #' @param label_col Colour of variable labels (and of the equation text when `show_eqn = TRUE`). Defaults to "black".
-#' @param show_eqn If `TRUE`, show each variable's equation on a new line beneath its label, in a smaller font and the same colour as the label (`label_col`). Defaults to `TRUE`.
+#' @param show_eqn If `TRUE`, show each variable's equation on a new line beneath its label, in a smaller font and the same colour as the label (`label_col`). The equation is prefixed by what it defines for that variable type: `Initial value =` for stocks, `Rate =` for flows, `Value =` for constants, and `Equation =` for auxiliaries. Defaults to `TRUE`.
 #' @param show_tooltip If `TRUE`, show each variable's equation as a tooltip when hovering over it. Defaults to `TRUE`.
 #' @param show_dependencies If TRUE, show dependencies between variables. Defaults to TRUE.
 #' @param show_constants If TRUE, show constants. Defaults to FALSE.
@@ -667,7 +667,7 @@ plot.stockflow <- function(x,
     if (show_eqn) {
       stock_label <- sprintf(
         "label=<%s>",
-        make_eqn_label(dict[stock_names], dict_eqn[stock_names], eqn_font_size, label_col, wrap_width)
+        make_eqn_label("stock", dict[stock_names], dict_eqn[stock_names], eqn_font_size, label_col, wrap_width)
       )
     } else {
       stock_label <- sprintf("label='%s'", dict[stock_names])
@@ -695,7 +695,7 @@ plot.stockflow <- function(x,
     if (show_eqn) {
       aux_xlabel <- sprintf(
         "xlabel=<%s>",
-        make_eqn_label(dict[aux_names], dict_eqn[aux_names], eqn_font_size, label_col, wrap_width)
+        make_eqn_label("aux", dict[aux_names], dict_eqn[aux_names], eqn_font_size, label_col, wrap_width)
       )
     } else {
       aux_xlabel <- sprintf("xlabel='%s'", dict[aux_names])
@@ -717,7 +717,7 @@ plot.stockflow <- function(x,
   if (length(const_names) > 0) {
     if (show_eqn) {
       formatted_labels <- make_eqn_label(
-        dict[const_names], dict_eqn[const_names], eqn_font_size, label_col, wrap_width,
+        "constant", dict[const_names], dict_eqn[const_names], eqn_font_size, label_col, wrap_width,
         italic = TRUE
       )
     } else {
@@ -890,7 +890,7 @@ plot.stockflow <- function(x,
     if (show_eqn) {
       flow_label <- sprintf(
         "label=<%s>",
-        make_eqn_label(dict[flow_names], dict_eqn[flow_names], eqn_font_size, label_col, wrap_width)
+        make_eqn_label("flow", dict[flow_names], dict_eqn[flow_names], eqn_font_size, label_col, wrap_width)
       )
     } else {
       flow_label <- sprintf("label='%s'", dict[flow_names])
@@ -968,7 +968,6 @@ plot.stockflow <- function(x,
     dep <- dep[names(dep) %in% plot_var]
 
     if (length(dep) > 0) {
-
       dependency_edges <- unlist(lapply(names(dep), function(y) {
         if (length(dep[[y]]) > 0) {
           vapply(dep[[y]], function(z) {
@@ -983,7 +982,6 @@ plot.stockflow <- function(x,
 
       # Avoid overlap between flows and dependency edges
       if (!is.null(dependency_edges) && length(flow_names) > 0) {
-
         # Find dependency edges that link the same variables as flows do
         dep_split <- strsplit(dependency_edges, " -> ", fixed = TRUE)
 
@@ -999,8 +997,8 @@ plot.stockflow <- function(x,
         }) |> unlist()
 
         if (any(idx)) {
-          suff1 <- " [headport = 's', tailport = 's']"
-          suff2 <- " [headport = 'n', tailport = 'n']"
+          suff1 <- " [headport = 'n', tailport = 'n']"
+          suff2 <- " [headport = 's', tailport = 's']"
 
           # Alternative
           suff <- rep(c(suff1, suff2), length.out = sum(idx))
@@ -1010,9 +1008,7 @@ plot.stockflow <- function(x,
           # Add head/tail ports to dependency edges that overlap with flows
           dependency_edges[idx] <- paste0(dependency_edges[idx], suff)
         }
-
       }
-
     }
   }
 
@@ -1258,6 +1254,15 @@ prep_plot <- function(
 #'   `TRUE`.
 #' @param animation Animation mode. Use `"none"` for a static plot or `"time"`
 #'   to cumulatively reveal trajectories over time. Defaults to `"none"`.
+#' @param control_options Named list fine-tuning the speed and smoothness of
+#'   the `animation = "time"` animation. Supports `frame_ms`: the duration of
+#'   each frame in milliseconds (default `100`); `duration`: the total
+#'   animation length in seconds, as an alternative to `frame_ms` (supplying
+#'   both is an error); `transition_ms`: the transition time between frames in
+#'   milliseconds (default `0`); and `max_frames`: the maximum number of
+#'   animation frames (default `50`; lower it for a chunkier reveal that also
+#'   shortens the animation at a fixed `frame_ms`). Defaults to `list()`, i.e.
+#'   all defaults.
 #' @param webgl If `TRUE`, render trajectories with WebGL (plotly `scattergl`) for
 #'   performance with many lines; if `FALSE`, use SVG (`scatter`). Defaults to
 #'   `getOption("sdbuildR.webgl", default = TRUE)`. Set
@@ -1300,6 +1305,11 @@ prep_plot <- function(
 #' # Cumulatively reveal the trajectories over time
 #' plot(sim, animation = "time")
 #'
+#' # Slow the animation down to ~10 seconds in total, or speed up the
+#' # individual frames
+#' plot(sim, animation = "time", control_options = list(duration = 10))
+#' plot(sim, animation = "time", control_options = list(frame_ms = 40))
+#'
 plot.simulate_stockflow <- function(x,
                                     show_constants = FALSE,
                                     vars = NULL,
@@ -1312,9 +1322,9 @@ plot.simulate_stockflow <- function(x,
                                     showlegend = TRUE,
                                     format_label = TRUE,
                                     animation = c("none", "time"),
+                                    control_options = list(),
                                     webgl = getOption("sdbuildR.webgl", default = TRUE),
                                     ...) {
-  animation <- .clean_animation(animation)
   if (missing(x)) {
     cli::cli_abort(c(
       "x" = "No simulation data available.",
@@ -1334,6 +1344,12 @@ plot.simulate_stockflow <- function(x,
   if (nrow(x[["df"]]) == 0) {
     cli::cli_abort(c("x" = "Simulation data frame has no rows"))
   }
+
+  animation <- .clean_animation(animation)
+  # No condition slider/dropdown here, so only the animation options apply.
+  control_options <- resolve_control_options(control_options,
+    allowed = c("frame_ms", "transition_ms", "max_frames", "duration")
+  )
 
   # Validate common plot parameters
   validate_plot_params(
@@ -1381,8 +1397,12 @@ plot.simulate_stockflow <- function(x,
 
   # For time animation, cumulatively reveal each trajectory frame by frame.
   if (animation == "time") {
-    df_highlight <- accumulate_by_time(df_highlight)
-    df_nonhighlight <- accumulate_by_time(df_nonhighlight)
+    df_highlight <- accumulate_by_time(df_highlight,
+      max_frames = control_options[["max_frames"]]
+    )
+    df_nonhighlight <- accumulate_by_time(df_nonhighlight,
+      max_frames = control_options[["max_frames"]]
+    )
     frame <- ~.frame
   } else {
     frame <- NULL
@@ -1443,10 +1463,15 @@ plot.simulate_stockflow <- function(x,
 
   # Add play button and time slider for the cumulative reveal animation.
   if (animation == "time") {
+    n_frames <- length(unique(c(
+      df_highlight[[".frame"]], df_nonhighlight[[".frame"]]
+    )))
     pl <- add_time_animation_controls(pl,
       time_unit = if (is.null(time_unit)) "" else time_unit,
       font_family = font_family,
-      font_size = font_size
+      font_size = font_size,
+      frame_ms = resolve_frame_ms(control_options, n_frames),
+      transition_ms = control_options[["transition_ms"]]
     )
   }
 
@@ -1515,15 +1540,21 @@ plot.simulate_stockflow <- function(x,
 #'   a slider/dropdown have a fixed height (sized to the number of controls)
 #'   instead of a responsive one.
 #' @param control_options Named list fine-tuning the `"slider"`/`"dropdown"`
-#'   condition control. Supports `max_labels`: the maximum number of
+#'   condition control and the `animation = "time"` animation. For the
+#'   condition control it supports `max_labels`: the maximum number of
 #'   slider tick labels to keep visible when many conditions are varied (the
 #'   slider always keeps one step per condition; intermediate labels are thinned
 #'   above this count); and `spacing`: the vertical gap (in pixels) between the
 #'   tops of stacked controls when several condition parameters are varied. By
 #'   default the spacing and the reserved bottom margin are sized automatically
 #'   so the controls never overlap each other or the x-axis title; pass a number
-#'   to widen or tighten the gap. Defaults to
-#'   `list(max_labels = 10, spacing = NULL)`.
+#'   to widen or tighten the gap. For the animation it supports `frame_ms`:
+#'   the duration of each frame in milliseconds (default `100`); `duration`:
+#'   the total animation length in seconds, as an alternative to `frame_ms`
+#'   (supplying both is an error); `transition_ms`: the transition time between
+#'   frames in milliseconds (default `0`); and `max_frames`: the maximum number
+#'   of animation frames (default `50`). Defaults to `list()`, i.e. all
+#'   defaults.
 #' @param animation Animation mode. Use `"none"` for a static plot or `"time"`
 #'   to cumulatively reveal trajectories over time. Defaults to `"none"`.
 #'   Time animation requires `which = "sims"` (confidence ribbons cannot be
@@ -1664,7 +1695,7 @@ plot.ensemble_stockflow <- function(x,
     cli::cli_warn(c(
       "!" = "None of the requested {.arg central} statistics are saved in the ensemble summary.",
       "i" = "Saved central statistics: {.val {central_avail}}.",
-      ">" = "Re-run {.fn ensemble} with {.code central = 
+      ">" = "Re-run {.fn ensemble} with {.code central =
       {.val {central}}}."
     ))
   }
@@ -1684,7 +1715,7 @@ plot.ensemble_stockflow <- function(x,
       "!" = "None of the requested {.arg spread} options are saved in the ensemble summary.",
       "i" = "Saved spread options: {.val {spread_avail}}.",
       # "i" = "{.code 'quantile'} needs quantile columns; {.code 'sd'} needs the {.field sd} statistic and a central line; {.code 'range'} needs the {.field min} and {.field max} statistics.",
-      ">" = "Re-run {.fn ensemble} with {.code spread = 
+      ">" = "Re-run {.fn ensemble} with {.code spread =
       {.val {spread}}}."
     ))
   }
@@ -1861,10 +1892,11 @@ plot.ensemble_stockflow <- function(x,
   # splitting by condition so each row keeps its condition; per-frame line
   # breaking happens later in plot_ensemble_helper().
   if (animation == "time") {
-    summary_df_highlight <- accumulate_by_time(summary_df_highlight)
-    summary_df_nonhighlight <- accumulate_by_time(summary_df_nonhighlight)
-    df_highlight <- accumulate_by_time(df_highlight)
-    df_nonhighlight <- accumulate_by_time(df_nonhighlight)
+    mf <- control_options[["max_frames"]]
+    summary_df_highlight <- accumulate_by_time(summary_df_highlight, max_frames = mf)
+    summary_df_nonhighlight <- accumulate_by_time(summary_df_nonhighlight, max_frames = mf)
+    df_highlight <- accumulate_by_time(df_highlight, max_frames = mf)
+    df_nonhighlight <- accumulate_by_time(df_nonhighlight, max_frames = mf)
     frame <- ~.frame
   } else {
     frame <- NULL
@@ -1953,7 +1985,13 @@ plot.ensemble_stockflow <- function(x,
       font_family = font_family, font_size = font_size, margin_t = 100
     )
 
-    cond_tbl <- condition_param_table(x[["conditions"]])
+    if (is.null(x[["conditions"]])) {
+      cond_tbl <- data.frame()
+    } else {
+      cond_tbl <- as.data.frame(x[["conditions"]])
+      cond_tbl <- cond_tbl[, setdiff(names(cond_tbl), "condition"), drop = FALSE]
+    }
+
     pl <- assemble_condition_control_plot(
       pl_list,
       condition_ids = condition,
@@ -2091,10 +2129,16 @@ plot.ensemble_stockflow <- function(x,
 
   # Add play button and time slider for the cumulative reveal animation.
   if (animation == "time") {
+    n_frames <- length(unique(c(
+      summary_df_highlight[[".frame"]], summary_df_nonhighlight[[".frame"]],
+      df_highlight[[".frame"]], df_nonhighlight[[".frame"]]
+    )))
     pl <- add_time_animation_controls(pl,
       time_unit = if (is.null(time_unit)) "" else time_unit,
       font_family = font_family,
-      font_size = font_size
+      font_size = font_size,
+      frame_ms = resolve_frame_ms(control_options, n_frames),
+      transition_ms = control_options[["transition_ms"]]
     )
   }
 
@@ -2662,6 +2706,11 @@ plot_ensemble_helper <- function(subplot_label,
 #' @param label_subplots Whether to title each subplot with its condition's
 #'   parameter overrides (or `"Baseline"`) and test number(s), e.g.
 #'   `"rate = 0 (test 2)"`. Defaults to `TRUE`.
+#' @param control_options Named list fine-tuning the `"slider"`/`"dropdown"`
+#'   condition control and the `animation = "time"` animation; see
+#'   [plot.ensemble_stockflow()] for the supported options (`max_labels`,
+#'   `spacing`, `frame_ms`, `duration`, `transition_ms`, `max_frames`).
+#'   Defaults to `list()`, i.e. all defaults.
 #' @param ... Additional arguments passed to [plot.simulate_stockflow()].
 #' @inheritParams as.data.frame.verify_stockflow
 #' @inheritParams plot.simulate_stockflow
@@ -2875,8 +2924,12 @@ plot.verify_stockflow <- function(x,
 
   # For time animation, cumulatively reveal trajectories (see ensemble plot).
   if (animation == "time") {
-    df_highlight <- accumulate_by_time(df_highlight)
-    df_nonhighlight <- accumulate_by_time(df_nonhighlight)
+    df_highlight <- accumulate_by_time(df_highlight,
+      max_frames = control_options[["max_frames"]]
+    )
+    df_nonhighlight <- accumulate_by_time(df_nonhighlight,
+      max_frames = control_options[["max_frames"]]
+    )
     frame <- ~.frame
   } else {
     frame <- NULL
@@ -3079,10 +3132,15 @@ plot.verify_stockflow <- function(x,
 
   # Add play button and time slider for the cumulative reveal animation.
   if (animation == "time") {
+    n_frames <- length(unique(c(
+      df_highlight[[".frame"]], df_nonhighlight[[".frame"]]
+    )))
     pl <- add_time_animation_controls(pl,
       time_unit = if (is.null(time_unit)) "" else time_unit,
       font_family = font_family,
-      font_size = font_size
+      font_size = font_size,
+      frame_ms = resolve_frame_ms(control_options, n_frames),
+      transition_ms = control_options[["transition_ms"]]
     )
   }
 

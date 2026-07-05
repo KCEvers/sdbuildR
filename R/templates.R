@@ -331,7 +331,7 @@ template_registry <- function() {
       description = "Toy model of burnout as used in Evers et al. (under review)",
       build = function() {
         stockflow() |>
-          sim_settings(start = "0.0", stop = round(365/2), dt = "0.01", time_units = "days", only_stocks = FALSE) |>
+          sim_settings(start = "0.0", stop = round(365 / 2), dt = "0.01", time_units = "days", only_stocks = FALSE) |>
           meta(name = "Burnout") |>
           stock("energy", eqn = 0.3, label = "Energy") |>
           constant("recovery_rate", eqn = 0.3, label = "Recovery Rate") |>
@@ -341,21 +341,22 @@ template_registry <- function() {
           aux("net_flow", eqn = "recovery - depletion", label = "Net flow to energy")
       }
     ),
-    list(name = "burnout",
+    list(
+      name = "burnout",
       version = "2.0.0",
       description = "Toy model of burnout as used in Evers et al. (under review)",
-    build = function() {
-      stockflow() |>
-        sim_settings(start = "0.0", stop = round(365/2), dt = "0.01", time_units = "days", only_stocks = FALSE) |>
-        meta(name = "Burnout") |>
-        stock("energy", eqn = 0.3, label = "Energy") |>
-        stock("recovery_rate", eqn = 0.3, label = "Recovery Rate") |>
-        flow("erosion", eqn = "recovery_rate * depletion", from = "recovery_rate", label = "Erosion") |>
-        flow("recovery", eqn = "recovery_rate", to = "energy", label = "Recovery") |>
-        flow("depletion", eqn = "depletion_rate * energy", from = "energy", label = "Depletion") |>
-        constant("depletion_rate", eqn = 0.05, label = "Depletion Rate") |>
-        aux("net_flow", eqn = "recovery - depletion", label = "Net flow to energy")
-    }
+      build = function() {
+        stockflow() |>
+          sim_settings(start = "0.0", stop = round(365 / 2), dt = "0.01", time_units = "days", only_stocks = FALSE) |>
+          meta(name = "Burnout") |>
+          stock("energy", eqn = 0.3, label = "Energy") |>
+          stock("recovery_rate", eqn = 0.3, label = "Recovery Rate") |>
+          flow("erosion", eqn = "recovery_rate * depletion", from = "recovery_rate", label = "Erosion") |>
+          flow("recovery", eqn = "recovery_rate", to = "energy", label = "Recovery") |>
+          flow("depletion", eqn = "depletion_rate * energy", from = "energy", label = "Depletion") |>
+          constant("depletion_rate", eqn = 0.05, label = "Depletion Rate") |>
+          aux("net_flow", eqn = "recovery - depletion", label = "Net flow to energy")
+      }
     ),
     list(
       name = "fitzhugh_nagumo",
@@ -396,7 +397,25 @@ template_registry <- function() {
             eqn = c("0.7", "0.8", "12.5", "0.5")
           )
       }
+    ),
+list(
+      name = "queue",
+      version = "1.0.0",
+      description = "Simple demonstration model of people waiting in a queue",
+      build = function() {
+        stockflow() |>
+        sim_settings(start = "0.0", stop = "10.0", dt = "0.01", time_units = "hours", only_stocks = FALSE) |>
+        meta(name = "") |>
+        stock("queue", eqn = 0, label = "People Waiting in Queue") |>
+        stock("served", eqn = 0, label = "People Served") |>
+        flow("arrivals", eqn = 1, to = "queue", label = "Arrivals") |>
+        flow("leave", eqn = "0.1 * queue^2", from = "queue", label = "Life Is Too Short") |>
+        flow("service", eqn = "service_rate * queue", to = "served", from = "queue", label = "Service") |>
+        constant("service_rate", eqn = 0.5, label = "Service Rate") |>
+        aux("satisfaction", eqn = "service / (service + leave)", label = "Satisfaction")
+      }
     )
+
     # list(
     #   name = "jdr",
     #   version = "1.0.0",

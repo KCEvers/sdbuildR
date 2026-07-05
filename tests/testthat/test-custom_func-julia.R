@@ -55,7 +55,7 @@ test_that("round_IM maps to the same values in Julia", {
 test_that("indexof maps to the same values in Julia", {
   ready_julia()
   expect_r_julia_equal('indexof(c("a", "b", "c"), "b")')
-  expect_r_julia_equal('indexof(c(10, 20, 30), 30)')
+  expect_r_julia_equal("indexof(c(10, 20, 30), 30)")
   expect_r_julia_equal('indexof("haystack", "hay")')
   expect_r_julia_equal('indexof("haystack", "stack")')
   expect_r_julia_equal('indexof("haystack", "zzz")') # not found -> 0
@@ -63,8 +63,8 @@ test_that("indexof maps to the same values in Julia", {
 
 test_that("contains_IM maps to the same values in Julia", {
   ready_julia()
-  expect_r_julia_equal('contains_IM(c(1, 2, 3), 2)')
-  expect_r_julia_equal('contains_IM(c(1, 2, 3), 4)')
+  expect_r_julia_equal("contains_IM(c(1, 2, 3), 2)")
+  expect_r_julia_equal("contains_IM(c(1, 2, 3), 4)")
   expect_r_julia_equal('contains_IM("haystack", "hay")')
   expect_r_julia_equal('contains_IM("haystack", "needle")')
 })
@@ -123,6 +123,6 @@ test_that("ricker maps to the same values in Julia", {
   expect_r_julia_equal("ricker(2, location = 2, upper = 10, shape = 1)")
   expect_r_julia_equal("ricker(3, location = 3, upper = 10, shape = 2)")
   expect_r_julia_equal("ricker(c(0.5, 1, 3, 5), location = 2)") # broadcast
-  expect_r_julia_equal("ricker(3, a = 2.5, b = 0.4)")           # expanded form
+  expect_r_julia_equal("ricker(3, a = 2.5, b = 0.4)") # expanded form
   expect_r_julia_equal("ricker(3, a = 1.8, b = 0.6, shape = 2.5)")
 })

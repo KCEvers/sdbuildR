@@ -118,7 +118,6 @@ test_that("julia_version_compatible() compares major and minor versions", {
 })
 
 
-
 test_that("Project.toml hash drift is detected", {
   # The shipped Project.toml should produce a stable, non-NA hash
   h <- project_toml_hash()

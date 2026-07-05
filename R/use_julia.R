@@ -99,7 +99,7 @@ install_julia_env <- function(remove = FALSE, quiet = FALSE) {
     # directory (R_user_dir), delete the whole directory so nothing is left
     # behind.
     unlink(env_dir, recursive = TRUE, force = TRUE)
-    
+
 
     status <- is_julia_env_setup(force = TRUE, error = FALSE)
 
@@ -114,7 +114,7 @@ install_julia_env <- function(remove = FALSE, quiet = FALSE) {
     # First stop Julia for a clean installation
     JuliaConnectoR::stopJulia()
 
-    # For a clean installation, remove the environment files. 
+    # For a clean installation, remove the environment files.
     # The environment lives in its own
     # directory (R_user_dir), delete the whole directory so nothing is left
     # behind.
@@ -143,8 +143,10 @@ install_julia_env <- function(remove = FALSE, quiet = FALSE) {
       # version with changed dependencies can detect a stale environment
       write_julia_env_marker()
       if (!quiet) {
-        cli::cli_inform(c("v" = "Julia environment installed.",
-        ">" = "Run {.fn use_julia} to start a Julia session and activate the environment."))
+        cli::cli_inform(c(
+          "v" = "Julia environment installed.",
+          ">" = "Run {.fn use_julia} to start a Julia session and activate the environment."
+        ))
       }
     } else {
       cli::cli_inform(c("x" = "Failed to install Julia environment."))
@@ -370,8 +372,6 @@ is_julia_version_ok <- function() {
 
   invisible(TRUE)
 }
-
-
 
 
 #' Location of the sdbuildR Julia environment

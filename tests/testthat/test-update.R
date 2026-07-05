@@ -621,7 +621,6 @@ test_that("change_type() to stock keeps dSdt[] aligned in a realistic model", {
 })
 
 
-
 test_that("discard() reindexes remaining stock dSdt[] contiguously", {
   sfm <- stockflow() |>
     update("a", type = "stock", eqn = "1") |>

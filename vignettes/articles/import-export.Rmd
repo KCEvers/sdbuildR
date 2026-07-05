@@ -70,7 +70,9 @@ After importing, use the model as usual:
 
 ```{r eval=FALSE}
 summary(sfm)
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot()
 ```
 
 
@@ -148,7 +150,9 @@ print(sfm)
 
 ```{r}
 sfm <- sim_settings(sfm, save_by = 5)
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot()
 ```
 
 The imported model is a full `stockflow` object. You can modify it with
@@ -207,7 +211,7 @@ Write directly to a `.json` file for upload:
 ```{r eval=FALSE}
 export_model(sfm,
   format = "psychomodels",
-  publication_doi = "10.0000/my-paper", 
+  publication_doi = "10.0000/my-paper",
   file = "sir_psychomodels.json"
 )
 ```

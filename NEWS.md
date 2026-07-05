@@ -1,5 +1,28 @@
 # Developmental version
 
+* Fixed a bug in the `animation = "time"` cumulative reveal where a variable
+  starting at `NaN` (e.g. a `0/0` ratio at initialization) corrupted the
+  initial frame and triggered a plotly warning ("number of items to replace is
+  not a multiple of replacement length") when the plot was built. The
+  animation no longer emits a frame at the very first time point, which held
+  only a single (invisible) point per line.
+
+* The speed of the `animation = "time"` cumulative reveal can now be tuned via
+  `control_options` in `plot.simulate_stockflow()` (which gains the argument),
+  `plot.ensemble_stockflow()`, and `plot.verify_stockflow()`: set `duration`
+  (total animation length in seconds) or `frame_ms` (milliseconds per frame),
+  plus `transition_ms` (smoothing between frames) and `max_frames` (frame-count
+  cap, trading smoothness for rendering speed). For example,
+  `plot(sim, animation = "time", control_options = list(duration = 10))`.
+
+* In `plot.stockflow()` diagrams, the equation shown beneath each label
+  (`show_eqn = TRUE`) is now prefixed by what it defines for that variable
+  type — `Initial value =` for stocks, `Rate =` for flows, `Value =` for
+  constants, and `Equation =` for auxiliaries — instead of a uniform `eqn =`.
+  Hover tooltips use the same vocabulary (flows now show `Rate:` instead of
+  `Equation:`). This clarifies, for instance, that a stock's equation is only
+  its starting value, and distinguishes constants from auxiliaries.
+
 * `install_julia_env()` now first removes the entire directory 
    `tools::R_user_dir("sdbuildR", which = "data")` before re-installing the 
     Julia environment for a cleaner installation.

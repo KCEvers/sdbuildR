@@ -394,13 +394,27 @@ test_that("plot() with show_eqn = TRUE (default) shows equations beneath labels"
   pl <- plot(sfm, show_constants = TRUE)
   d <- pl[["x"]][["diagram"]]
 
-  # Equations are rendered as a smaller FONT line, prefixed with "eqn = ".
+  # Equations are rendered as a smaller FONT line, prefixed by what the
+  # equation defines for that variable type.
   expect_true(grepl("FONT POINT-SIZE", d, fixed = TRUE))
-  expect_true(grepl("eqn = ", d, fixed = TRUE))
+  expect_true(grepl("Initial value = ", d, fixed = TRUE))
+  expect_true(grepl("Rate = ", d, fixed = TRUE))
+  expect_true(grepl("Value = ", d, fixed = TRUE))
   # HTML-like labels (label=< ... >) are used when show_eqn = TRUE.
   expect_true(grepl("label=<", d, fixed = TRUE))
 
   expect_snapshot_plot("stockflow-show-eqn", pl)
+})
+
+test_that("plot() show_eqn uses a type-specific prefix for every variable type", {
+  sfm <- typed_model()
+  pl <- plot(sfm, show_constants = TRUE, show_aux = TRUE)
+  d <- pl[["x"]][["diagram"]]
+
+  expect_true(grepl("Initial value = 100", d, fixed = TRUE))
+  expect_true(grepl("Rate = r * a", d, fixed = TRUE))
+  expect_true(grepl("Value = 0.1", d, fixed = TRUE))
+  expect_true(grepl("Equation = S * 2", d, fixed = TRUE))
 })
 
 test_that("plot() with show_eqn = FALSE does not show equations in labels", {
@@ -448,6 +462,7 @@ test_that("plot.stockflow() tooltips describe type, name, equation, and structur
 
   flow <- nodes[nodes$name == "new_infections", ]
   expect_true(grepl("Flow: New infections", flow$tooltip, fixed = TRUE))
+  expect_true(grepl("Rate: ", flow$tooltip, fixed = TRUE))
   expect_true(grepl("From: Susceptible", flow$tooltip, fixed = TRUE))
   expect_true(grepl("To: Infected", flow$tooltip, fixed = TRUE))
 
@@ -500,7 +515,7 @@ test_that("plot() show_eqn wraps long equations to wrap_width", {
   d <- pl[["x"]][["diagram"]]
 
   # A long equation wrapped to a narrow width contains a line break.
-  expect_true(grepl("eqn =.*<BR/>", d))
+  expect_true(grepl("Rate =.*<BR/>", d))
 })
 
 test_that("plot() validates show_eqn", {

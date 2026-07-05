@@ -10,13 +10,13 @@
 #' @noRd
 ensemble_stat_funs <- function() {
   list(
-  mean          = function(v) mean(v, na.rm = TRUE),
-  median        = function(v) stats::median(v, na.rm = TRUE),
-  sd            = function(v) stats::sd(v, na.rm = TRUE),
-  min           = function(v) min(v, na.rm = TRUE),
-  max           = function(v) max(v, na.rm = TRUE),
-  missing_count = function(v) sum(is.na(v))
-)
+    mean          = function(v) mean(v, na.rm = TRUE),
+    median        = function(v) stats::median(v, na.rm = TRUE),
+    sd            = function(v) stats::sd(v, na.rm = TRUE),
+    min           = function(v) min(v, na.rm = TRUE),
+    max           = function(v) max(v, na.rm = TRUE),
+    missing_count = function(v) sum(is.na(v))
+  )
 }
 
 
@@ -219,8 +219,10 @@ ensemble_r <- function(object, n, save_sims, conditions, cross,
               parsed_expr = parsed_scripts[[task[["condition"]]]],
               condition = task[["condition"]], sim = task[["sim"]]
             )
-          }, quiet = quiet, apply_fun = apply_fun,
-          future.seed = seed_nr, future.packages = c("sdbuildR", "progressr"))
+          },
+          quiet = quiet, apply_fun = apply_fun,
+          future.seed = seed_nr, future.packages = c("sdbuildR", "progressr")
+          )
         }
         # With a numeric seed, per-future seeds are derived deterministically, so
         # restore the global RNG to avoid leaking state. Without a seed,

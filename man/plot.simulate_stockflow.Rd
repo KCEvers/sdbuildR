@@ -17,6 +17,7 @@
   showlegend = TRUE,
   format_label = TRUE,
   animation = c("none", "time"),
+  control_options = list(),
   webgl = getOption("sdbuildR.webgl", default = TRUE),
   ...
 )
@@ -63,6 +64,16 @@ variable name. Applies to the legend and any condition controls. Defaults to
 \item{animation}{Animation mode. Use \code{"none"} for a static plot or \code{"time"}
 to cumulatively reveal trajectories over time. Defaults to \code{"none"}.}
 
+\item{control_options}{Named list fine-tuning the speed and smoothness of
+the \code{animation = "time"} animation. Supports \code{frame_ms}: the duration of
+each frame in milliseconds (default \code{100}); \code{duration}: the total
+animation length in seconds, as an alternative to \code{frame_ms} (supplying
+both is an error); \code{transition_ms}: the transition time between frames in
+milliseconds (default \code{0}); and \code{max_frames}: the maximum number of
+animation frames (default \code{50}; lower it for a chunkier reveal that also
+shortens the animation at a fixed \code{frame_ms}). Defaults to \code{list()}, i.e.
+all defaults.}
+
 \item{webgl}{If \code{TRUE}, render trajectories with WebGL (plotly \code{scattergl}) for
 performance with many lines; if \code{FALSE}, use SVG (\code{scatter}). Defaults to
 \code{getOption("sdbuildR.webgl", default = TRUE)}. Set
@@ -107,6 +118,11 @@ plot(sim, show_constants = TRUE)
 
 # Cumulatively reveal the trajectories over time
 plot(sim, animation = "time")
+
+# Slow the animation down to ~10 seconds in total, or speed up the
+# individual frames
+plot(sim, animation = "time", control_options = list(duration = 10))
+plot(sim, animation = "time", control_options = list(frame_ms = 40))
 
 }
 \seealso{

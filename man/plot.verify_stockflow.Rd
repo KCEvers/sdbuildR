@@ -116,15 +116,10 @@ a slider/dropdown have a fixed height (sized to the number of controls)
 instead of a responsive one.}
 
 \item{control_options}{Named list fine-tuning the \code{"slider"}/\code{"dropdown"}
-condition control. Supports \code{max_labels}: the maximum number of
-slider tick labels to keep visible when many conditions are varied (the
-slider always keeps one step per condition; intermediate labels are thinned
-above this count); and \code{spacing}: the vertical gap (in pixels) between the
-tops of stacked controls when several condition parameters are varied. By
-default the spacing and the reserved bottom margin are sized automatically
-so the controls never overlap each other or the x-axis title; pass a number
-to widen or tighten the gap. Defaults to
-\code{list(max_labels = 10, spacing = NULL)}.}
+condition control and the \code{animation = "time"} animation; see
+\code{\link[=plot.ensemble_stockflow]{plot.ensemble_stockflow()}} for the supported options (\code{max_labels},
+\code{spacing}, \code{frame_ms}, \code{duration}, \code{transition_ms}, \code{max_frames}).
+Defaults to \code{list()}, i.e. all defaults.}
 
 \item{animation}{Animation mode. Use \code{"none"} for a static plot or \code{"time"}
 to cumulatively reveal trajectories over time. Defaults to \code{"none"}.}

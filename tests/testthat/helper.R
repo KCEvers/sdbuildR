@@ -92,7 +92,7 @@ expect_snapshot_plot <- function(name, code, fileext = NULL, width = 4, height =
     if ("plotly" %in% plot_types) {
       skip_if_not_installed("webshot2")
       skip_if_not_installed("htmlwidgets")
-    } 
+    }
 
     if ("grViz" %in% plot_types) {
       skip_if_not_installed("DiagrammeRsvg")
@@ -764,7 +764,6 @@ julia_ast_vnames <- function() {
 }
 
 
-
 # Skip unless Julia is set up, and start the sdbuildR Julia session (loading the
 # SystemDynamicsBuildR functions) so direct julia_eval() calls resolve them. A bare
 # JuliaConnectoR session would not have run init.jl. use_julia() is idempotent.
@@ -802,4 +801,3 @@ expect_input_sim_equal <- function(input_eqn, tolerance = 1e-4) {
   ja <- j[["df"]][j[["df"]][["variable"]] == "a", "value"]
   expect_equal(ra, ja, tolerance = tolerance, info = input_eqn)
 }
-

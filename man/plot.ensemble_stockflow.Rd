@@ -119,15 +119,21 @@ a slider/dropdown have a fixed height (sized to the number of controls)
 instead of a responsive one.}
 
 \item{control_options}{Named list fine-tuning the \code{"slider"}/\code{"dropdown"}
-condition control. Supports \code{max_labels}: the maximum number of
+condition control and the \code{animation = "time"} animation. For the
+condition control it supports \code{max_labels}: the maximum number of
 slider tick labels to keep visible when many conditions are varied (the
 slider always keeps one step per condition; intermediate labels are thinned
 above this count); and \code{spacing}: the vertical gap (in pixels) between the
 tops of stacked controls when several condition parameters are varied. By
 default the spacing and the reserved bottom margin are sized automatically
 so the controls never overlap each other or the x-axis title; pass a number
-to widen or tighten the gap. Defaults to
-\code{list(max_labels = 10, spacing = NULL)}.}
+to widen or tighten the gap. For the animation it supports \code{frame_ms}:
+the duration of each frame in milliseconds (default \code{100}); \code{duration}:
+the total animation length in seconds, as an alternative to \code{frame_ms}
+(supplying both is an error); \code{transition_ms}: the transition time between
+frames in milliseconds (default \code{0}); and \code{max_frames}: the maximum number
+of animation frames (default \code{50}). Defaults to \code{list()}, i.e. all
+defaults.}
 
 \item{animation}{Animation mode. Use \code{"none"} for a static plot or \code{"time"}
 to cumulatively reveal trajectories over time. Defaults to \code{"none"}.

@@ -75,22 +75,28 @@ test_that("plot.ensemble_stockflow() requires save_sims for which = 'sims'", {
 # be told apart from the central-tendency line traces.
 ens_trace_aes <- function(pl) {
   b <- plotly::plotly_build(pl)[["x"]][["data"]]
-  do.call(rbind, lapply(b, function(t) data.frame(
-    name = t[["name"]] %||% NA_character_,
-    type = t[["type"]] %||% NA_character_,
-    width = if (is.null(t[["line"]][["width"]])) NA_real_ else as.numeric(t[["line"]][["width"]])[1],
-    opacity = if (is.null(t[["opacity"]])) NA_real_ else as.numeric(t[["opacity"]])[1],
-    line_color = t[["line"]][["color"]] %||% NA_character_,
-    fillcolor = t[["fillcolor"]] %||% NA_character_,
-    stringsAsFactors = FALSE
-  )))
+  do.call(rbind, lapply(b, function(t) {
+    data.frame(
+      name = t[["name"]] %||% NA_character_,
+      type = t[["type"]] %||% NA_character_,
+      width = if (is.null(t[["line"]][["width"]])) NA_real_ else as.numeric(t[["line"]][["width"]])[1],
+      opacity = if (is.null(t[["opacity"]])) NA_real_ else as.numeric(t[["opacity"]])[1],
+      line_color = t[["line"]][["color"]] %||% NA_character_,
+      fillcolor = t[["fillcolor"]] %||% NA_character_,
+      stringsAsFactors = FALSE
+    )
+  }))
 }
 
 # Alpha channel (0-1) of a plotly colour string: #RRGGBBAA, rgba(), else opaque.
 color_alpha <- function(col) {
-  if (is.null(col) || length(col) == 0L || is.na(col)) return(NA_real_)
+  if (is.null(col) || length(col) == 0L || is.na(col)) {
+    return(NA_real_)
+  }
   col <- as.character(col)[1L]
-  if (grepl("^#[0-9A-Fa-f]{8}$", col)) return(strtoi(substr(col, 8, 9), 16L) / 255)
+  if (grepl("^#[0-9A-Fa-f]{8}$", col)) {
+    return(strtoi(substr(col, 8, 9), 16L) / 255)
+  }
   if (grepl("^rgba\\(", col)) {
     nums <- as.numeric(strsplit(gsub("rgba\\(|\\)|\\s", "", col), ",")[[1L]])
     return(nums[4L])
@@ -786,8 +792,10 @@ test_that("plot.ensemble_stockflow() control_options$spacing widens the gap", {
   ), cross = TRUE)
 
   auto <- plot(sims, condition_display = "slider")
-  wide <- plot(sims, condition_display = "slider",
-    control_options = list(spacing = 150))
+  wide <- plot(sims,
+    condition_display = "slider",
+    control_options = list(spacing = 150)
+  )
 
   auto_y <- vapply(plotly_layout(auto)$sliders, function(s) s$y, numeric(1))
   wide_y <- vapply(plotly_layout(wide)$sliders, function(s) s$y, numeric(1))
@@ -905,6 +913,18 @@ test_that("plot.ensemble_stockflow() animates a single selected condition", {
   pl <- plot(sims, which = "sims", condition = 1, animation = "time")
   expect_plotly(pl)
   expect_true(length(plotly_frames(pl)) > 0)
+})
+
+test_that("plot.ensemble_stockflow() control_options tune the animation speed", {
+  sims <- make_r_ens(save_sims = TRUE)
+  pl <- plot(sims,
+    which = "sims", animation = "time",
+    control_options = list(frame_ms = 40, max_frames = 10)
+  )
+  expect_plotly(pl)
+  opts <- plotly_layout(pl)$updatemenus[[1]]$buttons[[1]]$args[[2]]
+  expect_equal(opts$frame$duration, 40)
+  expect_lte(length(plotly_frame_names(pl)), 10)
 })
 
 test_that("plot.ensemble_stockflow() rejects invalid / unsupported combinations", {

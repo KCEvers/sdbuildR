@@ -749,9 +749,9 @@ hill <- function(x, slope = 1, midpoint = 0.5, upper = 1) {
 #'
 #' @details
 #' The generalized Ricker function (Persson et al., 1998) is defined as:
-#' 
+#'
 #' \deqn{f(x) = upper \cdot \left(\frac{x}{location} \cdot e^{1 - x / location}\right)^{shape}}
-#' 
+#'
 #' with a power parameter (\eqn{\alpha}, or `shape`) that broadens or narrows the
 #' peak. The function peaks at `x = location`, where it attains the value `upper`,
 #' for any `shape`.

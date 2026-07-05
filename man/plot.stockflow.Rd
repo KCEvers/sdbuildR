@@ -64,7 +64,7 @@ Defaults to \code{NULL} (the default type colours).}
 
 \item{label_col}{Colour of variable labels (and of the equation text when \code{show_eqn = TRUE}). Defaults to "black".}
 
-\item{show_eqn}{If \code{TRUE}, show each variable's equation on a new line beneath its label, in a smaller font and the same colour as the label (\code{label_col}). Defaults to \code{TRUE}.}
+\item{show_eqn}{If \code{TRUE}, show each variable's equation on a new line beneath its label, in a smaller font and the same colour as the label (\code{label_col}). The equation is prefixed by what it defines for that variable type: \verb{Initial value =} for stocks, \verb{Rate =} for flows, \verb{Value =} for constants, and \verb{Equation =} for auxiliaries. Defaults to \code{TRUE}.}
 
 \item{show_tooltip}{If \code{TRUE}, show each variable's equation as a tooltip when hovering over it. Defaults to \code{TRUE}.}
 

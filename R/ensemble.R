@@ -540,7 +540,6 @@ print.ensemble_stockflow <- function(x, ...) {
 }
 
 
-
 #' Create data frame of simulation results
 #'
 #' Convert simulation results to a data.frame.

@@ -379,6 +379,15 @@ test_that("plot.verify_stockflow(animation = 'time') builds frames for one condi
   expect_true(length(plotly_frames(pl)) > 0)
 })
 
+test_that("plot.verify_stockflow() control_options tune the animation speed", {
+  res <- make_verify_model(n_tests = 1)
+  pl <- plot(res, animation = "time", control_options = list(duration = 2))
+  expect_plotly(pl)
+  n_frames <- length(plotly_frame_names(pl))
+  opts <- plotly_layout(pl)$updatemenus[[1]]$buttons[[1]]$args[[2]]
+  expect_equal(opts$frame$duration, 2000 / n_frames)
+})
+
 test_that("plot.verify_stockflow() rejects unsupported combinations", {
   res <- make_verify_model(n_tests = 2)
   expect_error(

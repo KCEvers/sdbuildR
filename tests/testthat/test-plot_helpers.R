@@ -572,3 +572,39 @@ test_that("validate_vars_in_model passes on valid variables", {
 
   expect_invisible(validate_vars_in_model(c("S", "I"), names_df, df))
 })
+
+# ============================================================================
+# accumulate_by_time TESTS
+# ============================================================================
+
+test_that("accumulate_by_time accumulates rows and skips the first-time frame", {
+  df <- data.frame(
+    time = rep(0:10, times = 2),
+    variable = rep(c("a", "b"), each = 11),
+    value = 1
+  )
+
+  out <- accumulate_by_time(df)
+  frames <- sort(unique(out[[".frame"]]))
+
+  # No frame at the very first time point: a single point per variable draws
+  # nothing under mode = "lines", and an all-NaN first frame makes plotly drop
+  # the trace from the initial data but not from the frames (trace-count
+  # mismatch warning). The first frame spans the first two time points.
+  expect_equal(frames, 1:10)
+  expect_equal(sort(unique(out[out[[".frame"]] == 1, "time"])), c(0, 1))
+
+  # Cumulative reveal: the last frame contains all rows
+  expect_equal(nrow(out[out[[".frame"]] == 10, ]), nrow(df))
+})
+
+test_that("accumulate_by_time caps frames while keeping the last time", {
+  df <- data.frame(time = seq(0, 10, by = 0.01), variable = "a", value = 1)
+
+  out <- accumulate_by_time(df, max_frames = 50)
+  frames <- sort(unique(out[[".frame"]]))
+
+  expect_lte(length(frames), 50)
+  expect_false(min(df$time) %in% frames)
+  expect_equal(frames[length(frames)], max(df$time))
+})

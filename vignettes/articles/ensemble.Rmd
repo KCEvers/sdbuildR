@@ -71,7 +71,9 @@ sfm <- sim_settings(sfm, seed = 1)
 ```
 
 ```{r}
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot()
 ```
 
 As the model has random initial conditions, another run will be different:
@@ -82,7 +84,9 @@ sfm <- sim_settings(sfm, seed = 3)
 ```
 
 ```{r}
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot()
 ```
 
 To explore this more systematically, we can run an ensemble simulation using the `ensemble()` function. 

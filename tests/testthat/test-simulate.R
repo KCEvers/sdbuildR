@@ -534,4 +534,3 @@ test_that("summary.simulate_stockflow() errors on failed simulation", {
   )
   expect_error(summary(sim), class = "rlang_error")
 })
-

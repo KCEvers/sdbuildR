@@ -77,10 +77,10 @@ normalize_synonyms <- function(x, synonyms) {
 #' @noRd
 central_synonyms <- function() {
   list(
-  mean = c("means", "average", "averages", "avg"),
-  median = c("medians", "med", "meds"),
-  none = c("no", "off", "false")
-)
+    mean = c("means", "average", "averages", "avg"),
+    median = c("medians", "med", "meds"),
+    none = c("no", "off", "false")
+  )
 }
 
 #' @noRd

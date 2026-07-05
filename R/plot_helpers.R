@@ -181,13 +181,35 @@ escape_html_ <- function(x) {
 }
 
 
+#' Descriptive field name for a variable's equation, by variable type
+#'
+#' Shared vocabulary for the diagram equation line (make_eqn_label) and the
+#' hover tooltip (node_tooltip), so the two can never drift apart.
+#'
+#' @param type Variable type ("stock", "flow", "aux", "constant", ...).
+#' @returns Character scalar: "Initial value", "Rate", "Value", or "Equation".
+#' @noRd
+#'
+eqn_field_ <- function(type) {
+  switch(type,
+    stock = "Initial value",
+    flow = "Rate",
+    constant = "Value",
+    "Equation"
+  )
+}
+
+
 #' Build an HTML-like node label that shows the label and its equation
 #'
 #' Produce a Graphviz HTML-like label body that places the variable label on one
 #' line and its equation underneath, in a smaller font and a given colour. The
+#' equation line is prefixed with a type-specific field name (see eqn_field_),
+#' e.g. "Initial value = 100" for stocks or "Rate = a * b" for flows. The
 #' returned value is the inner HTML, WITHOUT the surrounding angle brackets, so
 #' callers assign it via `label=<...>` or `xlabel=<...>`.
 #'
+#' @param type Variable type, used to pick the equation field name.
 #' @param label Character vector of variable labels (may contain "\\n" from wrapping).
 #' @param eqn Character vector of equations (same length as label).
 #' @param eqn_font_size Numeric, font size for the equation line.
@@ -197,7 +219,7 @@ escape_html_ <- function(x) {
 #' @returns Character vector of HTML-like label bodies (no surrounding angle brackets).
 #' @noRd
 #'
-make_eqn_label <- function(label, eqn, eqn_font_size, eqn_col, wrap_width, italic = FALSE) {
+make_eqn_label <- function(type, label, eqn, eqn_font_size, eqn_col, wrap_width, italic = FALSE) {
   # Labels arrive from prepare_labels() with single quotes escaped for quoted
   # Graphviz strings; undo that escaping for HTML-like labels.
   label <- gsub("\\'", "'", label, fixed = TRUE)
@@ -211,8 +233,8 @@ make_eqn_label <- function(label, eqn, eqn_font_size, eqn_col, wrap_width, itali
   eqn_html <- gsub("\n", "<BR/>", escape_html_(eqn), fixed = TRUE)
 
   sprintf(
-    "%s<BR/><FONT POINT-SIZE=\"%s\" COLOR=\"%s\">eqn = %s</FONT>",
-    label_html, eqn_font_size, eqn_col, eqn_html
+    "%s<BR/><FONT POINT-SIZE=\"%s\" COLOR=\"%s\">%s = %s</FONT>",
+    label_html, eqn_font_size, eqn_col, eqn_field_(type), eqn_html
   )
 }
 
@@ -251,13 +273,8 @@ node_tooltip <- function(type, label, name, eqn,
     lines <- c(lines, sprintf("Name: %s", name))
   }
 
-  eqn_field <- switch(type,
-    stock = "Initial value",
-    constant = "Value",
-    "Equation"
-  )
   if (!is.na(eqn) && nzchar(eqn)) {
-    lines <- c(lines, sprintf("%s: %s", eqn_field, eqn))
+    lines <- c(lines, sprintf("%s: %s", eqn_field_(type), eqn))
   }
 
   none <- "\u2014" # em dash
@@ -313,8 +330,6 @@ plotly_theme <- function(font_family = default_font_family(),
     yaxis = list(font = list(size = font_size))
   )
 }
-
-
 
 
 #' Apply optional parameters from ... to layout
@@ -572,7 +587,6 @@ generate_line_width <- function(n_vars, line_width = NULL, default = 2,
 }
 
 
-
 #' Build a constant per-variable aesthetic vector
 #'
 #' @param value Single numeric value.
@@ -737,7 +751,8 @@ resolve_aes <- function(x, roles, defaults, var_names, arg, validate_by_role,
   stats::setNames(
     lapply(roles, function(r) {
       expand_aes(raw[[r]], var_names, defaults[[r]], arg,
-        validate_by_role[[r]], display_names = display_names,
+        validate_by_role[[r]],
+        display_names = display_names,
         valid_names = valid_names
       )
     }),
@@ -1300,6 +1315,9 @@ set_plotly_export_format <- function(pl, format = "svg") {
 #' `time <= t`. This produces the "line drawing itself" effect when the frame
 #' column is mapped to a Plotly animation frame. All other columns (e.g.
 #' `variable`, `condition`, `sim`) are preserved, including factor levels.
+#' There is no frame at the very first time point (a single point per variable
+#' renders as an empty line plot, and an all-NaN first frame corrupts plotly's
+#' initial trace data), so the first frame already contains a line segment.
 #'
 #' @param df Data frame with a time column, or NULL.
 #' @param time_col Name of the time column. Defaults to "time".
@@ -1327,10 +1345,29 @@ accumulate_by_time <- function(df, time_col = "time", frame_col = ".frame",
   # frame includes every row up to its threshold.
   if (length(times) > max_frames) {
     rng <- range(times)
+    # Slider step labels are the frame times, so cap the *nice* breaks at ~20
+    # regardless of max_frames: more tick labels than that overprint.
     nice <- pretty(rng, n = min(max_frames, 20))
     nice <- nice[nice > rng[1] & nice < rng[2]]
     snapped <- vapply(nice, function(v) times[which.min(abs(times - v))], numeric(1))
     times <- sort(unique(c(rng[1], snapped, rng[2])))
+
+    # pretty() only approximates the requested count, so enforce the cap by
+    # thinning evenly while keeping the first and last frame.
+    if (length(times) > max_frames) {
+      keep <- unique(round(seq(1L, length(times), length.out = max_frames)))
+      times <- times[keep]
+    }
+  }
+
+  # Drop the degenerate frame at the very first time point: it holds a single
+  # point per variable, which draws nothing under mode = "lines" and, when a
+  # variable starts at NaN (e.g. a 0/0 at initialization), makes plotly drop
+  # that trace from the initial data but not from the frames. The resulting
+  # trace-count mismatch corrupts the first frame with a "number of items to
+  # replace is not a multiple of replacement length" warning.
+  if (length(times) > 1L) {
+    times <- times[-1L]
   }
 
   out <- lapply(times, function(time_value) {
@@ -1418,31 +1455,12 @@ add_time_animation_controls <- function(pl,
       pl,
       x = 0.94,
       xanchor = "center",
-      y = control_y + abs(control_y/1.25),
+      y = control_y + abs(control_y / 1.25),
       yanchor = "center"
     )
   }
 
   pl
-}
-
-
-#' Drop the bookkeeping `condition` index column from a conditions table
-#'
-#' `ensemble()` prepends a `condition` index column to `x$conditions`
-#' (see `R/ensemble_r.R` / `R/ensemble_julia.R`). Only the actual parameter
-#' columns should drive sliders/dropdowns.
-#'
-#' @param conditions The `conditions` element of an ensemble object (a data
-#'   frame, or `NULL`).
-#' @returns A data frame of parameter columns only (zero columns if none).
-#' @noRd
-condition_param_table <- function(conditions) {
-  if (is.null(conditions)) {
-    return(data.frame())
-  }
-  cond <- as.data.frame(conditions)
-  cond[, setdiff(names(cond), "condition"), drop = FALSE]
 }
 
 
@@ -1514,7 +1532,7 @@ format_label_if_default <- function(name, label) {
 #' `"Contact rate = 1"` (single parameter) or
 #' `"Condition 3 (Contact rate = 1, Recovery rate = 0.05)"` (multiple).
 #'
-#' @param param_tbl Parameter table from condition_param_table().
+#' @param param_tbl Parameter table.
 #' @param object Stockflow model, used to map parameter names to labels.
 #' @param condition_ids Condition indices (rows of `param_tbl`) in display order.
 #' @param format_label Whether to prettify parameter names lacking a custom label.
@@ -1577,11 +1595,12 @@ capture_swapdata <- function(pl_list) {
 }
 
 
-#' Resolve and validate the `control_options` list for condition controls
+#' Resolve and validate the `control_options` list for interactive controls
 #'
-#' Users pass a named list to fine-tune the slider/dropdown without bloating the
-#' `plot()` signature (cf. the `control` lists of [stats::optim()] /
-#' [stats::loess()]). Unknown names are rejected so typos surface early.
+#' Users pass a named list to fine-tune the condition slider/dropdown and the
+#' time animation without bloating the `plot()` signature (cf. the `control`
+#' lists of [stats::optim()] / [stats::loess()]). Unknown names are rejected so
+#' typos surface early.
 #'
 #' Supported options:
 #' * `max_labels` -- maximum number of slider tick labels to keep visible when
@@ -1589,13 +1608,32 @@ capture_swapdata <- function(pl_list) {
 #'   step per condition). Defaults to 10.
 #' * `spacing` -- vertical gap in pixels between the tops of stacked controls
 #'   (see control_geometry()). `NULL` (the default) sizes it automatically.
+#' * `frame_ms` -- duration of each `animation = "time"` frame in milliseconds.
+#'   Defaults to 100.
+#' * `transition_ms` -- transition (smoothing) time between animation frames in
+#'   milliseconds. Defaults to 0.
+#' * `max_frames` -- maximum number of animation frames (see
+#'   accumulate_by_time()). Defaults to 50.
+#' * `duration` -- total animation length in seconds; overrides `frame_ms`
+#'   (supplying both is an error). `NULL` (the default) uses `frame_ms`.
 #'
 #' @param control_options A named list, or `NULL`/empty for defaults.
+#' @param allowed Names the caller supports; anything else is rejected as
+#'   unknown. Plot methods without condition controls pass only the animation
+#'   options. Defaults to all supported options.
 #' @returns A list with all supported options filled in.
 #' @noRd
-resolve_control_options <- function(control_options = list()) {
-  # `spacing = NULL` means "use the type-specific default" (see control_geometry).
-  defaults <- list(max_labels = 10L, spacing = NULL)
+resolve_control_options <- function(control_options = list(),
+                                    allowed = c(
+                                      "max_labels", "spacing", "frame_ms",
+                                      "transition_ms", "max_frames", "duration"
+                                    )) {
+  # `spacing = NULL` means "use the type-specific default" (see control_geometry);
+  # `duration = NULL` means "use frame_ms".
+  defaults <- list(
+    max_labels = 10L, spacing = NULL,
+    frame_ms = 100, transition_ms = 0, max_frames = 50L, duration = NULL
+  )
 
   if (is.null(control_options)) {
     return(defaults)
@@ -1607,13 +1645,21 @@ resolve_control_options <- function(control_options = list()) {
     ))
   }
 
-  unknown <- setdiff(names(control_options), names(defaults))
+  unknown <- setdiff(names(control_options), allowed)
   if (length(control_options) > 0 &&
     (is.null(names(control_options)) || length(unknown) > 0)) {
     bad <- if (is.null(names(control_options))) "<unnamed>" else unknown
     cli::cli_abort(c(
       "x" = "Unknown {.arg control_options}: {.val {bad}}.",
-      "i" = "Supported options: {.val {names(defaults)}}."
+      "i" = "Supported options: {.val {allowed}}."
+    ))
+  }
+
+  # `duration` and `frame_ms` both set the animation pace; reject the ambiguity.
+  if (all(c("duration", "frame_ms") %in% names(control_options))) {
+    cli::cli_abort(c(
+      "x" = "Supply either {.arg control_options$duration} or {.arg control_options$frame_ms}, not both.",
+      "i" = "{.arg duration} sets the total animation length; {.arg frame_ms} sets the time per frame."
     ))
   }
 
@@ -1637,7 +1683,58 @@ resolve_control_options <- function(control_options = list()) {
     ))
   }
 
+  fm <- out[["frame_ms"]]
+  if (!is.numeric(fm) || length(fm) != 1L || is.na(fm) || fm <= 0) {
+    cli::cli_abort(c(
+      "x" = "{.arg control_options$frame_ms} must be a single positive number (milliseconds).",
+      "i" = "You supplied {.val {fm}}."
+    ))
+  }
+
+  tm <- out[["transition_ms"]]
+  if (!is.numeric(tm) || length(tm) != 1L || is.na(tm) || tm < 0) {
+    cli::cli_abort(c(
+      "x" = "{.arg control_options$transition_ms} must be a single non-negative number (milliseconds).",
+      "i" = "You supplied {.val {tm}}."
+    ))
+  }
+
+  mf <- out[["max_frames"]]
+  if (!is.numeric(mf) || length(mf) != 1L || is.na(mf) || mf < 2) {
+    cli::cli_abort(c(
+      "x" = "{.arg control_options$max_frames} must be a single number of at least 2.",
+      "i" = "You supplied {.val {mf}}."
+    ))
+  }
+  out[["max_frames"]] <- as.integer(mf)
+
+  du <- out[["duration"]]
+  if (!is.null(du) &&
+    (!is.numeric(du) || length(du) != 1L || is.na(du) || du <= 0)) {
+    cli::cli_abort(c(
+      "x" = "{.arg control_options$duration} must be a single positive number (seconds, or NULL).",
+      "i" = "You supplied {.val {du}}."
+    ))
+  }
+
   out
+}
+
+
+#' Effective per-frame duration for the time animation
+#'
+#' When `duration` (total animation length in seconds) is set, spread it evenly
+#' over the frames; otherwise use `frame_ms` directly.
+#'
+#' @param opts Resolved `control_options` list (see resolve_control_options()).
+#' @param n_frames Number of animation frames actually built.
+#' @returns Frame duration in milliseconds.
+#' @noRd
+resolve_frame_ms <- function(opts, n_frames) {
+  if (!is.null(opts[["duration"]]) && n_frames > 0) {
+    return(opts[["duration"]] * 1000 / n_frames)
+  }
+  opts[["frame_ms"]]
 }
 
 
@@ -1718,7 +1815,7 @@ thin_slider_labels <- function(labels, max_labels = 10L) {
 #' One control per condition variable. The browser-side handler reads each
 #' control's active value and finds the matching condition (cross-product).
 #'
-#' @param param_tbl Full parameter table from condition_param_table().
+#' @param param_tbl Full parameter table.
 #' @param condition_ids Condition indices built into `pl_list`/`ydata`, in order.
 #' @param type Either "slider" or "dropdown".
 #' @param object Stockflow model, for parameter labels.
@@ -1867,8 +1964,7 @@ swap_onrender_js <- function() {
 #' @param theme Theme list from `plotly_theme()`.
 #' @param main,xlab,ylab Title and axis labels.
 #' @param font_family,font_size Font settings.
-#' @param condition_table Optional parameter table (from
-#'   condition_param_table()) enabling per-parameter controls.
+#' @param condition_table Optional parameter table enabling per-parameter controls.
 #' @param cross Whether the ensemble conditions were crossed.
 #' @param object Optional stockflow model, for parameter labels.
 #' @param max_labels Maximum number of slider tick labels to keep visible.

@@ -696,8 +696,6 @@ create_julia_project_toml_init <- function(use_github_release = TRUE) {
     # Remove Test.jl dependency if present
     lines <- lines[!grepl("^Test\\s*=", lines)]
     deps_names <- deps_names[deps_names != "Test"]
-    
-
   } else {
     deps_names <- character(0)
   }
