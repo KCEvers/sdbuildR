@@ -193,12 +193,12 @@ print.summary_stockflow <- function(x, ...) {
   n_warn <- length(warnings)
 
   if (n_err > 0) {
-    cli::cli_h2("Problem{?s} ({n_err})")
+    cli_h2_tight("Problem{?s} ({n_err})")
     lapply(names(errors), function(nm) .print_one_check(nm, errors[[nm]]))
   }
 
   if (n_warn > 0) {
-    cli::cli_h2("Potential problem{?s} ({n_warn})")
+    cli_h2_tight("Potential problem{?s} ({n_warn})")
     lapply(names(warnings), function(nm) .print_one_check(nm, warnings[[nm]]))
   }
 

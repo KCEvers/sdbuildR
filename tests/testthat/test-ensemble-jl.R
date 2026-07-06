@@ -109,9 +109,9 @@ test_that("ensemble() runs successfully", {
 test_that("ensemble() handles models with no constants", {
   skip_if_julia_not_ready()
   sfm <- make_basic_sfm() |>
-    sim_settings(language = "jl", start = 0, stop = 10, dt = 0.1, save_at = 1)
+    sim_settings(language = "jl", start = 0, stop = 10, dt = 0.1, save_by = 1)
 
-  sims <- silence(ensemble(sfm, n = 3, save_sims = TRUE, verbose = FALSE))
+  sims <- silence(ensemble(sfm, n = 3, save_sims = TRUE, quiet = TRUE))
 
   expect_true(sims[["success"]])
   expect_equal(nrow(sims[["constants"]][["df"]]), 0)
@@ -132,9 +132,9 @@ test_that("ensemble() of model with only stocks", {
   sfm <- stockflow() |>
     stock("Stock1", eqn = 100) |>
     stock("Stock2", eqn = 50) |>
-    sim_settings(language = "Julia", start = 0, stop = 10, dt = 0.1, save_at = 1)
+    sim_settings(language = "Julia", start = 0, stop = 10, dt = 0.1, save_by = 1)
 
-  sims <- silence(ensemble(sfm, n = 3, only_stocks = TRUE, save_sims = TRUE, verbose = FALSE))
+  sims <- silence(ensemble(sfm, n = 3, only_stocks = TRUE, save_sims = TRUE, quiet = TRUE))
   expect_true(sims[["success"]])
   expect_equal(
     sort(unique(sims[["summary"]][["variable"]])),
@@ -197,7 +197,7 @@ test_that("ensemble() with Julia handles integer start and fractional dt with in
       update("f", type = "flow", eqn = "k * s * (1.0 + exp(-s))", from = "s")
   })
 
-  sims <- silence(ensemble(sfm, n = 2, verbose = FALSE))
+  sims <- silence(ensemble(sfm, n = 2, quiet = TRUE))
 
   expect_true(sims[["success"]])
   expect_equal(sort(unique(sims[["df"]][["time"]])), c(0, 0.01, 0.02), tolerance = 1e-12)
@@ -393,7 +393,7 @@ test_that("ensemble() with mixed stock and constant in conditions", {
     update(c("predator", "prey"), eqn = "runif(1, 30, 50)") |>
     sim_settings(
       language = "Julia",
-      dt = 0.1, save_at = 10,
+      dt = 0.1, save_by = 10,
       start = 0, stop = 200
     )
 
@@ -551,7 +551,7 @@ test_that("ensemble() works with single time point", {
     sim_settings(
       language = "Julia",
       start = 0, stop = 5, dt = 0.1,
-      save_n = 1
+      save_length = 1
     ) |>
     update(c("predator", "prey"), eqn = "runif(1)")
 
@@ -574,7 +574,7 @@ test_that("ensemble() works with interpolation function", {
     sim_settings(
       language = "Julia",
       start = 0, stop = 50, dt = 0.1,
-      save_n = 1
+      save_length = 1
     ) |>
     update("X", eqn = "runif(1, 0, K)") |>
     update("input", "constant", eqn = "pulse(times, 10, width = dt, height = .01)") |>
@@ -586,7 +586,7 @@ test_that("ensemble() works with interpolation function", {
 })
 
 
-# Verbose messages ----------------------------------------
+# Quiet messages ------------------------------------------
 
 test_that("ensemble() prints simulation count", {
   skip_if_julia_not_ready()
@@ -595,7 +595,7 @@ test_that("ensemble() prints simulation count", {
 
   # Basic ensemble
   expect_message(
-    ensemble(sfm, n = 3, verbose = TRUE),
+    ensemble(sfm, n = 3, quiet = FALSE),
     "Starting"
   )
 
@@ -606,7 +606,7 @@ test_that("ensemble() prints simulation count", {
         "a1" = c(1.1, 1.2, 1.3),
         "a2" = c(1.2, 1.3, 1.4)
       ),
-      cross = TRUE, n = 3, verbose = TRUE,
+      cross = TRUE, n = 3, quiet = FALSE,
       save_sims = TRUE
     ),
     "conditions"
@@ -681,7 +681,7 @@ cli::test_that_cli(configs = "plain", "print() success output matches snapshot",
   sfm <- make_r_ensemble_random_sfm() |>
     meta(name = "Demo model")
 
-  sims <- silence(ensemble(sfm, n = 3, verbose = FALSE))
+  sims <- silence(ensemble(sfm, n = 3, quiet = TRUE))
   sims$duration <- structure(1.234, class = "difftime", units = "secs")
   expect_snapshot(print(sims))
 })
@@ -697,7 +697,7 @@ cli::test_that_cli(configs = "plain", "print() success with conditions lists cha
       contact_rate = c(1.5, 2.5),
       infection_rate = c(1, 3)
     ),
-    verbose = FALSE
+    quiet = TRUE
   ))
   sims$duration <- structure(1.234, class = "difftime", units = "secs")
   expect_snapshot(print(sims))
@@ -772,7 +772,7 @@ test_that("as.data.frame() direction = 'wide' widens summary and sims", {
   expect_lt(nrow(df_wide), nrow(df_long))
   expect_false("variable" %in% names(df_wide))
   expect_true(all(c("sim", "condition", "time") %in% names(df_wide)))
-  # Variable names appear as columns (there are stocks in Crielaard2022)
+  # Variable names appear as columns (there are stocks in crielaard2022)
   stock_names <- unique(df_long[["variable"]])
   expect_true(any(stock_names %in% names(df_wide)))
 })

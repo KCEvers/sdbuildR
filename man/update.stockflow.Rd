@@ -133,7 +133,7 @@ and are evaluated normally.
 sfm <- stockflow()
 print(sfm)
 \dontshow{
-sfm <- sim_settings(sfm, save_at = .5)
+sfm <- sim_settings(sfm, save_by = .5)
 }
 
 # Add two stocks. Specify their initial values in the "eqn" property

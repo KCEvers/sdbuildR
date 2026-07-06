@@ -131,7 +131,7 @@
       }
     },
     "font": {
-      "family": "Times New Roman",
+      "family": "stix-two-text",
       "size": 20
     },
     "hovermode": "closest",

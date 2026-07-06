@@ -3,15 +3,45 @@
 #' Save a plot of a stock-and-flow diagram or a simulation to a specified file path. Note that saving plots requires additional packages to be installed (see below).
 #'
 #' @param pl Plot object. Can be a `grViz` object from the DiagrammeR package (for stock-and-flow diagrams) or a `plotly` object from the plotly package (for (ensemble) simulation results).
-#' @param file File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. For plotting a qgraph graph, the file extension can be one of png, pdf, svg, ps, eps, jpg, jpeg, tiff, bmp. If no file extension is specified, it will default to png.
+#' @param file File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. If no file extension is specified, it will default to png.
 #' @param width Width of image in units.
 #' @param height Height of image in units.
 #' @param units Units in which width and height are specified. Either "cm", "in", or "px".
 #' @param dpi Resolution of image. Only used if units is not "px".
-#' @param font_family Font family used for qgraph exports. For PDF/PS/EPS exports,
-#'   this is applied when the graphics device is opened.
+#' @param font_family Font family to render the plot in, overriding the font
+#'   the plot was created with. Kebab-case names (e.g. `"eb-garamond"`) are
+#'   loaded as webfonts (see Details); any other name must be installed on
+#'   your system. Defaults to `NULL`, which keeps the plot's own font.
+#' @param close_browser If `TRUE` (default), browser-based exports run in a
+#'   separate short-lived R process, so the headless browser is closed when
+#'   the export finishes and leaves no state behind in your R session. Set to
+#'   `FALSE` to render in a persistent browser session instead, which is
+#'   faster when exporting many plots in a row; the browser then stays open
+#'   in the background until your R session ends. Ignored for exports that do
+#'   not use a browser.
 #'
-#' @returns Returns `NULL` invisibly, called for side effects.
+#' @details
+#' Exports that render in a headless browser (plotly plots, and diagrams
+#' using a webfont) require the suggested packages webshot2 and callr, plus a
+#' Chrome-based browser on your system. See `close_browser` for how the
+#' browser's lifetime is managed.
+#'
+#' # Fonts
+#'
+#' When `font_family` (either passed here or to the `plot()` call that
+#' created `pl`) is an all-lowercase kebab-case name, it is treated as a font
+#' identifier from Fontsource (<https://fontsource.org/>) -- browse the
+#' catalogue there and use the id from the font page's URL, e.g.
+#' `"eb-garamond"` or `"source-serif-4"`. The font is then loaded as a
+#' *webfont*: a CSS rule pointing to the font's files on the jsDelivr content
+#' delivery network is attached to the plot, and the headless browser that
+#' renders the export fetches the font over the internet at render time, just
+#' like a webpage. No fonts are downloaded by R or installed on your system.
+#' Internet access is required during the export; without it, the export
+#' still succeeds in a fallback font. Note that webfonts are not supported
+#' for the ps/eps formats, which fall back to system fonts.
+#'
+#' @returns Invisibly returns the file path of the exported plot, called for side effects.
 #' @export
 #' @concept convenience
 #'
@@ -22,7 +52,10 @@
 #'   requireNamespace("rsvg", quietly = TRUE)) {
 #'   sfm <- stockflow("sir")
 #'   file <- tempfile(fileext = ".png")
-#'   export_plot(plot(sfm), file)
+#'
+#'   # With a system font the diagram is rendered by rsvg; the default
+#'   # webfont would instead require webshot2 and a headless browser
+#'   export_plot(plot(sfm, font_family = "serif"), file)
 #'
 #'   # Remove plot
 #'   file.remove(file)
@@ -42,7 +75,24 @@
 #'   file.remove(file)
 #' }
 #' }
-export_plot <- function(pl, file, width = 3, height = 4, units = "cm", dpi = 300, font_family = "") {
+export_plot <- function(pl, file, width = 3, height = 4, units = "cm", dpi = 300, font_family = NULL, close_browser = TRUE) {
+  if (!is.logical(close_browser) || length(close_browser) != 1 || is.na(close_browser)) {
+    cli::cli_abort(c(
+      "x" = "Invalid {.arg close_browser} argument.",
+      ">" = "The {.arg close_browser} argument must be a single {.code TRUE} or {.code FALSE}."
+    ))
+  }
+
+  if (!is.null(font_family)) {
+    if (!is.character(font_family) || length(font_family) != 1 || !nzchar(font_family)) {
+      cli::cli_abort(c(
+        "x" = "Invalid {.arg font_family} argument.",
+        ">" = "The {.arg font_family} argument must be a single font family name."
+      ))
+    }
+    pl <- set_plot_font(pl, font_family)
+  }
+
   # Auto-detect format
   format <- tolower(tools::file_ext(file))
 
@@ -66,22 +116,92 @@ export_plot <- function(pl, file, width = 3, height = 4, units = "cm", dpi = 300
 
   if ("grViz" %in% class(pl)) {
     export_diagram(pl, file, format,
-      width = width_px, height = height_px
+      width = width_px, height = height_px,
+      close_browser = close_browser
     )
   } else if ("plotly" %in% class(pl)) {
-    export_plotly(pl, file,
+    export_widget(pl, file,
       format = format,
-      width = width_px, height = height_px
+      width = width_px, height = height_px,
+      close_browser = close_browser
     )
   } else {
     cli::cli_abort(c(
       "x" = "Unsupported plot object class.",
       "i" = "The {.fn export_plot} function does not support plot objects of class {.cls {class(pl)}}.",
-      ">" = "Use a {.cls grViz}, {.cls plotly}, or {.cls qgraph} object."
+      ">" = "Use a {.cls grViz} or {.cls plotly} object."
     ))
   }
 
   invisible(file)
+}
+
+
+#' Restyle the font of an existing plot object
+#'
+#' For plotly, the plot is built and every font specification in the spec
+#' (layout font, axis titles, tick labels, legend, annotations, sliders,
+#' updatemenus, trace text, animation frames, ...) is overwritten. For grViz,
+#' the fontname attributes baked into the DOT source are rewritten. In both
+#' cases a webfont is attached when the family is a webfont id.
+#'
+#' @inheritParams export_plot
+#' @returns The restyled plot object.
+#' @noRd
+set_plot_font <- function(pl, font_family) {
+  if (inherits(pl, "grViz")) {
+    pl$x$diagram <- gsub(
+      "fontname=['\"][^'\"]*['\"]", sprintf("fontname=\"%s\"", font_family),
+      pl$x$diagram
+    )
+  } else if (inherits(pl, "plotly")) {
+    # Building resolves all font specifications into the spec (it is
+    # idempotent and happens at render time anyway), so overwriting every
+    # family field covers fonts set per-element at plot creation.
+    pl <- plotly::plotly_build(pl)
+    pl$x$layout <- replace_font_family(pl$x$layout, font_family)
+    pl$x$data <- replace_font_family(pl$x$data, font_family)
+    pl$x$frames <- replace_font_family(pl$x$frames, font_family)
+
+    # Global font so unset families inherit the new one too
+    pl$x$layout$font$family <- font_family
+  }
+
+  # Drop any webfont attached at plot creation; apply_webfont() re-adds it
+  # when the new family is a webfont id, so a system-font override does not
+  # force the browser-based export path
+  attr(pl, "sdbuildR_webfont") <- NULL
+
+  apply_webfont(pl, font_family)
+}
+
+
+#' Recursively overwrite every font family in a plotly spec fragment
+#'
+#' Font objects appear at many nesting levels of a built spec. In the plotly
+#' schema the `family` field only occurs inside font objects, so replacing
+#' every character `family` covers them all exactly.
+#'
+#' @param x A fragment of a built plotly spec (or NULL).
+#' @param font_family Font family name.
+#' @returns The fragment with all font families replaced.
+#' @noRd
+replace_font_family <- function(x, font_family) {
+  if (!is.list(x)) {
+    return(x)
+  }
+
+  if (is.character(x[["family"]])) {
+    x[["family"]] <- font_family
+  }
+
+  for (i in seq_along(x)) {
+    if (is.list(x[[i]])) {
+      x[[i]] <- replace_font_family(x[[i]], font_family)
+    }
+  }
+
+  x
 }
 
 
@@ -93,7 +213,45 @@ export_plot <- function(pl, file, width = 3, height = 4, units = "cm", dpi = 300
 #' @returns Returns `NULL` invisibly.
 #' @noRd
 #'
-export_diagram <- function(pl, file, format, width, height) {
+export_diagram <- function(pl, file, format, width, height, close_browser = TRUE) {
+  # Diagrams carrying a webfont cannot go through rsvg (librsvg resolves
+  # system fonts only, not @font-face rules), so they are rendered in a
+  # headless browser like plotly exports. SVG keeps the vector pipeline, with
+  # the @font-face CSS injected for browsers viewing the file.
+  webfont <- attr(pl, "sdbuildR_webfont")
+  if (!is.null(webfont)) {
+    if (format %in% c("png", "pdf", "jpg", "jpeg", "webp")) {
+      # The SVG is placed on a bare HTML page (no widget JS, which interferes
+      # with scaling) and stretched to the browser viewport; its viewBox
+      # preserves the aspect ratio, matching how the rsvg path fits the
+      # diagram to the requested size.
+      rlang::check_installed("DiagrammeRsvg", reason = "to export stock-and-flow diagrams to image files.")
+      svg <- inject_svg_webfont(DiagrammeRsvg::export_svg(pl), webfont)
+
+      temp_html <- tempfile(fileext = ".html")
+      on.exit(remove_files(temp_html), add = TRUE)
+      writeLines(paste0(
+        "<!DOCTYPE html><html><head><meta charset=\"utf-8\">",
+        "<style>body { margin: 0; padding: 0; } svg { width: 100vw; height: 100vh; }</style>",
+        "</head><body>", svg, "</body></html>"
+      ), temp_html)
+
+      return(webshot_html(temp_html, file, format, width, height,
+        close_browser = close_browser
+      ))
+    } else if (format == "svg") {
+      rlang::check_installed("DiagrammeRsvg", reason = "to export stock-and-flow diagrams to image files.")
+      svg <- DiagrammeRsvg::export_svg(pl)
+      writeLines(inject_svg_webfont(svg, webfont), file)
+      return(invisible(file))
+    } else {
+      cli::cli_warn(c(
+        "!" = "Webfonts are not supported for {.val {format}} exports.",
+        "i" = "The {.val {webfont}} font will only render if it is installed on your system."
+      ))
+    }
+  }
+
   rlang::check_installed("rsvg", reason = "to export stock-and-flow diagrams to image files.")
 
   rlang::check_installed("DiagrammeRsvg", reason = "to export stock-and-flow diagrams to image files.")
@@ -124,7 +282,10 @@ export_diagram <- function(pl, file, format, width, height) {
 }
 
 
-#' Export plotly object
+#' Export an htmlwidget (plotly or grViz) via a headless browser
+#'
+#' The widget is saved to a temporary HTML file and rendered in a headless
+#' browser, so any webfont CSS attached to it is honoured.
 #'
 #' @inheritParams export_plot
 #' @param format Output format.
@@ -132,13 +293,9 @@ export_diagram <- function(pl, file, format, width, height) {
 #' @returns Returns `NULL` invisibly.
 #' @noRd
 #'
-export_plotly <- function(pl, file, format, width, height) {
+export_widget <- function(pl, file, format, width, height, close_browser = TRUE) {
   rlang::check_installed("htmlwidgets",
-    reason = "to export plotly visualizations to image files."
-  )
-
-  rlang::check_installed("webshot2",
-    reason = "to export plotly visualizations to image files."
+    reason = "to export plots to image files."
   )
 
   # Create temporary HTML file
@@ -146,14 +303,34 @@ export_plotly <- function(pl, file, format, width, height) {
   on.exit(remove_files(temp_html), add = TRUE)
   htmlwidgets::saveWidget(pl, temp_html, selfcontained = TRUE)
 
+  webshot_html(temp_html, file, format, width, height,
+    close_browser = close_browser
+  )
+}
+
+
+#' Screenshot an HTML file to an image file via a headless browser
+#'
+#' @param url Path to the HTML file to render.
+#' @inheritParams export_plot
+#' @param format Output format.
+#'
+#' @returns Returns `NULL` invisibly.
+#' @noRd
+#'
+webshot_html <- function(url, file, format, width, height, close_browser = TRUE) {
+  needed <- if (close_browser) c("webshot2", "callr") else "webshot2"
+  rlang::check_installed(needed,
+    reason = "to export plots to image files."
+  )
+
   # Set webshot2 parameters based on format
   webshot_params <- list(
-    url = temp_html,
+    url = url,
     file = file,
     vwidth = width,
     vheight = height,
-    delay = 1,
-    quiet = TRUE # Doesn't seem to work
+    delay = 1
   )
 
   # Format-specific settings
@@ -164,27 +341,33 @@ export_plotly <- function(pl, file, format, width, height) {
     ))
   }
 
-  # Overwrite quiet option temporarily
-  old_option <- getOption("webshot.quiet")
-  options("webshot.quiet" = TRUE)
-  on.exit(
-    {
-      if (is.null(old_option)) {
-        options("webshot.quiet" = NULL)
-      } else {
-        options("webshot.quiet" = old_option)
-      }
-    },
-    add = TRUE
-  )
+  # With close_browser = TRUE the screenshot is taken in a short-lived R
+  # subprocess, so the headless browser and its supervisor (with their open
+  # connections) live and die with the subprocess instead of lingering in the
+  # user's session. With FALSE the browser is reused in the current session,
+  # which is faster across many exports but leaves it running until R exits.
+  take_shot <- function() {
+    if (close_browser) {
+      callr::r(
+        function(params) {
+          options(webshot.quiet = TRUE)
+          do.call(webshot2::webshot, params)
+        },
+        args = list(params = webshot_params)
+      )
+    } else {
+      old_option <- getOption("webshot.quiet")
+      options(webshot.quiet = TRUE)
+      on.exit(options(webshot.quiet = old_option), add = TRUE)
+      do.call(webshot2::webshot, webshot_params)
+    }
+  }
 
-
-  # Convert to specified format
   tryCatch(
-    do.call(webshot2::webshot, webshot_params),
+    take_shot(),
     error = function(e) {
       cli::cli_abort(c(
-        "x" = "Failed to export plotly visualization.",
+        "x" = "Failed to export plot.",
         ">" = "This typically means Chrome/Chromium could not be launched. Try again.",
         "i" = conditionMessage(e)
       ), class = "stockflow_export_error")
@@ -204,19 +387,38 @@ export_plotly <- function(pl, file, format, width, height) {
 #' @param format_label If TRUE, apply default formatting (removing periods and underscores) to labels if labels are the same as variable names.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 20.
 #' @param font_size Font size. Defaults to 18.
-#' @param font_family Font name. Defaults to "Times New Roman".
-#' @param stock_col Colour of stocks. Defaults to "#83d3d4".
-#' @param flow_col Colour of flows. Defaults to "#f48153".
-#' @param dependency_col Colour of dependency arrows. Defaults to "#999999".
-#' @param label_col Colour of variable labels (and of the equation text when `show_eqn = TRUE`). Defaults to "black".
-#' @param show_eqn If `TRUE`, show each variable's equation on a new line beneath its label, in a smaller font and the same colour as the label (`label_col`). Defaults to `TRUE`.
+#' @param font_family Font name. Kebab-case names (e.g. `"eb-garamond"`) are
+#'   Fontsource ids (browse them at <https://fontsource.org/>), loaded as
+#'   webfonts: no installation is needed, but internet access is required to
+#'   display them. Other fonts must be installed on the system viewing the
+#'   plot. Defaults to the `sdbuildR.font_family` option, or the
+#'   `"stix-two-text"` webfont when the option is unset; use
+#'   `options(sdbuildR.font_family = )` to change the default for all plots,
+#'   e.g. in your .Rprofile.
+#' @param colors Colours of the diagram variables, by variable type or
+#'   variable name. A single colour applies to every variable. A named list
+#'   keyed by type (`list(stock = , flow = , constant = , aux = )`), each entry
+#'   a single colour, overrides the colour of those types and keeps the
+#'   defaults for the rest (as with [utils::modifyList()]); the defaults are
+#'   `list(stock = "#83d3d4", flow = "#f48153", constant = "grey90",
+#'   aux = "grey90")`. A named vector (names are variable names, as in the
+#'   other plot methods) recolours only those variables and leaves the rest at
+#'   their type default. Stocks, constants, and auxiliaries are coloured by
+#'   their node fill; flows by the coloured band of their flow arrows.
+#'   Defaults to `NULL` (the default type colours).
+#' @param color_dependency Colour of dependency arrows. Defaults to "#999999".
+#' @param font_color Colour of variable labels (and of the equation text when `show_eqn = TRUE`). Defaults to "black".
+#' @param show_eqn If `TRUE`, show each variable's equation on a new line beneath its label, in a smaller font and the same colour as the label (`font_color`). The equation is prefixed by what it defines for that variable type: `Initial value =` for stocks, `Rate =` for flows, `Value =` for constants, and `Equation =` for auxiliaries. Defaults to `TRUE`.
 #' @param show_tooltip If `TRUE`, show each variable's equation as a tooltip when hovering over it. Defaults to `TRUE`.
 #' @param show_dependencies If TRUE, show dependencies between variables. Defaults to TRUE.
 #' @param show_constants If TRUE, show constants. Defaults to FALSE.
 #' @param show_aux If TRUE, show auxiliary variables. Defaults to TRUE.
-#' @param minlen Minimum length of edges; must be an integer. Defaults to 2.
-#' @param pad Padding around the graph. Defaults to 0.1.
-#' @param nodesep Minimum distance between nodes. Defaults to 0.3.
+#' @param flow_length Minimum length of flow arrows; controls how far apart
+#'   connected variables sit along the flow direction. Must be an integer.
+#'   Defaults to 1.
+#' @param margin Padding around the diagram. Defaults to 0.1.
+#' @param spacing Minimum space between adjacent variables placed side by side
+#'   (across the flow direction). Defaults to 0.5.
 #' @param direction Overall flow direction of the layout, passed to Graphviz's
 #'   `rankdir`. One of `"LR"` (left-to-right, the default), `"TB"` (top-to-bottom),
 #'   `"RL"` (right-to-left), or `"BT"` (bottom-to-top).
@@ -237,6 +439,11 @@ export_plotly <- function(pl, file, format, width, height) {
 #'   line variables up in a single rank and control their order *within* it,
 #'   combine `order` with `align` (the `align` group sets the rank, `order` sets
 #'   the position within it). Same validation as `align`. Defaults to `NULL`.
+#' @param arrowhead_dependency Shape of the arrowhead on dependency arrows,
+#'   passed to Graphviz's `arrowhead`. One of `"open"` (the default, an open
+#'   V-shape), `"normal"`, `"vee"`, `"diamond"`, `"dot"`, `"box"`, `"crow"`,
+#'   `"curve"`, `"inv"`, `"tee"`, or `"none"`. See
+#'   <https://graphviz.org/docs/attr-types/arrowType/> for illustrations.
 #' @param ... Optional arguments
 #'
 #' @returns Stock-and-flow diagram
@@ -262,7 +469,16 @@ export_plotly <- function(pl, file, format, width, height) {
 #' plot(sfm, show_tooltip = FALSE)
 #'
 #' # Custom label colour
-#' plot(sfm, label_col = "#333333")
+#' plot(sfm, font_color = "#333333")
+#'
+#' # Colour every variable the same
+#' plot(sfm, colors = "lightblue")
+#'
+#' # Change only the stock colour; other types keep their defaults
+#' plot(sfm, colors = list(stock = "gold"))
+#'
+#' # Recolour a single variable
+#' plot(sfm, colors = c(susceptible = "gold"))
 #'
 #' # Lay the model out top-to-bottom instead of left-to-right
 #' plot(sfm, direction = "TB")
@@ -278,22 +494,22 @@ plot.stockflow <- function(x,
                            format_label = TRUE,
                            wrap_width = 20,
                            font_size = 18,
-                           font_family = "Times New Roman",
-                           stock_col = "#83d3d4",
-                           flow_col = "#f48153",
-                           dependency_col = "#999999",
-                           label_col = "black",
+                           font_family = default_font_family(),
+                           colors = NULL,
+                           color_dependency = "#999999",
+                           font_color = "black",
                            show_eqn = TRUE,
                            show_tooltip = TRUE,
                            show_dependencies = TRUE,
                            show_constants = FALSE,
                            show_aux = TRUE,
-                           minlen = 1,
-                           pad = 0.1,
-                           nodesep = 0.3,
+                           flow_length = 1,
+                           margin = 0.1,
+                           spacing = 0.5,
                            direction = "LR",
                            align = NULL,
                            order = NULL,
+                           arrowhead_dependency = "open",
                            ...) {
   check_stockflow(x)
 
@@ -316,6 +532,18 @@ plot.stockflow <- function(x,
     cli::cli_abort(c(
       "x" = "Invalid {.arg direction} argument.",
       ">" = "The {.arg direction} argument must be one of {.val {valid_direction}}."
+    ))
+  }
+
+  valid_arrowhead <- c(
+    "open", "normal", "vee", "diamond", "dot",
+    "box", "crow", "curve", "inv", "tee", "none"
+  )
+  if (!is.character(arrowhead_dependency) || length(arrowhead_dependency) != 1L ||
+    !arrowhead_dependency %in% valid_arrowhead) {
+    cli::cli_abort(c(
+      "x" = "Invalid {.arg arrowhead_dependency} argument.",
+      ">" = "The {.arg arrowhead_dependency} argument must be one of {.val {valid_arrowhead}}."
     ))
   }
 
@@ -377,6 +605,11 @@ plot.stockflow <- function(x,
     }
   }
 
+  # Per-variable node/edge colours, resolved by variable type and/or name.
+  # Names are validated against the full model so a name hidden by `vars` is
+  # ignored silently rather than warned about as unknown.
+  var_colors <- resolve_diagram_colors(colors, df, valid_names = model_var_names)
+
   if (format_label) {
     df[["label"]] <- format_label_if_default(df[["name"]], df[["label"]])
   }
@@ -415,7 +648,7 @@ plot.stockflow <- function(x,
   # Shared node style
   style_node <- sprintf(
     "node [fontsize=%s,fontname='%s',fontcolor='%s']",
-    font_size, font_family, label_col
+    font_size, font_family, font_color
   )
 
   # Font size for the equation line (shown beneath the label when show_eqn = TRUE)
@@ -471,24 +704,22 @@ plot.stockflow <- function(x,
 
   # Prepare stock nodes
   if (length(stock_names) > 0) {
-    style_stock <- sprintf(
-      "node [shape=box,style=filled,fillcolor='%s']",
-      stock_col
-    )
+    style_stock <- "node [shape=box,style=filled]"
 
     if (show_eqn) {
       stock_label <- sprintf(
         "label=<%s>",
-        make_eqn_label(dict[stock_names], dict_eqn[stock_names], eqn_font_size, label_col, wrap_width)
+        make_eqn_label("stock", dict[stock_names], dict_eqn[stock_names], eqn_font_size, font_color, wrap_width)
       )
     } else {
       stock_label <- sprintf("label='%s'", dict[stock_names])
     }
 
     stock_nodes <- sprintf(
-      "%s [id=%s,%s%s]",
+      "%s [id=%s,fillcolor='%s',%s%s]",
       paste0("'", stock_names, "'"),
       paste0("'", stock_names, "'"),
+      var_colors[stock_names],
       stock_label,
       node_tooltip_attr(stock_names)
     )
@@ -499,23 +730,24 @@ plot.stockflow <- function(x,
   # Prepare auxiliary nodes
   if (length(aux_names) > 0) {
     style_aux <- sprintf(
-      "node [shape=circle,fontsize=%s, width=0.15, height=0.15, fixedsize=true, style=filled, fillcolor='grey90']",
+      "node [shape=circle,fontsize=%s, width=0.15, height=0.15, fixedsize=true, style=filled]",
       font_size - 2
     )
 
     if (show_eqn) {
       aux_xlabel <- sprintf(
         "xlabel=<%s>",
-        make_eqn_label(dict[aux_names], dict_eqn[aux_names], eqn_font_size, label_col, wrap_width)
+        make_eqn_label("aux", dict[aux_names], dict_eqn[aux_names], eqn_font_size, font_color, wrap_width)
       )
     } else {
       aux_xlabel <- sprintf("xlabel='%s'", dict[aux_names])
     }
 
     aux_nodes <- sprintf(
-      "%s [id=%s,%s,label=''%s]",
+      "%s [id=%s,fillcolor='%s',%s,label=''%s]",
       paste0("'", aux_names, "'"),
       paste0("'", aux_names, "'"),
+      var_colors[aux_names],
       aux_xlabel,
       node_tooltip_attr(aux_names)
     )
@@ -527,7 +759,7 @@ plot.stockflow <- function(x,
   if (length(const_names) > 0) {
     if (show_eqn) {
       formatted_labels <- make_eqn_label(
-        dict[const_names], dict_eqn[const_names], eqn_font_size, label_col, wrap_width,
+        "constant", dict[const_names], dict_eqn[const_names], eqn_font_size, font_color, wrap_width,
         italic = TRUE
       )
     } else {
@@ -539,14 +771,15 @@ plot.stockflow <- function(x,
     }
 
     style_const <- sprintf(
-      "node [shape=diamond,fontsize=%s,width=0.15, height=0.15, fixedsize=true, style=filled, fillcolor='grey90']",
+      "node [shape=diamond,fontsize=%s,width=0.15, height=0.15, fixedsize=true, style=filled]",
       font_size - 2
     )
 
     const_nodes <- sprintf(
-      "%s [id=%s,xlabel=<%s>,label=''%s]",
+      "%s [id=%s,fillcolor='%s',xlabel=<%s>,label=''%s]",
       paste0("'", const_names, "'"),
       paste0("'", const_names, "'"),
+      var_colors[const_names],
       formatted_labels,
       node_tooltip_attr(const_names)
     )
@@ -619,7 +852,7 @@ plot.stockflow <- function(x,
   }
 
   # User-specified ordering along the flow direction: invisible edges between
-  # consecutive names. A soft hint (constraint = true, no minlen bump) so Graphviz
+  # consecutive names. A soft hint (constraint = true, no flow_length bump) so Graphviz
   # balances it against the real flows rather than forcing the order.
   order_groups <- prepare_layout_groups(order, plot_var, model_var_names, "order")
   order_statements <- ""
@@ -699,7 +932,7 @@ plot.stockflow <- function(x,
     if (show_eqn) {
       flow_label <- sprintf(
         "label=<%s>",
-        make_eqn_label(dict[flow_names], dict_eqn[flow_names], eqn_font_size, label_col, wrap_width)
+        make_eqn_label("flow", dict[flow_names], dict_eqn[flow_names], eqn_font_size, font_color, wrap_width)
       )
     } else {
       flow_label <- sprintf("label='%s'", dict[flow_names])
@@ -718,28 +951,17 @@ plot.stockflow <- function(x,
     flow_edges_to_destination <- c()
 
     style_flow_edges_from_source <- sprintf(
-      # "edge [style = '', arrowhead='none', color='%s', penwidth=1.1, minlen=%s, splines=false, tailport='%s', headport='%s']",
-      "edge [style = '', arrowhead='none', color='%s', penwidth=1.1, minlen=%s, tailport='%s', headport='%s']",
-      paste0(
-        "black:", flow_col, ":black"
-      ),
-      minlen,
+      "edge [style = '', arrowhead='none', penwidth=1.1, minlen=%s, tailport='%s', headport='%s']",
+      flow_length,
       flow_ports[["tail"]],
       flow_ports[["head"]]
     )
     style_flow_edges_to_destination <- sprintf(
-      # "edge [style = '', arrowhead='normal', color='%s', arrowsize=1.5, penwidth=1.1, minlen=%s, splines=ortho, tailport='%s', headport='%s']",
-      "edge [style = '', arrowhead='normal', color='%s', arrowsize=1.5, penwidth=1.1, minlen=%s, tailport='%s', headport='%s']",
-      paste0(
-        "black:", flow_col, ":black"
-      ),
-      minlen,
+      "edge [style = '', arrowhead='normal', arrowsize=1.5, penwidth=1.1, minlen=%s, tailport='%s', headport='%s']",
+      flow_length,
       flow_ports[["tail"]],
       flow_ports[["head"]]
     )
-
-    # # Recycle flow_col if needed
-    # flow_cols <- rep_len(flow_col, nrow(flow_df))
 
     for (i in seq_len(nrow(flow_df))) {
       flow_name <- flow_df[i, "name"]
@@ -747,18 +969,24 @@ plot.stockflow <- function(x,
       from_node <- flow_df[i, "from"]
       to_node <- flow_df[i, "to"]
 
+      # Flows can be coloured per variable, so each edge carries its own colour
+      # (a black-bordered band in the flow's colour) rather than the group style.
+      edge_color <- sprintf("black:%s:black", var_colors[[flow_name]])
+
       # Edge from source to flow node
       flow_edges_from_source <- c(flow_edges_from_source, sprintf(
-        "%s -> %s",
+        "%s -> %s [color='%s']",
         paste0("'", from_node, "'"),
-        paste0("'", flow_node, "'")
+        paste0("'", flow_node, "'"),
+        edge_color
       ))
 
       # Edge from flow node to destination
       flow_edges_to_destination <- c(flow_edges_to_destination, sprintf(
-        "%s -> %s",
+        "%s -> %s [color='%s']",
         paste0("'", flow_node, "'"),
-        paste0("'", to_node, "'")
+        paste0("'", to_node, "'"),
+        edge_color
       ))
     }
   }
@@ -768,8 +996,9 @@ plot.stockflow <- function(x,
   if (show_dependencies) {
     style_dependency <- sprintf(
       # "edge [style = '', color='%s', arrowsize=0.8, penwidth=1, splines=true, constraint=false, tailport = '_', headport='_']",
-      "edge [style = '', color='%s', arrowsize=0.8, penwidth=1, constraint=false, tailport = '_', headport='_']",
-      dependency_col
+      "edge [style = '', color='%s', arrowhead='%s', arrowsize=0.8, penwidth=1, constraint=false, tailport = '_', headport='_']",
+      color_dependency,
+      arrowhead_dependency
     )
 
     # Only keep dependencies in plot_var
@@ -781,7 +1010,6 @@ plot.stockflow <- function(x,
     dep <- dep[names(dep) %in% plot_var]
 
     if (length(dep) > 0) {
-
       dependency_edges <- unlist(lapply(names(dep), function(y) {
         if (length(dep[[y]]) > 0) {
           vapply(dep[[y]], function(z) {
@@ -796,7 +1024,6 @@ plot.stockflow <- function(x,
 
       # Avoid overlap between flows and dependency edges
       if (!is.null(dependency_edges) && length(flow_names) > 0) {
-
         # Find dependency edges that link the same variables as flows do
         dep_split <- strsplit(dependency_edges, " -> ", fixed = TRUE)
 
@@ -812,8 +1039,8 @@ plot.stockflow <- function(x,
         }) |> unlist()
 
         if (any(idx)) {
-          suff1 <- " [headport = 's', tailport = 's']"
-          suff2 <- " [headport = 'n', tailport = 'n']"
+          suff1 <- " [headport = 'n', tailport = 'n']"
+          suff2 <- " [headport = 's', tailport = 's']"
 
           # Alternative
           suff <- rep(c(suff1, suff2), length.out = sum(idx))
@@ -823,9 +1050,7 @@ plot.stockflow <- function(x,
           # Add head/tail ports to dependency edges that overlap with flows
           dependency_edges[idx] <- paste0(dependency_edges[idx], suff)
         }
-
       }
-
     }
   }
 
@@ -880,8 +1105,8 @@ plot.stockflow <- function(x,
     }
           ",
     direction,
-    pad = as.character(pad),
-    nodesep = as.character(nodesep),
+    pad = as.character(margin),
+    nodesep = as.character(spacing),
     style_node,
     style_stock,
     stock_nodes |> paste0(collapse = "\n\t"),
@@ -906,7 +1131,7 @@ plot.stockflow <- function(x,
 
   pl <- DiagrammeR::grViz(viz_str)
 
-  pl
+  apply_webfont(pl, font_family)
 }
 
 
@@ -991,6 +1216,7 @@ prep_plot <- function(
   names_df <- names_df[names_df[["name"]] %in% unique(df[["variable"]]), ,
     drop = FALSE
   ]
+  highlight_these_names <- highlight_these_names[highlight_these_names %in% names_df[["name"]]]
 
   # Prepare and standardize labels (handle duplicates, wrapping, special characters)
   names_df <- prepare_labels(names_df, wrap_width = wrap_width, format_label = format_label)
@@ -1053,7 +1279,14 @@ prep_plot <- function(
 #'   value applied to all variables, a named per-variable vector (names are
 #'   variable names), or an unnamed vector with one value per variable in plot
 #'   order. Defaults to `2`.
-#' @param font_family Font family. Defaults to "Times New Roman".
+#' @param font_family Font family. Kebab-case names (e.g. `"eb-garamond"`)
+#'   are Fontsource ids (browse them at <https://fontsource.org/>), loaded as
+#'   webfonts: no installation is needed, but internet access is required to
+#'   display them. Other fonts must be installed on the system viewing the
+#'   plot. Defaults to the `sdbuildR.font_family` option, or
+#'   the `"stix-two-text"` webfont when the option is unset; use
+#'   `options(sdbuildR.font_family = )` to change the default for all plots,
+#'   e.g. in your .Rprofile.
 #' @param font_size Font size. Defaults to 16.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
 #' @param showlegend Whether to show legend. Must be `TRUE` or `FALSE`. Defaults to `TRUE`.
@@ -1063,6 +1296,15 @@ prep_plot <- function(
 #'   `TRUE`.
 #' @param animation Animation mode. Use `"none"` for a static plot or `"time"`
 #'   to cumulatively reveal trajectories over time. Defaults to `"none"`.
+#' @param control_options Named list fine-tuning the speed and smoothness of
+#'   the `animation = "time"` animation. Supports `frame_ms`: the duration of
+#'   each frame in milliseconds (default `100`); `duration`: the total
+#'   animation length in seconds, as an alternative to `frame_ms` (supplying
+#'   both is an error); `transition_ms`: the transition time between frames in
+#'   milliseconds (default `0`); and `max_frames`: the maximum number of
+#'   animation frames (default `50`; lower it for a chunkier reveal that also
+#'   shortens the animation at a fixed `frame_ms`). Defaults to `list()`, i.e.
+#'   all defaults.
 #' @param webgl If `TRUE`, render trajectories with WebGL (plotly `scattergl`) for
 #'   performance with many lines; if `FALSE`, use SVG (`scatter`). Defaults to
 #'   `getOption("sdbuildR.webgl", default = TRUE)`. Set
@@ -1105,21 +1347,26 @@ prep_plot <- function(
 #' # Cumulatively reveal the trajectories over time
 #' plot(sim, animation = "time")
 #'
+#' # Slow the animation down to ~10 seconds in total, or speed up the
+#' # individual frames
+#' plot(sim, animation = "time", control_options = list(duration = 10))
+#' plot(sim, animation = "time", control_options = list(frame_ms = 40))
+#'
 plot.simulate_stockflow <- function(x,
                                     show_constants = FALSE,
                                     vars = NULL,
                                     palette = "Dark 2",
                                     colors = NULL,
                                     line_width = 2,
-                                    font_family = "Times New Roman",
+                                    font_family = default_font_family(),
                                     font_size = 16,
                                     wrap_width = 25,
                                     showlegend = TRUE,
                                     format_label = TRUE,
                                     animation = c("none", "time"),
+                                    control_options = list(),
                                     webgl = getOption("sdbuildR.webgl", default = TRUE),
                                     ...) {
-  animation <- .clean_animation(animation)
   if (missing(x)) {
     cli::cli_abort(c(
       "x" = "No simulation data available.",
@@ -1139,6 +1386,12 @@ plot.simulate_stockflow <- function(x,
   if (nrow(x[["df"]]) == 0) {
     cli::cli_abort(c("x" = "Simulation data frame has no rows"))
   }
+
+  animation <- .clean_animation(animation)
+  # No condition slider/dropdown here, so only the animation options apply.
+  control_options <- resolve_control_options(control_options,
+    allowed = c("frame_ms", "transition_ms", "max_frames", "duration")
+  )
 
   # Validate common plot parameters
   validate_plot_params(
@@ -1186,8 +1439,12 @@ plot.simulate_stockflow <- function(x,
 
   # For time animation, cumulatively reveal each trajectory frame by frame.
   if (animation == "time") {
-    df_highlight <- accumulate_by_time(df_highlight)
-    df_nonhighlight <- accumulate_by_time(df_nonhighlight)
+    df_highlight <- accumulate_by_time(df_highlight,
+      max_frames = control_options[["max_frames"]]
+    )
+    df_nonhighlight <- accumulate_by_time(df_nonhighlight,
+      max_frames = control_options[["max_frames"]]
+    )
     frame <- ~.frame
   } else {
     frame <- NULL
@@ -1248,14 +1505,19 @@ plot.simulate_stockflow <- function(x,
 
   # Add play button and time slider for the cumulative reveal animation.
   if (animation == "time") {
+    n_frames <- length(unique(c(
+      df_highlight[[".frame"]], df_nonhighlight[[".frame"]]
+    )))
     pl <- add_time_animation_controls(pl,
       time_unit = if (is.null(time_unit)) "" else time_unit,
       font_family = font_family,
-      font_size = font_size
+      font_size = font_size,
+      frame_ms = resolve_frame_ms(control_options, n_frames),
+      transition_ms = control_options[["transition_ms"]]
     )
   }
 
-  set_plotly_export_format(pl)
+  apply_webfont(set_plotly_export_format(pl), font_family)
 }
 
 
@@ -1265,9 +1527,9 @@ plot.simulate_stockflow <- function(x,
 #'
 #' @param x Output of [ensemble()].
 #' @param which Type of plot. Either `"summary"` for a summary plot with mean or median lines and confidence intervals, or `"sims"` for individual simulation trajectories with mean or median lines. Defaults to `"summary"`.
-#' @param sim Indices of the individual trajectories to plot if which = `"sims"`. Defaults to 1:10. Including a high number of trajectories will slow down plotting considerably.
+#' @param sim Indices of the individual trajectories to plot if which = `"sims"`. Defaults to the first `min(n, 100)` trajectories. Including a high number of trajectories will slow down plotting considerably.
 #' @param condition Indices of the condition(s) to plot. Defaults to 1:9.
-#' @param nrows Number of rows in the plot grid. Defaults to ceiling(sqrt(n_conditions)).
+#' @param nrows Number of rows in the plot grid. Defaults to `ceiling(sqrt(max(condition)))`.
 #' @param margin Margin between subplots. Either a single numeric or a vector of length four(left, right, top, bottom). See `?plotly::subplot()` for more details. Defaults to 0.05.
 #' @param shareX If `TRUE`, share the x-axis across subplots. Defaults to `TRUE`.
 #' @param shareY If `TRUE`, share the y-axis across subplots. Defaults to `TRUE`.
@@ -1288,7 +1550,14 @@ plot.simulate_stockflow <- function(x,
 #' @param alpha Opacity, with the same grammar as `line_width`: a single value, a
 #'   named per-variable vector, or a list keyed by layer (`central`/`spread`/
 #'   `sims`). Defaults to `list(central = 1, spread = 0.3, sims = 0.3)`.
-#' @param font_family Font family. Defaults to "Times New Roman".
+#' @param font_family Font family. Kebab-case names (e.g. `"eb-garamond"`)
+#'   are Fontsource ids (browse them at <https://fontsource.org/>), loaded as
+#'   webfonts: no installation is needed, but internet access is required to
+#'   display them. Other fonts must be installed on the system viewing the
+#'   plot. Defaults to the `sdbuildR.font_family` option, or
+#'   the `"stix-two-text"` webfont when the option is unset; use
+#'   `options(sdbuildR.font_family = )` to change the default for all plots,
+#'   e.g. in your .Rprofile.
 #' @param font_size Font size. Defaults to 16.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
 #' @param showlegend Whether to show legend. Must be TRUE or FALSE. Defaults to TRUE.
@@ -1307,16 +1576,27 @@ plot.simulate_stockflow <- function(x,
 #' @param condition_display How to display multiple conditions. Use `"subplots"`
 #'   to show conditions as panels, `"slider"` to select one condition with a
 #'   slider, or `"dropdown"` to select one condition with a dropdown. Defaults
-#'   to `"subplots"`.
+#'   to `"subplots"`. If only a single condition is available (e.g. no
+#'   conditions were varied), `"slider"` and `"dropdown"` fall back to
+#'   `"subplots"` with a message. To guarantee the control geometry, plots with
+#'   a slider/dropdown have a fixed height (sized to the number of controls)
+#'   instead of a responsive one.
 #' @param control_options Named list fine-tuning the `"slider"`/`"dropdown"`
-#'   condition control. Supports `max_labels`: the maximum number of
+#'   condition control and the `animation = "time"` animation. For the
+#'   condition control it supports `max_labels`: the maximum number of
 #'   slider tick labels to keep visible when many conditions are varied (the
 #'   slider always keeps one step per condition; intermediate labels are thinned
-#'   above this count); and `spacing`: the vertical gap (in paper units) between
-#'   stacked controls when several condition parameters are varied. By default
-#'   the spacing and the reserved bottom margin are sized automatically so the
-#'   controls never overlap each other or the x-axis title; pass a number to
-#'   widen or tighten the gap. Defaults to `list(max_labels = 10, spacing = NULL)`.
+#'   above this count); and `spacing`: the vertical gap (in pixels) between the
+#'   tops of stacked controls when several condition parameters are varied. By
+#'   default the spacing and the reserved bottom margin are sized automatically
+#'   so the controls never overlap each other or the x-axis title; pass a number
+#'   to widen or tighten the gap. For the animation it supports `frame_ms`:
+#'   the duration of each frame in milliseconds (default `100`); `duration`:
+#'   the total animation length in seconds, as an alternative to `frame_ms`
+#'   (supplying both is an error); `transition_ms`: the transition time between
+#'   frames in milliseconds (default `0`); and `max_frames`: the maximum number
+#'   of animation frames (default `50`). Defaults to `list()`, i.e. all
+#'   defaults.
 #' @param animation Animation mode. Use `"none"` for a static plot or `"time"`
 #'   to cumulatively reveal trajectories over time. Defaults to `"none"`.
 #'   Time animation requires `which = "sims"` (confidence ribbons cannot be
@@ -1368,7 +1648,7 @@ plot.ensemble_stockflow <- function(x,
                                     alpha = list(central = 1, spread = 0.3, sims = 0.3),
                                     colors = NULL,
                                     line_width = list(central = 3, spread = 0, sims = 1),
-                                    font_family = "Times New Roman",
+                                    font_family = default_font_family(),
                                     font_size = 16,
                                     wrap_width = 25,
                                     showlegend = TRUE,
@@ -1457,7 +1737,7 @@ plot.ensemble_stockflow <- function(x,
     cli::cli_warn(c(
       "!" = "None of the requested {.arg central} statistics are saved in the ensemble summary.",
       "i" = "Saved central statistics: {.val {central_avail}}.",
-      ">" = "Re-run {.fn ensemble} with {.code central = 
+      ">" = "Re-run {.fn ensemble} with {.code central =
       {.val {central}}}."
     ))
   }
@@ -1477,7 +1757,7 @@ plot.ensemble_stockflow <- function(x,
       "!" = "None of the requested {.arg spread} options are saved in the ensemble summary.",
       "i" = "Saved spread options: {.val {spread_avail}}.",
       # "i" = "{.code 'quantile'} needs quantile columns; {.code 'sd'} needs the {.field sd} statistic and a central line; {.code 'range'} needs the {.field min} and {.field max} statistics.",
-      ">" = "Re-run {.fn ensemble} with {.code spread = 
+      ">" = "Re-run {.fn ensemble} with {.code spread =
       {.val {spread}}}."
     ))
   }
@@ -1550,6 +1830,12 @@ plot.ensemble_stockflow <- function(x,
     !("condition" %in% passed_arg)) {
     condition <- seq_len(x[["n_conditions"]])
   }
+
+  # A condition control needs at least two conditions to step through; with a
+  # single one (e.g. no conditions varied) fall back to the plain display.
+  condition_display <- .revert_condition_display(
+    condition_display, length(condition)
+  )
 
   # Filter to the selected condition(s). This is a no-op for the default (all
   # conditions); without it, selecting a single condition would still draw every
@@ -1648,10 +1934,11 @@ plot.ensemble_stockflow <- function(x,
   # splitting by condition so each row keeps its condition; per-frame line
   # breaking happens later in plot_ensemble_helper().
   if (animation == "time") {
-    summary_df_highlight <- accumulate_by_time(summary_df_highlight)
-    summary_df_nonhighlight <- accumulate_by_time(summary_df_nonhighlight)
-    df_highlight <- accumulate_by_time(df_highlight)
-    df_nonhighlight <- accumulate_by_time(df_nonhighlight)
+    mf <- control_options[["max_frames"]]
+    summary_df_highlight <- accumulate_by_time(summary_df_highlight, max_frames = mf)
+    summary_df_nonhighlight <- accumulate_by_time(summary_df_nonhighlight, max_frames = mf)
+    df_highlight <- accumulate_by_time(df_highlight, max_frames = mf)
+    df_nonhighlight <- accumulate_by_time(df_nonhighlight, max_frames = mf)
     frame <- ~.frame
   } else {
     frame <- NULL
@@ -1740,7 +2027,13 @@ plot.ensemble_stockflow <- function(x,
       font_family = font_family, font_size = font_size, margin_t = 100
     )
 
-    cond_tbl <- condition_param_table(x[["conditions"]])
+    if (is.null(x[["conditions"]])) {
+      cond_tbl <- data.frame()
+    } else {
+      cond_tbl <- as.data.frame(x[["conditions"]])
+      cond_tbl <- cond_tbl[, setdiff(names(cond_tbl), "condition"), drop = FALSE]
+    }
+
     pl <- assemble_condition_control_plot(
       pl_list,
       condition_ids = condition,
@@ -1878,14 +2171,20 @@ plot.ensemble_stockflow <- function(x,
 
   # Add play button and time slider for the cumulative reveal animation.
   if (animation == "time") {
+    n_frames <- length(unique(c(
+      summary_df_highlight[[".frame"]], summary_df_nonhighlight[[".frame"]],
+      df_highlight[[".frame"]], df_nonhighlight[[".frame"]]
+    )))
     pl <- add_time_animation_controls(pl,
       time_unit = if (is.null(time_unit)) "" else time_unit,
       font_family = font_family,
-      font_size = font_size
+      font_size = font_size,
+      frame_ms = resolve_frame_ms(control_options, n_frames),
+      transition_ms = control_options[["transition_ms"]]
     )
   }
 
-  set_plotly_export_format(pl)
+  apply_webfont(set_plotly_export_format(pl), font_family)
 }
 
 
@@ -2405,9 +2704,15 @@ plot_ensemble_helper <- function(subplot_label,
 
 #' Plot verify results
 #'
-#' Visualize the simulation(s) used during [verify()]. Each condition `j` is
-#' displayed as a subplot. Simulations are always available since [verify()]
-#' unconditionally retains them.
+#' Visualize the simulation(s) used during [verify()]. Each *condition* is one
+#' simulation run -- the model with one set of parameter overrides (from
+#' `unit_test(conditions = )`, possibly none) -- shared by every unit test
+#' declaring those overrides. Each condition is displayed as a subplot (or a
+#' slider/dropdown step, see `condition_display`), labelled by its overrides
+#' and the test(s) evaluated on it: e.g. `"rate = 0 (test 2)"`, with the
+#' unmodified run labelled `"Baseline (tests 1, 3)"` (or just `"Tests 1, 3"`
+#' when no test varies anything). Simulations are always available since
+#' [verify()] unconditionally retains them.
 #'
 #' @param x Output of [verify()].
 #' @param test Integer vector of test numbers to plot.
@@ -2417,7 +2722,7 @@ plot_ensemble_helper <- function(subplot_label,
 #' @param ignore_case Logical; whether `label` matching is case-insensitive.
 #'   Default `TRUE`.
 #' @param condition Integer vector of condition numbers to plot. Defaults to `1:9`. If only one condition is specified, the plot will not be a grid of subplots.
-#' @param nrows Number of subplot rows. Defaults to `ceiling(sqrt(condition))`.
+#' @param nrows Number of subplot rows. Defaults to `ceiling(sqrt(max(condition)))`.
 #' @param shareX Share the x-axis across subplots. Defaults to `TRUE`.
 #' @param shareY Share the y-axis across subplots. Defaults to `TRUE`.
 #' @param palette Colour palette (see `hcl.pals()`). Defaults to `"Dark 2"`.
@@ -2429,11 +2734,25 @@ plot_ensemble_helper <- function(subplot_label,
 #'   with one value per variable in plot order. Defaults to `2`.
 #' @param alpha Trajectory opacity, between 0 and 1. A single value or a named
 #'   per-variable vector. Defaults to `1`.
-#' @param font_family Font family. Defaults to `"Times New Roman"`.
+#' @param font_family Font family. Kebab-case names (e.g. `"eb-garamond"`)
+#'   are Fontsource ids (browse them at <https://fontsource.org/>), loaded as
+#'   webfonts: no installation is needed, but internet access is required to
+#'   display them. Other fonts must be installed on the system viewing the
+#'   plot. Defaults to the `sdbuildR.font_family` option, or
+#'   the `"stix-two-text"` webfont when the option is unset; use
+#'   `options(sdbuildR.font_family = )` to change the default for all plots,
+#'   e.g. in your .Rprofile.
 #' @param font_size Font size. Defaults to `16`.
 #' @param wrap_width Label wrap width. Defaults to `25`.
 #' @param showlegend Whether to show the legend. Defaults to `TRUE`.
-#' @param label_subplots Whether to plot labels indicating the test number of the subplot.
+#' @param label_subplots Whether to title each subplot with its condition's
+#'   parameter overrides (or `"Baseline"`) and test number(s), e.g.
+#'   `"rate = 0 (test 2)"`. Defaults to `TRUE`.
+#' @param control_options Named list fine-tuning the `"slider"`/`"dropdown"`
+#'   condition control and the `animation = "time"` animation; see
+#'   [plot.ensemble_stockflow()] for the supported options (`max_labels`,
+#'   `spacing`, `frame_ms`, `duration`, `transition_ms`, `max_frames`).
+#'   Defaults to `list()`, i.e. all defaults.
 #' @param ... Additional arguments passed to [plot.simulate_stockflow()].
 #' @inheritParams as.data.frame.verify_stockflow
 #' @inheritParams plot.simulate_stockflow
@@ -2486,7 +2805,7 @@ plot.verify_stockflow <- function(x,
                                   palette = "Dark 2",
                                   colors = NULL,
                                   line_width = 2,
-                                  font_family = "Times New Roman",
+                                  font_family = default_font_family(),
                                   font_size = 16,
                                   wrap_width = 25,
                                   showlegend = TRUE,
@@ -2555,6 +2874,10 @@ plot.verify_stockflow <- function(x,
   n_tests <- length(test_nrs)
   condition_nrs <- unique(df[["condition"]])
   n_conditions <- length(condition_nrs)
+
+  # A condition control needs at least two conditions to step through; with a
+  # single one (e.g. after filtering) fall back to the plain display.
+  condition_display <- .revert_condition_display(condition_display, n_conditions)
 
   # Ensure there aren't more rows than conditions
   nrows <- min(nrows, n_conditions)
@@ -2643,8 +2966,12 @@ plot.verify_stockflow <- function(x,
 
   # For time animation, cumulatively reveal trajectories (see ensemble plot).
   if (animation == "time") {
-    df_highlight <- accumulate_by_time(df_highlight)
-    df_nonhighlight <- accumulate_by_time(df_nonhighlight)
+    df_highlight <- accumulate_by_time(df_highlight,
+      max_frames = control_options[["max_frames"]]
+    )
+    df_nonhighlight <- accumulate_by_time(df_nonhighlight,
+      max_frames = control_options[["max_frames"]]
+    )
     frame <- ~.frame
   } else {
     frame <- NULL
@@ -2664,6 +2991,19 @@ plot.verify_stockflow <- function(x,
 
   # Per-subplot theme is invariant across conditions; compute once.
   subplot_theme <- plotly_theme(font_family = font_family, font_size = font_size)
+
+  # One label per condition, shared by the subplot titles and the condition
+  # controls so every display names a run the same way: by its parameter
+  # overrides (or "Baseline") and the test(s) evaluated on it, never by the
+  # bare condition index.
+  cond_labels <- stats::setNames(
+    make_verify_condition_labels(df, condition_nrs),
+    as.character(condition_nrs)
+  )
+  cond_label <- function(j) {
+    lab <- cond_labels[[as.character(j)]]
+    if (is.null(lab)) paste0("Condition ", j) else lab
+  }
 
   if (condition_control) {
     # Build one (non-subplot) plot per present condition, then merge into a
@@ -2708,7 +3048,7 @@ plot.verify_stockflow <- function(x,
       pl_list,
       condition_ids = condition_nrs,
       type = condition_display,
-      labels = make_verify_condition_labels(df, condition_nrs),
+      labels = unname(cond_labels),
       theme = control_theme,
       main = main, xlab = xlab, ylab = ylab,
       font_family = font_family, font_size = font_size,
@@ -2720,7 +3060,7 @@ plot.verify_stockflow <- function(x,
     j_idx <- 1
     j_name <- condition_nrs[j_idx]
     pl <- plot_ensemble_helper(
-      subplot_label = ifelse(label_subplots, paste0("Condition ", j_name), ""),
+      subplot_label = if (label_subplots) cond_label(j_name) else "",
       which = which,
       create_subplots = create_subplots,
       summary_df_highlight = summary_df_highlight,
@@ -2756,7 +3096,7 @@ plot.verify_stockflow <- function(x,
       j_name <- condition[j_idx]
 
       pl_list[[j_idx]] <- plot_ensemble_helper(
-        subplot_label = ifelse(label_subplots, paste0("Condition ", j_name), ""),
+        subplot_label = if (label_subplots) cond_label(j_name) else "",
         which = which,
         create_subplots = create_subplots,
         summary_df_highlight = summary_df_highlight,
@@ -2834,12 +3174,17 @@ plot.verify_stockflow <- function(x,
 
   # Add play button and time slider for the cumulative reveal animation.
   if (animation == "time") {
+    n_frames <- length(unique(c(
+      df_highlight[[".frame"]], df_nonhighlight[[".frame"]]
+    )))
     pl <- add_time_animation_controls(pl,
       time_unit = if (is.null(time_unit)) "" else time_unit,
       font_family = font_family,
-      font_size = font_size
+      font_size = font_size,
+      frame_ms = resolve_frame_ms(control_options, n_frames),
+      transition_ms = control_options[["transition_ms"]]
     )
   }
 
-  set_plotly_export_format(pl)
+  apply_webfont(set_plotly_export_format(pl), font_family)
 }

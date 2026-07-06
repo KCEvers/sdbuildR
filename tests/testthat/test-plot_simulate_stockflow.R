@@ -587,6 +587,46 @@ test_that("plot.simulate_stockflow() supports cumulative time animation", {
   expect_true(all(diff(point_counts) >= 0))
 })
 
+test_that("time animation builds cleanly when a variable is NaN at time zero", {
+  # Regression: a variable that starts at NaN (e.g. a 0/0 ratio at
+  # initialization) used to make plotly drop its all-NaN trace from the
+  # initial data but not from the first frame, corrupting the first frame
+  # with a "number of items to replace is not a multiple of replacement
+  # length" warning at build time.
+  sim <- sir_sim()
+  first_time <- min(sim[["df"]][["time"]])
+  first_var <- as.character(sim[["df"]][["variable"]][1])
+  sim[["df"]][["value"]][
+    sim[["df"]][["time"]] == first_time & sim[["df"]][["variable"]] == first_var
+  ] <- NaN
+
+  pl <- plot(sim, animation = "time")
+  expect_no_warning(built <- plotly::plotly_build(pl))
+
+  # The initial trace data and every frame carry the same traces
+  n_traces <- length(built$x$data)
+  expect_true(all(
+    vapply(built$x$frames, function(frame) length(frame$data), integer(1)) == n_traces
+  ))
+
+  # The animation still starts from an empty plot at the first time point: the
+  # first frame is at the earliest time and draws no line (a line needs two
+  # consecutive finite points).
+  all_times <- sort(unique(sim[["df"]][["time"]]))
+  expect_equal(built$x$frames[[1]]$name, as.character(min(all_times)))
+  max_consecutive_finite <- function(y) {
+    fin <- is.finite(unlist(y))
+    if (!any(fin)) return(0L)
+    runs <- rle(fin)
+    max(runs$lengths[runs$values])
+  }
+  draws_line <- vapply(
+    built$x$frames[[1]]$data,
+    function(trace) max_consecutive_finite(trace$y) >= 2, logical(1)
+  )
+  expect_false(any(draws_line))
+})
+
 test_that("plot.simulate_stockflow() is static by default (no frames)", {
   sim <- sir_sim()
   expect_equal(length(plotly_frames(plot(sim))), 0L)
@@ -596,6 +636,51 @@ test_that("plot.simulate_stockflow() is static by default (no frames)", {
 test_that("plot.simulate_stockflow() rejects invalid animation", {
   sim <- sir_sim()
   expect_error(plot(sim, animation = "fast"), "animation")
+})
+
+test_that("plot.simulate_stockflow() control_options tune the animation speed", {
+  sim <- sir_sim()
+
+  # Per-frame and transition durations reach the built animation options (the
+  # play button's animate args carry them).
+  pl <- plot(sim,
+    animation = "time",
+    control_options = list(frame_ms = 40, transition_ms = 20)
+  )
+  opts <- plotly_layout(pl)$updatemenus[[1]]$buttons[[1]]$args[[2]]
+  expect_equal(opts$frame$duration, 40)
+  expect_equal(opts$transition$duration, 20)
+
+  # duration spreads the total animation length (seconds) evenly over frames
+  pl <- plot(sim, animation = "time", control_options = list(duration = 10))
+  n_frames <- length(plotly_frame_names(pl))
+  opts <- plotly_layout(pl)$updatemenus[[1]]$buttons[[1]]$args[[2]]
+  expect_equal(opts$frame$duration, 10000 / n_frames)
+
+  # max_frames caps the number of frames (endpoints always kept)
+  pl_few <- plot(sim, animation = "time", control_options = list(max_frames = 10))
+  few_names <- plotly_frame_names(pl_few)
+  all_times <- sort(unique(sim[["df"]][["time"]]))
+  expect_lte(length(few_names), 10)
+  expect_lt(length(few_names), length(plotly_frame_names(plot(sim, animation = "time"))))
+  expect_equal(few_names[length(few_names)], as.character(max(all_times)))
+})
+
+test_that("plot.simulate_stockflow() rejects invalid control_options", {
+  sim <- sir_sim()
+  # Unknown keys, including condition-control keys that only apply to
+  # ensemble/verify plots
+  expect_error(plot(sim, control_options = list(speed = 2)), "control_options")
+  expect_error(plot(sim, control_options = list(max_labels = 5)), "control_options")
+  # duration and frame_ms both set the pace
+  expect_error(
+    plot(sim, animation = "time", control_options = list(duration = 5, frame_ms = 40)),
+    "not both"
+  )
+  expect_error(plot(sim, control_options = list(frame_ms = 0)), "frame_ms")
+  expect_error(plot(sim, control_options = list(transition_ms = -1)), "transition_ms")
+  expect_error(plot(sim, control_options = list(max_frames = 1)), "max_frames")
+  expect_error(plot(sim, control_options = list(duration = 0)), "duration")
 })
 
 test_that("plot.simulate_stockflow() webgl toggles trace type", {

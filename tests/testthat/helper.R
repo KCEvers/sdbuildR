@@ -92,7 +92,7 @@ expect_snapshot_plot <- function(name, code, fileext = NULL, width = 4, height =
     if ("plotly" %in% plot_types) {
       skip_if_not_installed("webshot2")
       skip_if_not_installed("htmlwidgets")
-    } 
+    }
 
     if ("grViz" %in% plot_types) {
       skip_if_not_installed("DiagrammeRsvg")
@@ -103,7 +103,13 @@ expect_snapshot_plot <- function(name, code, fileext = NULL, width = 4, height =
       img_path <- tempfile(fileext = fileext[[i]])
       tryCatch(
         {
-          export_plot(plots[[i]], file = img_path, width = width[[i]], height = height[[i]])
+          # This block never runs on CRAN, so reuse one browser session
+          # across the loop for speed instead of spawning a subprocess per
+          # export; the browser is cleaned up when the test process exits.
+          export_plot(plots[[i]],
+            file = img_path, width = width[[i]], height = height[[i]],
+            close_browser = FALSE
+          )
           expect_snapshot_file(img_path,
             name = paste0(name[[i]], fileext[[i]]),
             compare = function(old, new) TRUE
@@ -150,6 +156,27 @@ skip_if_julia_not_ready <- function() {
   if (!env_setup) {
     testthat::skip()
   }
+
+  invisible()
+}
+
+
+local_future_multisession_or_skip <- function(workers = 2L) {
+  testthat::skip_on_cran()
+
+  tryCatch(
+    {
+      future::plan(future::multisession, workers = workers)
+      withr::defer(future::plan(future::sequential), envir = parent.frame())
+    },
+    error = function(e) {
+      try(future::plan(future::sequential), silent = TRUE)
+      testthat::skip(paste(
+        "future::multisession workers are unavailable:",
+        conditionMessage(e)
+      ))
+    }
+  )
 
   invisible()
 }
@@ -256,15 +283,15 @@ make_ensemble_error_sfm <- function() {
 
 # Helper: standard sfm for method tests
 make_jl_ensemble_sfm <- function() {
-  stockflow("Crielaard2022") |>
-    sim_settings(start = 0, stop = 10, dt = 0.1, save_at = 1, language = "Julia")
+  stockflow("crielaard2022") |>
+    sim_settings(start = 0, stop = 10, dt = 0.1, save_by = 1, language = "Julia")
 }
 
 
 make_r_ensemble_random_sfm <- function() {
   stockflow("sir") |>
     update(c(susceptible, infected, recovered), eqn = "runif(1, 1, 1000)") |>
-    sim_settings(language = "R", start = 0, stop = 10, dt = 0.1, save_at = 1, seed = 42)
+    sim_settings(language = "R", start = 0, stop = 10, dt = 0.1, save_by = 1, seed = 42)
 }
 
 
@@ -295,7 +322,7 @@ make_verifiable_sfm <- function(language = "R") {
     update("S", type = "stock", eqn = runif(1, 1, 100)) |>
     update("drain", type = "flow", eqn = "rate * S", from = "S") |>
     update("rate", type = "constant", eqn = "0.1") |>
-    sim_settings(stop = 10, dt = 0.1, save_at = 1, language = language, seed = 123)
+    sim_settings(stop = 10, dt = 0.1, save_by = 1, language = language, seed = 123)
 }
 
 
@@ -327,7 +354,7 @@ make_verify_model <- function(n_tests = 1, with_fail = FALSE) {
 # conditions          → optional named list passed to ensemble().
 make_r_ens <- function(n = 5, save_sims = FALSE, conditions = NULL, ...) {
   sfm <- make_r_ensemble_random_sfm()
-  args <- list(sfm, n = n, save_sims = save_sims, verbose = FALSE, ...)
+  args <- list(sfm, n = n, save_sims = save_sims, quiet = TRUE, ...)
   if (!is.null(conditions)) args$conditions <- conditions
   silence(do.call(ensemble, args))
 }
@@ -764,7 +791,6 @@ julia_ast_vnames <- function() {
 }
 
 
-
 # Skip unless Julia is set up, and start the sdbuildR Julia session (loading the
 # SystemDynamicsBuildR functions) so direct julia_eval() calls resolve them. A bare
 # JuliaConnectoR session would not have run init.jl. use_julia() is idempotent.
@@ -793,7 +819,7 @@ expect_input_sim_equal <- function(input_eqn, tolerance = 1e-4) {
     update("a", "stock") |>
     update("input", "constant", eqn = !!input_eqn) |>
     update("inflow", "flow", eqn = "input(t)", to = "a") |>
-    sim_settings(start = 0, stop = 20, dt = 0.1, save_at = 1)
+    sim_settings(start = 0, stop = 20, dt = 0.1, save_by = 1)
 
   r <- silence(simulate(sim_settings(sfm, language = "R"), only_stocks = FALSE))
   j <- silence(simulate(sim_settings(sfm, language = "Julia"), only_stocks = FALSE))
@@ -802,4 +828,3 @@ expect_input_sim_equal <- function(input_eqn, tolerance = 1e-4) {
   ja <- j[["df"]][j[["df"]][["variable"]] == "a", "value"]
   expect_equal(ra, ja, tolerance = tolerance, info = input_eqn)
 }
-

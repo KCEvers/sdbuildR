@@ -10,13 +10,13 @@
 #' @noRd
 ensemble_stat_funs <- function() {
   list(
-  mean          = function(v) mean(v, na.rm = TRUE),
-  median        = function(v) stats::median(v, na.rm = TRUE),
-  sd            = function(v) stats::sd(v, na.rm = TRUE),
-  min           = function(v) min(v, na.rm = TRUE),
-  max           = function(v) max(v, na.rm = TRUE),
-  missing_count = function(v) sum(is.na(v))
-)
+    mean          = function(v) mean(v, na.rm = TRUE),
+    median        = function(v) stats::median(v, na.rm = TRUE),
+    sd            = function(v) stats::sd(v, na.rm = TRUE),
+    min           = function(v) min(v, na.rm = TRUE),
+    max           = function(v) max(v, na.rm = TRUE),
+    missing_count = function(v) sum(is.na(v))
+  )
 }
 
 
@@ -42,7 +42,7 @@ ensemble_summary_stats <- function(vals, stats, quantiles, q_names) {
 }
 
 
-#' Summarise a long data frame by groups
+#' Summarize a long data frame by groups
 #'
 #' Groups `df` by the columns in `by` and computes summary stats on the `value`
 #' column using data.table. `keyby` returns the rows sorted by the grouping keys
@@ -77,6 +77,49 @@ summarise_by <- function(df, by, stats, quantiles, q_names) {
 }
 
 
+#' Apply with progressr progress reporting
+#'
+#' @param X List to iterate over.
+#' @param FUN Function to apply to each element of `X`.
+#' @param quiet Logical; if TRUE, suppress progress output.
+#' @param apply_fun Apply function, e.g. [lapply()] or
+#'   [future.apply::future_lapply()].
+#' @param handler A progressr progression handler.
+#' @param ... Additional arguments passed to `apply_fun`.
+#' @returns A list, as in [lapply()].
+#' @noRd
+progressr_lapply <- function(X, FUN, quiet, apply_fun = lapply,
+                             handler = progressr::handler_cli(), ...) {
+  if (length(X) == 0L) {
+    return(apply_fun(X, FUN, ...))
+  }
+
+  run <- function() {
+    progress <- progressr::progressor(
+      steps = length(X),
+      label = "Simulations",
+      enable = !quiet
+    )
+
+    apply_fun(X, function(x) {
+      out <- FUN(x)
+      progress()
+      out
+    }, ...)
+  }
+
+  if (quiet) {
+    progressr::without_progress(run())
+  } else {
+    progressr::with_progress(
+      run(),
+      handlers = handler,
+      enable = TRUE
+    )
+  }
+}
+
+
 #' Run ensemble simulation in R
 #'
 #' Called by [ensemble()] when language is R. Runs multiple simulations using
@@ -91,7 +134,7 @@ summarise_by <- function(df, by, stats, quantiles, q_names) {
 #' @noRd
 ensemble_r <- function(object, n, save_sims, conditions, cross,
                        quantiles, summary_stats, only_stocks, vars = NULL,
-                       verbose, n_conditions, total_sims) {
+                       quiet, n_conditions, total_sims) {
   # Find seed if specified
   has_seed <- !is.null(object[["sim_settings"]][["seed"]])
   if (has_seed) {
@@ -120,7 +163,7 @@ ensemble_r <- function(object, n, save_sims, conditions, cross,
 
   # Use parallel apply only if the user configured an active future plan with
   # more than one worker.
-  use_par <- rlang::is_installed("future.apply") && future::nbrOfWorkers() > 1L
+  use_par <- future::nbrOfWorkers() > 1L
   apply_fun <- if (use_par) future.apply::future_lapply else lapply
 
   # --- Pre-compile scripts (avoids redundant compile() per simulation) --------
@@ -165,7 +208,7 @@ ensemble_r <- function(object, n, save_sims, conditions, cross,
     {
       if (use_par) {
         run_par <- function() {
-          apply_fun(tasks, function(task) {
+          progressr_lapply(tasks, function(task) {
             # Resolve the internal worker function from the namespace on the
             # worker itself (sdbuildR is loaded via future.packages). Serializing
             # it as a captured global strips its namespace environment, which
@@ -176,7 +219,10 @@ ensemble_r <- function(object, n, save_sims, conditions, cross,
               parsed_expr = parsed_scripts[[task[["condition"]]]],
               condition = task[["condition"]], sim = task[["sim"]]
             )
-          }, future.seed = seed_nr, future.packages = "sdbuildR")
+          },
+          quiet = quiet, apply_fun = apply_fun,
+          future.seed = seed_nr, future.packages = c("sdbuildR", "progressr")
+          )
         }
         # With a numeric seed, per-future seeds are derived deterministically, so
         # restore the global RNG to avoid leaking state. Without a seed,
@@ -185,12 +231,12 @@ ensemble_r <- function(object, n, save_sims, conditions, cross,
         if (has_seed) withr::with_preserve_seed(run_par()) else run_par()
       } else {
         do_run <- function() {
-          lapply(tasks, function(task) {
+          progressr_lapply(tasks, function(task) {
             eval_sim_script_r(
               parsed_expr = parsed_scripts[[task[["condition"]]]],
               condition = task[["condition"]], sim = task[["sim"]]
             )
-          })
+          }, quiet = quiet)
         }
 
         if (has_seed) withr::with_seed(seed_nr, do_run()) else do_run()
@@ -237,7 +283,7 @@ ensemble_r <- function(object, n, save_sims, conditions, cross,
   # Filter to only successful results
   good_results <- sim_results[!failed]
 
-  if (verbose) {
+  if (!quiet) {
     elapsed <- round(as.numeric(end_t) - as.numeric(start_t), 4)
     cli::cli_inform(c(
       "v" = "Ensemble simulation completed in {.val {elapsed}} seconds."

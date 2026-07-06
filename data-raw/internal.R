@@ -642,8 +642,8 @@ Pkg.add(url="https://github.com/kcevers/%s.jl"%s)
 println("\\nInstalling dependencies from Project.toml...")
 Pkg.instantiate()
 
-# Resolve dependencies without installing
-Pkg.resolve()
+## Resolve dependencies without installing
+# Pkg.resolve()
 
 # Precompile packages for faster loading
 println("\\nPrecompiling packages...")
@@ -692,11 +692,16 @@ create_julia_project_toml_init <- function(use_github_release = TRUE) {
     if (is.na(deps_end)) deps_end <- length(lines) + 1
     deps_lines <- lines[(deps_start + 1):(deps_end - 1)]
     deps_names <- gsub("\\s*=.*", "", deps_lines[grepl("=", deps_lines)])
+
+    # Remove Test.jl dependency if present
+    lines <- lines[!grepl("^Test\\s*=", lines)]
+    deps_names <- deps_names[deps_names != "Test"]
   } else {
     deps_names <- character(0)
   }
 
   # Insert dependency on SystemDynamicsBuildR.jl
+  deps_start <- which(lines == "[deps]")
   lines <- append(lines, paste0(P[["jl_pkg_name"]], " = \"", uuid, "\""), after = deps_start)
   deps_names <- c(deps_names, P[["jl_pkg_name"]])
 
@@ -707,6 +712,23 @@ create_julia_project_toml_init <- function(use_github_release = TRUE) {
     sprintf('name = "%s"', pkg_name),
     lines
   )
+
+  # Remove [extras] and [targets] sections if they exist
+  extras_start <- which(lines == "[extras]")
+  if (length(extras_start) == 1) {
+    section_headers <- which(grepl("^\\[", lines))
+    extras_end <- section_headers[section_headers > extras_start][1]
+    if (is.na(extras_end)) extras_end <- length(lines) + 1
+    lines <- lines[-(extras_start:(extras_end - 1))]
+  }
+
+  targets_start <- which(lines == "[targets]")
+  if (length(targets_start) == 1) {
+    section_headers <- which(grepl("^\\[", lines))
+    targets_end <- section_headers[section_headers > targets_start][1]
+    if (is.na(targets_end)) targets_end <- length(lines) + 1
+    lines <- lines[-(targets_start:(targets_end - 1))]
+  }
 
   script_project_toml <- paste(lines, collapse = "\n")
 
@@ -722,10 +744,10 @@ create_julia_project_toml_init <- function(use_github_release = TRUE) {
     "# Load packages\n",
     # "using ", P[["jl_pkg_name"]], "\n",
     using_lines, "\n\n",
-    "# Extend min/max: when applied to a single vector, use minimum, like in R\n",
-    "Base.min(v::AbstractVector) = minimum(v)\n",
-    "Base.max(v::AbstractVector) = maximum(v)\n",
-    "\n# Add initialization of ", pkg_name, "\n",
+    # "# Extend min/max: when applied to a single vector, use minimum, like in R\n",
+    # "Base.min(v::AbstractVector) = minimum(v)\n",
+    # "Base.max(v::AbstractVector) = maximum(v)\n",  "\n\n",
+    "# Add initialization of ", pkg_name, "\n",
     P[["init_sdbuildR"]], " = true\n"
   )
 

@@ -11,7 +11,7 @@ dependencies(object, name = NULL, type = NULL, reverse = FALSE)
 
 \item{name}{Variable names to find dependencies for. Defaults to \code{NULL} to include all variables.}
 
-\item{type}{Variable types to find dependencies for. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', or 'func'. Defaults to \code{NULL} to include all types.}
+\item{type}{Variable types to find dependencies for. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'lookup', or 'func'. Defaults to \code{NULL} to include all types.}
 
 \item{reverse}{If FALSE, list for each variable X which variables Y it depends on for its equation definition. If TRUE, don't show dependencies but dependents. This reverses the dependencies, such that for each variable X, it lists what other variables Y depend on X.}
 }

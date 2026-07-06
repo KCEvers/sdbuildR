@@ -145,7 +145,7 @@ find_newly_defined_var <- function(eqn) {
 #'
 #' @inheritParams update.stockflow
 #' @param name Variable names to find dependencies for. Defaults to `NULL` to include all variables.
-#' @param type Variable types to find dependencies for. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', or 'func'. Defaults to `NULL` to include all types.
+#' @param type Variable types to find dependencies for. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'lookup', or 'func'. Defaults to `NULL` to include all types.
 #' @param reverse If FALSE, list for each variable X which variables Y it depends on for its equation definition. If TRUE, don't show dependencies but dependents. This reverses the dependencies, such that for each variable X, it lists what other variables Y depend on X.
 #'
 #' @returns List, with for each model variable what other variables it depends on, or if \code{reverse = TRUE}, which variables depend on it

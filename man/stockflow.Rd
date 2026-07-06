@@ -25,7 +25,8 @@ and a default meta. If specified, \code{template} should be one of:
 \item \strong{chua}: Chua's circuit (chaotic) (v1.0.0)
 \item \strong{burnout}: Toy model of burnout as used in Evers et al. (under review) (v1.0.0)
 \item \strong{burnout}: Toy model of burnout as used in Evers et al. (under review) (v2.0.0)
-\item \strong{jdr}: Job Demands-Resources Theory as formalized in Evers et al. (under review) (v1.0.0)
+\item \strong{fitzhugh_nagumo}: Two-variable excitable neuron model (v1.0.0)
+\item \strong{queue}: Simple demonstration model of people waiting in a queue (v1.0.0)
 }}
 
 \item{version}{Optional semantic version of the template to load. Flexible in
@@ -60,7 +61,7 @@ sfm <- stockflow()
 summary(sfm)
 
 \dontshow{
-sfm <- sim_settings(sfm, save_at = 1)
+sfm <- sim_settings(sfm, save_by = 1)
 }
 
 # Load a template

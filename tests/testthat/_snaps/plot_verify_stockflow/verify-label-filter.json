@@ -82,9 +82,9 @@
     },
     "annotations": [
       {
-        "text": "Condition 1",
+        "text": "Baseline (test 1)",
         "font": {
-          "family": "Times New Roman",
+          "family": "stix-two-text",
           "size": 12
         },
         "bgcolor": "white",
@@ -97,9 +97,9 @@
         "showarrow": false
       },
       {
-        "text": "Condition 2",
+        "text": "rate = 0 (test 2)",
         "font": {
-          "family": "Times New Roman",
+          "family": "stix-two-text",
           "size": 12
         },
         "bgcolor": "white",
@@ -114,7 +114,7 @@
       {
         "text": "Time (seconds)",
         "font": {
-          "family": "Times New Roman"
+          "family": "stix-two-text"
         },
         "xref": "paper",
         "yref": "paper",
@@ -150,7 +150,7 @@
       "text": "Unit Tests of My Model<span style='font-size:16px;'><br />2 unit tests across 2 conditions<\/span>"
     },
     "font": {
-      "family": "Times New Roman",
+      "family": "stix-two-text",
       "size": 16
     }
   }

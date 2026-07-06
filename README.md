@@ -22,8 +22,8 @@ or system dynamics background knowledge.
 
 ## Quick start
 
-Load one of the dozens of models from the built-in library, such as the
-classic SIR (Susceptible-Infected-Recovered) epidemic model:
+Load one of the models from the built-in library, such as the classic
+SIR (Susceptible-Infected-Recovered) epidemic model:
 
 ``` r
 library(sdbuildR)
@@ -38,7 +38,7 @@ plot(sfm)
 ![](man/figures/README-sir-diagram.svg)
 
 ``` r
-# Simulate and visualise the dynamics over time
+# Simulate and visualize the dynamics over time
 simulate(sfm) |> plot()
 ```
 
@@ -111,9 +111,8 @@ by [PySD](https://doi.org/10.21105/joss.04329).
 
 ## Troubleshooting
 
-sdbuildR is under active development. While thoroughly tested, the
-package may have bugs, particularly in complex model translations. We
-encourage users to report [issues on
+sdbuildR is under active development and may have bugs, particularly in
+complex model translations. We encourage users to report [issues on
 GitHub](https://github.com/KCEvers/sdbuildR/issues) - your input helps
 the package improve\! Use `summary()` to run model diagnostics, and use
 the vignettes for guidance.
@@ -127,7 +126,7 @@ citation("sdbuildR")
 #> To cite package 'sdbuildR' in publications use:
 #> 
 #>   Evers, K. (2026). sdbuildR: An Accessible Interface for
-#>   Stock-and-Flow Modelling in R. R package version 2.1.0.
+#>   Stock-and-Flow Modelling in R. R package version 2.2.0.
 #>   https://doi.org/10.32614/CRAN.package.sdbuildR
 #> 
 #> A BibTeX entry for LaTeX users is
@@ -136,7 +135,7 @@ citation("sdbuildR")
 #>     title = {{sdbuildR}: An Accessible Interface for Stock-and-Flow Modelling in R},
 #>     author = {Kyra Caitlin Evers},
 #>     year = {2026},
-#>     note = {R package version 2.1.0},
+#>     note = {R package version 2.2.0},
 #>     url = {https://kcevers.github.io/sdbuildR/},
 #>     doi = {10.32614/CRAN.package.sdbuildR},
 #>   }

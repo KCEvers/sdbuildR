@@ -13,6 +13,14 @@ knitr::opts_chunk$set(
 )
 ```
 
+
+```{r, echo = FALSE}
+font_family <- "stix-two-text"
+options(sdbuildR.font_family = font_family)
+# getOption("sdbuildR.font_family")
+```
+
+
 # sdbuildR: An Accessible Interface for Stock-and-Flow Modelling in R
 
 <!-- badges: start -->
@@ -25,7 +33,7 @@ knitr::opts_chunk$set(
 
 ## Quick start
 
-Load one of the dozens of models from the built-in library, such as the classic SIR (Susceptible-Infected-Recovered) epidemic model:
+Load one of the models from the built-in library, such as the classic SIR (Susceptible-Infected-Recovered) epidemic model:
 
 ```{r quickstart-sfm, eval=FALSE}
 library(sdbuildR)
@@ -46,7 +54,7 @@ if (!file.exists(dirname(filepath))) {
   dir.create(dirname(filepath), recursive = TRUE)
 }
 export_plot(
-  plot(sfm, minlen = 1),
+  plot(sfm, flow_length = 1),
   filepath,
   width = 6, height = 1, units = "cm"
 )
@@ -56,12 +64,12 @@ export_plot(
 
 
 ```{r quickstart-sim, eval=FALSE}
-# Simulate and visualise the dynamics over time
+# Simulate and visualize the dynamics over time
 simulate(sfm) |> plot()
 ```
 
 ```{r sir-sim, include=FALSE, eval=TRUE}
-pl <- simulate(sfm, dt = 0.01, save_at = 0.01) |> plot(palette = "Temps")
+pl <- simulate(sfm, dt = 0.01, save_by = 0.01) |> plot(palette = "Temps")
 filepath <- file.path("man", "figures", "README-sir-sim.png")
 export_plot(
   pl,
@@ -109,7 +117,7 @@ sdbuildR is heavily based on common system dynamics software such as [Vensim](ht
 
 ## Troubleshooting
 
-sdbuildR is under active development. While thoroughly tested, the package may have bugs, particularly in complex model translations. We encourage users to report [issues on GitHub](https://github.com/KCEvers/sdbuildR/issues) - your input helps the package improve! Use `summary()` to run model diagnostics, and use the vignettes for guidance.
+sdbuildR is under active development and may have bugs, particularly in complex model translations. We encourage users to report [issues on GitHub](https://github.com/KCEvers/sdbuildR/issues) - your input helps the package improve! Use `summary()` to run model diagnostics, and use the vignettes for guidance.
 
 ## Citation
 

@@ -294,53 +294,6 @@ test_that("plotly_theme legend font scales with base font size", {
 })
 
 # ============================================================================
-# diagram_theme TESTS
-# ============================================================================
-
-test_that("diagram_theme returns list with expected structure", {
-  theme <- diagram_theme()
-
-  expect_type(theme, "list")
-  expect_true(all(c(
-    "font_family", "font_size", "aux_font_size",
-    "stock_col", "flow_col", "dependency_col"
-  ) %in% names(theme)))
-})
-
-test_that("diagram_theme uses custom font family", {
-  theme <- diagram_theme(font_family = "Helvetica")
-
-  expect_equal(theme$font_family, "Helvetica")
-})
-
-test_that("diagram_theme uses custom font size", {
-  theme <- diagram_theme(font_size = 24)
-
-  expect_equal(theme$font_size, 24)
-})
-
-test_that("diagram_theme calculates aux font size", {
-  theme <- diagram_theme(font_size = 20)
-
-  expect_equal(theme$aux_font_size, 18)
-})
-
-test_that("diagram_theme enforces minimum aux font size", {
-  theme <- diagram_theme(font_size = 8)
-
-  # Should not go below 8pt
-  expect_gte(theme$aux_font_size, 8)
-})
-
-test_that("diagram_theme has default colors", {
-  theme <- diagram_theme()
-
-  expect_equal(theme$stock_col, "#83d3d4")
-  expect_equal(theme$flow_col, "#f48153")
-  expect_equal(theme$dependency_col, "#999999")
-})
-
-# ============================================================================
 # extract_plot_params TESTS
 # ============================================================================
 
@@ -618,4 +571,74 @@ test_that("validate_vars_in_model passes on valid variables", {
   df <- data.frame(variable = c("S", "I"), value = c(100, 50))
 
   expect_invisible(validate_vars_in_model(c("S", "I"), names_df, df))
+})
+
+# ============================================================================
+# accumulate_by_time TESTS
+# ============================================================================
+
+test_that("accumulate_by_time reveals cumulatively and starts at the first time", {
+  df <- data.frame(
+    time = rep(0:10, times = 2),
+    variable = rep(c("a", "b"), each = 11),
+    value = 1
+  )
+
+  out <- accumulate_by_time(df)
+  frames <- sort(unique(out[[".frame"]]))
+
+  # The animation starts at the first time point (an empty plot: a single point
+  # per series draws nothing under mode = "lines") and reveals cumulatively.
+  expect_equal(frames, 0:10)
+  expect_equal(sort(unique(out[out[[".frame"]] == 0, "time"])), 0)
+
+  # Cumulative reveal: the last frame contains all rows
+  expect_equal(nrow(out[out[[".frame"]] == 10, ]), nrow(df))
+})
+
+test_that("accumulate_by_time backfills non-finite starting values in the first frame", {
+  # A series that is NaN at the first time point (e.g. a 0/0 ratio) would be an
+  # all-NaN trace in the first frame, which plotly drops from the initial data
+  # but pads back into the frame -- a trace-count mismatch that warns. It is
+  # backfilled with the series' first finite value so the (invisible) trace
+  # stays present.
+  df <- data.frame(
+    time = rep(0:3, times = 2),
+    variable = rep(c("a", "ratio"), each = 4),
+    value = c(1, 1, 1, 1, NaN, 0.9, 0.8, 0.7)
+  )
+
+  out <- accumulate_by_time(df)
+  first <- out[out[[".frame"]] == 0, ]
+
+  # Every series has a finite value in the first frame (ratio backfilled to 0.9)
+  expect_true(all(is.finite(first[["value"]])))
+  expect_equal(first[first[["variable"]] == "ratio", "value"], 0.9)
+
+  # Later frames keep the real (non-finite) starting value
+  ratio_f3 <- out[out[[".frame"]] == 3 & out[["variable"]] == "ratio", ]
+  expect_true(is.nan(ratio_f3[ratio_f3[["time"]] == 0, "value"]))
+})
+
+test_that("accumulate_by_time leaves a never-finite series untouched", {
+  df <- data.frame(
+    time = rep(0:3, times = 2),
+    variable = rep(c("a", "empty"), each = 4),
+    value = c(1, 2, 3, 4, NaN, NaN, NaN, NaN)
+  )
+
+  out <- accumulate_by_time(df)
+  empty_first <- out[out[[".frame"]] == 0 & out[["variable"]] == "empty", "value"]
+  expect_true(all(is.nan(empty_first)))
+})
+
+test_that("accumulate_by_time caps frames while keeping first and last time", {
+  df <- data.frame(time = seq(0, 10, by = 0.01), variable = "a", value = 1)
+
+  out <- accumulate_by_time(df, max_frames = 50)
+  frames <- sort(unique(out[[".frame"]]))
+
+  expect_lte(length(frames), 50)
+  expect_equal(frames[1], min(df$time))
+  expect_equal(frames[length(frames)], max(df$time))
 })

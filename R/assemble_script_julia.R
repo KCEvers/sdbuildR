@@ -7,7 +7,8 @@
 #'
 simulate_julia <- function(object,
                            only_stocks,
-                           vars = NULL) {
+                           vars = NULL,
+                           quiet = FALSE) {
   # Get output filepaths
   filepath_sim <- get_tempfile(fileext = ".csv")
   filepath <- get_tempfile(fileext = ".jl")
@@ -33,7 +34,7 @@ simulate_julia <- function(object,
   write_script(script, filepath)
   script <- paste0(readLines(filepath), collapse = "\n")
 
-  use_julia()
+  use_julia(quiet = quiet)
 
   # Evaluate script
   sim <- tryCatch(

@@ -33,7 +33,7 @@ sfm <- stockflow() |>
   update("inflow", "flow", eqn = "input(t)", to = "a")
 
 \dontshow{
-sfm <- sim_settings(sfm, save_at = 1, dt = .1)
+sfm <- sim_settings(sfm, save_by = 1, dt = .1)
 }
 
 sim <- simulate(sfm, only_stocks = FALSE)

@@ -11,13 +11,14 @@ export_plot(
   height = 4,
   units = "cm",
   dpi = 300,
-  font_family = ""
+  font_family = NULL,
+  close_browser = TRUE
 )
 }
 \arguments{
 \item{pl}{Plot object. Can be a \code{grViz} object from the DiagrammeR package (for stock-and-flow diagrams) or a \code{plotly} object from the plotly package (for (ensemble) simulation results).}
 
-\item{file}{File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. For plotting a qgraph graph, the file extension can be one of png, pdf, svg, ps, eps, jpg, jpeg, tiff, bmp. If no file extension is specified, it will default to png.}
+\item{file}{File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. If no file extension is specified, it will default to png.}
 
 \item{width}{Width of image in units.}
 
@@ -27,15 +28,46 @@ export_plot(
 
 \item{dpi}{Resolution of image. Only used if units is not "px".}
 
-\item{font_family}{Font family used for qgraph exports. For PDF/PS/EPS exports,
-this is applied when the graphics device is opened.}
+\item{font_family}{Font family to render the plot in, overriding the font
+the plot was created with. Kebab-case names (e.g. \code{"eb-garamond"}) are
+loaded as webfonts (see Details); any other name must be installed on
+your system. Defaults to \code{NULL}, which keeps the plot's own font.}
+
+\item{close_browser}{If \code{TRUE} (default), browser-based exports run in a
+separate short-lived R process, so the headless browser is closed when
+the export finishes and leaves no state behind in your R session. Set to
+\code{FALSE} to render in a persistent browser session instead, which is
+faster when exporting many plots in a row; the browser then stays open
+in the background until your R session ends. Ignored for exports that do
+not use a browser.}
 }
 \value{
-Returns \code{NULL} invisibly, called for side effects.
+Invisibly returns the file path of the exported plot, called for side effects.
 }
 \description{
 Save a plot of a stock-and-flow diagram or a simulation to a specified file path. Note that saving plots requires additional packages to be installed (see below).
 }
+\details{
+Exports that render in a headless browser (plotly plots, and diagrams
+using a webfont) require the suggested packages webshot2 and callr, plus a
+Chrome-based browser on your system. See \code{close_browser} for how the
+browser's lifetime is managed.
+}
+\section{Fonts}{
+When \code{font_family} (either passed here or to the \code{plot()} call that
+created \code{pl}) is an all-lowercase kebab-case name, it is treated as a font
+identifier from Fontsource (\url{https://fontsource.org/}) -- browse the
+catalogue there and use the id from the font page's URL, e.g.
+\code{"eb-garamond"} or \code{"source-serif-4"}. The font is then loaded as a
+\emph{webfont}: a CSS rule pointing to the font's files on the jsDelivr content
+delivery network is attached to the plot, and the headless browser that
+renders the export fetches the font over the internet at render time, just
+like a webpage. No fonts are downloaded by R or installed on your system.
+Internet access is required during the export; without it, the export
+still succeeds in a fallback font. Note that webfonts are not supported
+for the ps/eps formats, which fall back to system fonts.
+}
+
 \examples{
 
 # Only if dependencies are installed
@@ -43,7 +75,10 @@ if (requireNamespace("DiagrammeRsvg", quietly = TRUE) &&
   requireNamespace("rsvg", quietly = TRUE)) {
   sfm <- stockflow("sir")
   file <- tempfile(fileext = ".png")
-  export_plot(plot(sfm), file)
+
+  # With a system font the diagram is rendered by rsvg; the default
+  # webfont would instead require webshot2 and a headless browser
+  export_plot(plot(sfm, font_family = "serif"), file)
 
   # Remove plot
   file.remove(file)

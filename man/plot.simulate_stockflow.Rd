@@ -11,12 +11,13 @@
   palette = "Dark 2",
   colors = NULL,
   line_width = 2,
-  font_family = "Times New Roman",
+  font_family = default_font_family(),
   font_size = 16,
   wrap_width = 25,
   showlegend = TRUE,
   format_label = TRUE,
   animation = c("none", "time"),
+  control_options = list(),
   webgl = getOption("sdbuildR.webgl", default = TRUE),
   ...
 )
@@ -40,7 +41,14 @@ value applied to all variables, a named per-variable vector (names are
 variable names), or an unnamed vector with one value per variable in plot
 order. Defaults to \code{2}.}
 
-\item{font_family}{Font family. Defaults to "Times New Roman".}
+\item{font_family}{Font family. Kebab-case names (e.g. \code{"eb-garamond"})
+are Fontsource ids (browse them at \url{https://fontsource.org/}), loaded as
+webfonts: no installation is needed, but internet access is required to
+display them. Other fonts must be installed on the system viewing the
+plot. Defaults to the \code{sdbuildR.font_family} option, or
+the \code{"stix-two-text"} webfont when the option is unset; use
+\code{options(sdbuildR.font_family = )} to change the default for all plots,
+e.g. in your .Rprofile.}
 
 \item{font_size}{Font size. Defaults to 16.}
 
@@ -55,6 +63,16 @@ variable name. Applies to the legend and any condition controls. Defaults to
 
 \item{animation}{Animation mode. Use \code{"none"} for a static plot or \code{"time"}
 to cumulatively reveal trajectories over time. Defaults to \code{"none"}.}
+
+\item{control_options}{Named list fine-tuning the speed and smoothness of
+the \code{animation = "time"} animation. Supports \code{frame_ms}: the duration of
+each frame in milliseconds (default \code{100}); \code{duration}: the total
+animation length in seconds, as an alternative to \code{frame_ms} (supplying
+both is an error); \code{transition_ms}: the transition time between frames in
+milliseconds (default \code{0}); and \code{max_frames}: the maximum number of
+animation frames (default \code{50}; lower it for a chunkier reveal that also
+shortens the animation at a fixed \code{frame_ms}). Defaults to \code{list()}, i.e.
+all defaults.}
 
 \item{webgl}{If \code{TRUE}, render trajectories with WebGL (plotly \code{scattergl}) for
 performance with many lines; if \code{FALSE}, use SVG (\code{scatter}). Defaults to
@@ -100,6 +118,11 @@ plot(sim, show_constants = TRUE)
 
 # Cumulatively reveal the trajectories over time
 plot(sim, animation = "time")
+
+# Slow the animation down to ~10 seconds in total, or speed up the
+# individual frames
+plot(sim, animation = "time", control_options = list(duration = 10))
+plot(sim, animation = "time", control_options = list(frame_ms = 40))
 
 }
 \seealso{

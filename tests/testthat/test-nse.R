@@ -267,7 +267,6 @@ test_that("lookup() accepts bare symbols", {
 # ==============================================================================
 
 test_that("discard() accepts bare symbol for name", {
-
   sfm <- stockflow() |>
     update("x", "stock", eqn = "1")
 

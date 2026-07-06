@@ -217,7 +217,6 @@ get_IM_model <- function(url, file, fileext = c("InsightMaker", "json")) {
       },
       error = function(e) {
         cli::cli_abort(c(
-          "Failed to download model.",
           "x" = "Could not download {.pkg InsightMaker} model from the URL.",
           "i" = "Original error: {conditionMessage(e)}.",
           ">" = "Check your internet connection and ensure the URL is accessible."

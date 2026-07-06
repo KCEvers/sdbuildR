@@ -20,12 +20,12 @@ An object of class \code{compare_stockflow} (a list) containing:
 \item{\code{type_changed}}{Variables with different types.}
 \item{\code{eqn_changed}}{Variables with different equations.}
 \item{\code{sim_settings_diff}}{Simulation settings that differ.}
-\item{\code{properties}}{Per-model counts and nonlinearity scores.}
+\item{\code{properties}}{Per-model counts of variables by type.}
 }
 }
 \description{
 Compares the structure, equations, and simulation settings of two
-\code{stockflow} models, and computes a nonlinearity score for each.
+\code{stockflow} models.
 }
 \examples{
 sfm1 <- stockflow("sir")

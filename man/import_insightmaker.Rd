@@ -39,7 +39,7 @@ sfm <- import_insightmaker(
 plot(sfm)
 
 \dontshow{
-sfm <- sim_settings(sfm, save_at = .5)
+sfm <- sim_settings(sfm, save_by = .5)
 }
 
 # Simulate the model

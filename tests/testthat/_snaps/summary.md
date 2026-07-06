@@ -7,7 +7,6 @@
       -- Stock-and-Flow Model Diagnostics --------------------------------------------
       
       -- Potential problems (3) --
-      
       * Model has no flows.
       > Add flows with `flow()` or `update()`.
       * Stocks not connected to any flow: `Stock1` and `Stock2`.
@@ -22,7 +21,6 @@
       -- Stock-and-Flow Model Diagnostics --------------------------------------------
       
       -- Potential problem (1) --
-      
       * `Stock1` and `Flow1` have an equation of 0.
 
 # print.summary_stockflow() shows header and 'No problems detected!' for valid model
@@ -43,7 +41,6 @@
       -- Stock-and-Flow Model Diagnostics --------------------------------------------
       
       -- Potential problems (3) --
-      
       * Model has no flows.
       > Add flows with `flow()` or `update()`.
       * Stock not connected to any flow: `S`.

@@ -193,11 +193,11 @@ test_that("plot() applies custom stock color", {
   stock_color <- "#FF6B6B"
   df <- as.data.frame(sfm, properties = "type")
   stock_names <- df$name[df$type == "stock"]
-  pl <- plot(sfm, stock_col = stock_color)
+  pl <- plot(sfm, colors = list(stock = stock_color))
   nodes <- extract_diagram_nodes(pl)
   stock_nodes <- nodes[nodes$name %in% stock_names, ]
-  expect_true(all(stock_nodes$shape == "rectangle"))
-  expect_true(all(stock_nodes$color == stock_color))
+  expect_equal(nrow(stock_nodes), length(stock_names))
+  expect_true(all(stock_nodes$fillcolor == stock_color))
 
   expect_snapshot_plot("stockflow-custom-stock-color", pl)
 })
@@ -205,21 +205,135 @@ test_that("plot() applies custom stock color", {
 test_that("plot() applies custom flow color", {
   sfm <- stockflow("sir")
   flow_color <- "#4ECDC4"
-  df <- as.data.frame(sfm, properties = "type")
-  flow_names <- df$name[df$type == "flow"]
-  pl <- plot(sfm, flow_col = flow_color)
-  nodes <- extract_diagram_nodes(pl)
-  flow_nodes <- nodes[nodes$name %in% flow_names, ]
-  expect_true(all(flow_nodes$color == flow_color))
+  pl <- plot(sfm, colors = list(flow = flow_color))
+  d <- pl[["x"]][["diagram"]]
+
+  # Flows are drawn as black-bordered bands in the flow colour.
+  expect_true(grepl(paste0("black:", flow_color, ":black"), d, fixed = TRUE))
 
   expect_snapshot_plot("stockflow-custom-flow-color", pl)
+})
+
+# ============================================================================
+# colors ARGUMENT TESTS
+# ============================================================================
+
+# Model with all four variable types for colour tests
+typed_model <- function() {
+  sfm <- stockflow()
+  sfm <- update(sfm, "S", type = "stock", eqn = "100")
+  sfm <- update(sfm, "growth", type = "flow", to = "S", eqn = "r * a")
+  sfm <- update(sfm, "r", type = "constant", eqn = "0.1")
+  sfm <- update(sfm, "a", type = "aux", eqn = "S * 2")
+  sfm
+}
+
+test_that("plot() colors: single colour applies to all variable types", {
+  sfm <- typed_model()
+  pl <- plot(sfm, colors = "red", show_constants = TRUE, show_aux = TRUE)
+  nodes <- extract_diagram_nodes(pl)
+
+  # Stocks, constants, and auxiliaries are filled with the (normalised) colour
+  fill_nodes <- nodes[nodes$name %in% c("S", "r", "a"), ]
+  expect_equal(nrow(fill_nodes), 3L)
+  expect_true(all(fill_nodes$fillcolor == "#FF0000"))
+
+  # Flows carry the colour in their edge bands
+  expect_true(grepl("black:#FF0000:black", pl[["x"]][["diagram"]], fixed = TRUE))
+})
+
+test_that("plot() colors: list by type overrides only that type", {
+  sfm <- typed_model()
+  pl <- plot(sfm, colors = list(stock = "red"), show_constants = TRUE, show_aux = TRUE)
+  nodes <- extract_diagram_nodes(pl)
+
+  expect_equal(nodes$fillcolor[nodes$name == "S"], "#FF0000")
+  # Other types keep their defaults (grey90 = #E5E5E5, flow = #F48153)
+  expect_true(all(nodes$fillcolor[nodes$name %in% c("r", "a")] == "#E5E5E5"))
+  expect_true(grepl("black:#F48153:black", pl[["x"]][["diagram"]], fixed = TRUE))
+})
+
+test_that("plot() colors: list can set every type at once", {
+  sfm <- typed_model()
+  pl <- plot(sfm,
+    colors = list(
+      stock = "#111111", flow = "#222222",
+      constant = "#333333", aux = "#444444"
+    ),
+    show_constants = TRUE, show_aux = TRUE
+  )
+  nodes <- extract_diagram_nodes(pl)
+
+  expect_equal(nodes$fillcolor[nodes$name == "S"], "#111111")
+  expect_equal(nodes$fillcolor[nodes$name == "r"], "#333333")
+  expect_equal(nodes$fillcolor[nodes$name == "a"], "#444444")
+  expect_true(grepl("black:#222222:black", pl[["x"]][["diagram"]], fixed = TRUE))
+})
+
+test_that("plot() colors: named vector recolours single variables", {
+  sfm <- stockflow("sir")
+  pl <- plot(sfm, colors = c(susceptible = "gold"))
+  nodes <- extract_diagram_nodes(pl)
+
+  expect_equal(nodes$fillcolor[nodes$name == "susceptible"], "#FFD700")
+  # Other stocks keep the default stock colour
+  expect_true(all(nodes$fillcolor[nodes$name %in% c("infected", "recovered")] == "#83D3D4"))
+})
+
+test_that("plot() colors: named vector recolours single flows", {
+  sfm <- typed_model()
+  pl <- plot(sfm, colors = c(growth = "blue"))
+  d <- pl[["x"]][["diagram"]]
+
+  expect_true(grepl("black:#0000FF:black", d, fixed = TRUE))
+  expect_false(grepl("black:#F48153:black", d, fixed = TRUE))
+})
+
+test_that("plot() colors: list entries must be a single colour", {
+  sfm <- stockflow("sir")
+  # A variable's type is unique, so per-variable colours inside a type entry
+  # are redundant; the error points to the named-vector form instead.
+  expect_error(
+    plot(sfm, colors = list(stock = c(susceptible = "red"))),
+    "named vector"
+  )
+  expect_error(plot(sfm, colors = list(stock = c("red", "blue"))), "single colour")
+})
+
+test_that("plot() colors: unknown variable names warn and are ignored", {
+  sfm <- stockflow("sir")
+  expect_warning(
+    pl <- plot(sfm, colors = c(nonexistent = "red")),
+    "nonexistent"
+  )
+  nodes <- extract_diagram_nodes(pl)
+  expect_true(all(nodes$fillcolor[nodes$name == "susceptible"] == "#83D3D4"))
+})
+
+test_that("plot() colors: a type name in a named vector hints at the list form", {
+  sfm <- stockflow("sir")
+  expect_warning(
+    plot(sfm, colors = c(stock = "red")),
+    "list"
+  )
+})
+
+test_that("plot() colors: invalid specifications raise errors", {
+  sfm <- stockflow("sir")
+
+  # Unknown type in the list
+  expect_error(plot(sfm, colors = list(banana = "red")), "banana")
+  # Non-character colours
+  expect_error(plot(sfm, colors = 5), "character")
+  # Unnamed vector of multiple colours is ambiguous in a diagram
+  expect_error(plot(sfm, colors = c("red", "blue")), "single colour")
 })
 
 test_that("plot() applies custom dependency color", {
   sfm <- stockflow("sir")
   dependency_color <- "#FFE66D"
   df <- as.data.frame(sfm, properties = "type")
-  pl <- plot(sfm, dependency_col = dependency_color, show_dependencies = TRUE)
+  pl <- plot(sfm, color_dependency = dependency_color, show_dependencies = TRUE)
   edges <- extract_diagram_edges(pl)
   # dependency_edges <- edges[edges$rel == "dependency", ]
   # expect_true(all(dependency_edges$color == dependency_color))
@@ -272,7 +386,7 @@ test_that("plot.stockflow() with format_label = TRUE removes underscores", {
 })
 
 # ============================================================================
-# show_eqn AND label_col TESTS
+# show_eqn AND font_color TESTS
 # ============================================================================
 
 test_that("plot() with show_eqn = TRUE (default) shows equations beneath labels", {
@@ -280,13 +394,27 @@ test_that("plot() with show_eqn = TRUE (default) shows equations beneath labels"
   pl <- plot(sfm, show_constants = TRUE)
   d <- pl[["x"]][["diagram"]]
 
-  # Equations are rendered as a smaller FONT line, prefixed with "eqn = ".
+  # Equations are rendered as a smaller FONT line, prefixed by what the
+  # equation defines for that variable type.
   expect_true(grepl("FONT POINT-SIZE", d, fixed = TRUE))
-  expect_true(grepl("eqn = ", d, fixed = TRUE))
+  expect_true(grepl("Initial value = ", d, fixed = TRUE))
+  expect_true(grepl("Rate = ", d, fixed = TRUE))
+  expect_true(grepl("Value = ", d, fixed = TRUE))
   # HTML-like labels (label=< ... >) are used when show_eqn = TRUE.
   expect_true(grepl("label=<", d, fixed = TRUE))
 
   expect_snapshot_plot("stockflow-show-eqn", pl)
+})
+
+test_that("plot() show_eqn uses a type-specific prefix for every variable type", {
+  sfm <- typed_model()
+  pl <- plot(sfm, show_constants = TRUE, show_aux = TRUE)
+  d <- pl[["x"]][["diagram"]]
+
+  expect_true(grepl("Initial value = 100", d, fixed = TRUE))
+  expect_true(grepl("Rate = r * a", d, fixed = TRUE))
+  expect_true(grepl("Value = 0.1", d, fixed = TRUE))
+  expect_true(grepl("Equation = S * 2", d, fixed = TRUE))
 })
 
 test_that("plot() with show_eqn = FALSE does not show equations in labels", {
@@ -334,6 +462,7 @@ test_that("plot.stockflow() tooltips describe type, name, equation, and structur
 
   flow <- nodes[nodes$name == "new_infections", ]
   expect_true(grepl("Flow: New infections", flow$tooltip, fixed = TRUE))
+  expect_true(grepl("Rate: ", flow$tooltip, fixed = TRUE))
   expect_true(grepl("From: Susceptible", flow$tooltip, fixed = TRUE))
   expect_true(grepl("To: Infected", flow$tooltip, fixed = TRUE))
 
@@ -367,13 +496,13 @@ test_that("plot.stockflow() cloud tooltips state they are outside the model boun
   expect_true(any(grepl("Source of: births", cloud$tooltip, fixed = TRUE)))
 })
 
-test_that("plot() show_eqn uses label_col for the equation text", {
+test_that("plot() show_eqn uses font_color for the equation text", {
   sfm <- stockflow("sir")
   label_color <- "#123456"
-  pl <- plot(sfm, show_eqn = TRUE, label_col = label_color)
+  pl <- plot(sfm, show_eqn = TRUE, font_color = label_color)
   d <- pl[["x"]][["diagram"]]
 
-  # Equation FONT colour and node fontcolor both use label_col.
+  # Equation FONT colour and node fontcolor both use font_color.
   expect_true(grepl(paste0("COLOR=\"", label_color, "\""), d, fixed = TRUE))
   expect_true(grepl(label_color, d, fixed = TRUE))
 
@@ -386,7 +515,7 @@ test_that("plot() show_eqn wraps long equations to wrap_width", {
   d <- pl[["x"]][["diagram"]]
 
   # A long equation wrapped to a narrow width contains a line break.
-  expect_true(grepl("eqn =.*<BR/>", d))
+  expect_true(grepl("Rate =.*<BR/>", d))
 })
 
 test_that("plot() validates show_eqn", {
@@ -395,10 +524,10 @@ test_that("plot() validates show_eqn", {
   expect_error(plot(sfm, show_eqn = NA), "show_eqn")
 })
 
-test_that("plot() applies label_col to node fontcolor", {
+test_that("plot() applies font_color to node fontcolor", {
   sfm <- stockflow("sir")
   label_color <- "#654321"
-  pl <- plot(sfm, label_col = label_color)
+  pl <- plot(sfm, font_color = label_color)
   d <- pl[["x"]][["diagram"]]
 
   expect_true(grepl(label_color, d, fixed = TRUE))

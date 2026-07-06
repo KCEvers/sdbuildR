@@ -49,7 +49,7 @@
 #'   name   = "Logistic growth"
 #' )
 #' \dontshow{
-#' sfm <- sim_settings(sfm, save_at = 5)
+#' sfm <- sim_settings(sfm, save_by = 5)
 #' }
 #' sim <- simulate(sfm)
 #' plot(sim)

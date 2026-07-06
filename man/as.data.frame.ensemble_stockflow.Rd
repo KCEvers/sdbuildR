@@ -34,7 +34,7 @@
 
 \item{vars}{Variables to plot. Defaults to \code{NULL} to plot all variables.}
 
-\item{type}{Variable types to retain in the data frame. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', or 'func'. Defaults to \code{NULL} to include all types.}
+\item{type}{Variable types to retain in the data frame. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'lookup', or 'func'. Defaults to \code{NULL} to include all types.}
 
 \item{...}{Optional parameters}
 }

@@ -196,7 +196,7 @@ test_that("import_desolve() produces a simulatable model (logistic)", {
     init   = c(N = 10),
     times  = seq(0, 10, by = 0.1)
   )
-  sfm <- sim_settings(sfm, save_at = 1)
+  sfm <- sim_settings(sfm, save_by = 1)
   sim <- expect_no_error(simulate(sfm))
   expect_s3_class(sim, "simulate_stockflow")
 })
@@ -209,7 +209,7 @@ test_that("import_desolve() produces a simulatable model (SIR)", {
     init   = c(S = 990, I = 10, R = 0),
     times  = seq(0, 50, by = 0.1)
   )
-  sfm <- sim_settings(sfm, save_at = 5)
+  sfm <- sim_settings(sfm, save_by = 5)
   sim <- expect_no_error(simulate(sfm))
   expect_s3_class(sim, "simulate_stockflow")
 })

@@ -1,3 +1,49 @@
+# sdbuildR 2.2.0
+
+* Renamed several `plot.stockflow()` arguments for clarity: `minlen` is now
+  `flow_length`, `nodesep` is now `spacing`, `pad` is now `margin`,
+  `dependency_col` is now `color_dependency`, and `label_col` is now
+  `font_color`. The old names are no longer recognised.
+
+* Fixed time animations for variables that start with non-finite values, such
+  as `NaN` from a `0/0` ratio at initialization. These plots now build without
+  plotly trace-length warnings.
+
+* Time animations can now be tuned with `control_options` in
+  `plot.simulate_stockflow()`, `plot.ensemble_stockflow()`, and
+  `plot.verify_stockflow()`. Use `duration`, `frame_ms`, `transition_ms`, or
+  `max_frames` to control speed and smoothness.
+
+* `plot.stockflow(show_eqn = TRUE)` now labels equations by variable type:
+  `Initial value =` for stocks, `Rate =` for flows, `Value =` for constants,
+  and `Equation =` for auxiliaries. Hover tooltips use the same wording.
+
+* `install_julia_env()` now reinstalls the Julia environment from a clean
+  sdbuildR user data directory.
+
+* Informational messages are now controlled consistently with `quiet` in
+  `ensemble()`, `simulate()`, `use_julia()`, and `install_julia_env()`.
+  `ensemble(verbose = )` is deprecated.
+
+* *Breaking:* `plot.stockflow()` now uses `colors` instead of `stock_col` and
+  `flow_col`. `colors` accepts a single colour, a list keyed by variable type,
+  or a named vector keyed by variable name. Constants and auxiliaries can now
+  be coloured as well.
+
+* Dependency arrows in `plot.stockflow()` now default to open arrow heads. Use
+  the new `arrowhead_dependency` argument to choose a different shape.
+
+* Plots and diagrams can now use Fontsource webfonts by passing a Fontsource id
+  such as `"eb-garamond"` or `"source-serif-4"` to `font_family`. System fonts,
+  such as `"Times New Roman"`, still work as before. *Breaking:* the default
+  plot font changed from `"Times New Roman"` to `"stix-two-text"`; set
+  `options(sdbuildR.font_family = "Times New Roman")` to restore the old
+  default.
+
+* *Breaking:* `sim_settings()` now uses `save_by`, `save_times`, and
+  `save_length` for output times. These replace the removed `save_at` and
+  `save_n` arguments.
+
 # sdbuildR 2.1.0
 
 * The plotting `line_width` and `alpha` arguments now accept a richer grammar.
@@ -14,13 +60,20 @@
   sims = 1)` and `alpha = list(central = 1, spread = 0.3, sims = 0.3)` (the
   trajectory width is thinner and the band is drawn without a border by default).
 
-* `plot.ensemble_stockflow()` and `plot.verify_stockflow()` place condition
-  sliders/dropdowns (`condition_display = "slider"`/`"dropdown"`) more robustly:
-  the per-control spacing, the reserved bottom margin, and the x-axis title are
-  now sized from a single geometry so the controls no longer overlap each other
-  or the axis title when several condition parameters are varied. The gap can be
-  tuned via `control_options = list(spacing = ...)` (paper units; `NULL` keeps
-  the automatic default).
+* Improved the placement of condition sliders/dropdowns
+  (`condition_display = "slider"`/`"dropdown"`) in `plot.ensemble_stockflow()`
+  and `plot.verify_stockflow()`.
+  Plots with condition controls now have a fixed height, sized to the number of
+  stacked controls. The gap
+  between stacked controls can be tuned via
+  `control_options = list(spacing = ...)` (now in pixels; `NULL` keeps the
+  automatic default).
+
+* Fixed `condition_display = "dropdown"`: selecting a condition from the
+  dropdown(s) did not update the plot when several condition parameters were
+  varied, because the handler waited for a relayout event that plotly.js never
+  emits for dropdown buttons. The handler now reacts to the button-click event.
+
 
 * `ensemble()` chooses which summary statistics to compute via `central` and
   `spread`, mirroring the vocabulary of `plot.ensemble_stockflow()`. `central` is
@@ -40,16 +93,9 @@
   preference vector. `central` (`"mean"`, `"median"`, `"none"`) picks the central
   line and `spread` (`"quantile"`, `"sd"`, `"range"`, `"none"`) picks the
   uncertainty band; the first option whose statistics are present in the summary
-  is used, otherwise it falls back gracefully. `central` replaces the previous
+  is used. `central` replaces the previous
   `central_tendency` argument. Both accept lenient spellings (e.g. `"Medians"`,
   `"SDs"`).
-
-* Fixed a bug in `plot.ensemble_stockflow(which = "sims")` where the legend
-  swatches did not match the trajectory colours: the legend-carrying central
-  tendency traces were coloured via plotly's palette, which plotly silently
-  dropped (falling back to its default colourway) because the explicitly-coloured
-  trajectory traces were already present. The central tendency traces are now
-  coloured explicitly so the legend always matches the trajectories.
 
 * Fixed a bug where `simulate()` with `language = "julia"` ignored the `seed` set
   via `sim_settings()`, so models with random elements were not reproducible.
@@ -74,10 +120,6 @@
   for the model-editing functions (`update()`, `stock()`, `flow()`, ...). The
   `name` argument of `as.data.frame.stockflow()` has been renamed to `vars`.
 
-* Requesting a variable that exists in the model but was not saved in the output
-  now raises a clear, actionable error (re-run with `only_stocks = FALSE`, or set
-  `vars` in `sim_settings()`), instead of a generic message.
-
 * `plot.stockflow()` gains three layout-control arguments. `direction` sets the
   overall flow direction (`"LR"`, `"TB"`, `"RL"`, or `"BT"`; default `"LR"`).
   `align` lines variables up across the flow direction (one or more groups,
@@ -95,7 +137,7 @@
 * `use_julia()` and `simulate()` now detect when the sdbuildR Julia environment
   was built with a different version of Julia than the one currently running
   (for example after reinstalling or updating Julia) and prompt you to rebuild
-  it with `install_julia_env()`, instead of failing with an unclear error.
+  it with `install_julia_env()`, instead of failing.
 
 * `install_julia_env()` now reports clearly when setup is interrupted (for
   example by cancelling the 10-25 minute install), prompting you to run it
@@ -123,7 +165,7 @@
   `condition_display` argument. In addition to the default `"subplots"`, use
   `"slider"` or `"dropdown"` to show one condition/test at a time and select it
   interactively. These controls now (a) draw only one condition's traces and
-  swap the data client-side, so they stay fast and compact even for ensembles
+  swap the data client-side, so they stay fast even for ensembles
   with many conditions; (b) label each condition with its parameter values; and
   (c) for a crossed ensemble (`cross = TRUE`) with two or more parameters, show
   one control per parameter instead of a single condition selector. The
@@ -213,8 +255,8 @@
 * `unit_test()`, `unit_tests()`, and `verify()` add model-level unit tests for
   expected simulation behavior, including tests under alternative `conditions`.
 
-* `compare_models()` compares model structure, equations, simulation settings,
-  and nonlinearity scores across two `stockflow` models.
+* `compare_models()` compares model structure, equations, and simulation
+  settings across two `stockflow` models.
 
 * `import_desolve()` converts deSolve-style ODE models into `stockflow` models.
 

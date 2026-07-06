@@ -2,10 +2,10 @@
 #'
 #' Simulate a stock-and-flow model with simulation specifications defined by [sim_settings()]. If `sim_settings(language = "julia")`, the Julia environment will first be set up with [use_julia()]. If any problems are detected by [summary()], the model cannot be simulated.
 #'
-#' @inheritParams import_insightmaker
 #' @inheritParams update.stockflow
 #' @inheritParams sim_settings
 #' @param nsim Number of simulations to run (unused; see [ensemble()] for running multiple simulations).
+#' @param quiet If `TRUE`, suppress informational messages such as progress and status updates. Warnings and errors are always shown. Defaults to `FALSE`.
 #' @param ... Optional arguments passed to [sim_settings()]; these can be used to override the simulation specifications set in the model object.
 #'
 #' @returns Object of class [`simulate_stockflow`][simulate.stockflow()], a list containing:
@@ -41,6 +41,7 @@
 simulate.stockflow <- function(
   object,
   nsim = 1, seed = NULL,
+  quiet = FALSE,
   ...
 ) {
   check_stockflow(object)
@@ -67,7 +68,8 @@ simulate.stockflow <- function(
   if (tolower(object[["sim_settings"]][["language"]]) == "julia") {
     return(simulate_julia(object,
       only_stocks = only_stocks,
-      vars = vars
+      vars = vars,
+      quiet = quiet
     ))
   } else if (tolower(object[["sim_settings"]][["language"]]) == "r") {
     return(simulate_r(object,
@@ -207,7 +209,7 @@ print.simulate_stockflow <- function(x, ...) {
 
   df <- x[["df"]]
   if (!is.null(df) && nrow(df) > 0) {
-    cli::cli_h2("Data (first rows)")
+    cli_h2_tight("Data (first rows)")
     print(head(as.data.frame(x, direction = "wide"), 5))
 
     # Print blank line
@@ -222,88 +224,18 @@ print.simulate_stockflow <- function(x, ...) {
 }
 
 
-# Internal helper: compute model properties including nonlinearity score
+# Internal helper: count model variables by type
 model_properties <- function(object) {
   vars <- object[["variables"]]
 
-  by_type <- function(t) vars[vars[["type"]] == t, , drop = FALSE]
-  stocks <- by_type("stock")
-  flows <- by_type("flow")
-  auxs <- by_type("aux")
-  constants <- by_type("constant")
-  lookups <- by_type("lookup")
-
-  dynamic_names <- c(stocks[["name"]], flows[["name"]], auxs[["name"]])
-  lookup_names <- lookups[["name"]]
-
-  # Variables whose equations we scan (everything except lookups and funcs)
-  eqn_vars <- vars[!vars[["type"]] %in% c("lookup", "func"), , drop = FALSE]
-
-  nonlinear_fn_pattern <- paste0(
-    "\\b(exp|log|log10|log2|sqrt|sin|cos|tan|asin|acos|atan|abs|ceiling|floor)\\s*\\("
-  )
-
-  by_variable <- character(0)
-
-  tag_var <- function(vec, nm, tag) {
-    if (nm %in% names(vec)) {
-      vec[nm] <- paste0(vec[nm], ", ", tag)
-    } else {
-      vec[nm] <- tag
-    }
-    vec
-  }
-
-  n_lookup_refs <- 0L
-  n_nonlinear_fns <- 0L
-  n_multiplicative_dynamic <- 0L
-
-  if (nrow(eqn_vars) > 0 && length(lookup_names) > 0) {
-    for (i in seq_len(nrow(eqn_vars))) {
-      eqn <- eqn_vars[i, "eqn"]
-      nm <- eqn_vars[i, "name"]
-      if (is.na(eqn) || eqn == "") next
-      if (any(sapply(lookup_names, function(lk) grepl(lk, eqn, fixed = TRUE)))) {
-        n_lookup_refs <- n_lookup_refs + 1L
-        by_variable <- tag_var(by_variable, nm, "lookup_ref")
-      }
-    }
-  }
-
-  if (nrow(eqn_vars) > 0) {
-    for (i in seq_len(nrow(eqn_vars))) {
-      eqn <- eqn_vars[i, "eqn"]
-      nm <- eqn_vars[i, "name"]
-      if (is.na(eqn) || eqn == "") next
-
-      if (grepl(nonlinear_fn_pattern, eqn, perl = TRUE)) {
-        n_nonlinear_fns <- n_nonlinear_fns + 1L
-        by_variable <- tag_var(by_variable, nm, "nonlinear_fn")
-      }
-
-      if (length(dynamic_names) >= 2 && grepl("*", eqn, fixed = TRUE)) {
-        refs <- sum(sapply(dynamic_names, function(v) grepl(v, eqn, fixed = TRUE)))
-        if (refs >= 2L) {
-          n_multiplicative_dynamic <- n_multiplicative_dynamic + 1L
-          by_variable <- tag_var(by_variable, nm, "multiplicative")
-        }
-      }
-    }
-  }
+  count_type <- function(t) sum(vars[["type"]] == t)
 
   list(
-    n_stocks = nrow(stocks),
-    n_flows = nrow(flows),
-    n_aux = nrow(auxs),
-    n_constants = nrow(constants),
-    n_lookups = nrow(lookups),
-    nonlinearity = list(
-      score                    = n_lookup_refs + n_nonlinear_fns + n_multiplicative_dynamic,
-      n_lookup_refs            = n_lookup_refs,
-      n_nonlinear_fns          = n_nonlinear_fns,
-      n_multiplicative_dynamic = n_multiplicative_dynamic,
-      by_variable              = by_variable
-    )
+    n_stocks = count_type("stock"),
+    n_flows = count_type("flow"),
+    n_aux = count_type("aux"),
+    n_constants = count_type("constant"),
+    n_lookups = count_type("lookup")
   )
 }
 
@@ -311,7 +243,7 @@ model_properties <- function(object) {
 #' Compare two stock-and-flow models
 #'
 #' Compares the structure, equations, and simulation settings of two
-#' `stockflow` models, and computes a nonlinearity score for each.
+#' `stockflow` models.
 #'
 #' @param sfm1 A stock-and-flow model of class [`stockflow`][stockflow()].
 #' @param sfm2 A stock-and-flow model of class [`stockflow`][stockflow()].
@@ -324,7 +256,7 @@ model_properties <- function(object) {
 #'     \item{`type_changed`}{Variables with different types.}
 #'     \item{`eqn_changed`}{Variables with different equations.}
 #'     \item{`sim_settings_diff`}{Simulation settings that differ.}
-#'     \item{`properties`}{Per-model counts and nonlinearity scores.}
+#'     \item{`properties`}{Per-model counts of variables by type.}
 #'   }
 #' @seealso [`simulate()`][simulate.stockflow()], [`summary()`][summary.stockflow()]
 #' @concept build
@@ -387,7 +319,7 @@ compare_models <- function(sfm1, sfm2) {
 
   # Sim specs diff
   spec_fields <- c(
-    "start", "stop", "dt", "save_at", "save_type", "save_n",
+    "start", "stop", "dt", "save_by", "save_times", "save_length",
     "time_units", "method", "seed", "language", "only_stocks"
   )
   s1 <- sfm1[["sim_settings"]]
@@ -448,7 +380,7 @@ print.compare_stockflow <- function(x, ...) {
   cli::cli_h1("Stock-and-Flow Comparison: {l1} vs {l2}")
 
   # ── Structural Differences ──────────────────────────────────────
-  cli::cli_h2("Structural Differences")
+  cli_h2_tight("Structural Differences")
 
   n_added <- nrow(x[["added"]])
   n_removed <- nrow(x[["removed"]])
@@ -485,7 +417,7 @@ print.compare_stockflow <- function(x, ...) {
   }
 
   # ── Simulation Settings ──────────────────────────────────────
-  cli::cli_h2("Simulation Settings")
+  cli_h2_tight("Simulation Settings")
   if (length(x[["sim_settings_diff"]]) == 0L) {
     cli::cli_alert_success("Identical")
   } else {
@@ -497,7 +429,7 @@ print.compare_stockflow <- function(x, ...) {
   }
 
   # ── Model Properties ──────────────────────────────────────────
-  cli::cli_h2("Model Properties")
+  cli_h2_tight("Model Properties")
 
   p1 <- x[["properties"]][["sfm1"]]
   p2 <- x[["properties"]][["sfm2"]]
@@ -509,36 +441,11 @@ print.compare_stockflow <- function(x, ...) {
     )
   }
 
-  # cli::cli_text(
-    # paste0(
-    #   "  ", formatC("", width = 24, flag = "-"),
-    #   formatC(l1, width = 8), formatC(l2, width = 8)
-    # )
-  #   "{l1} vs {l2}"
-  # )
-  cli::cli_text(paste0("  ", strrep("-", 40)))
   row("Stocks", p1[["n_stocks"]], p2[["n_stocks"]])
   row("Flows", p1[["n_flows"]], p2[["n_flows"]])
   row("Auxiliaries", p1[["n_aux"]], p2[["n_aux"]])
   row("Constants", p1[["n_constants"]], p2[["n_constants"]])
   row("Lookups", p1[["n_lookups"]], p2[["n_lookups"]])
-  cli::cli_text(paste0("  ", strrep("-", 40)))
-  row(
-    "Nonlinearity score", p1[["nonlinearity"]][["score"]],
-    p2[["nonlinearity"]][["score"]]
-  )
-  row(
-    "  Lookup refs", p1[["nonlinearity"]][["n_lookup_refs"]],
-    p2[["nonlinearity"]][["n_lookup_refs"]]
-  )
-  row(
-    "  Nonlinear fns", p1[["nonlinearity"]][["n_nonlinear_fns"]],
-    p2[["nonlinearity"]][["n_nonlinear_fns"]]
-  )
-  row(
-    "  Multiplicative", p1[["nonlinearity"]][["n_multiplicative_dynamic"]],
-    p2[["nonlinearity"]][["n_multiplicative_dynamic"]]
-  )
 
   invisible(x)
 }
@@ -658,7 +565,7 @@ compare_sim <- function(sim1, sim2, tolerance = .00001) {
 #' @inheritParams plot.simulate_stockflow
 #' @param direction Format of data frame, either "long" (default) or "wide".
 #' @param vars Variable names to retain in the data frame. Defaults to `NULL` to include all variables.
-#' @param type Variable types to retain in the data frame. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'gf', or 'func'. Defaults to `NULL` to include all types.
+#' @param type Variable types to retain in the data frame. Must be one or more of 'stock', 'flow', 'constant', 'aux', 'lookup', or 'func'. Defaults to `NULL` to include all types.
 #' @param row.names NULL or a character vector giving the row names for the data frame. Missing values are not allowed.
 #' @param optional Ignored parameter.
 #'
@@ -775,7 +682,7 @@ tail.simulate_stockflow <- function(x, n = 6L, ...) {
 }
 
 
-#' Summarise simulation results
+#' Summarize simulation results
 #'
 #' Returns a data frame with per-variable summary statistics (min, mean, max,
 #' and final value) over the simulated time range.
@@ -799,7 +706,7 @@ summary.simulate_stockflow <- function(object, ...) {
 
   if (!object[["success"]]) {
     cli::cli_abort(c(
-      "Cannot summarise a failed simulation.",
+      "Cannot summarize a failed simulation.",
       "i" = "Inspect the error message with: {.code x$error_message}"
     ))
   }

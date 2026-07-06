@@ -14,8 +14,8 @@
 #' @noRd
 ensemble_julia <- function(object, n, save_sims, conditions, cross,
                            quantiles, summary_stats, only_stocks, vars = NULL,
-                           verbose, n_conditions, total_sims) {
-  use_julia()
+                           quiet, n_conditions, total_sims) {
+  use_julia(quiet = quiet)
 
   # Evaluate script
   start_t <- Sys.time()
@@ -81,7 +81,7 @@ ensemble_julia <- function(object, n, save_sims, conditions, cross,
 
       end_t <- Sys.time()
 
-      if (verbose) {
+      if (!quiet) {
         elapsed <- round(as.numeric(end_t) - as.numeric(start_t), 4)
         cli::cli_inform(c(
           "v" = "Ensemble simulation completed in {.val {elapsed}} seconds."

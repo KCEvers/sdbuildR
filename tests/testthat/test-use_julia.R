@@ -118,22 +118,6 @@ test_that("julia_version_compatible() compares major and minor versions", {
 })
 
 
-test_that("julia_env_dir() honours the in-package toggle", {
-  # Default: persistent user directory via tools::R_user_dir()
-  withr::local_options(sdbuildR.julia_env_in_package = FALSE)
-  expect_false(julia_env_in_package())
-  expect_match(julia_env_dir(), "julia$")
-
-  # Toggled: inside the installed package directory (pre-2.x behaviour)
-  withr::local_options(sdbuildR.julia_env_in_package = TRUE)
-  expect_true(julia_env_in_package())
-  expect_identical(
-    julia_env_dir(),
-    dirname(system.file("Project.toml", package = "sdbuildR"))
-  )
-})
-
-
 test_that("Project.toml hash drift is detected", {
   # The shipped Project.toml should produce a stable, non-NA hash
   h <- project_toml_hash()

@@ -98,7 +98,7 @@
       }
     },
     "font": {
-      "family": "Times New Roman",
+      "family": "stix-two-text",
       "size": 16
     },
     "hovermode": "closest",

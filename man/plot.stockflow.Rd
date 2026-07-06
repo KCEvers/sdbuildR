@@ -10,22 +10,22 @@
   format_label = TRUE,
   wrap_width = 20,
   font_size = 18,
-  font_family = "Times New Roman",
-  stock_col = "#83d3d4",
-  flow_col = "#f48153",
-  dependency_col = "#999999",
-  label_col = "black",
+  font_family = default_font_family(),
+  colors = NULL,
+  color_dependency = "#999999",
+  font_color = "black",
   show_eqn = TRUE,
   show_tooltip = TRUE,
   show_dependencies = TRUE,
   show_constants = FALSE,
   show_aux = TRUE,
-  minlen = 1,
-  pad = 0.1,
-  nodesep = 0.3,
+  flow_length = 1,
+  margin = 0.1,
+  spacing = 0.5,
   direction = "LR",
   align = NULL,
   order = NULL,
+  arrowhead_dependency = "open",
   ...
 )
 }
@@ -40,17 +40,31 @@
 
 \item{font_size}{Font size. Defaults to 18.}
 
-\item{font_family}{Font name. Defaults to "Times New Roman".}
+\item{font_family}{Font name. Kebab-case names (e.g. \code{"eb-garamond"}) are
+Fontsource ids (browse them at \url{https://fontsource.org/}), loaded as
+webfonts: no installation is needed, but internet access is required to
+display them. Other fonts must be installed on the system viewing the
+plot. Defaults to the \code{sdbuildR.font_family} option, or the
+\code{"stix-two-text"} webfont when the option is unset; use
+\code{options(sdbuildR.font_family = )} to change the default for all plots,
+e.g. in your .Rprofile.}
 
-\item{stock_col}{Colour of stocks. Defaults to "#83d3d4".}
+\item{colors}{Colours of the diagram variables, by variable type or
+variable name. A single colour applies to every variable. A named list
+keyed by type (\code{list(stock = , flow = , constant = , aux = )}), each entry
+a single colour, overrides the colour of those types and keeps the
+defaults for the rest (as with \code{\link[utils:modifyList]{utils::modifyList()}}); the defaults are
+\code{list(stock = "#83d3d4", flow = "#f48153", constant = "grey90", aux = "grey90")}. A named vector (names are variable names, as in the
+other plot methods) recolours only those variables and leaves the rest at
+their type default. Stocks, constants, and auxiliaries are coloured by
+their node fill; flows by the coloured band of their flow arrows.
+Defaults to \code{NULL} (the default type colours).}
 
-\item{flow_col}{Colour of flows. Defaults to "#f48153".}
+\item{color_dependency}{Colour of dependency arrows. Defaults to "#999999".}
 
-\item{dependency_col}{Colour of dependency arrows. Defaults to "#999999".}
+\item{font_color}{Colour of variable labels (and of the equation text when \code{show_eqn = TRUE}). Defaults to "black".}
 
-\item{label_col}{Colour of variable labels (and of the equation text when \code{show_eqn = TRUE}). Defaults to "black".}
-
-\item{show_eqn}{If \code{TRUE}, show each variable's equation on a new line beneath its label, in a smaller font and the same colour as the label (\code{label_col}). Defaults to \code{TRUE}.}
+\item{show_eqn}{If \code{TRUE}, show each variable's equation on a new line beneath its label, in a smaller font and the same colour as the label (\code{font_color}). The equation is prefixed by what it defines for that variable type: \verb{Initial value =} for stocks, \verb{Rate =} for flows, \verb{Value =} for constants, and \verb{Equation =} for auxiliaries. Defaults to \code{TRUE}.}
 
 \item{show_tooltip}{If \code{TRUE}, show each variable's equation as a tooltip when hovering over it. Defaults to \code{TRUE}.}
 
@@ -60,11 +74,14 @@
 
 \item{show_aux}{If TRUE, show auxiliary variables. Defaults to TRUE.}
 
-\item{minlen}{Minimum length of edges; must be an integer. Defaults to 2.}
+\item{flow_length}{Minimum length of flow arrows; controls how far apart
+connected variables sit along the flow direction. Must be an integer.
+Defaults to 1.}
 
-\item{pad}{Padding around the graph. Defaults to 0.1.}
+\item{margin}{Padding around the diagram. Defaults to 0.1.}
 
-\item{nodesep}{Minimum distance between nodes. Defaults to 0.3.}
+\item{spacing}{Minimum space between adjacent variables placed side by side
+(across the flow direction). Defaults to 0.5.}
 
 \item{direction}{Overall flow direction of the layout, passed to Graphviz's
 \code{rankdir}. One of \code{"LR"} (left-to-right, the default), \code{"TB"} (top-to-bottom),
@@ -88,6 +105,12 @@ successive ranks (e.g. separate columns when \code{direction = "LR"}); to instea
 line variables up in a single rank and control their order \emph{within} it,
 combine \code{order} with \code{align} (the \code{align} group sets the rank, \code{order} sets
 the position within it). Same validation as \code{align}. Defaults to \code{NULL}.}
+
+\item{arrowhead_dependency}{Shape of the arrowhead on dependency arrows,
+passed to Graphviz's \code{arrowhead}. One of \code{"open"} (the default, an open
+V-shape), \code{"normal"}, \code{"vee"}, \code{"diamond"}, \code{"dot"}, \code{"box"}, \code{"crow"},
+\code{"curve"}, \code{"inv"}, \code{"tee"}, or \code{"none"}. See
+\url{https://graphviz.org/docs/attr-types/arrowType/} for illustrations.}
 
 \item{...}{Optional arguments}
 }
@@ -114,7 +137,16 @@ plot(sfm, show_eqn = FALSE)
 plot(sfm, show_tooltip = FALSE)
 
 # Custom label colour
-plot(sfm, label_col = "#333333")
+plot(sfm, font_color = "#333333")
+
+# Colour every variable the same
+plot(sfm, colors = "lightblue")
+
+# Change only the stock colour; other types keep their defaults
+plot(sfm, colors = list(stock = "gold"))
+
+# Recolour a single variable
+plot(sfm, colors = c(susceptible = "gold"))
 
 # Lay the model out top-to-bottom instead of left-to-right
 plot(sfm, direction = "TB")

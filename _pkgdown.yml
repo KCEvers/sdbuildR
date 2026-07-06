@@ -6,6 +6,7 @@ articles:
 - title: Vignettes
   navbar: ~
   contents:
+  - articles/summerschool2026
   - articles/build
   - articles/ensemble
   - articles/unit-tests

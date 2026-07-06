@@ -26,6 +26,12 @@ options(sdbuildR.webgl = FALSE)
 ```
 
 
+```{r, echo = FALSE}
+font_family <- "stix-two-text"
+options(sdbuildR.font_family = font_family)
+# getOption("sdbuildR.font_family")
+```
+
 sdbuildR is an R package for building, simulating, and testing stock-and-flow models. This page gives a quick overview of its main features.
 
 ### Load models from the model library
@@ -122,7 +128,7 @@ Running multiple simulations (i.e., an ensemble) provides insight into a model's
 sfm_ens <- sfm |>
   update(c(Susceptible, Infected, Recovered), eqn = runif(1, 1, 1000)) |>
   # Save fewer values for computational efficiency
-  sim_settings(stop = 50, save_at = 1)
+  sim_settings(stop = 50, save_by = 1)
 ```
 
 ```{r ensemble_plot, fig.width=8, fig.height=4}

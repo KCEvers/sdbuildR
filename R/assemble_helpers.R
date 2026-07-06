@@ -433,21 +433,20 @@ compile_script_sections <- function(object, ode, run_ode, post) {
 #'
 #' @param ss Simulation settings list.
 #'
-#' @returns List with save schedule type, value, and scalar flag.
+#' @returns List with save schedule type and value.
 #' @noRd
 save_schedule <- function(ss) {
-  save_type <- ss[["save_type"]] %||% "all"
-  value <- switch(save_type,
-    "all" = NULL,
-    "save_at" = ss[["save_at"]],
-    "save_n" = ss[["save_n"]]
-  )
-
-  list(
-    type = save_type,
-    value = value,
-    is_scalar = !is.null(value) && length(value) == 1L
-  )
+  # Exactly one of save_by / save_times / save_length is non-NULL, or none (save
+  # every dt step). Derive the discriminating type from whichever field is set.
+  if (!is.null(ss[["save_by"]])) {
+    list(type = "by", value = ss[["save_by"]])
+  } else if (!is.null(ss[["save_times"]])) {
+    list(type = "times", value = ss[["save_times"]])
+  } else if (!is.null(ss[["save_length"]])) {
+    list(type = "length", value = ss[["save_length"]])
+  } else {
+    list(type = "all", value = NULL)
+  }
 }
 
 
@@ -462,15 +461,12 @@ julia_saveat_expr <- function(ss) {
 
   switch(schedule[["type"]],
     "all" = P[["tstops_name"]],
-    "save_at" = if (schedule[["is_scalar"]]) {
-      sprintf(
-        "%s[1]:%s:%s[2]",
-        P[["times_name"]], schedule[["value"]], P[["times_name"]]
-      )
-    } else {
-      paste0("[", paste(schedule[["value"]], collapse = ", "), "]")
-    },
-    "save_n" = {
+    "by" = sprintf(
+      "%s[1]:%s:%s[2]",
+      P[["times_name"]], schedule[["value"]], P[["times_name"]]
+    ),
+    "times" = paste0("[", paste(schedule[["value"]], collapse = ", "), "]"),
+    "length" = {
       if (as.integer(schedule[["value"]]) == 1L) {
         sprintf("[%s[2]]", P[["times_name"]])
       } else {
@@ -495,17 +491,14 @@ r_saveat_script <- function(ss) {
 
   switch(schedule[["type"]],
     "all" = "",
-    "save_at" = if (schedule[["is_scalar"]]) {
-      fmt_script("saveat_interval", "R", ss, save_at_val = schedule[["value"]])
+    "by" = fmt_script("saveat_interval", "R", ss, save_by_val = schedule[["value"]]),
+    "times" = fmt_script("saveat_explicit", "R", ss,
+      save_times_str = paste(schedule[["value"]], collapse = ", ")
+    ),
+    "length" = if (as.integer(schedule[["value"]]) == 1L) {
+      fmt_script("saveat_length1", "R", ss)
     } else {
-      fmt_script("saveat_explicit", "R", ss,
-        save_at_str = paste(schedule[["value"]], collapse = ", ")
-      )
-    },
-    "save_n" = if (as.integer(schedule[["value"]]) == 1L) {
-      fmt_script("saveat_n1", "R", ss)
-    } else {
-      fmt_script("saveat_n", "R", ss, save_n_val = schedule[["value"]])
+      fmt_script("saveat_length", "R", ss, save_length_val = schedule[["value"]])
     }
   )
 }

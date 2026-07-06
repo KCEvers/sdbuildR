@@ -16,7 +16,6 @@
 # converter and are intentionally left untouched.
 
 
-
 #' Translate one R equation to Julia via its parse tree
 #'
 #' @param eqn Length-1 character R equation.
@@ -298,16 +297,16 @@ emit_julia_node <- function(node, var_names) {
 
   # --- Binary operators -----------------------------------------------------
   # Binary operators -> Julia. Arithmetic/comparison broadcast (.op); logical map
-# to scalar &&/||; %%/%/% map to the package's Unicode operators (emitted as the
-# \uXXXX escape text, converted downstream exactly like the legacy translator);
-# %*% is plain * and %in% is `in`.
-.ast_binary_ops <- c(
-  "+" = ".+", "-" = ".-", "*" = ".*", "/" = "./", "^" = ".^",
-  "==" = ".==", "!=" = ".!=", "<" = ".<", ">" = ".>",
-  "<=" = ".<=", ">=" = ".>=",
-  "&" = "&&", "|" = "||", "&&" = "&&", "||" = "||",
-  "%%" = "\\u2295", "%/%" = "\\u2298", "%*%" = "*", "%in%" = "in"
-)
+  # to scalar &&/||; %%/%/% map to the package's Unicode operators (emitted as the
+  # \uXXXX escape text, converted downstream exactly like the legacy translator);
+  # %*% is plain * and %in% is `in`.
+  .ast_binary_ops <- c(
+    "+" = ".+", "-" = ".-", "*" = ".*", "/" = "./", "^" = ".^",
+    "==" = ".==", "!=" = ".!=", "<" = ".<", ">" = ".>",
+    "<=" = ".<=", ">=" = ".>=",
+    "&" = "&&", "|" = "||", "&&" = "&&", "||" = "||",
+    "%%" = "\\u2295", "%/%" = "\\u2298", "%*%" = "*", "%in%" = "in"
+  )
 
   if (length(args) == 2L && !is.null(fname) &&
     fname %in% names(.ast_binary_ops)) {

@@ -75,22 +75,28 @@ test_that("plot.ensemble_stockflow() requires save_sims for which = 'sims'", {
 # be told apart from the central-tendency line traces.
 ens_trace_aes <- function(pl) {
   b <- plotly::plotly_build(pl)[["x"]][["data"]]
-  do.call(rbind, lapply(b, function(t) data.frame(
-    name = t[["name"]] %||% NA_character_,
-    type = t[["type"]] %||% NA_character_,
-    width = if (is.null(t[["line"]][["width"]])) NA_real_ else as.numeric(t[["line"]][["width"]])[1],
-    opacity = if (is.null(t[["opacity"]])) NA_real_ else as.numeric(t[["opacity"]])[1],
-    line_color = t[["line"]][["color"]] %||% NA_character_,
-    fillcolor = t[["fillcolor"]] %||% NA_character_,
-    stringsAsFactors = FALSE
-  )))
+  do.call(rbind, lapply(b, function(t) {
+    data.frame(
+      name = t[["name"]] %||% NA_character_,
+      type = t[["type"]] %||% NA_character_,
+      width = if (is.null(t[["line"]][["width"]])) NA_real_ else as.numeric(t[["line"]][["width"]])[1],
+      opacity = if (is.null(t[["opacity"]])) NA_real_ else as.numeric(t[["opacity"]])[1],
+      line_color = t[["line"]][["color"]] %||% NA_character_,
+      fillcolor = t[["fillcolor"]] %||% NA_character_,
+      stringsAsFactors = FALSE
+    )
+  }))
 }
 
 # Alpha channel (0-1) of a plotly colour string: #RRGGBBAA, rgba(), else opaque.
 color_alpha <- function(col) {
-  if (is.null(col) || length(col) == 0L || is.na(col)) return(NA_real_)
+  if (is.null(col) || length(col) == 0L || is.na(col)) {
+    return(NA_real_)
+  }
   col <- as.character(col)[1L]
-  if (grepl("^#[0-9A-Fa-f]{8}$", col)) return(strtoi(substr(col, 8, 9), 16L) / 255)
+  if (grepl("^#[0-9A-Fa-f]{8}$", col)) {
+    return(strtoi(substr(col, 8, 9), 16L) / 255)
+  }
   if (grepl("^rgba\\(", col)) {
     nums <- as.numeric(strsplit(gsub("rgba\\(|\\)|\\s", "", col), ",")[[1L]])
     return(nums[4L])
@@ -284,6 +290,29 @@ test_that("plot.ensemble_stockflow() creates a basic summary plot", {
   pl <- plot(sims)
   expect_plotly(pl)
   expect_true(nrow(plotly_traces(pl)) > 0)
+})
+
+test_that("plot.ensemble_stockflow() handles ensembles saved with selected vars", {
+  withr::local_pdf(NULL)
+  sims <- make_r_ens(
+    n = 2,
+    save_sims = TRUE,
+    only_stocks = FALSE,
+    vars = c("susceptible", "infected")
+  )
+
+  expect_setequal(unique(sims[["summary"]][["variable"]]), c("susceptible", "infected"))
+  expect_setequal(unique(sims[["df"]][["variable"]]), c("susceptible", "infected"))
+
+  pl <- expect_no_error(plot(sims, which = "summary"))
+  expect_plotly(pl)
+  legend <- plotly_dedupe_legend(plotly_traces(pl))
+  expect_setequal(legend[["name"]], c("Susceptible", "Infected"))
+
+  pl <- expect_no_error(plot(sims, which = "sims"))
+  expect_plotly(pl)
+  legend <- plotly_dedupe_legend(plotly_traces(pl))
+  expect_setequal(legend[["name"]], c("Susceptible", "Infected"))
 })
 
 
@@ -763,8 +792,10 @@ test_that("plot.ensemble_stockflow() control_options$spacing widens the gap", {
   ), cross = TRUE)
 
   auto <- plot(sims, condition_display = "slider")
-  wide <- plot(sims, condition_display = "slider",
-    control_options = list(spacing = 0.4))
+  wide <- plot(sims,
+    condition_display = "slider",
+    control_options = list(spacing = 150)
+  )
 
   auto_y <- vapply(plotly_layout(auto)$sliders, function(s) s$y, numeric(1))
   wide_y <- vapply(plotly_layout(wide)$sliders, function(s) s$y, numeric(1))
@@ -787,6 +818,70 @@ test_that("plot.ensemble_stockflow() controls reserve more bottom margin per con
   m2 <- plotly_layout(plot(two, condition_display = "slider"))$margin$b
   # Two stacked controls must reserve more space than one.
   expect_gt(m2, m1)
+})
+
+test_that("plot.ensemble_stockflow() condition controls pin the figure height", {
+  one <- make_r_ens_2cond()
+  two <- make_r_ens(n = 3, conditions = list(
+    "contact_rate" = c(1.5, 2.5),
+    "recovery_rate" = c(0.1, 0.2)
+  ), cross = TRUE)
+
+  p1 <- plot(one, condition_display = "slider")
+  p2 <- plot(two, condition_display = "slider")
+
+  # The control offsets are paper coordinates, so the pixel gaps between
+  # stacked controls are only guaranteed when the plot-area height is fixed:
+  # widget and layout carry an explicit height that grows per control.
+  expect_false(is.null(p1$height))
+  expect_equal(plotly_layout(p1)$height, p1$height)
+  expect_gt(p2$height, p1$height)
+
+  # Subplot displays stay responsive (no pinned height).
+  expect_null(plot(one)$height)
+
+  # The condition slider spans the full plot width (no play button lane).
+  expect_equal(plotly_layout(p1)$sliders[[1]]$len, 1)
+})
+
+test_that("plot.ensemble_stockflow() reverts condition controls for a single condition", {
+  sims <- make_r_ens() # no conditions varied
+  expect_message(
+    pl <- plot(sims, condition_display = "slider"),
+    "subplots"
+  )
+  expect_plotly(pl)
+  expect_length(plotly_layout(pl)$sliders, 0)
+
+  expect_message(
+    pd <- plot(sims, condition_display = "dropdown"),
+    "subplots"
+  )
+  expect_length(plotly_layout(pd)$updatemenus, 0)
+
+  # Also reverts when filtering leaves a single condition.
+  two <- make_r_ens_2cond()
+  expect_message(
+    plot(two, condition = 1, condition_display = "slider"),
+    "subplots"
+  )
+  # But not when several conditions remain.
+  expect_no_message(plot(two, condition_display = "slider"))
+})
+
+test_that("plot.ensemble_stockflow() crossed dropdowns react via plotly_buttonclicked", {
+  sims <- make_r_ens(conditions = list(
+    contact_rate = c(1, 2), recovery_rate = c(0.05, 0.1)
+  ))
+  pd <- plot(sims, condition_display = "dropdown")
+
+  # Dropdown buttons use method = "skip" (no native relayout/restyle), so the
+  # swap handler must listen for plotly_buttonclicked to react at all.
+  js <- paste(
+    vapply(pd$jsHooks$render, function(h) h$code, character(1)),
+    collapse = ""
+  )
+  expect_match(js, "plotly_buttonclicked", fixed = TRUE)
 })
 
 test_that("plot.ensemble_stockflow(condition_display = 'dropdown') builds a dropdown", {
@@ -818,6 +913,18 @@ test_that("plot.ensemble_stockflow() animates a single selected condition", {
   pl <- plot(sims, which = "sims", condition = 1, animation = "time")
   expect_plotly(pl)
   expect_true(length(plotly_frames(pl)) > 0)
+})
+
+test_that("plot.ensemble_stockflow() control_options tune the animation speed", {
+  sims <- make_r_ens(save_sims = TRUE)
+  pl <- plot(sims,
+    which = "sims", animation = "time",
+    control_options = list(frame_ms = 40, max_frames = 10)
+  )
+  expect_plotly(pl)
+  opts <- plotly_layout(pl)$updatemenus[[1]]$buttons[[1]]$args[[2]]
+  expect_equal(opts$frame$duration, 40)
+  expect_lte(length(plotly_frame_names(pl)), 10)
 })
 
 test_that("plot.ensemble_stockflow() rejects invalid / unsupported combinations", {
