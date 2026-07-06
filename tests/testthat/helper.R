@@ -161,6 +161,27 @@ skip_if_julia_not_ready <- function() {
 }
 
 
+local_future_multisession_or_skip <- function(workers = 2L) {
+  testthat::skip_on_cran()
+
+  tryCatch(
+    {
+      future::plan(future::multisession, workers = workers)
+      withr::defer(future::plan(future::sequential), envir = parent.frame())
+    },
+    error = function(e) {
+      try(future::plan(future::sequential), silent = TRUE)
+      testthat::skip(paste(
+        "future::multisession workers are unavailable:",
+        conditionMessage(e)
+      ))
+    }
+  )
+
+  invisible()
+}
+
+
 #' Expect successful simulation
 #'
 #' Helper to verify a simulation completes successfully

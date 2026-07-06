@@ -374,12 +374,9 @@ test_that("ensemble() in R respects seed", {
 
 
 test_that("ensemble() in R with parallel execution respects seed", {
-  skip_on_cran()
-
   sfm <- make_r_ensemble_random_sfm() |> sim_settings(seed = 123)
 
-  future::plan(future::multisession, workers = 2)
-  on.exit(future::plan(future::sequential), add = TRUE)
+  local_future_multisession_or_skip(workers = 2)
 
   # Should not modify global seed state
   withr::local_seed(123) # ensure .Random.seed exists before capturing it
@@ -438,10 +435,7 @@ test_that("ensemble() R runs sequentially with future::sequential plan", {
 })
 
 test_that("ensemble() R uses parallel path when future plan has multiple workers", {
-  skip_on_cran()
-
-  future::plan(future::multisession, workers = 2)
-  on.exit(future::plan(future::sequential), add = TRUE)
+  local_future_multisession_or_skip(workers = 2)
 
   n <- 4
   sfm <- make_r_ensemble_random_sfm()
@@ -453,10 +447,7 @@ test_that("ensemble() R uses parallel path when future plan has multiple workers
 })
 
 test_that("ensemble() R reports progress without error under future plan", {
-  skip_on_cran()
-
-  future::plan(future::multisession, workers = 2)
-  on.exit(future::plan(future::sequential), add = TRUE)
+  local_future_multisession_or_skip(workers = 2)
 
   sfm <- make_r_ensemble_random_sfm()
   sims <- suppressWarnings(expect_no_error(ensemble(sfm, n = 2, quiet = FALSE)))
