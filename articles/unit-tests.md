@@ -91,8 +91,8 @@ verify(sfm)
 #> ✔ 2. Population is conserved
 ```
 
-Unit tests are most useful when kept small, readable, and tied to a
-specific model expectation.
+Unit tests are most useful when kept small, easily understood, and tied
+to a specific model expectation.
 
 ## Test behaviour under a condition
 
@@ -373,6 +373,13 @@ res <- verify(sfm)
 plot(res)
 ```
 
+Interactively browse through conditions:
+
+``` r
+
+plot(res, condition_display = "slider")
+```
+
 Plot the simulation used for a specific test:
 
 ``` r
@@ -444,7 +451,7 @@ head(as.data.frame(res, which = "sims", test = 1))
 ## Inspect failed tests
 
 We will first deliberately break the model by making the susceptible
-population negative:
+population negative (which is not physically possible):
 
 ``` r
 

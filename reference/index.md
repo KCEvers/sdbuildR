@@ -61,7 +61,7 @@
 - [`simulate(`*`<stockflow>`*`)`](https://kcevers.github.io/sdbuildR/reference/simulate.stockflow.md)
   : Simulate stock-and-flow model
 - [`summary(`*`<simulate_stockflow>`*`)`](https://kcevers.github.io/sdbuildR/reference/summary.simulate_stockflow.md)
-  : Summarise simulation results
+  : Summarize simulation results
 - [`tail(`*`<simulate_stockflow>`*`)`](https://kcevers.github.io/sdbuildR/reference/tail.simulate_stockflow.md)
   : Print last rows of a simulation
 

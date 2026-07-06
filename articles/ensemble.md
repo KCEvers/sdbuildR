@@ -23,14 +23,13 @@ load this example from the model library and look what is inside:
 
 ``` r
 
-sfm <- stockflow("Crielaard2022")
+sfm <- stockflow("crielaard2022")
 print(sfm)
 #> 
 #> ── Stock-and-Flow Model: Eating Behaviour (Crielaard et al., 2022) ─────────────
 #> 3 stocks • 8 flows • 3 constants
 #> 
 #> ── Stock-Flow Structure ──
-#> 
 #> Compensatory_behaviour: + Compensating_for_having_eaten -
 #> Satisfaction_with_hungry_feeling
 #> Food_intake: + Effect_of_eating_triggers + Feeling_hunger -
@@ -38,11 +37,9 @@ print(sfm)
 #> Hunger: + Losing_energy_by_compensatory_behavior - Food_intake_reduces_hunger
 #> 
 #> ── Other Variables ──
-#> 
 #> Constants: `a0`, `a1`, and `a2`
 #> 
 #> ── Simulation Settings ──
-#> 
 #> Time: 0.0 to 100.0 days (dt = 0.01) • euler • R
 #> Simulation output: stocks only
 ```
@@ -59,7 +56,9 @@ how the model behaves:
 
 ``` r
 
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot()
 ```
 
 As the model has random initial conditions, another run will be
@@ -67,7 +66,9 @@ different:
 
 ``` r
 
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot()
 ```
 
 To explore this more systematically, we can run an ensemble simulation
@@ -93,15 +94,16 @@ With random initial conditions, multiple runs of the same model will be
 different. As running ensemble simulations can be quite memory
 intensive, it is highly recommended to reduce the size of the returned
 timeseries. This will save memory and speed up the simulation. For
-example, we can only save the timeseries every 1 time units:
+example, we can save only 50 evenly-spaced time points per run with
+`save_length`:
 
 ``` r
 
-sfm <- sim_settings(sfm, save_at = 1)
+sfm <- sim_settings(sfm, save_length = 50)
 ```
 
-The model is now ready for running ensemble simulations. We complete 100
-runs using the
+With random initial conditions and reduced output, the model is now
+ready for running ensemble simulations. We complete 100 runs using the
 [`ensemble()`](https://kcevers.github.io/sdbuildR/reference/ensemble.md)
 function:
 
@@ -109,7 +111,7 @@ function:
 
 sims <- ensemble(sfm, n = 100)
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 22.2153 seconds.
+#> ✔ Ensemble simulation completed in 22.279 seconds.
 ```
 
 ``` r
@@ -123,9 +125,11 @@ which we first have to rerun the simulation with `save_sims = TRUE`:
 
 ``` r
 
+sfm <- sim_settings(sfm, save_sims = TRUE)
+# or pass `save_sims = TRUE` directly to `ensemble()`:
 sims <- ensemble(sfm, n = 30, save_sims = TRUE)
 #> Starting ensemble simulation in "R" with 30 simulations.
-#> ✔ Ensemble simulation completed in 6.8228 seconds.
+#> ✔ Ensemble simulation completed in 6.7164 seconds.
 ```
 
 ``` r
@@ -133,62 +137,85 @@ sims <- ensemble(sfm, n = 30, save_sims = TRUE)
 plot(sims, which = "sims")
 ```
 
-This automatically only plots the first ten simulations, as plotting a
-large number of simulations can be quite slow. We can change which
-simulations we plot by specifying the `i` argument:
+We can change which simulations we plot by specifying the `sim`
+argument:
 
 ``` r
 
 plot(sims, which = "sims", sim = 15:30)
 ```
 
-By default, only the stocks are saved. If you need one or two flows or
-auxiliaries, prefer selecting them with `vars`; to save every model
-variable for exploratory diagnostics, set `only_stocks = FALSE`:
+### Selecting variables to save
+
+By default, only the stocks are saved. We can save all variables by
+updating the simulation settings:
 
 ``` r
 
-sims <- ensemble(sfm, n = 100, only_stocks = FALSE)
+sfm <- sim_settings(sfm, only_stocks = FALSE)
+```
+
+Alternatively, we can specify which variables to save with the `vars`
+argument. For example, to save only the stocks Hunger and Food_intake,
+we can run:
+
+``` r
+
+sfm <- sim_settings(sfm, vars = c("Hunger", "Food_intake"))
+```
+
+``` r
+
+sims <- ensemble(sfm, n = 100)
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 76.805 seconds.
+#> ✔ Ensemble simulation completed in 22.1786 seconds.
 ```
 
 ``` r
 
-plot(sims)
+head(sims, direction = "wide", which = "sims", n = 1)
+#>   time sim condition Food_intake    Hunger
+#> 1    0   1         1   0.8075164 0.3849424
 ```
 
-### Choosing which summaries to keep
+Resetting `vars` to `NULL` will save all variables again:
 
-Storing every simulation is expensive, so by default
+``` r
+
+sfm <- sim_settings(sfm, vars = NULL, only_stocks = TRUE)
+```
+
+### Selecting summary statistics
+
+By default,
 [`ensemble()`](https://kcevers.github.io/sdbuildR/reference/ensemble.md)
-keeps only summaries statistics across runs at each time point: the mean
-and a 95% interval (the 2.5% and 97.5% quantiles). The quantile levels
-can be changed as follows:
+computes as summary statistics the mean and median, together with a 95%
+interval (the 2.5% and 97.5% quantiles), across runs at each time point.
+The quantile levels can be changed as follows:
 
 ``` r
 
 sims <- ensemble(sfm,
-  n = 100,   
+  n = 100,
   quantiles = c(0.1, 0.9)
 )
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 22.4024 seconds.
+#> ✔ Ensemble simulation completed in 22.2381 seconds.
 head(sims)
-#>   condition               variable time      mean    median missing_count
-#> 1         1 Compensatory_behaviour    0 0.4750875 0.4036320             0
-#> 2         1 Compensatory_behaviour    1 0.5978226 0.5469748             0
-#> 3         1 Compensatory_behaviour    2 0.6594824 0.6397814             0
-#> 4         1 Compensatory_behaviour    3 0.6868372 0.6901910             0
-#> 5         1 Compensatory_behaviour    4 0.6906507 0.7017107             0
-#> 6         1 Compensatory_behaviour    5 0.6775006 0.6806661             0
+#>   condition               variable      time      mean    median missing_count
+#> 1         1 Compensatory_behaviour  0.000000 0.4750875 0.4036320             0
+#> 2         1 Compensatory_behaviour  2.040816 0.6611736 0.6447433             0
+#> 3         1 Compensatory_behaviour  4.081633 0.6901401 0.6983019             0
+#> 4         1 Compensatory_behaviour  6.122449 0.6484665 0.6473452             0
+#> 5         1 Compensatory_behaviour  8.163265 0.5759548 0.5646513             0
+#> 6         1 Compensatory_behaviour 10.204082 0.5068495 0.4974462             0
 #>       quant1    quant2
 #> 1 0.09538729 0.8620636
-#> 2 0.38936237 0.8665326
-#> 3 0.49574861 0.8745699
-#> 4 0.52067662 0.8726997
-#> 5 0.52001627 0.8472388
-#> 6 0.51999692 0.8454621
+#> 2 0.49913587 0.8756194
+#> 3 0.52347853 0.8442506
+#> 4 0.50208329 0.7992062
+#> 5 0.46242760 0.6944000
+#> 6 0.43265309 0.5799470
 ```
 
 Here, quantiles appear as columns `quant1`, `quant2` which correspond to
@@ -196,7 +223,7 @@ Here, quantiles appear as columns `quant1`, `quant2` which correspond to
 
 To change which summary statistics are computed, use `central` (defining
 the central tendency) and `spread` (defining the measure of dispersion).
-For example, to summarise each run by its median together with a
+For example, to summarize each run by its median together with a
 standard deviation:
 
 ``` r
@@ -207,20 +234,15 @@ sims <- ensemble(sfm,
   spread = "sd"
 )
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 22.35 seconds.
+#> ✔ Ensemble simulation completed in 22.2109 seconds.
 head(sims)
-#>   condition               variable time    median        sd missing_count
-#> 1         1 Compensatory_behaviour    0 0.4036320 0.2949805             0
-#> 2         1 Compensatory_behaviour    1 0.5469748 0.1882976             0
-#> 3         1 Compensatory_behaviour    2 0.6397814 0.1430877             0
-#> 4         1 Compensatory_behaviour    3 0.6901910 0.1245730             0
-#> 5         1 Compensatory_behaviour    4 0.7017107 0.1174524             0
-#> 6         1 Compensatory_behaviour    5 0.6806661 0.1143088             0
-```
-
-``` r
-
-plot(sims)
+#>   condition               variable      time    median         sd missing_count
+#> 1         1 Compensatory_behaviour  0.000000 0.4036320 0.29498048             0
+#> 2         1 Compensatory_behaviour  2.040816 0.6447433 0.14195140             0
+#> 3         1 Compensatory_behaviour  4.081633 0.6983019 0.11711189             0
+#> 4         1 Compensatory_behaviour  6.122449 0.6473452 0.11086144             0
+#> 5         1 Compensatory_behaviour  8.163265 0.5646513 0.09414421             0
+#> 6         1 Compensatory_behaviour 10.204082 0.4974462 0.06660461             0
 ```
 
 All available summary statistics can be computed with:
@@ -233,22 +255,12 @@ sims <- ensemble(sfm,
   spread = c("quantile", "sd", "range")
 )
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 22.4022 seconds.
-head(sims)
-#>   condition               variable time      mean    median        sd
-#> 1         1 Compensatory_behaviour    0 0.4750875 0.4036320 0.2949805
-#> 2         1 Compensatory_behaviour    1 0.5978226 0.5469748 0.1882976
-#> 3         1 Compensatory_behaviour    2 0.6594824 0.6397814 0.1430877
-#> 4         1 Compensatory_behaviour    3 0.6868372 0.6901910 0.1245730
-#> 5         1 Compensatory_behaviour    4 0.6906507 0.7017107 0.1174524
-#> 6         1 Compensatory_behaviour    5 0.6775006 0.6806661 0.1143088
+#> ✔ Ensemble simulation completed in 21.9315 seconds.
+head(sims, n = 1)
+#>   condition               variable time      mean   median        sd
+#> 1         1 Compensatory_behaviour    0 0.4750875 0.403632 0.2949805
 #>           min       max missing_count     quant1    quant2
 #> 1 0.008115848 0.9553296             0 0.01931528 0.9259952
-#> 2 0.309331064 0.9657745             0 0.34270610 0.9190606
-#> 3 0.364860898 0.9694763             0 0.41868692 0.9192805
-#> 4 0.383161078 0.9670575             0 0.46006368 0.9187255
-#> 5 0.391525379 0.9581517             0 0.47481319 0.9183256
-#> 6 0.395668622 0.9403187             0 0.45766539 0.9043367
 ```
 
 Plots can then switch between summary statistics:
@@ -268,26 +280,23 @@ plot(sims, central = "median", spread = "range")
 plot(sims, central = "none", spread = "range")
 ```
 
-### Parallel simulations (R)
+### Computational efficiency
+
+#### Parallel simulations (R)
 
 By default, R ensemble simulations run sequentially. To run simulations
-in parallel, use the `future` package to control parallel execution.
-First, check that the `future` and `future.apply` packages are
-available:
+in parallel, use the `future` package to control parallel execution:
 
 ``` r
 
-if (requireNamespace("future", quietly = TRUE) &&
-  requireNamespace("future.apply", quietly = TRUE)) {
-  # Set up parallel execution with 4 workers
-  future::plan(future::multisession, workers = 4)
+# Set up parallel execution with 4 workers
+future::plan(future::multisession, workers = 4)
 
-  # Run 1000 simulations in parallel
-  sims <- ensemble(sfm, n = 100)
+# Run 100 simulations in parallel
+sims <- ensemble(sfm, n = 100)
 
-  # Restore sequential execution
-  future::plan(future::sequential)
-}
+# Restore sequential execution
+future::plan(future::sequential)
 ```
 
 The `workers` argument specifies how many parallel processes to use;
@@ -321,8 +330,6 @@ Then, set the simulation language to Julia:
 sfm <- sim_settings(sfm, language = "julia")
 ```
 
-##### Parallel simulations (Julia)
-
 We can also enable parallel execution in Julia by setting the number of
 threads:
 
@@ -338,12 +345,12 @@ To stop using threaded simulations, run:
 use_julia(restart = TRUE)
 ```
 
-## Specifying ranges
+## Specifying conditions
 
 Instead of generating an ensemble with random initial conditions, we can
-also specify ensembles with exact parameter values. For example, we
-could vary the a_2 parameter, which determines how strongly having eaten
-increases compensatory behaviour.
+also specify exact constant and initial stock values to vary. For
+example, we could vary the `a2` parameter, which determines how strongly
+having eaten increases compensatory behaviour.
 
 ``` r
 
@@ -353,7 +360,7 @@ sims <- ensemble(sfm,
 )
 #> Starting ensemble simulation in "Julia" with 400 simulations in total.
 #> ℹ 4 conditions x 100 simulations per condition.
-#> ✔ Ensemble simulation completed in 10.2635 seconds.
+#> ✔ Ensemble simulation completed in 10.2047 seconds.
 ```
 
 ``` r
@@ -361,8 +368,10 @@ sims <- ensemble(sfm,
 plot(sims)
 ```
 
+### Varying multiple parameters
+
 We can also vary multiple parameters at once. For example, we can vary
-both a_2 and a_1, where the latter influences how strongly food intake
+both `a2` and `a1`, where the latter influences how strongly food intake
 leads to more food intake. `n` now specifies the number of simulations
 per condition. By default, `cross = TRUE`, which means that all possible
 combinations of parameters are simulated.
@@ -378,7 +387,7 @@ sims <- ensemble(sfm,
 )
 #> Starting ensemble simulation in "Julia" with 400 simulations in total.
 #> ℹ 4 conditions x 100 simulations per condition.
-#> ✔ Ensemble simulation completed in 2.5595 seconds.
+#> ✔ Ensemble simulation completed in 2.4833 seconds.
 ```
 
 ``` r
@@ -387,9 +396,11 @@ plot(sims)
 ```
 
 The plot shows similarity within columns but differences between
-columns. As a_1 differs between columns, it appears that a_1 has a
-larger effect than a_2. To view the parameter combination corresponding
-to each condition, view `conditions` in `sims`:
+columns. As `a1` differs between columns, it appears that `a1` has a
+larger effect than `a2`.
+
+To view the parameter combination corresponding to each condition, view
+`conditions` in `sims`:
 
 ``` r
 
@@ -401,8 +412,18 @@ sims$conditions
 #> [4,]         4 1.5 0.8
 ```
 
+To explore the effect of each parameter interactively, use
+`condition_display = "slider"` or `condition_display = "dropdown"`:
+
+``` r
+
+plot(sims, condition_display = "slider")
+```
+
+### Crossed vs non-crossed designs
+
 To generate a non-crossed designed, set `cross = FALSE`. In this case,
-the length of each conditions vector needs to be the same.
+the length of each vector in `conditions` needs to be the same.
 
 ``` r
 
@@ -415,7 +436,7 @@ sims <- ensemble(sfm,
 )
 #> Starting ensemble simulation in "Julia" with 300 simulations in total.
 #> ℹ 3 conditions x 100 simulations per condition.
-#> ✔ Ensemble simulation completed in 2.8013 seconds.
+#> ✔ Ensemble simulation completed in 2.258 seconds.
 ```
 
 ``` r
@@ -433,49 +454,20 @@ plot(sims, sim = 1:15, condition = 1:2, which = "sims", nrows = 1)
 
 ### Accessing simulation results
 
-The results of the ensemble simulation are stored in the `sims` object,
-which is a list containing, among others: - `summary`: summary
-statistics across all simulations per condition - `df`: individual
-simulation data (if `save_sims = TRUE`) - `init`: initial values of
-stocks - `constants`: parameter values used - `conditions`: matrix
-showing parameter combinations for each condition
+The results of the ensemble simulation are stored in the `sims` object.
 
 You can access the summary statistics per condition and per time point,
 such as the mean and confidence intervals, using:
 
 ``` r
 
-head(sims)
+head(sims, n = 1)
 #>   condition time               variable      mean    median missing_count
 #> 1         1    0 Compensatory_behaviour 0.4783079 0.4449562             0
-#> 2         1    0            Food_intake 0.4766333 0.4552623             0
-#> 3         1    0                 Hunger 0.4784890 0.4548582             0
-#> 4         1    1 Compensatory_behaviour 0.6064398 0.5782980             0
-#> 5         1    1            Food_intake 0.3499367 0.2950685             0
-#> 6         1    1                 Hunger 0.4860790 0.4168530             0
-#>        quant1    quant2
-#> 1 0.023064509 0.9746829
-#> 2 0.016268546 0.9624419
-#> 3 0.014191360 0.9650377
-#> 4 0.323508122 0.9706544
-#> 5 0.008076535 0.9006591
-#> 6 0.122635157 0.9467490
+#>       quant1    quant2
+#> 1 0.02306451 0.9746829
 # or
-sims |> as.data.frame() |> head()
-#>   condition time               variable      mean    median missing_count
-#> 1         1    0 Compensatory_behaviour 0.4783079 0.4449562             0
-#> 2         1    0            Food_intake 0.4766333 0.4552623             0
-#> 3         1    0                 Hunger 0.4784890 0.4548582             0
-#> 4         1    1 Compensatory_behaviour 0.6064398 0.5782980             0
-#> 5         1    1            Food_intake 0.3499367 0.2950685             0
-#> 6         1    1                 Hunger 0.4860790 0.4168530             0
-#>        quant1    quant2
-#> 1 0.023064509 0.9746829
-#> 2 0.016268546 0.9624419
-#> 3 0.014191360 0.9650377
-#> 4 0.323508122 0.9706544
-#> 5 0.008076535 0.9006591
-#> 6 0.122635157 0.9467490
+# sims |> as.data.frame() |> head()
 ```
 
 By default, simulations are returned in long format, but can also be
@@ -483,58 +475,28 @@ shaped in wide format as well:
 
 ``` r
 
-head(sims, direction = "wide")
+head(sims, n = 1, direction = "wide")
 #>   condition time mean.Compensatory_behaviour median.Compensatory_behaviour
 #> 1         1    0                   0.4783079                     0.4449562
-#> 2         1    1                   0.6064398                     0.5782980
-#> 3         1    2                   0.6654096                     0.6654575
-#> 4         1    3                   0.6878700                     0.7044476
-#> 5         1    4                   0.6870671                     0.7128944
-#> 6         1    5                   0.6699829                     0.6943745
 #>   missing_count.Compensatory_behaviour quant1.Compensatory_behaviour
 #> 1                                    0                    0.02306451
-#> 2                                    0                    0.32350812
-#> 3                                    0                    0.41107518
-#> 4                                    0                    0.44038959
-#> 5                                    0                    0.45185705
-#> 6                                    0                    0.44313084
 #>   quant2.Compensatory_behaviour mean.Food_intake median.Food_intake
-#> 1                     0.9746829       0.47663330        0.455262347
-#> 2                     0.9706544       0.34993669        0.295068492
-#> 3                     0.9594017       0.22519740        0.165096699
-#> 4                     0.9406263       0.13572832        0.064093203
-#> 5                     0.9242090       0.08344722        0.024972732
-#> 6                     0.9038378       0.05127490        0.009849555
+#> 1                     0.9746829        0.4766333          0.4552623
 #>   missing_count.Food_intake quant1.Food_intake quant2.Food_intake mean.Hunger
-#> 1                         0       1.626855e-02          0.9624419   0.4784890
-#> 2                         0       8.076535e-03          0.9006591   0.4860790
-#> 3                         0       3.105759e-03          0.8200163   0.5270163
-#> 4                         0       7.936879e-04          0.7273670   0.5865395
-#> 5                         0       2.082555e-04          0.6395364   0.6498461
-#> 6                         0       6.398903e-05          0.4426647   0.7079553
+#> 1                         0         0.01626855          0.9624419    0.478489
 #>   median.Hunger missing_count.Hunger quant1.Hunger quant2.Hunger
 #> 1     0.4548582                    0    0.01419136     0.9650377
-#> 2     0.4168530                    0    0.12263516     0.9467490
-#> 3     0.4672373                    0    0.21685901     0.9447705
-#> 4     0.5536180                    0    0.28533754     0.9440976
-#> 5     0.6280648                    0    0.39115944     0.9538292
-#> 6     0.6899168                    0    0.44863920     0.9608182
 ```
 
-If you have set `save_sims = TRUE`, you can access the individual
-simulation runs as well. The dataframe contains the value of each
+With `save_sims = TRUE`, the individual simulation runs can be accessed
+by specifying `which = "sims"`. The dataframe contains the value of each
 variable, for each time point, for each simulation, for each condition.
 
 ``` r
 
-head(sims, which = "sims", direction = "long")
+head(sims, n = 1, which = "sims", direction = "long")
 #>   condition sim time               variable      value
 #> 1         1   1    0 Compensatory_behaviour 0.09211427
-#> 2         1   1    0            Food_intake 0.69842600
-#> 3         1   1    0                 Hunger 0.49628470
-#> 4         1   1    1 Compensatory_behaviour 0.40993234
-#> 5         1   1    1            Food_intake 0.63479705
-#> 6         1   1    1                 Hunger 0.34165639
 ```
 
 Finally, to access the parameters (i.e., constants) of each simulation
@@ -542,19 +504,18 @@ per condition, run:
 
 ``` r
 
-head(sims, which = "sims", type = "constant")
-#> [1] condition sim       time      variable  value    
-#> <0 rows> (or 0-length row.names)
+head(sims, n = 1, which = "sims", type = "constant")
+#>   condition sim variable value
+#> 1         1   1       a0  1.31
 ```
 
 To view their summary statistics, run:
 
 ``` r
 
-head(sims, which = "summary", type = "constant")
-#> [1] condition     time          variable      mean          median       
-#> [6] missing_count quant1        quant2       
-#> <0 rows> (or 0-length row.names)
+head(sims, n = 1, which = "summary", type = "constant")
+#>   condition variable mean median missing_count quant1 quant2
+#> 1         1       a0 1.31   1.31             0   1.31   1.31
 ```
 
 ## Close Julia session

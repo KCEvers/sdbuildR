@@ -11,7 +11,7 @@ sdbuildR needs to have been instantiated. This can be set up with
 ## Usage
 
 ``` r
-use_julia(stop = FALSE, restart = FALSE, nthreads = NULL)
+use_julia(stop = FALSE, restart = FALSE, nthreads = NULL, quiet = FALSE)
 ```
 
 ## Arguments
@@ -33,9 +33,16 @@ use_julia(stop = FALSE, restart = FALSE, nthreads = NULL)
   page](https://docs.julialang.org/en/v1/manual/parallel-computing/#man-parallel-computing)
   for more details on threading in Julia.
 
+- quiet:
+
+  If `TRUE`, suppress informational messages such as progress and status
+  updates. Warnings and errors are always shown. Defaults to `FALSE`.
+
 ## Value
 
-Returns `NULL` invisibly, used for side effects
+Returns `TRUE` invisibly after setting up the Julia environment, and
+`NULL` invisibly if Julia was already set up or when stopping Julia with
+`stop = TRUE`. Used for side effects.
 
 ## Details
 

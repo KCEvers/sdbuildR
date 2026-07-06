@@ -25,18 +25,15 @@ print(sfm)
 #> 3 stocks • 2 flows • 4 constants
 #> 
 #> ── Stock-Flow Structure ──
-#> 
 #> infected: + new_infections - new_recoveries
 #> recovered: + new_recoveries
 #> susceptible: - new_infections
 #> 
 #> ── Other Variables ──
-#> 
 #> Constants: `contact_rate`, `infection_rate`, `recovery_rate`, and
 #> `total_population`
 #> 
 #> ── Simulation Settings ──
-#> 
 #> Time: 0.0 to 20.0 weeks (dt = 0.01) • euler • R
 #> Simulation output: stocks only
 ```
@@ -144,14 +141,14 @@ random value:
 sfm_ens <- sfm |>
   update(c(Susceptible, Infected, Recovered), eqn = runif(1, 1, 1000)) |>
   # Save fewer values for computational efficiency
-  sim_settings(stop = 50, save_at = 1)
+  sim_settings(stop = 50, save_by = 1)
 ```
 
 ``` r
 
 sims <- ensemble(sfm_ens, n = 100)
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 6.5508 seconds.
+#> ✔ Ensemble simulation completed in 6.534 seconds.
 plot(sims)
 ```
 

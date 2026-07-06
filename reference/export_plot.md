@@ -14,7 +14,8 @@ export_plot(
   height = 4,
   units = "cm",
   dpi = 300,
-  font_family = ""
+  font_family = NULL,
+  close_browser = TRUE
 )
 ```
 
@@ -31,9 +32,8 @@ export_plot(
   File path to save plot to, including a file extension. For plotting a
   stock-and-flow model, the file extension can be one of png, pdf, svg,
   ps, eps, webp. For plotting a simulation, the file extension can be
-  one of png, pdf, jpg, jpeg, webp. For plotting a qgraph graph, the
-  file extension can be one of png, pdf, svg, ps, eps, jpg, jpeg, tiff,
-  bmp. If no file extension is specified, it will default to png.
+  one of png, pdf, jpg, jpeg, webp. If no file extension is specified,
+  it will default to png.
 
 - width:
 
@@ -54,12 +54,49 @@ export_plot(
 
 - font_family:
 
-  Font family used for qgraph exports. For PDF/PS/EPS exports, this is
-  applied when the graphics device is opened.
+  Font family to render the plot in, overriding the font the plot was
+  created with. Kebab-case names (e.g. `"eb-garamond"`) are loaded as
+  webfonts (see Details); any other name must be installed on your
+  system. Defaults to `NULL`, which keeps the plot's own font.
+
+- close_browser:
+
+  If `TRUE` (default), browser-based exports run in a separate
+  short-lived R process, so the headless browser is closed when the
+  export finishes and leaves no state behind in your R session. Set to
+  `FALSE` to render in a persistent browser session instead, which is
+  faster when exporting many plots in a row; the browser then stays open
+  in the background until your R session ends. Ignored for exports that
+  do not use a browser.
 
 ## Value
 
-Returns `NULL` invisibly, called for side effects.
+Invisibly returns the file path of the exported plot, called for side
+effects.
+
+## Details
+
+Exports that render in a headless browser (plotly plots, and diagrams
+using a webfont) require the suggested packages webshot2 and callr, plus
+a Chrome-based browser on your system. See `close_browser` for how the
+browser's lifetime is managed.
+
+## Fonts
+
+When `font_family` (either passed here or to the
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) call that
+created `pl`) is an all-lowercase kebab-case name, it is treated as a
+font identifier from Fontsource (<https://fontsource.org/>) – browse the
+catalogue there and use the id from the font page's URL, e.g.
+`"eb-garamond"` or `"source-serif-4"`. The font is then loaded as a
+*webfont*: a CSS rule pointing to the font's files on the jsDelivr
+content delivery network is attached to the plot, and the headless
+browser that renders the export fetches the font over the internet at
+render time, just like a webpage. No fonts are downloaded by R or
+installed on your system. Internet access is required during the export;
+without it, the export still succeeds in a fallback font. Note that
+webfonts are not supported for the ps/eps formats, which fall back to
+system fonts.
 
 ## Examples
 
@@ -70,7 +107,10 @@ if (requireNamespace("DiagrammeRsvg", quietly = TRUE) &&
   requireNamespace("rsvg", quietly = TRUE)) {
   sfm <- stockflow("sir")
   file <- tempfile(fileext = ".png")
-  export_plot(plot(sfm), file)
+
+  # With a system font the diagram is rendered by rsvg; the default
+  # webfont would instead require webshot2 and a headless browser
+  export_plot(plot(sfm, font_family = "serif"), file)
 
   # Remove plot
   file.remove(file)

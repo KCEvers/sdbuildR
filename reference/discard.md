@@ -59,11 +59,9 @@ print(sfm)
 #> 1 stock
 #> 
 #> ── Stock-Flow Structure ──
-#> 
 #> x: (no flows)
 #> 
 #> ── Simulation Settings ──
-#> 
 #> Time: 0 to 100 seconds (dt = 0.01) • euler • R
 #> Simulation output: stocks only
 
@@ -75,7 +73,6 @@ print(sfm)
 #> ℹ Empty model without any variables.
 #> 
 #> ── Simulation Settings ──
-#> 
 #> Time: 0 to 100 seconds (dt = 0.01) • euler • R
 #> Simulation output: stocks only
 ```

@@ -43,7 +43,7 @@ as.data.frame(
 - type:
 
   Variable types to retain in the data frame. Must be one or more of
-  'stock', 'flow', 'constant', 'aux', 'gf', or 'func'. Defaults to
+  'stock', 'flow', 'constant', 'aux', 'lookup', or 'func'. Defaults to
   `NULL` to include all types.
 
 - properties:

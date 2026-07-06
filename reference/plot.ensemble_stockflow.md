@@ -25,7 +25,7 @@ plot(
   alpha = list(central = 1, spread = 0.3, sims = 0.3),
   colors = NULL,
   line_width = list(central = 3, spread = 0, sims = 1),
-  font_family = "Times New Roman",
+  font_family = default_font_family(),
   font_size = 16,
   wrap_width = 25,
   showlegend = TRUE,
@@ -58,8 +58,8 @@ plot(
 - sim:
 
   Indices of the individual trajectories to plot if which = `"sims"`.
-  Defaults to 1:10. Including a high number of trajectories will slow
-  down plotting considerably.
+  Defaults to the first `min(n, 100)` trajectories. Including a high
+  number of trajectories will slow down plotting considerably.
 
 - condition:
 
@@ -76,7 +76,7 @@ plot(
 - nrows:
 
   Number of rows in the plot grid. Defaults to
-  ceiling(sqrt(n_conditions)).
+  `ceiling(sqrt(max(condition)))`.
 
 - margin:
 
@@ -126,7 +126,14 @@ plot(
 
 - font_family:
 
-  Font family. Defaults to "Times New Roman".
+  Font family. Kebab-case names (e.g. `"eb-garamond"`) are Fontsource
+  ids (browse them at <https://fontsource.org/>), loaded as webfonts: no
+  installation is needed, but internet access is required to display
+  them. Other fonts must be installed on the system viewing the plot.
+  Defaults to the `sdbuildR.font_family` option, or the
+  `"stix-two-text"` webfont when the option is unset; use
+  `options(sdbuildR.font_family = )` to change the default for all
+  plots, e.g. in your .Rprofile.
 
 - font_size:
 
@@ -174,20 +181,31 @@ plot(
   How to display multiple conditions. Use `"subplots"` to show
   conditions as panels, `"slider"` to select one condition with a
   slider, or `"dropdown"` to select one condition with a dropdown.
-  Defaults to `"subplots"`.
+  Defaults to `"subplots"`. If only a single condition is available
+  (e.g. no conditions were varied), `"slider"` and `"dropdown"` fall
+  back to `"subplots"` with a message. To guarantee the control
+  geometry, plots with a slider/dropdown have a fixed height (sized to
+  the number of controls) instead of a responsive one.
 
 - control_options:
 
-  Named list fine-tuning the `"slider"`/`"dropdown"` condition control.
-  Supports `max_labels`: the maximum number of slider tick labels to
+  Named list fine-tuning the `"slider"`/`"dropdown"` condition control
+  and the `animation = "time"` animation. For the condition control it
+  supports `max_labels`: the maximum number of slider tick labels to
   keep visible when many conditions are varied (the slider always keeps
   one step per condition; intermediate labels are thinned above this
-  count); and `spacing`: the vertical gap (in paper units) between
-  stacked controls when several condition parameters are varied. By
+  count); and `spacing`: the vertical gap (in pixels) between the tops
+  of stacked controls when several condition parameters are varied. By
   default the spacing and the reserved bottom margin are sized
   automatically so the controls never overlap each other or the x-axis
-  title; pass a number to widen or tighten the gap. Defaults to
-  `list(max_labels = 10, spacing = NULL)`.
+  title; pass a number to widen or tighten the gap. For the animation it
+  supports `frame_ms`: the duration of each frame in milliseconds
+  (default `100`); `duration`: the total animation length in seconds, as
+  an alternative to `frame_ms` (supplying both is an error);
+  `transition_ms`: the transition time between frames in milliseconds
+  (default `0`); and `max_frames`: the maximum number of animation
+  frames (default `50`). Defaults to
+  [`list()`](https://rdrr.io/r/base/list.html), i.e. all defaults.
 
 - animation:
 

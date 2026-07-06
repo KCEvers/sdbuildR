@@ -1,7 +1,8 @@
 # Internal function to save data frame at specific times
 
 Internal function used to save the data frame at specific times in case
-save_at is not equal to dt in the simulation specifications.
+the save interval (`save_by`) is not equal to dt in the simulation
+specifications.
 
 ## Usage
 
@@ -31,8 +32,8 @@ one column per variable.
 ## Examples
 
 ``` r
-# Recommended: Use save_at in sim_settings() to downsample simulations
-sfm <- stockflow("sir") |> sim_settings(dt = 0.01, save_at = 1)
+# Recommended: Use save_by in sim_settings() to downsample simulations
+sfm <- stockflow("sir") |> sim_settings(dt = 0.01, save_by = 1)
 sim <- simulate(sfm)
 df <- as.data.frame(sim)
 nrow(df) # Returns only times at intervals of 1
@@ -48,13 +49,13 @@ head(df)
 
 # The saveat_func() is the underlying function used by simulate()
 # Direct use is not recommended, but shown here for completeness:
-sfm <- sfm |> sim_settings(save_at = 0.01)
+sfm <- sfm |> sim_settings(save_by = 0.01)
 sim <- simulate(sfm)
 df <- as.data.frame(sim)
 nrow(df) # Many more rows
 #> [1] 6003
 
-# Manual downsampling (not recommended - use save_at instead)
+# Manual downsampling (not recommended - use save_by instead)
 new_times <- seq(min(df$time), max(df$time), by = 1)
 df_wide <- as.data.frame(sim, direction = "wide")
 df_manual <- saveat_func(df_wide, "time", new_times)

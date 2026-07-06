@@ -88,8 +88,8 @@ as.data.frame(
 - type:
 
   Variable types to retain in the data frame. Must be one or more of
-  'stock', 'flow', 'constant', 'aux', 'gf', or 'func'. Only applies when
-  `which = "sims"`. Defaults to `NULL` to include all types.
+  'stock', 'flow', 'constant', 'aux', 'lookup', or 'func'. Only applies
+  when `which = "sims"`. Defaults to `NULL` to include all types.
 
 - ...:
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,7 +19,8 @@
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/build.html">Building stock-and-flow models</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/summerschool2026.html">Theory Building in Psychology (Summer School 2026)</a></li>
+    <li><a class="dropdown-item" href="../articles/build.html">Building stock-and-flow models</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble.html">Ensemble simulations</a></li>
     <li><a class="dropdown-item" href="../articles/unit-tests.html">Unit Testing Stock-and-Flow Models</a></li>
     <li><a class="dropdown-item" href="../articles/julia-setup.html">Setting up Julia</a></li>
@@ -55,7 +56,8 @@
 <span>  height <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  units <span class="op">=</span> <span class="st">"cm"</span>,</span>
 <span>  dpi <span class="op">=</span> <span class="fl">300</span>,</span>
-<span>  font_family <span class="op">=</span> <span class="st">""</span></span>
+<span>  font_family <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  close_browser <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -68,7 +70,7 @@
 
 
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>
-<dd><p>File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. For plotting a qgraph graph, the file extension can be one of png, pdf, svg, ps, eps, jpg, jpeg, tiff, bmp. If no file extension is specified, it will default to png.</p></dd>
+<dd><p>File path to save plot to, including a file extension. For plotting a stock-and-flow model, the file extension can be one of png, pdf, svg, ps, eps, webp. For plotting a simulation, the file extension can be one of png, pdf, jpg, jpeg, webp. If no file extension is specified, it will default to png.</p></dd>
 
 
 <dt id="arg-width">width<a class="anchor" aria-label="anchor" href="#arg-width"></a></dt>
@@ -88,13 +90,47 @@
 
 
 <dt id="arg-font-family">font_family<a class="anchor" aria-label="anchor" href="#arg-font-family"></a></dt>
-<dd><p>Font family used for qgraph exports. For PDF/PS/EPS exports,
-this is applied when the graphics device is opened.</p></dd>
+<dd><p>Font family to render the plot in, overriding the font
+the plot was created with. Kebab-case names (e.g. <code>"eb-garamond"</code>) are
+loaded as webfonts (see Details); any other name must be installed on
+your system. Defaults to <code>NULL</code>, which keeps the plot's own font.</p></dd>
+
+
+<dt id="arg-close-browser">close_browser<a class="anchor" aria-label="anchor" href="#arg-close-browser"></a></dt>
+<dd><p>If <code>TRUE</code> (default), browser-based exports run in a
+separate short-lived R process, so the headless browser is closed when
+the export finishes and leaves no state behind in your R session. Set to
+<code>FALSE</code> to render in a persistent browser session instead, which is
+faster when exporting many plots in a row; the browser then stays open
+in the background until your R session ends. Ignored for exports that do
+not use a browser.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Returns <code>NULL</code> invisibly, called for side effects.</p>
+    <p>Invisibly returns the file path of the exported plot, called for side effects.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Exports that render in a headless browser (plotly plots, and diagrams
+using a webfont) require the suggested packages webshot2 and callr, plus a
+Chrome-based browser on your system. See <code>close_browser</code> for how the
+browser's lifetime is managed.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="fonts">Fonts<a class="anchor" aria-label="anchor" href="#fonts"></a></h2>
+    <p>When <code>font_family</code> (either passed here or to the <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> call that
+created <code>pl</code>) is an all-lowercase kebab-case name, it is treated as a font
+identifier from Fontsource (<a href="https://fontsource.org/" class="external-link">https://fontsource.org/</a>) – browse the
+catalogue there and use the id from the font page's URL, e.g.
+<code>"eb-garamond"</code> or <code>"source-serif-4"</code>. The font is then loaded as a
+<em>webfont</em>: a CSS rule pointing to the font's files on the jsDelivr content
+delivery network is attached to the plot, and the headless browser that
+renders the export fetches the font over the internet at render time, just
+like a webpage. No fonts are downloaded by R or installed on your system.
+Internet access is required during the export; without it, the export
+still succeeds in a fallback font. Note that webfonts are not supported
+for the ps/eps formats, which fall back to system fonts.</p>
     </div>
 
     <div class="section level2">
@@ -105,7 +141,10 @@ this is applied when the graphics device is opened.</p></dd>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"rsvg"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="va">sfm</span> <span class="op">&lt;-</span> <span class="fu"><a href="stockflow.html">stockflow</a></span><span class="op">(</span><span class="st">"sir"</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="va">file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".png"</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="fu">export_plot</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span>, <span class="va">file</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># With a system font the diagram is rendered by rsvg; the default</span></span></span>
+<span class="r-in"><span>  <span class="co"># webfont would instead require webshot2 and a headless browser</span></span></span>
+<span class="r-in"><span>  <span class="fu">export_plot</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">sfm</span>, font_family <span class="op">=</span> <span class="st">"serif"</span><span class="op">)</span>, <span class="va">file</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span>  <span class="co"># Remove plot</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.remove</a></span><span class="op">(</span><span class="va">file</span><span class="op">)</span></span></span>

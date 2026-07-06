@@ -9,7 +9,7 @@ unit_test() to define tests; use unit_tests() to display them."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,7 +21,8 @@ unit_test() to define tests; use unit_tests() to display them."></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/build.html">Building stock-and-flow models</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/summerschool2026.html">Theory Building in Psychology (Summer School 2026)</a></li>
+    <li><a class="dropdown-item" href="../articles/build.html">Building stock-and-flow models</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble.html">Ensemble simulations</a></li>
     <li><a class="dropdown-item" href="../articles/unit-tests.html">Unit Testing Stock-and-Flow Models</a></li>
     <li><a class="dropdown-item" href="../articles/julia-setup.html">Setting up Julia</a></li>
@@ -89,12 +90,9 @@ tests, which appear with <code>status = "skip"</code>). Each entry has <code>lab
 <dd><p>Nested list of <code>simulate_stockflow</code> objects used internally by
 <code><a href="plot.verify_stockflow.html">plot.verify_stockflow()</a></code>. Always present (never <code>NULL</code>).</p></dd>
 
-<dt>j</dt>
-<dd><p>Named integer vector mapping each test label to its condition index.
-Used internally by <code><a href="plot.verify_stockflow.html">plot.verify_stockflow()</a></code>.</p></dd>
-
-<dt>n</dt>
-<dd><p>Number of simulations run per condition.</p></dd>
+<dt>condition</dt>
+<dd><p>Named integer vector mapping each test label to its condition
+index. Used internally by <code><a href="plot.verify_stockflow.html">plot.verify_stockflow()</a></code>.</p></dd>
 
 <dt>n_conditions</dt>
 <dd><p>Number of unique simulation conditions.</p></dd>

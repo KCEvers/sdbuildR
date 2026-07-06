@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,7 +19,8 @@
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/build.html">Building stock-and-flow models</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/summerschool2026.html">Theory Building in Psychology (Summer School 2026)</a></li>
+    <li><a class="dropdown-item" href="../articles/build.html">Building stock-and-flow models</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble.html">Ensemble simulations</a></li>
     <li><a class="dropdown-item" href="../articles/unit-tests.html">Unit Testing Stock-and-Flow Models</a></li>
     <li><a class="dropdown-item" href="../articles/julia-setup.html">Setting up Julia</a></li>
@@ -64,7 +65,7 @@
 <span>  alpha <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>central <span class="op">=</span> <span class="fl">1</span>, spread <span class="op">=</span> <span class="fl">0.3</span>, sims <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span>,</span>
 <span>  colors <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  line_width <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>central <span class="op">=</span> <span class="fl">3</span>, spread <span class="op">=</span> <span class="fl">0</span>, sims <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  font_family <span class="op">=</span> <span class="st">"Times New Roman"</span>,</span>
+<span>  font_family <span class="op">=</span> <span class="fu">default_font_family</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  font_size <span class="op">=</span> <span class="fl">16</span>,</span>
 <span>  wrap_width <span class="op">=</span> <span class="fl">25</span>,</span>
 <span>  showlegend <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -93,7 +94,7 @@
 
 
 <dt id="arg-sim">sim<a class="anchor" aria-label="anchor" href="#arg-sim"></a></dt>
-<dd><p>Indices of the individual trajectories to plot if which = <code>"sims"</code>. Defaults to 1:10. Including a high number of trajectories will slow down plotting considerably.</p></dd>
+<dd><p>Indices of the individual trajectories to plot if which = <code>"sims"</code>. Defaults to the first <code>min(n, 100)</code> trajectories. Including a high number of trajectories will slow down plotting considerably.</p></dd>
 
 
 <dt id="arg-condition">condition<a class="anchor" aria-label="anchor" href="#arg-condition"></a></dt>
@@ -109,7 +110,7 @@
 
 
 <dt id="arg-nrows">nrows<a class="anchor" aria-label="anchor" href="#arg-nrows"></a></dt>
-<dd><p>Number of rows in the plot grid. Defaults to ceiling(sqrt(n_conditions)).</p></dd>
+<dd><p>Number of rows in the plot grid. Defaults to <code>ceiling(sqrt(max(condition)))</code>.</p></dd>
 
 
 <dt id="arg-margin">margin<a class="anchor" aria-label="anchor" href="#arg-margin"></a></dt>
@@ -154,7 +155,14 @@ to the defaults. Defaults to <code>list(central = 3, spread = 0, sims = 1)</code
 
 
 <dt id="arg-font-family">font_family<a class="anchor" aria-label="anchor" href="#arg-font-family"></a></dt>
-<dd><p>Font family. Defaults to "Times New Roman".</p></dd>
+<dd><p>Font family. Kebab-case names (e.g. <code>"eb-garamond"</code>)
+are Fontsource ids (browse them at <a href="https://fontsource.org/" class="external-link">https://fontsource.org/</a>), loaded as
+webfonts: no installation is needed, but internet access is required to
+display them. Other fonts must be installed on the system viewing the
+plot. Defaults to the <code>sdbuildR.font_family</code> option, or
+the <code>"stix-two-text"</code> webfont when the option is unset; use
+<code>options(sdbuildR.font_family = )</code> to change the default for all plots,
+e.g. in your .Rprofile.</p></dd>
 
 
 <dt id="arg-font-size">font_size<a class="anchor" aria-label="anchor" href="#arg-font-size"></a></dt>
@@ -199,19 +207,30 @@ variable name. Applies to the legend and any condition controls. Defaults to
 <dd><p>How to display multiple conditions. Use <code>"subplots"</code>
 to show conditions as panels, <code>"slider"</code> to select one condition with a
 slider, or <code>"dropdown"</code> to select one condition with a dropdown. Defaults
-to <code>"subplots"</code>.</p></dd>
+to <code>"subplots"</code>. If only a single condition is available (e.g. no
+conditions were varied), <code>"slider"</code> and <code>"dropdown"</code> fall back to
+<code>"subplots"</code> with a message. To guarantee the control geometry, plots with
+a slider/dropdown have a fixed height (sized to the number of controls)
+instead of a responsive one.</p></dd>
 
 
 <dt id="arg-control-options">control_options<a class="anchor" aria-label="anchor" href="#arg-control-options"></a></dt>
 <dd><p>Named list fine-tuning the <code>"slider"</code>/<code>"dropdown"</code>
-condition control. Supports <code>max_labels</code>: the maximum number of
+condition control and the <code>animation = "time"</code> animation. For the
+condition control it supports <code>max_labels</code>: the maximum number of
 slider tick labels to keep visible when many conditions are varied (the
 slider always keeps one step per condition; intermediate labels are thinned
-above this count); and <code>spacing</code>: the vertical gap (in paper units) between
-stacked controls when several condition parameters are varied. By default
-the spacing and the reserved bottom margin are sized automatically so the
-controls never overlap each other or the x-axis title; pass a number to
-widen or tighten the gap. Defaults to <code>list(max_labels = 10, spacing = NULL)</code>.</p></dd>
+above this count); and <code>spacing</code>: the vertical gap (in pixels) between the
+tops of stacked controls when several condition parameters are varied. By
+default the spacing and the reserved bottom margin are sized automatically
+so the controls never overlap each other or the x-axis title; pass a number
+to widen or tighten the gap. For the animation it supports <code>frame_ms</code>:
+the duration of each frame in milliseconds (default <code>100</code>); <code>duration</code>:
+the total animation length in seconds, as an alternative to <code>frame_ms</code>
+(supplying both is an error); <code>transition_ms</code>: the transition time between
+frames in milliseconds (default <code>0</code>); and <code>max_frames</code>: the maximum number
+of animation frames (default <code>50</code>). Defaults to <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code>, i.e. all
+defaults.</p></dd>
 
 
 <dt id="arg-animation">animation<a class="anchor" aria-label="anchor" href="#arg-animation"></a></dt>

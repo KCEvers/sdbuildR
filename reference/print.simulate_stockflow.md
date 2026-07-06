@@ -43,7 +43,6 @@ print(sim)
 #> ── Stock-and-Flow Simulation: Susceptible-Infected-Recovered (SIR) ─────────────
 #> 
 #> ── Data (first rows) ──
-#> 
 #>   time infected  recovered susceptible
 #> 1 0.00 1.000000 0.00000000    99999.00
 #> 2 0.01 1.019000 0.00100000    99998.98

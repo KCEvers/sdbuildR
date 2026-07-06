@@ -1,5 +1,68 @@
 # Changelog
 
+## sdbuildR 2.2.0
+
+- Renamed several
+  [`plot.stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.stockflow.md)
+  arguments for clarity: `minlen` is now `flow_length`, `nodesep` is now
+  `spacing`, `pad` is now `margin`, `dependency_col` is now
+  `color_dependency`, and `label_col` is now `font_color`. The old names
+  are no longer recognised.
+
+- Fixed time animations for variables that start with non-finite values,
+  such as `NaN` from a `0/0` ratio at initialization. These plots now
+  build without plotly trace-length warnings.
+
+- Time animations can now be tuned with `control_options` in
+  [`plot.simulate_stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.simulate_stockflow.md),
+  [`plot.ensemble_stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.ensemble_stockflow.md),
+  and
+  [`plot.verify_stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.verify_stockflow.md).
+  Use `duration`, `frame_ms`, `transition_ms`, or `max_frames` to
+  control speed and smoothness.
+
+- `plot.stockflow(show_eqn = TRUE)` now labels equations by variable
+  type: `Initial value =` for stocks, `Rate =` for flows, `Value =` for
+  constants, and `Equation =` for auxiliaries. Hover tooltips use the
+  same wording.
+
+- [`install_julia_env()`](https://kcevers.github.io/sdbuildR/reference/install_julia_env.md)
+  now reinstalls the Julia environment from a clean sdbuildR user data
+  directory.
+
+- Informational messages are now controlled consistently with `quiet` in
+  [`ensemble()`](https://kcevers.github.io/sdbuildR/reference/ensemble.md),
+  [`simulate()`](https://rdrr.io/r/stats/simulate.html),
+  [`use_julia()`](https://kcevers.github.io/sdbuildR/reference/use_julia.md),
+  and
+  [`install_julia_env()`](https://kcevers.github.io/sdbuildR/reference/install_julia_env.md).
+  `ensemble(verbose = )` is deprecated.
+
+- *Breaking:*
+  [`plot.stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.stockflow.md)
+  now uses `colors` instead of `stock_col` and `flow_col`. `colors`
+  accepts a single colour, a list keyed by variable type, or a named
+  vector keyed by variable name. Constants and auxiliaries can now be
+  coloured as well.
+
+- Dependency arrows in
+  [`plot.stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.stockflow.md)
+  now default to open arrow heads. Use the new `arrowhead_dependency`
+  argument to choose a different shape.
+
+- Plots and diagrams can now use Fontsource webfonts by passing a
+  Fontsource id such as `"eb-garamond"` or `"source-serif-4"` to
+  `font_family`. System fonts, such as `"Times New Roman"`, still work
+  as before. *Breaking:* the default plot font changed from
+  `"Times New Roman"` to `"stix-two-text"`; set
+  `options(sdbuildR.font_family = "Times New Roman")` to restore the old
+  default.
+
+- *Breaking:*
+  [`sim_settings()`](https://kcevers.github.io/sdbuildR/reference/sim_settings.md)
+  now uses `save_by`, `save_times`, and `save_length` for output times.
+  These replace the removed `save_at` and `save_n` arguments.
+
 ## sdbuildR 2.1.0
 
 - The plotting `line_width` and `alpha` arguments now accept a richer
@@ -20,17 +83,21 @@
   `alpha = list(central = 1, spread = 0.3, sims = 0.3)` (the trajectory
   width is thinner and the band is drawn without a border by default).
 
-- [`plot.ensemble_stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.ensemble_stockflow.md)
+- Improved the placement of condition sliders/dropdowns
+  (`condition_display = "slider"`/`"dropdown"`) in
+  [`plot.ensemble_stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.ensemble_stockflow.md)
   and
-  [`plot.verify_stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.verify_stockflow.md)
-  place condition sliders/dropdowns
-  (`condition_display = "slider"`/`"dropdown"`) more robustly: the
-  per-control spacing, the reserved bottom margin, and the x-axis title
-  are now sized from a single geometry so the controls no longer overlap
-  each other or the axis title when several condition parameters are
-  varied. The gap can be tuned via
-  `control_options = list(spacing = ...)` (paper units; `NULL` keeps the
-  automatic default).
+  [`plot.verify_stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.verify_stockflow.md).
+  Plots with condition controls now have a fixed height, sized to the
+  number of stacked controls. The gap between stacked controls can be
+  tuned via `control_options = list(spacing = ...)` (now in pixels;
+  `NULL` keeps the automatic default).
+
+- Fixed `condition_display = "dropdown"`: selecting a condition from the
+  dropdown(s) did not update the plot when several condition parameters
+  were varied, because the handler waited for a relayout event that
+  plotly.js never emits for dropdown buttons. The handler now reacts to
+  the button-click event.
 
 - [`ensemble()`](https://kcevers.github.io/sdbuildR/reference/ensemble.md)
   chooses which summary statistics to compute via `central` and
@@ -58,17 +125,8 @@
   `central` (`"mean"`, `"median"`, `"none"`) picks the central line and
   `spread` (`"quantile"`, `"sd"`, `"range"`, `"none"`) picks the
   uncertainty band; the first option whose statistics are present in the
-  summary is used, otherwise it falls back gracefully. `central`
-  replaces the previous `central_tendency` argument. Both accept lenient
-  spellings (e.g. `"Medians"`, `"SDs"`).
-
-- Fixed a bug in `plot.ensemble_stockflow(which = "sims")` where the
-  legend swatches did not match the trajectory colours: the
-  legend-carrying central tendency traces were coloured via plotly’s
-  palette, which plotly silently dropped (falling back to its default
-  colourway) because the explicitly-coloured trajectory traces were
-  already present. The central tendency traces are now coloured
-  explicitly so the legend always matches the trajectories.
+  summary is used. `central` replaces the previous `central_tendency`
+  argument. Both accept lenient spellings (e.g. `"Medians"`, `"SDs"`).
 
 - Fixed a bug where
   [`simulate()`](https://rdrr.io/r/stats/simulate.html) with
@@ -110,12 +168,6 @@
   [`as.data.frame.stockflow()`](https://kcevers.github.io/sdbuildR/reference/as.data.frame.stockflow.md)
   has been renamed to `vars`.
 
-- Requesting a variable that exists in the model but was not saved in
-  the output now raises a clear, actionable error (re-run with
-  `only_stocks = FALSE`, or set `vars` in
-  [`sim_settings()`](https://kcevers.github.io/sdbuildR/reference/sim_settings.md)),
-  instead of a generic message.
-
 - [`plot.stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.stockflow.md)
   gains three layout-control arguments. `direction` sets the overall
   flow direction (`"LR"`, `"TB"`, `"RL"`, or `"BT"`; default `"LR"`).
@@ -141,7 +193,7 @@
   of Julia than the one currently running (for example after
   reinstalling or updating Julia) and prompt you to rebuild it with
   [`install_julia_env()`](https://kcevers.github.io/sdbuildR/reference/install_julia_env.md),
-  instead of failing with an unclear error.
+  instead of failing.
 
 - [`install_julia_env()`](https://kcevers.github.io/sdbuildR/reference/install_julia_env.md)
   now reports clearly when setup is interrupted (for example by
@@ -178,9 +230,8 @@
   `"subplots"`, use `"slider"` or `"dropdown"` to show one
   condition/test at a time and select it interactively. These controls
   now (a) draw only one condition’s traces and swap the data
-  client-side, so they stay fast and compact even for ensembles with
-  many conditions; (b) label each condition with its parameter values;
-  and
+  client-side, so they stay fast even for ensembles with many
+  conditions; (b) label each condition with its parameter values; and
 
   3.  for a crossed ensemble (`cross = TRUE`) with two or more
       parameters, show one control per parameter instead of a single
@@ -325,8 +376,8 @@ CRAN release: 2026-06-16
   tests under alternative `conditions`.
 
 - [`compare_models()`](https://kcevers.github.io/sdbuildR/reference/compare_models.md)
-  compares model structure, equations, simulation settings, and
-  nonlinearity scores across two `stockflow` models.
+  compares model structure, equations, and simulation settings across
+  two `stockflow` models.
 
 - [`import_desolve()`](https://kcevers.github.io/sdbuildR/reference/import_desolve.md)
   converts deSolve-style ODE models into `stockflow` models.

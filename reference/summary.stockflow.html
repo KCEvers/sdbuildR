@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,7 +19,8 @@
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/build.html">Building stock-and-flow models</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/summerschool2026.html">Theory Building in Psychology (Summer School 2026)</a></li>
+    <li><a class="dropdown-item" href="../articles/build.html">Building stock-and-flow models</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble.html">Ensemble simulations</a></li>
     <li><a class="dropdown-item" href="../articles/unit-tests.html">Unit Testing Stock-and-Flow Models</a></li>
     <li><a class="dropdown-item" href="../articles/julia-setup.html">Setting up Julia</a></li>
@@ -91,7 +92,6 @@ entry per check. Each entry contains a <code>problem</code> field (<code>"none"<
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Stock-and-Flow Model Diagnostics</span> <span style="color: #00BBBB;">────────────────────────────────────────────</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Potential problem (1)</span> ──</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> `recovered` has an equation of 0.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Detect absence of stocks or flows</span></span></span>
@@ -101,12 +101,10 @@ entry per check. Each entry contains a <code>problem</code> field (<code>"none"<
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Stock-and-Flow Model Diagnostics</span> <span style="color: #00BBBB;">────────────────────────────────────────────</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Problem (1)</span> ──</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> Model has no stocks.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> → Add at least one stock with `stock()` or `update()`.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Potential problem (1)</span> ──</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Model has no flows.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> → Add flows with `flow()` or `update()`.</span>
 <span class="r-in"><span></span></span>
@@ -117,7 +115,6 @@ entry per check. Each entry contains a <code>problem</code> field (<code>"none"<
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Stock-and-Flow Model Diagnostics</span> <span style="color: #00BBBB;">────────────────────────────────────────────</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Potential problems (3)</span> ──</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Model has no flows.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> → Add flows with `flow()` or `update()`.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Stock not connected to any flow: `Prey`.</span>
@@ -137,14 +134,12 @@ entry per check. Each entry contains a <code>problem</code> field (<code>"none"<
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Stock-and-Flow Model Diagnostics</span> <span style="color: #00BBBB;">────────────────────────────────────────────</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Problem (1)</span> ──</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> Circular dependency in static equations.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Variables involved: `Prey` and `Predator`.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   `Prey` depends on `Predator`.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   `Predator` depends on `Prey`.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Potential problems (2)</span> ──</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Model has no flows.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> → Add flows with `flow()` or `update()`.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Stocks not connected to any flow: `Predator` and `Prey`.</span>

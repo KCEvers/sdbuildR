@@ -7,7 +7,7 @@ vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html).
 ## Usage
 
 ``` r
-install_julia_env(remove = FALSE)
+install_julia_env(remove = FALSE, quiet = FALSE)
 ```
 
 ## Arguments
@@ -18,6 +18,11 @@ install_julia_env(remove = FALSE)
   SystemDynamicsBuildR.jl package and delete the environment directory
   (containing Project.toml and Manifest.toml). All other Julia packages
   remain untouched.
+
+- quiet:
+
+  If `TRUE`, suppress informational messages such as progress and status
+  updates. Warnings and errors are always shown. Defaults to `FALSE`.
 
 ## Value
 

@@ -1,7 +1,7 @@
 # Compare two stock-and-flow models
 
 Compares the structure, equations, and simulation settings of two
-`stockflow` models, and computes a nonlinearity score for each.
+`stockflow` models.
 
 ## Usage
 
@@ -51,7 +51,7 @@ An object of class `compare_stockflow` (a list) containing:
 
 - `properties`:
 
-  Per-model counts and nonlinearity scores.
+  Per-model counts of variables by type.
 
 ## See also
 
@@ -68,24 +68,15 @@ compare_models(sfm1, sfm2)
 #> ── Stock-and-Flow Comparison: sfm1 vs sfm2 ─────────────────────────────────────
 #> 
 #> ── Structural Differences ──
-#> 
 #> ! Equation changed: `susceptible`: `99999` → `0.5`
 #> 
 #> ── Simulation Settings ──
-#> 
 #> ✔ Identical
 #> 
 #> ── Model Properties ──
-#> 
-#> ----------------------------------------
 #> Stocks 3 3
 #> Flows 2 2
 #> Auxiliaries 0 0
 #> Constants 4 4
 #> Lookups 0 0
-#> ----------------------------------------
-#> Nonlinearity score 1 1
-#> Lookup refs 0 0
-#> Nonlinear fns 0 0
-#> Multiplicative 1 1
 ```

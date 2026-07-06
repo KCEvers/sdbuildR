@@ -2,6 +2,8 @@
 
 ### Vignettes
 
+- [Theory Building in Psychology (Summer School
+  2026)](https://kcevers.github.io/sdbuildR/articles/summerschool2026.md):
 - [Building stock-and-flow
   models](https://kcevers.github.io/sdbuildR/articles/build.md):
 - [Ensemble

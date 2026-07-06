@@ -49,7 +49,9 @@ After importing, use the model as usual:
 ``` r
 
 summary(sfm)
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot()
 ```
 
 ### Limitations
@@ -143,26 +145,25 @@ print(sfm)
 #> 3 stocks • 3 flows • 3 constants • 2 auxiliaries
 #> 
 #> ── Stock-Flow Structure ──
-#> 
 #> I: + net_I
 #> R: + net_R
 #> S: + net_S
 #> 
 #> ── Other Variables ──
-#> 
 #> Constants: `beta`, `gamma`, and `N`
 #> Auxiliaries: `IR` and `SI`
 #> 
 #> ── Simulation Settings ──
-#> 
 #> Time: 0.0 to 100.0 seconds (dt = 0.1) • lsoda • R
 #> Simulation output: stocks only
 ```
 
 ``` r
 
-sfm <- sim_settings(sfm, save_at = 5)
-sfm |> simulate() |> plot()
+sfm <- sim_settings(sfm, save_by = 5)
+sfm |>
+  simulate() |>
+  plot()
 ```
 
 The imported model is a full `stockflow` object. You can modify it with
@@ -175,9 +176,10 @@ run ensembles, and export it to any supported format.
 ## Exporting models
 
 [`export_model()`](https://kcevers.github.io/sdbuildR/reference/export_model.md)
-converts an `stockflow` object to another format. The currently
-supported export formats are
-’sdbuildR`to generate the build code of the model,`deSolve`to return a complete script for simulating a model with`deSolve`, and`psychomodels\`.
+converts a `stockflow` object to another format. The currently supported
+export formats are `sdbuildR` to generate the build code of the model,
+`deSolve` to return a complete script for simulating a model with
+`deSolve`, and `psychomodels`.
 
 Use `file = "path"` to write directly to disk; omit `file` to return the
 result in memory.
@@ -194,7 +196,7 @@ specifications.
 ``` r
 
 export_model(sfm, format = "sdbuildR")
-#> [1] "sfm <-\tstockflow() |>\n\tsim_settings(method = \"lsoda\", start = \"0.0\", stop = \"100.0\", dt = \"0.1\", save_at = \"5.0\", save_type = \"save_at\") |>\n\tmeta(name = \"SIR epidemic\", created = \"2026-06-29 18:01:11.94021\") |>\n\tstock(I, eqn = 10) |>\n\tstock(R, eqn = 0) |>\n\tstock(S, eqn = 990) |>\n\tflow(net_I, eqn = SI - IR, to = I) |>\n\tflow(net_R, eqn = IR, to = R) |>\n\tflow(net_S, eqn = -SI, to = S) |>\n\tconstant(beta, eqn = 0.3) |>\n\tconstant(gamma, eqn = 0.1) |>\n\tconstant(N, eqn = 1000) |>\n\taux(IR, eqn = gamma * I) |>\n\taux(SI, eqn = beta * S * I/N)\n"
+#> [1] "sfm <-\tstockflow() |>\n\tsim_settings(method = \"lsoda\", start = \"0.0\", stop = \"100.0\", dt = \"0.1\", save_by = 5) |>\n\tmeta(name = \"SIR epidemic\", created = \"2026-07-06 07:34:09.324171\") |>\n\tstock(I, eqn = 10) |>\n\tstock(R, eqn = 0) |>\n\tstock(S, eqn = 990) |>\n\tflow(net_I, eqn = SI - IR, to = I) |>\n\tflow(net_R, eqn = IR, to = R) |>\n\tflow(net_S, eqn = -SI, to = S) |>\n\tconstant(beta, eqn = 0.3) |>\n\tconstant(gamma, eqn = 0.1) |>\n\tconstant(N, eqn = 1000) |>\n\taux(IR, eqn = gamma * I) |>\n\taux(SI, eqn = beta * S * I/N)\n"
 ```
 
 ### deSolve script
@@ -233,7 +235,7 @@ Write directly to a `.json` file for upload:
 
 export_model(sfm,
   format = "psychomodels",
-  publication_doi = "10.0000/my-paper", 
+  publication_doi = "10.0000/my-paper",
   file = "sir_psychomodels.json"
 )
 ```

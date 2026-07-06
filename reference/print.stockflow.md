@@ -42,18 +42,15 @@ print(sfm)
 #> 3 stocks • 2 flows • 4 constants
 #> 
 #> ── Stock-Flow Structure ──
-#> 
 #> infected: + new_infections - new_recoveries
 #> recovered: + new_recoveries
 #> susceptible: - new_infections
 #> 
 #> ── Other Variables ──
-#> 
 #> Constants: `contact_rate`, `infection_rate`, `recovery_rate`, and
 #> `total_population`
 #> 
 #> ── Simulation Settings ──
-#> 
 #> Time: 0.0 to 20.0 weeks (dt = 0.01) • euler • R
 #> Simulation output: stocks only
 ```

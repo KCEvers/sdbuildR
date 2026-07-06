@@ -58,7 +58,6 @@ summary(sfm)
 #> ── Stock-and-Flow Model Diagnostics ────────────────────────────────────────────
 #> 
 #> ── Potential problem (1) ──
-#> 
 #> • `recovered` has an equation of 0.
 
 # Detect absence of stocks or flows
@@ -68,12 +67,10 @@ summary(sfm)
 #> ── Stock-and-Flow Model Diagnostics ────────────────────────────────────────────
 #> 
 #> ── Problem (1) ──
-#> 
 #> ! Model has no stocks.
 #> → Add at least one stock with `stock()` or `update()`.
 #> 
 #> ── Potential problem (1) ──
-#> 
 #> • Model has no flows.
 #> → Add flows with `flow()` or `update()`.
 
@@ -84,7 +81,6 @@ summary(sfm)
 #> ── Stock-and-Flow Model Diagnostics ────────────────────────────────────────────
 #> 
 #> ── Potential problems (3) ──
-#> 
 #> • Model has no flows.
 #> → Add flows with `flow()` or `update()`.
 #> • Stock not connected to any flow: `Prey`.
@@ -104,14 +100,12 @@ summary(sfm)
 #> ── Stock-and-Flow Model Diagnostics ────────────────────────────────────────────
 #> 
 #> ── Problem (1) ──
-#> 
 #> ! Circular dependency in static equations.
 #>   Variables involved: `Prey` and `Predator`.
 #>   `Prey` depends on `Predator`.
 #>   `Predator` depends on `Prey`.
 #> 
 #> ── Potential problems (2) ──
-#> 
 #> • Model has no flows.
 #> → Add flows with `flow()` or `update()`.
 #> • Stocks not connected to any flow: `Predator` and `Prey`.

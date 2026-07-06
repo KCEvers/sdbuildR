@@ -58,15 +58,11 @@ the simulations used. The object contains:
   [`plot.verify_stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.verify_stockflow.md).
   Always present (never `NULL`).
 
-- j:
+- condition:
 
   Named integer vector mapping each test label to its condition index.
   Used internally by
   [`plot.verify_stockflow()`](https://kcevers.github.io/sdbuildR/reference/plot.verify_stockflow.md).
-
-- n:
-
-  Number of simulations run per condition.
 
 - n_conditions:
 

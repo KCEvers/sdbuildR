@@ -23,7 +23,7 @@ dependencies(object, name = NULL, type = NULL, reverse = FALSE)
 - type:
 
   Variable types to find dependencies for. Must be one or more of
-  'stock', 'flow', 'constant', 'aux', 'gf', or 'func'. Defaults to
+  'stock', 'flow', 'constant', 'aux', 'lookup', or 'func'. Defaults to
   `NULL` to include all types.
 
 - reverse:
