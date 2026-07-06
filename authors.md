@@ -11,7 +11,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/KCEvers/sdbuildR/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/KCEvers/sdbuildR/blob/v2.2.0/inst/CITATION)
 
 Evers, K. (2026). sdbuildR: An Accessible Interface for Stock-and-Flow
 Modelling in R. R package version 2.2.0.

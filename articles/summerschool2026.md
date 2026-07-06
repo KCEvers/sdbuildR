@@ -377,7 +377,7 @@ Run 50 simulations with different initial conditions:
 
 sims <- ensemble(sfm, n = 50)
 #> Starting ensemble simulation in "R" with 50 simulations.
-#> ✔ Ensemble simulation completed in 11.3767 seconds.
+#> ✔ Ensemble simulation completed in 11.4668 seconds.
 ```
 
 ``` r
@@ -473,7 +473,7 @@ sfm <- sim_settings(sfm, save_sims = TRUE)
 # Run 100 simulations
 sims <- ensemble(sfm, n = 100)
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 20.6033 seconds.
+#> ✔ Ensemble simulation completed in 21.0217 seconds.
 
 # Individual simulation runs
 plot(sims, which = "sims")
@@ -498,7 +498,7 @@ conditions <- list(decay_rate = c(0.005, 0.01, 0.05, 0.1, 0.2))
 sims <- ensemble(sfm, n = 50, conditions = conditions)
 #> Starting ensemble simulation in "R" with 250 simulations in total.
 #> ℹ 5 conditions x 50 simulations per condition.
-#> ✔ Ensemble simulation completed in 55.0816 seconds.
+#> ✔ Ensemble simulation completed in 56.9931 seconds.
 ```
 
 ``` r
