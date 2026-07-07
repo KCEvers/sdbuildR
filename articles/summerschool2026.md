@@ -2,6 +2,8 @@
 
 ## Formalizing Theory with Stock-and-Flow Models
 
+## A Concrete Example: A Queue of People Waiting for Service
+
 ### Inflows Increase a Stock
 
 | Time | People Waiting in Queue | Arrivals |
@@ -37,6 +39,14 @@ What **processes** cause the state to change?
 | 0.04 | -0.04                   | 1        | 2       |
 | 0.05 | -0.05                   | 1        | 2       |
 
+### Making the Outflow Stock-Dependent
+
+This is a **negative feedback loop**: the more people, the greater the
+outflow, which reduces the amount of people in the queue.
+
+A **positive** feedback loop **amplifies**, whereas a **negative**
+feedback loop **dampens** or **balances**.
+
 ### Functional Forms
 
 **Functional form**: mathematical relationship specifying how one
@@ -48,25 +58,13 @@ linear
 
 `eqn = `
 
-### Making the Outflow Stock-Dependent
-
-This is a **negative feedback loop**: the more people, the greater the
-outflow, which reduces the amount of people in the queue.
-
-A **positive** feedback loop **amplifies**, whereas a **negative**
-feedback loop **dampens** or **balances**.
-
 ### Multiple Outflows
 
 ### Multiple Stocks
 
-### Add A Constant to the Model
+### Add a Constant for Service Rate
 
-Add a constant for service rate:
-
-### Add An Auxiliary Variable to the Model
-
-Add an auxiliary variable for satisfaction:
+### Add an Auxiliary for Satisfaction
 
 ### Recap
 
@@ -82,7 +80,9 @@ This framework can be applied to model a wide range of phenomena.
 ## Package Setup
 
 The workshop materials are available at
-<https://kcevers.github.io/sdbuildR/summerschool2026>.
+<https://kcevers.github.io/sdbuildR/articles/summerschool2026.html>.
+
+Install the package from GitHub:
 
 ``` r
 
@@ -157,27 +157,26 @@ The timeseries can also be inspected in data frame format:
 
 ``` r
 
-sfm |> simulate() |> as.data.frame() |> head()
-#>   time variable      value
-#> 1 0.00    queue 0.00000000
-#> 2 0.01    queue 0.01000000
-#> 3 0.02    queue 0.01994990
-#> 4 0.03    queue 0.02984975
-#> 5 0.04    queue 0.03969961
-#> 6 0.05    queue 0.04949954
+sfm |> simulate() |> as.data.frame(direction = "wide") |> head()
+#>   time      queue       served    service        leave arrivals satisfaction
+#> 1 0.00 0.00000000 0.0000000000 0.00000000 0.000000e+00        1          NaN
+#> 2 0.01 0.01000000 0.0000000000 0.00500000 1.000000e-05        1    0.9980040
+#> 3 0.02 0.01994990 0.0000500000 0.00997495 3.979985e-05        1    0.9960259
+#> 4 0.03 0.02984975 0.0001497495 0.01492488 8.910077e-05        1    0.9940655
+#> 5 0.04 0.03969961 0.0002989983 0.01984981 1.576059e-04        1    0.9921226
+#> 6 0.05 0.04949954 0.0004974963 0.02474977 2.450204e-04        1    0.9901971
 ```
 
 ## A Simplified Model of Burnout
 
 Draw the **target phenomenon**:
 
-    #> Warning: No trace type specified and no positional attributes specified
-
 ### Building a Model from Scratch
+
+Create an empty stock-and-flow model:
 
 ``` r
 
-# Initialize stock-and-flow model
 sfm <- stockflow()
 print(sfm)
 #> 
@@ -187,9 +186,13 @@ print(sfm)
 #> ── Simulation Settings ──
 #> Time: 0 to 100 seconds (dt = 0.01) • euler • R
 #> Simulation output: stocks only
+```
 
-# Change name
-sfm <- meta(sfm, name = "Burnout Model")
+Change name of the model:
+
+``` r
+
+sfm <- meta(sfm, name = "Burnout")
 ```
 
 ### Defining the Time Horizon and Time Unit
@@ -199,14 +202,16 @@ Change simulation settings:
 ``` r
 
 sfm <- sim_settings(sfm, 
+
   # Run simulation for 6 months (~ 180 days)
   stop = round(365/2), time_unit = "days", 
+
   # Return all variables in output (not just stocks)
   only_stocks = FALSE)
 
 print(sfm)
 #> 
-#> ── Stock-and-Flow Model: Burnout Model ─────────────────────────────────────────
+#> ── Stock-and-Flow Model: Burnout ───────────────────────────────────────────────
 #> ℹ Empty model without any variables.
 #> 
 #> ── Simulation Settings ──
@@ -221,15 +226,17 @@ print(sfm)
 sfm <- stock(sfm, name = engagement, eqn = .3)
 ```
 
+Plot stock-and-flow diagram:
+
 ``` r
 
-# Plot stock-and-flow diagram
 sfm |> plot()
 ```
 
+Simulate and visualise timeseries:
+
 ``` r
 
-# Simulate and visualise timeseries
 sfm |> simulate() |> plot()
 ```
 
@@ -239,15 +246,19 @@ sfm |> simulate() |> plot()
 
 sfm <- constant(sfm, decay_rate, eqn = .05) |>
        flow(decay, eqn = decay_rate, from = engagement)
-
-# Plot stock-and-flow diagram
-sfm |> plot()
 ```
+
+Plot stock-and-flow diagram:
 
 ``` r
 
+sfm |> plot()
+```
 
-# Simulate and visualise timeseries
+Simulate and visualise timeseries:
+
+``` r
+
 sfm |> simulate() |> plot()
 ```
 
@@ -263,8 +274,16 @@ sfm |> simulate() |> plot(animation = "time")
 ``` r
 
 sfm <- update(sfm, decay, eqn = decay_rate * engagement)
+```
+
+Plot stock-and-flow diagram:
+
+``` r
+
 sfm |> plot()
 ```
+
+Simulate and visualise timeseries:
 
 ``` r
 
@@ -277,8 +296,16 @@ sfm |> simulate() |> plot()
 
 sfm <- constant(sfm, enjoyment, eqn = .3) |>
        flow(motivation, eqn = enjoyment, to = engagement)
+```
+
+Plot stock-and-flow diagram:
+
+``` r
+
 sfm |> plot()
 ```
+
+Simulate and visualise timeseries:
 
 ``` r
 
@@ -302,11 +329,21 @@ sfm |> plot()
 
 ``` r
 
-sfm <- flow(sfm, overcommitment, eqn = enjoyment * new_projects, 
-            from = enjoyment) |>
-       aux(new_projects, eqn = .1 * engagement)
+sfm <- sfm |>
+    flow(overcommitment, 
+         eqn = enjoyment * new_projects, 
+         from = enjoyment) |>
+    aux(new_projects, eqn = .1 * engagement)
+```
+
+Plot stock-and-flow diagram:
+
+``` r
+
 sfm |> plot()
 ```
+
+Simulate and visualise timeseries:
 
 ``` r
 
@@ -326,8 +363,8 @@ endogenous variable**; from a constant to a stock that erodes over time.
 
 ## Dependence on Initial Condition
 
-If you did not complete all steps above, load the updated model from the
-model library:
+If you did not complete all steps above, load the model from the model
+library:
 
 ``` r
 
@@ -341,11 +378,20 @@ Initialize the engagement stock with a random value between 0 and 4:
 sfm <- update(sfm, engagement, eqn = runif(1, min = 0, max = 4)) 
 ```
 
-Equations are stored as expressions:
+Equations are stored as expressions. Note the initial value of
+engagement:
 
 ``` r
 
-plot(sfm)
+as.data.frame(sfm, properties = "eqn")
+#>       type           name                        eqn
+#> 1    stock     engagement runif(1, min = 0, max = 4)
+#> 2    stock      enjoyment                        0.3
+#> 3     flow          decay    decay_rate * engagement
+#> 4     flow     motivation                  enjoyment
+#> 5     flow overcommitment   enjoyment * new_projects
+#> 6 constant     decay_rate                       0.05
+#> 7      aux   new_projects           0.1 * engagement
 ```
 
 This means that each simulation will have a different initial value for
@@ -363,10 +409,13 @@ Update simulation settings to prepare for ensemble simulations:
 ``` r
 
 sfm <- sfm |>
+
   # Save only 50 time points 
   sim_settings(save_length = 50, 
+
   # Save only stocks (not flows or auxiliaries)
   only_stocks = TRUE, 
+
   # Save individual simulation runs (not just summary statistics)
   save_sims = TRUE)
 ```
@@ -377,19 +426,20 @@ Run 50 simulations with different initial conditions:
 
 sims <- ensemble(sfm, n = 50)
 #> Starting ensemble simulation in "R" with 50 simulations.
-#> ✔ Ensemble simulation completed in 11.4668 seconds.
+#> ✔ Ensemble simulation completed in 9.2642 seconds.
 ```
+
+Summary statistics:
 
 ``` r
 
-# Summary statistics
 plot(sims)
 ```
 
+Individual simulation runs:
+
 ``` r
 
-
-# Individual simulation runs
 plot(sims, which = "sims")
 ```
 
@@ -402,8 +452,10 @@ Let’s return to the simpler model with a static recovery rate:
 ``` r
 
 sfm <- sfm |>
+
  # Remove the outflow and auxiliary
  discard(c(overcommitment, new_projects)) |>
+
  # Change recovery_rate back to a constant
  change_type(enjoyment, new_type = "constant")
 
@@ -426,6 +478,8 @@ ricker
 
 `eqn = `
 
+### Questions
+
 Explore the functional forms above:
 
 1.  What theoretical ideas does each functional form express?
@@ -433,19 +487,6 @@ Explore the functional forms above:
 2.  How do they differ in terms of the dynamics they produce?
 
 3.  Is the behaviour dependent on the initial condition of energy?
-
-### Hint
-
-The motivation inflow can be updated to a different functional form
-using the [`update()`](https://rdrr.io/r/stats/update.html) function.
-For example, to change the inflow to a linear function of engagement:
-
-``` r
-
-sfm_linear <- update(sfm, motivation, eqn = enjoyment * engagement)
-
-sfm_linear |> simulate() |> plot()
-```
 
 ## Bonus Material
 
@@ -469,13 +510,21 @@ sequentially.
 ``` r
 
 sfm <- sim_settings(sfm, save_sims = TRUE)
+```
 
-# Run 100 simulations
+Run 100 simulations:
+
+``` r
+
 sims <- ensemble(sfm, n = 100)
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 21.0217 seconds.
+#> ✔ Ensemble simulation completed in 16.7784 seconds.
+```
 
-# Individual simulation runs
+Individual simulation runs:
+
+``` r
+
 plot(sims, which = "sims")
 ```
 
@@ -498,7 +547,7 @@ conditions <- list(decay_rate = c(0.005, 0.01, 0.05, 0.1, 0.2))
 sims <- ensemble(sfm, n = 50, conditions = conditions)
 #> Starting ensemble simulation in "R" with 250 simulations in total.
 #> ℹ 5 conditions x 50 simulations per condition.
-#> ✔ Ensemble simulation completed in 56.9931 seconds.
+#> ✔ Ensemble simulation completed in 45.2224 seconds.
 ```
 
 ``` r

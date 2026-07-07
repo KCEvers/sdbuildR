@@ -111,7 +111,7 @@ function:
 
 sims <- ensemble(sfm, n = 100)
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 22.7869 seconds.
+#> ✔ Ensemble simulation completed in 18.8506 seconds.
 ```
 
 ``` r
@@ -129,7 +129,7 @@ sfm <- sim_settings(sfm, save_sims = TRUE)
 # or pass `save_sims = TRUE` directly to `ensemble()`:
 sims <- ensemble(sfm, n = 30, save_sims = TRUE)
 #> Starting ensemble simulation in "R" with 30 simulations.
-#> ✔ Ensemble simulation completed in 6.9758 seconds.
+#> ✔ Ensemble simulation completed in 5.6697 seconds.
 ```
 
 ``` r
@@ -168,7 +168,7 @@ sfm <- sim_settings(sfm, vars = c("Hunger", "Food_intake"))
 
 sims <- ensemble(sfm, n = 100)
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 22.7134 seconds.
+#> ✔ Ensemble simulation completed in 18.6912 seconds.
 ```
 
 ``` r
@@ -200,7 +200,7 @@ sims <- ensemble(sfm,
   quantiles = c(0.1, 0.9)
 )
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 22.672 seconds.
+#> ✔ Ensemble simulation completed in 18.7362 seconds.
 head(sims)
 #>   condition               variable      time      mean    median missing_count
 #> 1         1 Compensatory_behaviour  0.000000 0.4750875 0.4036320             0
@@ -234,7 +234,7 @@ sims <- ensemble(sfm,
   spread = "sd"
 )
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 22.5513 seconds.
+#> ✔ Ensemble simulation completed in 18.5931 seconds.
 head(sims)
 #>   condition               variable      time    median         sd missing_count
 #> 1         1 Compensatory_behaviour  0.000000 0.4036320 0.29498048             0
@@ -255,7 +255,7 @@ sims <- ensemble(sfm,
   spread = c("quantile", "sd", "range")
 )
 #> Starting ensemble simulation in "R" with 100 simulations.
-#> ✔ Ensemble simulation completed in 22.6292 seconds.
+#> ✔ Ensemble simulation completed in 18.4981 seconds.
 head(sims, n = 1)
 #>   condition               variable time      mean   median        sd
 #> 1         1 Compensatory_behaviour    0 0.4750875 0.403632 0.2949805
@@ -360,7 +360,7 @@ sims <- ensemble(sfm,
 )
 #> Starting ensemble simulation in "Julia" with 400 simulations in total.
 #> ℹ 4 conditions x 100 simulations per condition.
-#> ✔ Ensemble simulation completed in 11.2902 seconds.
+#> ✔ Ensemble simulation completed in 9.9206 seconds.
 ```
 
 ``` r
@@ -387,7 +387,7 @@ sims <- ensemble(sfm,
 )
 #> Starting ensemble simulation in "Julia" with 400 simulations in total.
 #> ℹ 4 conditions x 100 simulations per condition.
-#> ✔ Ensemble simulation completed in 2.9256 seconds.
+#> ✔ Ensemble simulation completed in 2.2957 seconds.
 ```
 
 ``` r
@@ -436,7 +436,7 @@ sims <- ensemble(sfm,
 )
 #> Starting ensemble simulation in "Julia" with 300 simulations in total.
 #> ℹ 3 conditions x 100 simulations per condition.
-#> ✔ Ensemble simulation completed in 1.977 seconds.
+#> ✔ Ensemble simulation completed in 2.3044 seconds.
 ```
 
 ``` r
