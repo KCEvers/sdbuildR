@@ -24,6 +24,42 @@ knitr::opts_chunk$set(
 )
 ```
 
+<style type="text/css">
+body {
+  line-height: 1.55;
+}
+
+h2 {
+  margin-top: 2.75rem;
+  margin-bottom: 1rem;
+  padding-top: 0.15rem;
+}
+
+h3 {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+h2 + h3 {
+  margin-top: 1.4rem;
+}
+
+p,
+ul,
+ol {
+  margin-bottom: 0.95rem;
+}
+
+pre,
+.sourceCode,
+.figure,
+.html-widget,
+.plotly {
+  margin-top: 0.85rem;
+  margin-bottom: 1.4rem;
+}
+</style>
+
 ```{r, echo=FALSE, message=FALSE}
 library(sdbuildR)
 ```
@@ -710,6 +746,80 @@ Stocks are **states** -->
 library(sdbuildR)
 ```
 
+
+
+```{r, echo=FALSE}
+
+{
+  viz_str <- '
+   digraph sfm {
+
+      graph [layout = dot, rankdir = LR, center=true, outputorder="edgesfirst", pad=%(pad)s, nodesep=0.3, splines = true, concentrate = false]
+
+      # Shared across all nodes (persists until overridden)
+      node [fontsize=18,fontname="Times New Roman",fontcolor="black"]
+
+      # Define stock nodes
+      node [shape=box,style=filled,fillcolor="#83d3d4"]
+      "Stock" [id="Stock",label="Stock", tooltip = "Stock: Stock\nInitial value: 0\nInflows: Inflow\nOutflows: Outflow"]
+
+      # Define flow nodes (intermediate nodes for flows)
+      node [style = "",shape=plaintext, fontsize=16, width=0.6, height=0.3]
+      "Inflow" [id="Inflow",label="Inflow", tooltip = "Flow: Inflow\nEquation: 0\nFrom: outside model boundary\nTo: Stock"]
+        "Outflow" [id="Outflow",label="Outflow", tooltip = "Flow: Outflow\nEquation: 0\nFrom: Stock\nTo: outside model boundary"]
+
+      # Define external cloud nodes
+      node [shape=doublecircle, fixedsize=true, width = .25, height = .25, orientation=15]
+      "Cloud1" [label=%(label_sink)s, tooltip = "Outside model boundary\nSink of: Outflow"]
+        "Cloud2" [label=%(label_source)s, tooltip = "Outside model boundary\nSource of: Inflow"]
+
+      # Define auxiliary nodes
+      
+      
+
+      # Define constant nodes
+      
+      
+
+      # Define flow edges (stock -> flow_node)
+      edge [style = "", arrowhead="none", color="black:#f48153:black", penwidth=1.1, minlen=1, tailport="e", headport="w"]
+      "Cloud2" -> "Inflow"
+        "Stock" -> "Outflow"
+
+      # Define flow edges (flow_node -> stock)
+      edge [style = "", arrowhead="normal", color="black:#f48153:black", arrowsize=1.5, penwidth=1.1, minlen=1, tailport="e", headport="w"]
+      "Inflow" -> "Stock"
+        "Outflow" -> "Cloud1"
+
+      # Define dependency edges
+      edge [style = "", color="#999999", arrowsize=0.8, penwidth=1, constraint=false, tailport = "_", headport="_"]
+      
+
+      
+
+
+      # Rank groupings
+      
+
+    }
+  '
+
+  viz_str <- sprintf_arg(viz_str, list(
+    pad = ".9",
+    label_source = '<Unspecified source<BR/><FONT POINT-SIZE="13" COLOR="black">(outside of model boundary)</FONT><BR/><BR/><BR/><BR/><FONT COLOR="white">.</FONT>>',
+    label_sink = '<Unspecified sink<BR/><FONT POINT-SIZE="13" COLOR="black">(outside of model boundary)</FONT><BR/><BR/><BR/><BR/><FONT COLOR="white">.</FONT>>'
+  ))
+
+}
+
+  pl <- DiagrammeR::grViz(viz_str)
+  pl
+```
+
+
+
+## A Concrete Example: A Queue of People Waiting for Service
+
 ```{r, fig.height=2}
 sfm <- stockflow() |>
   stock(queue, eqn = 0, label = "People Waiting in Queue") |>
@@ -739,7 +849,7 @@ plot(sfm)
 
 
 
-```{r}
+```{r, fig.height=5}
 sim <- simulate(sfm)
 
 pl1 <- plot(sim, vars = "queue", animation = "time", control_options = list(frame_ms = frame_ms), 
@@ -798,15 +908,8 @@ sfm <- sfm |>
 plot(sfm)
 ```
 
-::: {.fragment}
 
-```{r}
-sfm |> simulate() |> plot()
-```
-
-:::
-
-```{r}
+```{r, fig.height=5}
 sim <- simulate(sfm)
 
 pl1 <- plot(sim, vars = "queue", animation = "time", control_options = list(frame_ms = frame_ms), 
@@ -853,7 +956,7 @@ plot(sfm)
 ```
 
 
-```{r}
+```{r, fig.height=5}
 sim <- simulate(sfm)
 
 pl1 <- plot(sim, vars = "queue", animation = "time", control_options = list(frame_ms = frame_ms), 
@@ -894,19 +997,6 @@ gt::gt(head(df))
 ```
 
 
-### Functional Forms
-
-**Functional form**: mathematical relationship specifying how one variable affects another.
-
-```{r}
-#| echo: false
-functional_forms_widget(forms = c("constant", "linear"), 
-ylab = "Service", xlab = "People Waiting in Queue", var = "queue",
-arg_labels = list(constant = c(value = "service rate"),
-                    linear   = c(slope = "service rate")))
-```
-
-
 ### Making the Outflow Stock-Dependent
 
 ```{r}
@@ -922,7 +1012,7 @@ A **positive** feedback loop **amplifies**, whereas a **negative** feedback loop
 
 
 
-```{r}
+```{r, fig.height=5}
 sim <- simulate(sfm)
 
 pl1 <- plot(sim, vars = "queue", animation = "time", control_options = list(frame_ms = frame_ms), 
@@ -950,6 +1040,22 @@ pl$x$layout$legend$traceorder <- "normal"
 pl
 ```
 
+
+
+### Functional Forms
+
+**Functional form**: mathematical relationship specifying how one variable affects another.
+
+```{r}
+#| echo: false
+functional_forms_widget(forms = c("constant", "linear"), 
+ylab = "Service", xlab = "People Waiting in Queue", var = "queue",
+arg_labels = list(constant = c(value = "service rate"),
+                    linear   = c(slope = "service rate")))
+```
+
+
+
 ### Multiple Outflows
 
 ```{r}
@@ -960,7 +1066,7 @@ sfm <- sfm |>
 plot(sfm)
 ```
 
-```{r}
+```{r, fig.height=5}
 sim <- simulate(sfm)
 
 pl1 <- plot(sim, vars = "queue", animation = "time", control_options = list(frame_ms = frame_ms), 
@@ -1002,7 +1108,8 @@ plot(sfm)
 
 
 
-```{r}
+
+```{r, fig.height=5}
 sim <- simulate(sfm)
 
 pl1 <- plot(sim, vars = c("queue", "served"), animation = "time", control_options = list(frame_ms = frame_ms), 
@@ -1032,9 +1139,7 @@ pl
 ```
 
 
-### Add A Constant to the Model 
-
-Add a constant for service rate:
+### Add a Constant for Service Rate
 
 ```{r}
 sfm <- sfm |> 
@@ -1045,9 +1150,7 @@ order_vars <- c("leave", "service", "service_rate")
 plot(sfm, show_constants = TRUE, align = order_vars, order = order_vars, spacing = .5)
 ```
 
-### Add An Auxiliary Variable to the Model
-
-Add an auxiliary variable for satisfaction:
+### Add an Auxiliary for Satisfaction
 
 ```{r}
 sfm <- sfm |> 
@@ -1060,7 +1163,8 @@ plot(sfm, show_constants = TRUE, show_aux = TRUE, align = order_vars, order = or
 
 
 
-```{r}
+
+```{r, fig.height=5}
 sim <- simulate(sfm)
 
 pl1 <- plot(sim, vars = c("queue", "served"), animation = "time", control_options = list(frame_ms = frame_ms), 
@@ -1104,7 +1208,7 @@ Stock-and-flow models **formalize the processes by which states change** over ti
 ```{r, echo=FALSE}
 
 {
-  pl <- plot(sfm, show_eqn = FALSE, show_tooltip = FALSE)
+  # pl <- plot(sfm, show_eqn = FALSE, show_tooltip = FALSE)
   # cat(pl$x$diagram)
 
   viz_str <- '
@@ -1239,11 +1343,13 @@ stockflow() |>
 
 ## Package Setup
 
-The workshop materials are available at <https://kcevers.github.io/sdbuildR/summerschool2026>.
+The workshop materials are available at <https://kcevers.github.io/sdbuildR/articles/summerschool2026.html>.
+
+Install the package from GitHub:
 
 ```{r, eval = FALSE}
-install.packages("pak")
-pak::pak("kcevers/sdbuildR")
+if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
+remotes::install_github("kcevers/sdbuildR")
 ```
 
 
@@ -1296,7 +1402,7 @@ The pipe operator `|>` passes the result on its left into the function on its ri
 The timeseries can also be inspected in data frame format:
 
 ```{r}
-sfm |> simulate() |> as.data.frame() |> head()
+sfm |> simulate() |> as.data.frame(direction = "wide") |> head()
 ```
 
 
@@ -1309,7 +1415,7 @@ Draw the **target phenomenon**:
 
 
 
-```{r, warnings = FALSE, message = FALSE, echo = FALSE}
+```{r, warning = FALSE, message = FALSE, echo = FALSE, fig.height=5}
 
 fig <- plotly::plot_ly()
 fig <- plotly::layout(fig, dragmode="drawopenpath", 
@@ -1336,14 +1442,17 @@ fig
 
 ### Building a Model from Scratch
 
+Create an empty stock-and-flow model:
 
 ```{r}
-# Initialize stock-and-flow model
 sfm <- stockflow()
 print(sfm)
+```
 
-# Change name
-sfm <- meta(sfm, name = "Burnout Model")
+Change name of the model:
+
+```{r}
+sfm <- meta(sfm, name = "Burnout")
 ```
 
 
@@ -1353,8 +1462,10 @@ Change simulation settings:
 
 ```{r}
 sfm <- sim_settings(sfm, 
+
   # Run simulation for 6 months (~ 180 days)
   stop = round(365/2), time_unit = "days", 
+
   # Return all variables in output (not just stocks)
   only_stocks = FALSE)
 
@@ -1368,13 +1479,15 @@ print(sfm)
 sfm <- stock(sfm, name = engagement, eqn = .3)
 ```
 
+Plot stock-and-flow diagram:
+
 ```{r}
-# Plot stock-and-flow diagram
 sfm |> plot()
 ```
 
+Simulate and visualise timeseries:
+
 ```{r}
-# Simulate and visualise timeseries
 sfm |> simulate() |> plot()
 ```
 
@@ -1384,11 +1497,18 @@ sfm |> simulate() |> plot()
 ```{r}
 sfm <- constant(sfm, decay_rate, eqn = .05) |>
        flow(decay, eqn = decay_rate, from = engagement)
+```
 
-# Plot stock-and-flow diagram
+
+Plot stock-and-flow diagram:
+
+```{r}
 sfm |> plot()
+```
 
-# Simulate and visualise timeseries
+Simulate and visualise timeseries:
+
+```{r}
 sfm |> simulate() |> plot()
 ```
 
@@ -1403,7 +1523,18 @@ sfm |> simulate() |> plot(animation = "time")
 
 ```{r}
 sfm <- update(sfm, decay, eqn = decay_rate * engagement)
+```
+
+
+Plot stock-and-flow diagram:
+
+```{r}
 sfm |> plot()
+```
+
+Simulate and visualise timeseries:
+
+```{r}
 sfm |> simulate() |> plot()
 ```
 
@@ -1413,7 +1544,18 @@ sfm |> simulate() |> plot()
 ```{r}
 sfm <- constant(sfm, enjoyment, eqn = .3) |>
        flow(motivation, eqn = enjoyment, to = engagement)
+```
+
+
+Plot stock-and-flow diagram:
+
+```{r}
 sfm |> plot()
+```
+
+Simulate and visualise timeseries:
+
+```{r}
 sfm |> simulate() |> plot()
 ```
 
@@ -1432,13 +1574,25 @@ sfm |> plot()
 ### Adding an Outflow from Enjoyment
 
 ```{r}
-sfm <- flow(sfm, overcommitment, eqn = enjoyment * new_projects, 
-            from = enjoyment) |>
-       aux(new_projects, eqn = .1 * engagement)
-sfm |> plot()
-sfm |> simulate() |> plot()
+sfm <- sfm |>
+    flow(overcommitment, 
+         eqn = enjoyment * new_projects, 
+         from = enjoyment) |>
+    aux(new_projects, eqn = .1 * engagement)
 ```
 
+
+Plot stock-and-flow diagram:
+
+```{r}
+sfm |> plot()
+```
+
+Simulate and visualise timeseries:
+
+```{r}
+sfm |> simulate() |> plot()
+```
 
 ### Recap
 
@@ -1455,7 +1609,7 @@ In other words, the inflow rate changed from an **exogenous to an endogenous var
 
 ## Dependence on Initial Condition
 
-If you did not complete all steps above, load the updated model from the model library:
+If you did not complete all steps above, load the model from the model library:
 
 ```{r}
 sfm <- stockflow("burnout")
@@ -1467,10 +1621,10 @@ Initialize the engagement stock with a random value between 0 and 4:
 sfm <- update(sfm, engagement, eqn = runif(1, min = 0, max = 4)) 
 ```
 
-Equations are stored as expressions:
+Equations are stored as expressions. Note the initial value of engagement:
 
 ```{r}
-plot(sfm)
+as.data.frame(sfm, properties = "eqn")
 ```
 
 This means that each simulation will have a different initial value for engagement:
@@ -1486,10 +1640,13 @@ Update simulation settings to prepare for ensemble simulations:
 
 ```{r}
 sfm <- sfm |>
+
   # Save only 50 time points 
   sim_settings(save_length = 50, 
+
   # Save only stocks (not flows or auxiliaries)
   only_stocks = TRUE, 
+
   # Save individual simulation runs (not just summary statistics)
   save_sims = TRUE)
 ```
@@ -1500,12 +1657,15 @@ Run 50 simulations with different initial conditions:
 sims <- ensemble(sfm, n = 50)
 ```
 
+Summary statistics:
 
 ```{r}
-# Summary statistics
 plot(sims)
+```
 
-# Individual simulation runs
+Individual simulation runs:
+
+```{r}
 plot(sims, which = "sims")
 ```
 
@@ -1520,8 +1680,10 @@ Let's return to the simpler model with a static recovery rate:
 
 ```{r}
 sfm <- sfm |>
+
  # Remove the outflow and auxiliary
  discard(c(overcommitment, new_projects)) |>
+
  # Change recovery_rate back to a constant
  change_type(enjoyment, new_type = "constant")
 
@@ -1538,7 +1700,7 @@ This model has a constant inflow. The functional form of the motivation inflow c
 functional_forms_widget()
 ```
 
-
+### Questions
 
 Explore the functional forms above:
 
@@ -1549,19 +1711,6 @@ Explore the functional forms above:
 
 
 3. Is the behaviour dependent on the initial condition of energy?
-
-
-### Hint
-
-
-The motivation inflow can be updated to a different functional form using the `update()` function. For example, to change the inflow to a linear function of engagement:
-
-```{r}
-sfm_linear <- update(sfm, motivation, eqn = enjoyment * engagement)
-
-sfm_linear |> simulate() |> plot()
-```
-
 
 
 
@@ -1582,11 +1731,17 @@ If configured, `ensemble()` will automatically run simulations in parallel. Othe
 
 ```{r}
 sfm <- sim_settings(sfm, save_sims = TRUE)
+```
 
-# Run 100 simulations
+Run 100 simulations:
+
+```{r}
 sims <- ensemble(sfm, n = 100)
+```
 
-# Individual simulation runs
+Individual simulation runs:
+
+```{r}
 plot(sims, which = "sims")
 ```
 
