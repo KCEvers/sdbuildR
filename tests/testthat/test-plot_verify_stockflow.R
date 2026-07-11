@@ -24,7 +24,7 @@ test_that("plot.verify_stockflow for single condition, n=1", {
   # Object-level expectations
   traces <- plotly_traces(pl)
   expect_setequal(traces[["name"]], label_names)
-  expect_true(all(traces$showlegend))
+  expect_true(all(traces$show_legend))
 
   info <- plotly_subplot_grid(pl)
   expect_equal(info$n_panels, 1L)
@@ -48,7 +48,7 @@ test_that("plot.verify_stockflow for two conditions", {
   traces <- plotly_traces(pl)
   expect_true(nrow(traces) > 0)
   expect_setequal(traces[["name"]], label_names)
-  expect_true(all(plotly_dedupe_legend(traces)$showlegend))
+  expect_true(all(plotly_dedupe_legend(traces)$show_legend))
 
   info <- plotly_subplot_grid(pl)
   expect_true(info$is_subplot)
@@ -111,6 +111,23 @@ test_that("plot.verify_stockflow uses explicit custom colors on legend traces", 
   expect_true(all(legend_check$matches_expected))
 })
 
+test_that("plot.verify_stockflow respects trace order", {
+  sfm <- stockflow() |>
+    update("A", type = "stock", eqn = 1) |>
+    update("B", type = "stock", eqn = 2) |>
+    update("rate", type = "constant", eqn = 1) |>
+    unit_test(label = "stocks non-negative", expr = "all(A >= 0 & B >= 0)")
+  res <- silence(verify(sfm))
+  names_df <- as.data.frame(res[["object"]])
+  requested_order <- c("B", "A")
+  expected_labels <- names_df[["label"]][match(requested_order, names_df[["name"]])]
+
+  pl <- plot(res, order = requested_order, webgl = FALSE)
+  legend_items <- plotly_dedupe_legend(plotly_traces(pl))
+
+  expect_equal(legend_items[["name"]], expected_labels)
+})
+
 test_that("plot.verify_stockflow maps trace labels to source data and named colors", {
   res <- make_verify_model()
   names_df <- as.data.frame(res[["object"]])
@@ -154,7 +171,7 @@ test_that("plot() filtered j selects one condition from two", {
   traces <- plotly_traces(pl)
   expect_equal(nrow(traces), 1L)
   expect_setequal(traces[["name"]], label_names)
-  expect_true(all(plotly_dedupe_legend(traces)$showlegend))
+  expect_true(all(plotly_dedupe_legend(traces)$show_legend))
   expect_snapshot_plot("verify-filtered-j2", pl)
 })
 
@@ -163,17 +180,17 @@ test_that("plot() filtered j selects one condition from two", {
 # VISUAL REGRESSION — LAYOUT CONTROL
 # ============================================================================
 
-test_that("plot() showlegend = FALSE hides legend", {
+test_that("plot() show_legend = FALSE hides legend", {
   res <- make_verify_model()
   # Object-level expectation: no legend items when disabled
-  pl <- plot(res, showlegend = FALSE)
+  pl <- plot(res, show_legend = FALSE)
   expect_plotly(pl)
   traces <- plotly_traces(pl)
   expect_true(nrow(traces) > 0)
-  expect_true(all(!(plotly_dedupe_legend(traces)$showlegend)))
+  expect_true(all(!(plotly_dedupe_legend(traces)$show_legend)))
 
   # Snapshot last
-  expect_snapshot_plot("verify-showlegend-false", pl)
+  expect_snapshot_plot("verify-show_legend-false", pl)
 })
 
 

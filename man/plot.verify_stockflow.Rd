@@ -8,6 +8,7 @@
   x,
   test = NULL,
   vars = NULL,
+  order = NULL,
   show_constants = FALSE,
   label = NULL,
   ignore_case = TRUE,
@@ -19,10 +20,10 @@
   palette = "Dark 2",
   colors = NULL,
   line_width = 2,
-  font_family = default_font_family(),
+  font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
   font_size = 16,
   wrap_width = 25,
-  showlegend = TRUE,
+  show_legend = TRUE,
   label_subplots = TRUE,
   alpha = 1,
   margin = 0.05,
@@ -42,6 +43,10 @@ Combines with \code{label} and \code{status} as AND intersection.}
 
 \item{vars}{Variable names to retain in the data frame. Only applies when
 \code{which = "sims"}. Defaults to \code{NULL} to include all variables.}
+
+\item{order}{Optional character vector of model variable names giving the
+trace and legend order. Listed variables appear first; any plotted
+variables not listed keep their default relative order. Defaults to \code{NULL}.}
 
 \item{show_constants}{If \code{TRUE}, include constants in plot. Defaults to \code{FALSE}.}
 
@@ -90,7 +95,7 @@ e.g. in your .Rprofile.}
 
 \item{wrap_width}{Label wrap width. Defaults to \code{25}.}
 
-\item{showlegend}{Whether to show the legend. Defaults to \code{TRUE}.}
+\item{show_legend}{Whether to show the legend. Defaults to \code{TRUE}.}
 
 \item{label_subplots}{Whether to title each subplot with its condition's
 parameter overrides (or \code{"Baseline"}) and test number(s), e.g.

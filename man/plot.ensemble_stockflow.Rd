@@ -10,6 +10,7 @@
   sim = seq(1, min(c(x[["n"]], 100))),
   condition = seq(1, min(c(x[["n_conditions"]], 9))),
   vars = NULL,
+  order = NULL,
   show_constants = FALSE,
   nrows = ceiling(sqrt(max(condition))),
   margin = 0.05,
@@ -19,10 +20,10 @@
   alpha = list(central = 1, spread = 0.3, sims = 0.3),
   colors = NULL,
   line_width = list(central = 3, spread = 0, sims = 1),
-  font_family = default_font_family(),
+  font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
   font_size = 16,
   wrap_width = 25,
-  showlegend = TRUE,
+  show_legend = TRUE,
   label_subplots = TRUE,
   central = c("mean", "median", "none"),
   spread = c("quantile", "sd", "range"),
@@ -44,6 +45,10 @@
 \item{condition}{Indices of the condition(s) to plot. Defaults to 1:9.}
 
 \item{vars}{Variables to plot. Defaults to \code{NULL} to plot all variables.}
+
+\item{order}{Optional character vector of model variable names giving the
+trace and legend order. Listed variables appear first; any plotted
+variables not listed keep their default relative order. Defaults to \code{NULL}.}
 
 \item{show_constants}{If \code{TRUE}, include constants in plot. Defaults to \code{FALSE}.}
 
@@ -89,7 +94,7 @@ e.g. in your .Rprofile.}
 
 \item{wrap_width}{Width of text wrapping for labels. Must be an integer. Defaults to 25.}
 
-\item{showlegend}{Whether to show legend. Must be TRUE or FALSE. Defaults to TRUE.}
+\item{show_legend}{Whether to show legend. Must be TRUE or FALSE. Defaults to TRUE.}
 
 \item{label_subplots}{Whether to plot labels indicating the condition of the subplot.}
 

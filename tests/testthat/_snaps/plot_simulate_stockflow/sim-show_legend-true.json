@@ -7,11 +7,12 @@
       "type": "scattergl",
       "mode": "lines",
       "opacity": 1,
-      "showlegend": false,
+      "showlegend": true,
       "visible": true,
       "line": {
         "color": "rgba(200,122,138,1)",
-        "width": 2
+        "width": 2,
+        "dash": "solid"
       },
       "name": "Infected",
       "marker": {
@@ -40,11 +41,12 @@
       "type": "scattergl",
       "mode": "lines",
       "opacity": 1,
-      "showlegend": false,
+      "showlegend": true,
       "visible": true,
       "line": {
         "color": "rgba(107,157,89,1)",
-        "width": 2
+        "width": 2,
+        "dash": "solid"
       },
       "name": "Recovered",
       "marker": {
@@ -73,11 +75,12 @@
       "type": "scattergl",
       "mode": "lines",
       "opacity": 1,
-      "showlegend": false,
+      "showlegend": true,
       "visible": true,
       "line": {
         "color": "rgba(95,150,194,1)",
-        "width": 2
+        "width": 2,
+        "dash": "solid"
       },
       "name": "Susceptible",
       "marker": {
@@ -108,7 +111,7 @@
       "r": 50
     },
     "legend": {
-      "traceorder": "reversed",
+      "traceorder": "normal",
       "font": {
         "size": 14
       }
@@ -135,6 +138,6 @@
       "size": 16
     },
     "hovermode": "closest",
-    "showlegend": false
+    "showlegend": true
   }
 }

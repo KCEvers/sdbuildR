@@ -69,7 +69,7 @@ test_that("templates() with each template name simulates and produces a plotly o
     wide <- as.data.frame(sim, direction = "wide")
     all_vars <- setdiff(names(wide), "time")
     expect_gt(length(all_vars), 0)
-    pl <- expect_no_error(plot(sim, vars = all_vars))
+    pl <- expect_no_error(plot(sim, vars = all_vars, webgl = FALSE))
     expect_plotly(pl)
   }
 })

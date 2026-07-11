@@ -397,62 +397,120 @@ template_registry <- function() {
           )
       }
     ),
-list(
+    list(
       name = "queue",
       version = "1.0.0",
       description = "Simple demonstration model of people waiting in a queue",
       build = function() {
         stockflow() |>
-        sim_settings(start = "0.0", stop = "10.0", dt = "0.01", time_units = "hours", only_stocks = FALSE) |>
-        meta(name = "") |>
-        stock("queue", eqn = 0, label = "People Waiting in Queue") |>
-        stock("served", eqn = 0, label = "People Served") |>
-        flow("arrivals", eqn = 1, to = "queue", label = "Arrivals") |>
-        flow("leave", eqn = "0.1 * queue^2", from = "queue", label = "Life Is Too Short") |>
-        flow("service", eqn = "service_rate * queue", to = "served", from = "queue", label = "Service") |>
-        constant("service_rate", eqn = 0.5, label = "Service Rate") |>
-        aux("satisfaction", eqn = "service / (service + leave)", label = "Satisfaction")
+          sim_settings(start = "0.0", stop = "10.0", dt = "0.01", time_units = "hours", only_stocks = FALSE) |>
+          meta(name = "") |>
+          stock("queue", eqn = 0, label = "People Waiting in Queue") |>
+          stock("served", eqn = 0, label = "People Served") |>
+          flow("arrivals", eqn = 1, to = "queue", label = "Arrivals") |>
+          flow("leave", eqn = "0.1 * queue^2", from = "queue", label = "Life Is Too Short") |>
+          flow("service", eqn = "service_rate * queue", to = "served", from = "queue", label = "Service") |>
+          constant("service_rate", eqn = 0.5, label = "Service Rate") |>
+          aux("satisfaction", eqn = "service / (service + leave)", label = "Satisfaction")
+      }
+    ),
+    list(
+      name = "jdr",
+      version = "1.0.0",
+      description = "Job Demands-Resources Theory as formalized in Evers et al. (under review)",
+      build = function() {
+stockflow() |>
+        sim_settings(start = "0.0", stop = "182.0", dt = "0.01", seed = "123", time_units = "days", only_stocks = FALSE) |>
+        meta(name = "Job Demands and Resources (JD-R) Theory") |>
+        stock("demands", eqn = 0.05, label = "Job Demands") |>
+        stock("energy", eqn = 0.3, label = "Energy") |>
+        flow("depletion", eqn = "demands * energy", from = "energy", label = "Depletion") |>
+        flow("recovery", eqn = 0.01, to = "energy", label = "Recovery")
+      }
+    ),
+
+        list(
+      name = "jdr",
+      version = "2.0.0",
+      description = "Job Demands-Resources Theory as formalized in Evers et al. (under review)",
+      build = function() {
+stockflow() |>
+        sim_settings(start = "0.0", stop = "182.0", dt = "0.01", seed = "123", time_units = "days", only_stocks = FALSE) |>
+        meta(name = "Job Demands and Resources (JD-R) Theory") |>
+        stock("demands", eqn = "runif(1, 0, 1)", label = "Job Demands") |>
+        stock("energy", eqn = "runif(1)", label = "Energy") |>
+        stock("engagement", eqn = "runif(1, 0, 1)", label = "Work Engagement") |>
+        stock("resources", eqn = "runif(1, 0, 1)", label = "Job Resources") |>
+        flow("depletion", eqn = "demands * energy", from = "energy", label = "Depletion") |>
+        flow("effort", eqn = "effort_rate * energy * (1 + demands) / (1 + resources)", from = "energy", label = "Effort") |>
+        flow("engagement_decay", eqn = "engagement_decay_rate * engagement / (1 + energy)", from = "engagement", label = "Dissipation") |>
+        flow("exo_demands", eqn = "exo_demand_rate * exp(-s_slope * demands)", to = "demands", label = "Exogenous tasks") |>
+        flow("exo_resources", eqn = "exo_resource_rate * exp(-s_slope * resources)", to = "resources", label = "Exogenous support") |>
+        flow("motivation", eqn = "motivation_rate * energy * hill(resources, m_slope) * demands", to = "engagement", label = "Motivation") |>
+        flow("proactive", eqn = "proactive_rate * hill(engagement, m_slope)", to = "resources", label = "Proactive behaviour") |>
+        flow("recovery", eqn = "recovery_rate * ricker(energy, location = 0.5, shape = shape)", to = "energy", label = "Recovery") |>
+        flow("resource_decay", eqn = "resource_decay_rate * resources / (1 + energy)", from = "resources", label = "Decay") |>
+        flow("undermining", eqn = "undermining_rate * ricker(energy, location = location, shape = shape)", to = "demands", label = "Self-undermining") |>
+        flow("work", eqn = "work_rate * energy * demands * (1 + engagement)", from = "demands", label = "Work") |>
+        constant("effort_rate", eqn = 0.5, label = "Effort Rate") |>
+        constant("engagement_decay_rate", eqn = 0.2, label = "Engagement Decay Rate") |>
+        constant("exo_demand_rate", eqn = 0.3, label = "New task rate") |>
+        constant("exo_resource_rate", eqn = 0.1, label = "New resource rate") |>
+        constant("location", eqn = 0.2, label = "Location") |>
+        constant("m_slope", eqn = 3, label = "Medium Slope") |>
+        constant("motivation_rate", eqn = 0.3, label = "Motivation Rate") |>
+        constant("proactive_rate", eqn = 0.2, label = "Proactive Behaviour Rate") |>
+        constant("recovery_rate", eqn = 0.3, label = "Recovery Rate") |>
+        constant("resource_decay_rate", eqn = 0.1, label = "Resource Decay Rate") |>
+        constant("s_slope", eqn = 5, label = "Steep Slope") |>
+        constant("shape", eqn = 5, label = "Shape") |>
+        constant("undermining_rate", eqn = 0.1, label = "Self-undermining Rate") |>
+        constant("work_rate", eqn = 1, label = "Demand Reduction Rate") |>
+        aux("performance", eqn = "engagement + energy", label = "Job Performance")
+      }
+    ),
+
+        list(
+      name = "jdr",
+      version = "3.0.0",
+      description = "Job Demands-Resources Theory as formalized in Evers et al. (under review)",
+      build = function() {
+stockflow() |>
+        sim_settings(start = "0.0", stop = "182.0", dt = "0.01", seed = "123", time_units = "days", only_stocks = FALSE) |>
+        meta(name = "Job Demands and Resources (JD-R) Theory") |>
+        stock("demands", eqn = "runif(1, 0, 1)", label = "Job Demands") |>
+        stock("energy", eqn = "runif(1)", label = "Energy") |>
+        stock("engagement", eqn = "runif(1, 0, 1)", label = "Work Engagement") |>
+        stock("resources", eqn = "runif(1, 0, 1)", label = "Job Resources") |>
+        flow("depletion", eqn = "demands * energy", from = "energy", label = "Depletion") |>
+        flow("effort", eqn = "effort_rate * energy * (1 + demands) / (1 + resources)", from = "energy", label = "Effort") |>
+        flow("engagement_decay", eqn = "engagement_decay_rate * engagement / (1 + energy)", from = "engagement", label = "Dissipation") |>
+        flow("exo_demands", eqn = "exo_demand_rate * exp(-s_slope * demands)", to = "demands", label = "Exogenous tasks") |>
+        flow("exo_resources", eqn = "exo_resource_rate * exp(-s_slope * resources)", to = "resources", label = "Exogenous support") |>
+        flow("motivation", eqn = "motivation_rate * energy * hill(resources, m_slope) * demands", to = "engagement", label = "Motivation") |>
+        flow("proactive", eqn = "proactive_rate * hill(engagement, m_slope)", to = "resources", label = "Proactive behaviour") |>
+        flow("recovery", eqn = "recovery_rate * ricker(energy, location = 0.5, shape = shape)", to = "energy", label = "Recovery") |>
+        flow("resource_decay", eqn = "resource_decay_rate * resources / (1 + energy)", from = "resources", label = "Decay") |>
+        flow("undermining", eqn = "undermining_rate * ricker(energy, location = location, shape = shape)", to = "demands", label = "Self-undermining") |>
+        flow("work", eqn = "work_rate * energy * demands * (1 + engagement)", from = "demands", label = "Work") |>
+        constant("effort_rate", eqn = 0.5, label = "Effort Rate") |>
+        constant("engagement_decay_rate", eqn = 0.2, label = "Engagement Decay Rate") |>
+        constant("exo_demand_rate", eqn = 0.3, label = "New task rate") |>
+        constant("exo_resource_rate", eqn = 0.1, label = "New resource rate") |>
+        constant("location", eqn = 0.2, label = "Location") |>
+        constant("m_slope", eqn = 3, label = "Medium Slope") |>
+        constant("motivation_rate", eqn = 0.3, label = "Motivation Rate") |>
+        constant("proactive_rate", eqn = 0.2, label = "Proactive Behaviour Rate") |>
+        constant("recovery_rate", eqn = 0.3, label = "Recovery Rate") |>
+        constant("resource_decay_rate", eqn = 0.1, label = "Resource Decay Rate") |>
+        constant("s_slope", eqn = 5, label = "Steep Slope") |>
+        constant("shape", eqn = 5, label = "Shape") |>
+        constant("undermining_rate", eqn = 0.1, label = "Self-undermining Rate") |>
+        constant("work_rate", eqn = 1, label = "Demand Reduction Rate") |>
+        aux("performance", eqn = "demands * (engagement + energy)", label = "Job Performance")
       }
     )
 
-    # list(
-    #   name = "jdr",
-    #   version = "1.0.0",
-    #   description = "Job Demands-Resources Theory as formalized in Evers et al. (under review)",
-    #   build = function() {
-    #     stockflow() |>
-    #       sim_settings(start = "0.0", stop = round(182.5), dt = "0.01", seed = "123", time_units = "day", only_stocks = FALSE, save_by = 1) |>
-    #       meta(name = "Job Demands and Resources (JD-R) Theory", created = "2026-05-25 10:42:07.289319") |>
-    #       stock("demands", eqn = "runif(1, 0.01, 2)", label = "Job Demands") |>
-    #       stock("energy", eqn = "runif(1, 0.01, 2)", label = "Energy") |>
-    #       stock("engagement", eqn = "runif(1, 0.01, 2)", label = "Work Engagement") |>
-    #       stock("resources", eqn = "runif(1, 0.01, 2)", label = "Job Resources") |>
-    #       flow("effort", eqn = "effort_rate / (1 + engagement) * energy * demands / (1 + resources)", from = "energy", label = "Effort") |>
-    #       flow("engagement_decay", eqn = "engagement_decay_rate * engagement / (1 + energy)", from = "engagement", label = "Decay") |>
-    #       flow("exo_demands", eqn = "exo_demand_rate * exp(-s_slope * demands)", to = "demands", label = "Exogenous tasks") |>
-    #       flow("exo_resources", eqn = "exo_resource_rate * exp(-s_slope * resources)", to = "resources", label = "Exogenous support") |>
-    #       flow("motivation", eqn = "motivation_rate * energy * hill(resources, m_slope) * demands", to = "engagement", label = "Motivation") |>
-    #       flow("proactive", eqn = "proactive_rate * hill(engagement, m_slope)", to = "resources", label = "Proactive behaviour") |>
-    #       flow("recovery", eqn = "recovery_rate * energy * exp(-s_slope * energy)", to = "energy", label = "Recovery") |>
-    #       flow("resource_decay", eqn = "resource_decay_rate * resources / (1 + energy)", from = "resources", label = "Decay") |>
-    #       flow("undermining", eqn = "undermining_rate * energy * exp(-e_slope * energy)", to = "demands", label = "Self-undermining") |>
-    #       flow("work", eqn = "work_rate * energy * demands * (1 + engagement)", from = "demands", label = "Work") |>
-    #       constant("e_slope", eqn = 10, label = "Extreme Slope") |>
-    #       constant("effort_rate", eqn = 0.5, label = "Effort Rate") |>
-    #       constant("engagement_decay_rate", eqn = 0.2, label = "Engagement Decay Rate") |>
-    #       constant("exo_demand_rate", eqn = 0.1, label = "New task rate") |>
-    #       constant("exo_resource_rate", eqn = 0.1, label = "New resource rate") |>
-    #       constant("m_slope", eqn = 3, label = "Medium Slope") |>
-    #       constant("motivation_rate", eqn = 0.3, label = "Motivation Rate") |>
-    #       constant("proactive_rate", eqn = 0.2, label = "Proactive Behaviour Rate") |>
-    #       constant("recovery_rate", eqn = 0.3, label = "Recovery Rate") |>
-    #       constant("resource_decay_rate", eqn = 0.1, label = "Resource Decay Rate") |>
-    #       constant("s_slope", eqn = 5, label = "Steep Slope") |>
-    #       constant("undermining_rate", eqn = 5, label = "Self-undermining Rate") |>
-    #       constant("work_rate", eqn = 0.5, label = "Demand Reduction Rate") |>
-    #       aux("performance", eqn = "engagement + energy", label = "Job Performance")
-    #   }
-    # )
   )
 }
 

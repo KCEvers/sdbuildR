@@ -1,0 +1,2008 @@
+---
+title: "Formalizing Job Demands-Resources Theory"
+output: rmarkdown::html_vignette
+bibliography: "references/references.bib"
+vignette: >
+  %\VignetteIndexEntry{Formalizing Job Demands-Resources Theory}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r setup, include=FALSE}
+# knitr::opts_chunk$set(
+#   collapse = TRUE,
+#   include = TRUE,
+#   eval = TRUE,
+#   comment = "#>",
+#   fig.width = 12, # 1
+#   fig.height = 4, # 3
+#   fig.align = "center", # Center all figures
+#   out.width = "80%" # Display figures at 80% of container width
+# )
+
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  include = TRUE,
+  eval = TRUE,
+  comment = "#>",
+  fig.width = 12,
+  fig.height = 4,
+  fig.align = "center",
+  out.width = "80%",
+  cache = TRUE, # enable caching
+  cache.path = "jdr_cache/", # keep cache dir next to the .Rmd
+  autodep = TRUE # auto-detect cross-chunk dependencies
+)
+```
+
+Stock-and-flow models present an intuitive way to formalize psychological systems as dynamic processes that unfold over time. In this vignette, we will formalize Job Demands-Resources (JD-R) theory as a stock-and-flow model. JD-R theory is a prominent framework for understanding burnout and work engagement. Note that this vignette serves as online supplemental material B accompanying the paper *Formalizing Psychological Theory with sdbuildR: A Stock-and-Flow Modelling Tutorial in R* by Evers et al. (under review). To reproduce the figures in the paper, please see the corresponding .Rmd file.
+
+
+
+```{r libraries, results='hide', message=FALSE}
+library(sdbuildR)
+library(kableExtra)
+
+# Disable WebGL: many plotly widgets per HTML page can exceed the browser WebGL
+# context limit and render blank. SVG always renders.
+options(sdbuildR.webgl = FALSE)
+```
+
+
+```{r, echo = FALSE}
+font_family <- "stix-two-text"
+options(sdbuildR.font_family = font_family)
+# getOption("sdbuildR.font_family")
+```
+
+
+```{r include=FALSE}
+# Set recreate_figs <- TRUE to reproduce the figures in the paper
+recreate_figs <- interactive()
+```
+
+## Overview of System Dynamics Modelling
+
+To develop an understanding of the system, system dynamics modelling follows a structured process (see below). The first two steps are covered in detail in the paper, and we will only cover their application to JD-R theory here.
+
+```{r, echo=FALSE}
+sd_modelling_table <- data.frame(
+  Number = c(
+    "<b>1</b>", "1(a)", "1(b)", "1(c)",
+    "<b>2</b>",
+    "<b>3</b>", "3(a)", "3(b)", "3(c)",
+    "<b>4</b>",
+    "<b>5</b>"
+  ),
+  Step = c(
+    "<b>Problem articulation</b>", "Target phenomenon", "Key variables", "Time horizon and time unit",
+    "<b>Dynamic hypothesis</b>",
+    "<b>Formalization</b>", "Formalizing variables", "Stock-and-flow diagram", "Stock-and-flow model",
+    "<b>Testing</b>",
+    "<b>Application</b>"
+  ),
+  Description = c(
+    "",
+    "Express the phenomenon to be explained as a pattern over time, which forms the reference mode throughout the modelling process.",
+    "Select the most important variables needed to define and explain the target phenomenon.",
+    "Specify the time frame across which the simulation takes place and the time resolution with which variables change.",
+    "Formulate a provisional account explaining how the target phenomenon arises endogenously from the system structure.",
+    "",
+    "Formulate variables such that they can be represented as continuous quantities.",
+    "Categorize variables as constants, stocks, flows, or auxiliaries, and draw connections between variables.",
+    "Iteratively build and refine the stock-and-flow model to reproduce the target phenomenon.",
+    "Perform verification and validity tests to expose errors, misspecifications, and implausibilities in the model.",
+    "Design and evaluate interventions to identify effective leverage points."
+  )
+)
+
+kableExtra::kbl(sd_modelling_table,
+  format = "html",
+  escape = FALSE,
+  col.names = c("", "Step", "Description"),
+  caption = "Overview of the Modelling Process in System Dynamics"
+) |>
+  kableExtra::kable_styling()
+```
+
+## Step 1. Problem Articulation
+
+We select as our *target phenomenon* the development of burnout, which we characterize by the co-occurrence of gradually decreasing work engagement, increasing exhaustion, and decreasing job performance. 
+
+The *key variables* in JD-R theory are job demands, job resources, work engagement, exhaustion, proactive behaviour, self-undermining behaviour, and job performance. As working definitions, we follow those provided in @bakker_job_2023, as included below. 
+
+JD-R theory primarily explains how burnout develops rather than its maintenance or recovery, suggesting a time horizon of months rather than years. We adopt six months as the *time horizon* for reproducing our core phenomenon. The shortest timescale JD-R theory seems to address is a day, as job demands and resources are thought to fluctuate daily [@Bakker2024JobQuestions; @bakker_job_2023].
+
+
+```{r, echo=FALSE}
+def_table <- data.frame(
+  Variable = c(
+    "Job Demands", "Job Resources", "Work Engagement", "Exhaustion", "Proactive Behaviour", "Self-Undermining Behaviour", "Job Performance"
+  ),
+  Definition = c(
+    "The physical, psychological, social, or organizational aspects of the job that require sustained physical, cognitive, and/or emotional effort and are therefore associated with certain physiological and/or psychological costs",
+    "The physical, psychological, social, or organizational aspects of the job that have motivating potential, that are functional in achieving work goals, that regulate the impact of job demands, and that stimulate learning and personal growth",
+    "a positive, fulfilling, work-related state of mind that is characterized by vigor, dedication, and absorption. Vigor refers to high levels of energy and mental resilience while working, the willingness to invest effort in one’s work, and persistence even in the face of difficulties. Dedication implies being strongly involved in one’s work and experiencing a sense of significance, enthusiasm, and challenge. Absorption refers to being fully concentrated and happily engrossed in one’s work, whereby time passes quickly. Thus, work engagement is characterized by a high level of energy and strong identification with one’s work, whereas burnout is characterized by the opposite: a low level of energy and poor identification with one’s work",
+    "Depletion of energy resources; also used interchangeable or as part of job strain",
+    "Also called job crafting; employees’ personal initiative to change their job demands and job resources in order to better align the design of the job with their own abilities and preferences",
+    "Employees’ dysfunctional behaviors (e.g., poor communication, conflict behaviors) that create obstacles and may undermine performance.",
+    "Undefined in the literature; refers to the extent to which an individual performs well at their job (e.g., fulfilling responsibilities)"
+  )
+)
+
+kableExtra::kbl(def_table,
+  format = "markdown",
+  col.names = c("Variable", "Definition"),
+  caption = "Definition of key variables in Job-Demands Resources Theory from Bakker et al. (2025)"
+) |>
+  kableExtra::kable_styling()
+```
+
+
+## Step 2. Dynamic Hypothesis
+
+JD-R theory embodies the dynamic hypothesis that burnout occurs as a result of two competing feedback loops: a health impairment loop, in which excessive demands produce exhaustion, which in turn triggers self-undermining behaviour that further increases demands and depletes resources; and a motivational loop, in which resources foster work engagement, which promotes proactive behaviour that generates additional resources and lowers demands. Burnout emerges when the demands and exhaustion amplified by the health impairment loop overwhelm the resources and engagement sustained by the motivational loop. As the target phenomenon is articulated on a within-person level, the dynamic hypothesis correspondingly describes within-person dynamics.
+
+## Step 3. Formalization (new**)
+
+Please see the paper for Step 3a and 3b; here, we only note that exhaustion was reformulated to energy.
+
+## Step 3c. Building Stock-and-Flow Models in R (new**)
+
+
+```{r}
+# sfm <- stockflow() |>
+#         sim_settings(start = "0.0", stop = "182.0", dt = "0.01", time_units = "days", only_stocks = FALSE) |>
+#         meta(name = "Job Demands and Resources (JD-R) Theory", created = "2026-07-08 20:36:09.640509") |>
+#         stock(energy, eqn = 0.3, label = "Energy") |>
+#         stock(recovery_rate, eqn = 0.3, label = "Recovery Rate") |>
+#         flow(depletion, eqn = depletion_rate * energy, from = energy, label = "Depletion") |>
+#         flow(erosion, eqn = recovery_rate * depletion, from = recovery_rate, label = "Recovery Erosion") |>
+#         flow(recovery, eqn = recovery_rate, to = energy, label = "Recovery") |>
+#         constant(depletion_rate, eqn = 0.05, label = "Depletion Rate")
+#         # aux(net_flow, eqn = recovery - depletion, label = "Net flow to energy")
+# sfm |> simulate() |> plot()
+
+# sfm <- sfm |>
+# change_name(depletion_rate, new_name = "demands") |>
+# change_type(demands, new_type = "stock") |>
+# update(demands,
+# # eqn = 0.1,
+# label = "Job Demands")
+
+
+# export_model(sfm) |> cat()
+
+# sfm <-  stockflow() |>
+#         sim_settings(start = "0.0", stop = "182.0", dt = "0.01", time_units = "days", only_stocks = FALSE) |>
+#         meta(name = "Job Demands and Resources (JD-R) Theory", created = "2026-07-08 20:36:09.640509") |>
+#         stock(demands, eqn = 0.05, label = "Job Demands") |>
+#         stock(energy, eqn = 0.3, label = "Energy") |>
+#         stock(recovery_rate, eqn = 0.3, label = "Recovery Rate") |>
+#         flow(depletion, eqn = demands * energy, from = energy, label = "Depletion") |>
+#         flow(erosion, eqn = recovery_rate * depletion, from = recovery_rate, label = "Recovery Erosion") |>
+#         flow(recovery, eqn = recovery_rate, to = energy, label = "Recovery")
+#         # aux(net_flow, eqn = recovery - depletion, label = "Net flow to energy")
+
+# sfm <- sfm |>
+# discard(erosion) |>
+# change_type(recovery_rate, new_type = "constant") |>
+# update(recovery_rate, eqn = 0.01)
+
+sfm <- stockflow() |>
+  sim_settings(start = "0.0", stop = "182.0", dt = "0.01", time_units = "days", only_stocks = FALSE) |>
+  meta(name = "Job Demands and Resources (JD-R) Theory", created = "2026-07-08 20:36:09.640509") |>
+  stock(demands, eqn = 0.05, label = "Job Demands") |>
+  stock(energy, eqn = 0.3, label = "Energy") |>
+  flow(depletion, eqn = demands * energy, from = energy, label = "Depletion") |>
+  flow(recovery, eqn = 0.01, to = energy, label = "Recovery") |>
+  sim_settings(seed = 123)
+
+# export_model(sfm) |> cat()
+
+# save as
+# sfm <- stockflow("jdr", version = 1)
+
+
+print(sfm)
+
+# curve(exp(-5 * x), main = "Exponential Decay Function",
+# xlab = "Energy", ylab = "Self-undermining")
+# curve(exp(-3 * x), add = TRUE, col = "red", lty = 2)
+# curve(exp(-1 * x), add = TRUE, col = "blue", lty = 3)
+
+sfm_exp <- sfm |>
+  constant(s_slope, eqn = 5, label = "Steep Slope") |>
+  constant(undermining_rate, eqn = 0.1, label = "Self-undermining Rate") |>
+  flow(undermining,
+    eqn = undermining_rate * exp(-s_slope * energy),
+    to = demands, label = "Self-undermining"
+  )
+
+sfm_exp |>
+  simulate() |>
+  plot()
+
+# curve(ricker(x, location = 0.1, shape = 1), main = "Ricker Function",
+# xlab = "Energy", ylab = "Self-undermining")
+# curve(ricker(x, location = 0.1, shape = 2), add = TRUE, col = "red", lty = 2)
+# curve(ricker(x, location = 0.1, shape = 6), add = TRUE, col = "blue", lty = 3)
+
+
+sfm_ricker <- sfm_exp |>
+  constant(location,
+    eqn = 0.2,
+    label = "Location"
+  ) |>
+  constant(shape,
+    eqn = 5,
+    label = "Shape"
+  ) |>
+  update(undermining,
+    eqn = undermining_rate * ricker(energy, location = location, shape = shape)
+  )
+
+
+sfm_ricker |>
+  simulate() |>
+  plot()
+
+
+# wrap_width <- 38
+# pl_exp_sfm <- plot(sfm_exp |> update(undermining, eqn = "undermining_rate * exp(-5 * energy)"), vars = c("demands", "undermining"), wrap_width = wrap_width)
+# pl_ricker_sfm <- plot(sfm_ricker |> update(undermining, eqn = "undermining_rate * ricker(energy, location = 0.1, shape = 3)"), vars = c("demands", "undermining"), wrap_width = wrap_width)
+
+
+sim <- simulate(sfm_ricker)
+
+sfm_exp <- sfm_exp |>
+  update(energy, eqn = runif(1))
+
+sfm_ricker <- sfm_ricker |>
+  update(energy, eqn = runif(1))
+
+# Check that runif() is stored as an expression, not a computed value
+as.data.frame(sfm_exp, vars = "energy", properties = "eqn")
+
+# To instead use a computed value, we can use the !! (bang-bang) operator to evaluate the expression and store the resulting value in the model:
+sfm_exp |>
+  update(energy, eqn = !!runif(1, 0, 2)) |>
+  as.data.frame(properties = "eqn")
+
+# Note that we haven't saved the above statement to the model, so the model still contains the unevaluated expression.
+
+
+sims_exp <- ensemble(sfm_exp, n = 100, save_length = 50, save_sims = TRUE)
+sims_ricker <- ensemble(sfm_ricker, n = 100, save_length = 50, save_sims = TRUE)
+
+
+
+which <- "sims"
+central <- "none"
+pl_exp <- plot(sims_exp, main = "Self-undermining (exponential)", which = which, central = central)
+pl_ricker <- plot(sims_ricker, main = "Self-undermining (Ricker)", which = which, central = central, show_legend = FALSE)
+```
+
+
+
+
+
+```{r}
+## rest of model
+sfm <- sfm_ricker
+
+
+sfm <- sfm |>
+  # sim_settings(seed = 123) |>
+  update(demands, eqn = runif(1, 0, 1)) |>
+  stock(engagement, eqn = runif(1, 0, 1), label = "Work Engagement") |>
+  stock(resources, eqn = runif(1, 0, 1), label = "Job Resources") |>
+  constant(recovery_rate, eqn = 0.3, label = "Recovery Rate") |>
+  flow(recovery,
+    eqn = recovery_rate * ricker(energy,
+      # location = location,
+      location = 0.5, shape = shape
+    ),
+    to = energy, label = "Recovery"
+  ) |>
+  flow(effort,
+    # eqn = effort_rate / (1 + engagement) * energy * demands / (1 + resources),
+    eqn = effort_rate * energy * (1 + demands) / (1 + resources),
+    from = energy, label = "Effort"
+  ) |>
+  flow(engagement_decay, eqn = engagement_decay_rate * engagement / (1 + energy), from = engagement, label = "Dissipation") |>
+  flow(exo_demands, eqn = exo_demand_rate * exp(-s_slope * demands), to = demands, label = "Exogenous tasks") |>
+  flow(exo_resources, eqn = exo_resource_rate * exp(-s_slope * resources), to = resources, label = "Exogenous support") |>
+  flow(motivation, eqn = motivation_rate * energy * hill(resources, m_slope) * demands, to = engagement, label = "Motivation") |>
+  flow(proactive, eqn = proactive_rate * hill(engagement, m_slope), to = resources, label = "Proactive behaviour") |>
+  flow(resource_decay, eqn = resource_decay_rate * resources / (1 + energy), from = resources, label = "Decay") |>
+  flow(work, eqn = work_rate * energy * demands * (1 + engagement), from = demands, label = "Work") |>
+  constant(effort_rate, eqn = 0.5, label = "Effort Rate") |>
+  constant(engagement_decay_rate, eqn = 0.2, label = "Engagement Decay Rate") |>
+  constant(exo_demand_rate,
+    eqn = 0.3,
+    label = "New task rate"
+  ) |>
+  constant(exo_resource_rate, eqn = 0.1, label = "New resource rate") |>
+  constant(m_slope, eqn = 3, label = "Medium Slope") |>
+  constant(motivation_rate, eqn = 0.3, label = "Motivation Rate") |>
+  constant(proactive_rate, eqn = 0.2, label = "Proactive Behaviour Rate") |>
+  constant(resource_decay_rate, eqn = 0.1, label = "Resource Decay Rate") |>
+  constant(work_rate,
+    eqn = 1,
+    label = "Demand Reduction Rate"
+  ) |>
+  aux(performance, eqn = engagement + energy, label = "Job Performance") #|>
+
+
+sfm |>
+  simulate() |>
+  plot()
+
+# export_model(sfm) |> cat()
+
+```
+
+
+
+```{r, eval = FALSE, include = FALSE}
+cat(export_model(sfm, format = "sdbuildR"))
+```
+
+We save this version of the stock-and-flow model as `sfm0` for later use:
+
+```{r}
+sfm0 <- sfm
+```
+
+
+```{r, include=FALSE, eval=FALSE}
+compare_models(stockflow("jdr", version = 2), sfm)
+```
+
+
+Note that this is identical to the version stored in the model library, which can be loaded using `stockflow()`:
+
+```{r}
+# sfm0 <- sfm <- stockflow("jdr", version = 2)
+```
+
+```{r}
+if (interactive()) {
+  use_julia()
+  sfm0 <- sfm <- sim_settings(sfm, language = "julia")
+}
+```
+
+
+```{r}
+sims <- ensemble(sfm, n = 100, save_sims = TRUE, save_length = 50)
+
+plot(sims, vars = c("engagement", "demands", "resources", "energy", "performance"))
+
+# plot(sims, vars = c("engagement", "demands", "resources", "energy", "performance"), which = "sims")
+```
+
+
+
+
+```{r}
+sfm <- sim_settings(sfm, language = "julia", save_length = 100)
+```
+
+
+
+
+
+## Step 4. Testing
+
+### Verification Tests
+
+Verification involves assessing whether our model behaves as we intended it to. Although it has been designed to do so, an increasingly complex model can generate unexpected behaviours. A model should conform to known real-world behaviours, physical limitations and logical constraints [@Sterman2000BusinessWorld]. For example, in a population model, setting birth rates to zero should result in no new people being born. Similarly, daily work hours should never exceed 24 hours, the severity of a headache cannot become negative, and income cannot grow to infinity. Any violation indicates the model needs to be reformulated. \rev{To implement such verification tests in a stock-and-flow model, we make use of *unit tests*, a concept from software engineering [@duggan_system_2016; @fowler_refactoring_2019; @martin_clean_2012]. A unit test compares the behaviour of a small aspect of the model (i.e., a unit) to an explicitly formulated expectation. In JD-R theory, we may for example check that self-undermining never becomes negative, as behaviours should be strictly zero or positive:
+
+```{r}
+sfm <- unit_test(sfm, expr = all(undermining >= 0))
+```
+
+As `undermining` refers to the entire timeseries of self-undermining behaviour, we use `all()` to check that all time points are equal to or above zero. To assess whether our expectation holds, we run `verify()`, which simulates the model and checks all unit tests on its output:
+
+```{r}
+verify(sfm)
+```
+
+The model passes the test, increasing our confidence in its plausibility. A test label (`"undermining is at least 0 (for all values)"`) has been automatically generated based on the test's expectation, but may also be customized by passing a `label`. To expose more unrealistic behaviours, the model can be subjected to **extreme conditions**. Extreme values, such as zero, negative, or infinite values, tend to reveal equation errors more readily than variations within plausible ranges [@Peterson1994RealityDynamics; Barlas1996FormalDynamics]. For example, when job demands start and remain at zero, no tasks ever enter the system, such that there is no work to perform well on. In this scenario, job performance should be low. In `unit_test()`, we can set the conditions under which an expectation should hold with `condition`, which should be specified as a named list with only constants or initial values of stocks. Here, we expect the last value of job performance to be low when demands start at zero and its inflow rates at zero:
+
+```{r}
+conditions <- list(demands = 0, exo_demand_rate = 0, undermining_rate = 0)
+sfm <- unit_test(sfm,
+  expr = tail(performance, 1) < 0.1,
+  conditions = conditions
+)
+
+verify(sfm)
+```
+
+
+Our test failed. To understand why, we may selectively plot the failed test:
+
+```{r}
+sfm |>
+  verify() |>
+  plot(status = "fail")
+```
+
+
+Despite demands being zero throughout the simulation, performance reaches high levels. Our formal model enables us to exactly pinpoint the reason for this implausible behaviour, namely in performance's `eqn`:
+
+```{r}
+as.data.frame(sfm, vars = performance, properties = "eqn")
+```
+
+
+As JD-R theory merely states that performance is increased by engagement and decreased by exhaustion, we have defined performance simply as the sum of engagement and energy. Demands are thus not directly necessary to perform well. This may be rectified by simply revising job performance to also depend on demands, which causes all tests to pass:
+
+
+```{r}
+sfm <- update(sfm, performance, eqn = demands * (engagement + energy))
+
+verify(sfm)
+```
+
+We add this modification to our saved model as well:
+
+```{r}
+sfm0 <- update(sfm0, performance, eqn = demands * (engagement + energy))
+```
+
+
+
+Note that this is identical to the version stored in the model library, which can be loaded using `stockflow()`:
+
+```{r}
+# sfm0 <- sfm <- stockflow("jdr", version = 3)
+```
+
+
+We include some additional verification tests checks that are omitted from the paper for brevity. For more options and details on unit testing, see the [unit tests vignette](https://kcevers.github.io/sdbuildR/articles/unit-tests.html). 
+
+
+```{r}
+sfm <- sfm |>
+  # Job demands and energy should negatively correlate
+  unit_test(expr = cor(demands, energy) < -.2) |>
+  # Job resources and energy should positive correlate
+  unit_test(expr = cor(resources, energy) > .2) |>
+  # Job performance and work engagement should positively correlate
+  unit_test(expr = cor(engagement, performance) > .2) |>
+  # Job performance and energy should positively correlate
+  unit_test(expr = cor(performance, energy) > .2) |>
+  # Behaviours (e.g., the flows proactive and work) should always be positive
+  unit_test(expr = all(proactive >= 0)) |>
+  unit_test(expr = all(work >= 0))
+
+verify(sfm)
+```
+
+When motivation is zero, motivation should be zero at all time points:
+
+```{r}
+sfm <- unit_test(sfm,
+  expr = all(motivation == 0),
+  conditions = list(motivation_rate = 0)
+)
+
+verify(sfm)
+```
+
+As an extreme condition test, we can initialize all stocks at zero. In this case, only job demands rises.
+
+```{r}
+sfm <- unit_test(sfm,
+  expr = all(is.finite(c(engagement, resources, energy, demands))),
+  conditions = list(engagement = 0, resources = 0, energy = 0, demands = 0)
+)
+
+result <- verify(sfm)
+print(result)
+```
+
+As another robustness check, we initialize all stocks at high values, which the model is able to handle.
+
+```{r}
+sfm <- unit_test(sfm,
+  expr = all(is.finite(c(engagement, resources, energy, demands))),
+  conditions = list(engagement = 5, resources = 5, energy = 5, demands = 5)
+)
+
+result <- verify(sfm)
+print(result)
+```
+
+
+Show all unit tests:
+
+```{r}
+unit_tests(sfm)
+```
+
+Plot all tests:
+
+```{r, fig.height=10}
+sfm |>
+  verify() |>
+  plot(nrows = 3)
+```
+
+
+### Uncertainty
+
+To illustrate the impact of aleatory uncertainty in our JD-R model, we substitute the deterministic formulation of demand influx for a stochastic process. This more closely aligns with JD-R theory, which posits job demands may fluctuate rapidly on a daily basis due to environmental volatility [@Bakker2024JobQuestions; @Downes2021IncorporatingMeta-Analysis]. To implement this, we adopt the Cox-Ingersoll-Ross model [@cox_theory_1985], a classical stochastic process. It consists of both a deterministic and stochastic component. The former ensures `demands` reverts to its mean `demand_mean` with a rate `exo_demand_rate`. The latter adds normally distributed noise at each step, and scales this with the amount of demands. As long as `exo_demand_rate` and `demand_mean` are positive, this ensures that the inflow to demands cannot become negative, as noise is reduced to zero when demands are zero.
+
+
+```{r}
+sfm <- sfm0 |>
+  constant(demand_mean, eqn = .5) |>
+  constant(demand_sigma, eqn = 10) |>
+  constant(exo_demand_rate, eqn = .25) |>
+  aux(D_deterministic, eqn = exo_demand_rate * (demand_mean - demands)) |>
+  aux(D_stochastic, eqn = demand_sigma * sqrt(demands) * rnorm(1) * sqrt(dt)) |>
+  update(exo_demands, eqn = D_deterministic + D_stochastic)
+
+sim <- simulate(sfm, seed = 1)
+plot(sim, vars = c("demands", "energy", "engagement", "resources", "performance"))
+```
+
+```{r, include = FALSE}
+if (recreate_figs) {
+  sfm_noise <- sfm
+}
+```
+
+As shown above, job demands now exhibit autocorrelated fluctuations, which in turn create variability in job performance. Intrinsic variability in one variable may thus propagate to other variables, even when the latter are strictly deterministically formulated.
+
+
+### Removing Variables
+
+Theories tend to inflate over time, acquiring more assumptions, constructs, and interactions in an attempt to gain explanatory breadth and depth [@Haslam2016ConceptPathology; @Meehl1990AppraisingIt; @smid_magic_2023]. Though this may indeed improve a theory's explanatory power, it can stand in direct opposition to the principle of parsimony [@Keas2018SystematizingVirtues]. Formal models enable a direct comparison between the predictions of a more extensive versus a simpler version of the theory (also known as a perturbation analysis; @weisberg_simulation_2013). In JD-R theory, proactive and self-undermining behaviours are newer additions to the original theory proposed in 2001 [@bakker_job_2023], and we may wonder what their contribution is to the model's behaviour. We could remove self-undermining behaviour, and compare these two models:
+
+```{r}
+vars <- c("engagement", "demands", "resources", "energy")
+sim1 <- simulate(sfm0)
+pl1 <- plot(sim1, vars = vars)
+
+sfm2 <- discard(sfm0, undermining)
+summary(sfm2)
+```
+
+```{r}
+sim2 <- simulate(sfm2)
+pl2 <- plot(sim2, vars = vars, show_legend = FALSE)
+
+pl <- plotly::subplot(pl1, pl2, nrows = 2, shareY = TRUE)
+pl
+```
+
+
+As shown above, in our implementation of JD-R theory, self-undermining behaviour appears to be essential for the occurrence of burnout. Without self-undermining behaviour, the system settles in a healthy state with manageable demands and high energy, albeit with low work engagement. More generally, systematically removing components reveals which aspects of the theory are necessary for the target phenomenon and which are theoretically redundant, directly assessing empirical relevance [@vanDongen_2025_productive].
+
+### Challenging the Model Boundary
+
+Endogenous and exogenous variables can be distinguished by looking at their dependencies:
+
+```{r}
+dependencies(sfm0, name = performance)
+```
+
+By reversing the dependencies, we obtain which variables depend on job performance:
+
+```{r}
+dependencies(sfm0, name = performance, reverse = TRUE)
+```
+
+Job performance has no effect on any part of the system. In other words, it is merely an outcome variable, illustrating a case of open-loop thinking. However, it seems plausible that engagement does not only increase job performance, but that performance itself contributes to engagement. To represent this idea, we add a new inflow to engagement that grows with performance.
+
+```{r, fig.height=3}
+# Make performance feedback to the system
+sfm2 <- constant(sfm0, performance_effect,
+  eqn = .225,
+  label = "Effect Job Performance on Work Engagement"
+) |>
+  flow(pride,
+    eqn = performance_effect * hill(performance, slope = 2, midpoint = 0.5),
+    to = engagement
+  )
+```
+
+As shown below, this produces a qualitatively new pattern of behaviour: rather than a permanent burnout, the system now oscillates between a healthy and burnout state. Expanding the model boundary thus extends the possible range of model behaviours, which hardly could have been inferred from the verbal theory alone.
+
+```{r}
+sim1 <- simulate(sfm0)
+pl1 <- plot(sim1, vars = vars)
+
+sim2 <- simulate(sfm2)
+pl2 <- plot(sim2, vars = vars, show_legend = FALSE)
+
+pl <- plotly::subplot(pl1, pl2, nrows = 2, shareY = TRUE) |>
+  plotly::layout(title = "Model Boundary")
+pl
+```
+
+```{r include=FALSE}
+if (recreate_figs) {
+  sfm_boundary <- sfm2
+}
+```
+
+
+## Step 5. Application
+
+### Parallelization
+
+Large-scale simulations are also called **ensemble** simulations, which can be computationally intensive. We therefore recommend to reduce the size of the simulation output. Keep stock-only output for large ensembles unless full diagnostics are needed, select specific flows or auxiliaries with `vars`, and save fewer time points when possible. For instance, the following saves only a hundred time points, evenly spaced across the simulation interval:
+
+**
+```{r}
+# sfm0 <- sfm <- stockflow("jdr", version = 3)
+```
+
+```{r}
+sfm <- sfm0 <- sim_settings(sfm0, save_length = 100)
+```
+
+Alternatively, `save_times` or `save_by` can be passed to `sim_settings` to save at specific time points (e.g., `save_times = c(1, 100)`) or at a fixed interval (e.g., `save_by = 10` to save every ten time units). To further support computationally intensive ensemble simulations, **stockflow** enables parallelization supported by the **future** package [@bengtsson_unifying_2021]. The parallelization backend needs to be configured prior to running ensemble simulations:
+
+```{r, eval = FALSE}
+future::plan(future::multisession, workers = parallelly::availableCores() - 1)
+```
+
+After the ensemble simulations are completed, parallelization can be ended with:
+
+```{r, eval = FALSE}
+future::plan(future::sequential)
+```
+
+For even greater computational efficiency, ensemble simulations can be conducted in Julia. Julia is a modern, open-source programming language that reaches performance comparable to C and Fortran while maintaining readable, high-level syntax similar to R and Python [@Bezanson2017Julia:Computing]. Julia is increasingly finding applications in psychology, such as for mixed-effects and structural equation modelling  [@ernst_structuralequationmodelsjl_2025; @bates_mixedmodelsjl_2025]. In the context of **stockflow**, the Julia package **DifferentialEquations.jl** [@rackauckas_differentialequationsjlperformant_2017] offers state-of-the-art differential equation solvers that can vastly outperform R's **deSolve** [@rackauckas_gpu-accelerated_2024; @deSolve]. To simulate with Julia, **stockflow** translates R to Julia code and uses the **JuliaConnectoR** package [@lenz_juliaconnector_2022] to call Julia from R, so that users may benefit from Julia's computational speed without interacting with Julia directly.
+
+To enable Julia simulations in **stockflow**, Julia and a specific environment needs to be configured, as detailed in the vignette [Julia setup](https://kcevers.github.io/sdbuildR/articles/julia-setup.html). Once completed, the Julia environment can be activated (note that this needs to be repeated in each new R session):
+
+```{r eval = FALSE}
+# install_julia_env()
+```
+
+
+```{r julia-start}
+use_julia()
+```
+
+Parallelization is also supported with Julia:
+
+```{r, eval = FALSE}
+use_julia(nthreads = parallelly::availableCores() - 1)
+```
+
+By default, the simulation engine is R, which should be changed in the simulation settings to make use of Julia:
+
+```{r julia-set-language}
+sfm <- sfm0 <- sim_settings(sfm0, language = "Julia")
+```
+
+
+To revert to single-threaded simulation, stop and restart the Julia session:
+
+```{r, eval = FALSE}
+use_julia(restart = TRUE)
+```
+
+The Julia session can be ended with:
+
+```{r, eval = FALSE}
+use_julia(stop = TRUE)
+```
+
+In summary, ensemble simulations are more efficient with reduced output size and can be conducted with or without parallelization in either R or Julia.
+
+
+### Exploring Model-Implied Phenomena
+
+A first assessment of the target phenomenon's robustness may involve evaluating its dependence on initial conditions. Though we already simulated the model with several initial conditions, this can be more systematically examined with an ensemble simulation, where we run the model for a thousand iterations:
+
+```{r, include = FALSE, eval = FALSE}
+# Compare performance future to Julia
+n <- 100
+use_julia(stop = TRUE)
+
+future::plan(future::multisession, workers = parallelly::availableCores() - 1)
+future_time <- system.time({
+  sims <- ensemble(sfm, n = n, language = "R")
+})
+future::plan(future::sequential)
+
+use_julia(nthreads = parallelly::availableCores() - 1)
+julia_time <- system.time({
+  sims <- ensemble(sfm, n = n, language = "Julia")
+})
+use_julia(stop = TRUE)
+
+print(future_time)
+print(julia_time)
+```
+
+The mean and 95\% confidence interval across all simulations is shown above. The burnout phenomenon appears robust to variations in initial conditions, as all simulations eventually converge to the same stable state of high job demands and zero work engagement.
+
+Parameters (i.e., constants) are often of greater theoretical interest than initial conditions, as their variation can for instance represent individual differences, contextual factors, or uncertainty in the theory's assumptions. Parameters in ensemble simulations can be varied by redefining their `eqn` to draw from a distribution, or by passing a set of values to vary. For example, we can simulate three values of `motivation_rate`, the rate at which resources increase engagement. 
+
+```{r ensemble-parameter-variation-julia, fig.height = 8}
+# Define values to vary
+conditions <- list(motivation_rate = c(0.2, 0.7))
+
+# Retain individual simulations
+sfm <- sim_settings(sfm, save_sims = TRUE)
+
+# Generate ensemble
+n <- 100
+sims <- ensemble(sfm, n = n, conditions = conditions)
+
+# Plot all trajectories
+plot(sims,
+  which = "sims", sim = 1:n, alpha = .75,
+  nrows = 3, central = "none",
+  vars = c("engagement", "demands")
+)
+```
+
+
+```{r include=FALSE}
+if (recreate_figs) {
+  sfm_ens_par <- sfm
+  n_ens_par <- n
+  conditions_ens_par <- conditions
+}
+```
+
+
+
+### "What If" Scenarios: Developing Interventions
+
+Our ensemble simulations revealed that boosting the rate at which resources increase engagement could be an effective intervention to prevent burnout. For example, we may imagine that this parameter could be targeted by a training that teaches employees to make better use of their existing resources [@bakker_personal_2021]. To develop an intuition of the system's response to increasing `motivation_rate`, we can simulate an idealized intervention which is active for a particular time period (more realistic implementations can be explored at later modelling stages; @Sterman2000BusinessWorld). To implement this, `motivation_rate` first needs to be converted from a constant to a stock, as it should increase over the time course of the simulation:
+
+```{r intervention-change-motivation-rate}
+sfm <- change_type(sfm0, motivation_rate, new_type = "stock")
+```
+
+Next, we create a pulse function that is 1 for a period of two weeks and 0 otherwise. The use of input and interpolation functions should be preferred over using if-statements. Floating-point precision errors introduce small numerical inaccuracies in the solver. As a result, hard logical conditions like `if (t == 0.5)` can yield unpredictable results, where the condition may fail to occur at all. In contrast, interpolation functions make the model more robust to numerical errors. In `pulse()`, we set the starting time of the intervention to 21 days and its duration to 14 days. Additionally, we pass the global variable `times` as its first argument, which specifies the simulation time vector. Other types of external inputs can be created with the `step()`, `ramp()`, and `pulse()` functions.
+
+```{r intervention-pulse-model}
+sfm <- sfm |>
+  constant(start, eqn = 21) |>
+  constant(duration, eqn = 14) |>
+  constant(intervention, eqn = pulse(times, start, width = duration)) |>
+  flow(intervention_effect,
+    eqn = 0.05 * intervention(t),
+    to = motivation_rate, label = "Intervention Effect"
+  )
+```
+
+
+Run a single simulation:
+
+```{r intervention-single-simulation}
+sfm |>
+  simulate() |>
+  plot()
+```
+
+Run an ensemble simulation:
+
+```{r intervention-ensemble-julia}
+sfm <- sim_settings(sfm, save_sims = TRUE)
+sims <- ensemble(sfm, n = n)
+plot(sims,
+  which = "sims", sim = 1:n, alpha = .75, central = "none",
+  vars = c("engagement", "demands", "motivation_rate")
+)
+```
+
+
+```{r include=FALSE}
+if (recreate_figs) {
+  sfm_int <- sfm
+}
+```
+
+
+
+To compute the effectiveness of the intervention, we increase the simulation length and only save the last timepoint.
+
+```{r intervention-effectiveness-long-julia}
+n <- 1000
+sfm <- sim_settings(sfm,
+  # Only save engagement at the last time point
+  vars = "engagement", stop = 1000, save_times = 1000
+)
+sims <- ensemble(sfm, n = n)
+df <- as.data.frame(sims, direction = "wide", which = "sims")
+tab <- table(round(df$engagement)) |>
+  prop.table() |>
+  as.data.frame()
+colnames(tab) <- c("Engagement", "Proportion")
+print(tab)
+```
+
+A shorter intervention is not as effective.
+
+```{r intervention-shorter-duration-long-julia}
+sfm2 <- update(sfm, duration, eqn = 7)
+sims2 <- ensemble(sfm2, n = n)
+df2 <- as.data.frame(sims2, direction = "wide", which = "sims")
+tab2 <- table(round(df2$engagement)) |>
+  prop.table() |>
+  as.data.frame()
+colnames(tab2) <- c("Engagement", "Proportion")
+print(tab2)
+```
+
+
+
+
+
+### Informing Experimental and Statistical Design
+
+Finally, formal models are powerful tools for guiding experimental and statistical design. The derivation chain from theory to empirical test involves a multitude of decisions that the theory itself does not constrain. Though meta-analyses may quantify the impact of such decisions, they do not resolve whether discrepant findings reflect mere design artefacts or genuine challenges to the theory [@meehl_why_1990]. By contrast, a formally specified theory predicts what discrepancies are *implied by the theory itself*. As an illustration, we use our JD-R model to predict the results of a cross-lagged panel model, a widely used analysis in the JD-R literature [@upadyaya_job_2016; @hakanen_job_2008; @sorjonen_questionable_2024]. We assess the cross-lagged relationship between job demands and work engagement with **lavaan** [@rosseel_lavaan_2012] on an ensemble dataset (*n = 10,000*), sampled at day 20 (wave 1) and three months later at day 110 (wave 2). 
+
+
+
+```{r include = FALSE}
+# First, install and load the required packages for data manipulation and structural equation modelling:
+if (!requireNamespace("lavaan")) {
+  install.packages("lavaan")
+}
+library(lavaan)
+```
+
+
+```{r include = FALSE}
+# Next, we add random variability not only to the initial conditions of the stocks, but also to the model's constants. To avoid manually updating each constant, we can extract all constants into a dataframe, modify their equations, and then update the model with the modified dataframe.
+
+# View constant values
+df <- as.data.frame(sfm0, type = "constant", properties = "eqn")
+
+# Update equation to draw from a uniform distribution
+create_runif <- function(x, factor = 0.5) {
+  paste0("runif(1, ", max(c(0, x - x * factor)), ", ", x + x * factor, ")")
+}
+
+# All constants can be updated at once by passing a dataframe to `update()`,
+# which is more efficient than updating each constant separately.
+df[["eqn"]] <- sapply(df$eqn, function(x) {
+  if (grepl("^[0-9.]+$", x)) {
+    create_runif(as.numeric(x))
+  } else {
+    x
+  }
+})
+
+# Update model with modified constants
+sfm <- update(sfm0, df = df)
+```
+
+
+```{r sem-simulation-study, include= FALSE}
+# This modified model can now be used for the ensemble simulation, which will yield a dataset with variability in both initial conditions and parameters.
+
+# Simulation study
+# vars <- c("energy", "demands", "engagement", "resources", "performance")
+vars <- c("demands", "engagement")
+sfm <- sim_settings(sfm,
+  save_by = 1,
+  # Modify stop to a round value so the last value is included
+  stop = round(365 / 2), vars = vars, save_sims = TRUE
+)
+n <- 10000
+
+sims <- ensemble(sfm, n = n, save_sims = TRUE)
+plot(sims, vars = vars, which = "summary")
+```
+
+
+```{r include = FALSE}
+# Run cross-lagged panel analysis between energy and demands for different lags
+# Preparing the data for lavaan involves reshaping the dataset into a wide format, where each variable at each wave is represented as a separate column. We then fit a cross-lagged panel model, which includes autoregressive paths (e.g., engagement at wave 1 predicting engagement at wave 2) and cross-lagged paths (e.g., engagement at wave 1 predicting demands at wave 2). The model also includes concurrent covariances between the variables at each wave.
+
+wave1 <- 20
+x1 <- "engagement"
+x2 <- "demands"
+lags <- seq(10, as.numeric(sfm$sim_settings$stop) - wave1, by = 1)
+
+df <- as.data.frame(sims, direction = "wide", which = "sims")
+rm(sims)
+dfX <- df[, c("sim", "time", x1)]
+dfD <- df[, c("sim", "time", x2)]
+dfX_wave1 <- dfX[dfX$time == wave1, setdiff(names(dfX), "time")]
+colnames(dfX_wave1) <- gsub(x1, paste0(x1, "_wave1"), colnames(dfX_wave1))
+dfD_wave1 <- dfD[dfD$time == wave1, setdiff(names(dfD), "time")]
+colnames(dfD_wave1) <- gsub(x2, paste0(x2, "_wave1"), colnames(dfD_wave1))
+
+build_wave_data <- function(dfX, dfD, wave1, lag, x1, x2) {
+  dfX_wave2 <- dfX[dfX$time == (wave1 + lag), setdiff(names(dfX), "time")]
+  colnames(dfX_wave2) <- gsub(x1, paste0(x1, "_wave2"), colnames(dfX_wave2))
+  dfD_wave2 <- dfD[dfD$time == (wave1 + lag), setdiff(names(dfD), "time")]
+  colnames(dfD_wave2) <- gsub(x2, paste0(x2, "_wave2"), colnames(dfD_wave2))
+  out <- merge(dfX_wave1, dfX_wave2, by = "sim", all.x = TRUE)
+  out <- merge(out, dfD_wave1, by = "sim", all.x = TRUE)
+  out <- merge(out, dfD_wave2, by = "sim", all.x = TRUE)
+  out
+}
+
+model <- sprintf(" # wave 1 -> wave 2
+  %s_wave2  ~ 1 + %s_wave1 + %s_wave1
+  %s_wave2  ~ 1 + %s_wave1 + %s_wave1
+
+  # concurrent covariances
+  %s_wave1  ~~ %s_wave1
+  %s_wave2  ~~ %s_wave2
+", x1, x1, x2, x2, x1, x2, x1, x2, x1, x2)
+```
+
+
+```{r include = FALSE}
+# Choose one lag between waves for demonstration
+lag <- chosen_lag <- 90
+
+# Create wide format data for lavaan
+data_wide <- build_wave_data(dfX, dfD, wave1, lag, x1, x2)
+
+# Fit lavaan model
+m1 <- lavaan::sem(model, data = data_wide, estimator = "MLR")
+
+# Standardized parameter estimates (with standardized SEs/tests/CIs)
+m1_est <- chosen_lag_est <- lavaan::standardizedSolution(
+  m1,
+  type = "std.all",
+  se = TRUE,
+  pvalue = TRUE,
+  ci = TRUE
+)
+```
+
+
+As shown below, our model implies that engagement has a strong positive effect on itself, whereas demands have little effect on future demands. Higher demands lead to lower future work engagement, but higher engagement increases future demands. Furthermore, our JD-R model allows us to assess how these effects depend on the time between waves. For instance, as shown below, though the autoregressive effect of job demands is initially negative, it flips in sign as the time between waves increases. If provided with only a verbal theory, there would be no principled basis for anticipating this lag dependence.
+
+
+
+```{r include = FALSE}
+# Storage
+results <- vector("list", length(lags))
+
+# Loop over lags
+for (lag in lags) {
+  data_wide <- build_wave_data(dfX, dfD, wave1, lag, x1, x2)
+
+  # Fit lavaan model
+  m1 <- lavaan::sem(model,
+    data = data_wide, estimator = "MLR"
+  )
+
+  # Store standardized parameter estimates (including standardized SEs and CIs)
+  out <- lavaan::standardizedSolution(m1,
+    type = "std.all", se = TRUE,
+    pvalue = TRUE, ci = TRUE
+  )
+  out <- out[out[["op"]] == "~", c(
+    "lhs", "rhs",
+    "est.std", "se", "ci.lower", "ci.upper"
+  )]
+  out[["lag"]] <- lag
+  out[["est"]] <- out[["est.std"]]
+  out[["est.std"]] <- NULL
+  out <- out[, c("lhs", "rhs", "est", "se", "ci.lower", "ci.upper", "lag")]
+  results[[as.character(lag)]] <- out
+}
+
+# Plot
+results_df <- as.data.frame(do.call(rbind, results))
+results_df[["path"]] <- paste(results_df[["lhs"]], results_df[["rhs"]], sep = " ~ ")
+results_df <- results_df[, c("path", "est", "se", "ci.lower", "ci.upper", "lag")]
+rownames(results_df) <- NULL
+```
+
+
+```{r include = FALSE, eval = FALSE}
+# Check results
+# Sort paths for maximum lag
+results_max_lag <- results_df[results_df$lag == max(results_df$lag), ]
+results_max_lag[order(results_max_lag$est, decreasing = TRUE), ]
+
+# Chosen lag
+results_df[results_df$lag == chosen_lag, ]
+```
+
+
+```{r include = FALSE}
+# Relabel dataframe
+x1_title <- stringr::str_to_title(x1)
+x2_title <- stringr::str_to_title(x2)
+label_map <- c(
+  sprintf("%s (wave 2) ~ %s (wave 1)", x2_title, x1_title),
+  sprintf("%s (wave 2) ~ %s (wave 1)", x1_title, x2_title),
+  sprintf("%s (wave 2) ~ %s (wave 1)", x2_title, x2_title),
+  sprintf("%s (wave 2) ~ %s (wave 1)", x1_title, x1_title)
+)
+
+names(label_map) <- c(
+  paste0(x2, "_wave2 ~ ", x1, "_wave1"),
+  paste0(x1, "_wave2 ~ ", x2, "_wave1"),
+  paste0(x2, "_wave2 ~ ", x2, "_wave1"),
+  paste0(x1, "_wave2 ~ ", x1, "_wave1")
+)
+
+results_df$path <- as.factor(label_map[results_df$path])
+
+colors <- c(
+  COLORS[VARS == "engagement"],
+  COLORS[VARS == "performance"],
+  COLORS[VARS == "resources"],
+  COLORS[VARS == "motivation_rate"]
+)
+names(colors) <- unname(label_map)
+
+# Plot lag-dependent parameter estimates with confidence intervals
+pl <- plotly::plot_ly(results_df,
+  x = ~lag, y = ~est,
+  color = ~path, split = ~path, legendgroup = ~path,
+  colors = colors,
+  type = "scatter", mode = "lines",
+  line = list(),
+  showlegend = TRUE
+) |>
+  plotly::add_ribbons(
+    x = ~lag, ymin = ~ci.lower,
+    ymax = ~ci.upper, color = ~path, split = ~path,
+    line = list(color = "transparent"),
+    showlegend = FALSE
+  ) |>
+  plotly::layout(
+    showlegend = TRUE,
+    title = "",
+    xaxis = list(
+      title = "Time between waves (days)",
+      showgrid = FALSE, showline = TRUE
+    ),
+    yaxis = list(
+      title = "Parameter estimate (standardized)",
+      showgrid = FALSE, showline = TRUE
+    )
+  ) |>
+  plotly::layout(
+    xaxis = list(tickvals = list(10, 50, 90, 130, 170)),
+    legend = list(
+      orientation = "h", # orientation
+      x = 0.5, # Center horizontally
+      y = -0.25, # Below the plot
+      xanchor = "center",
+      yanchor = "top",
+    )
+  )
+```
+
+
+```{r, echo=FALSE}
+plotly::layout(pl,
+  margin = list(t = 100)
+)
+```
+
+```{r include=FALSE}
+if (recreate_figs) {
+  pl_sem_across_lags <- pl
+}
+```
+
+
+
+
+```{r include=FALSE, eval=has_internet(), error=TRUE}
+# Visualisation: helper functions and plotting parameters
+sprintf_arg <- function(template, values) {
+  for (nm in names(values)) {
+    template <- gsub(paste0("%\\(", nm, "\\)s"), values[[nm]], template)
+  }
+  template
+}
+
+# Plotting parameters
+filepath_base <- this.path::this.dir()
+filepath_figs <- file.path(filepath_base, "figs_tutorial2026")
+
+if (recreate_figs) {
+  dir.create(filepath_figs, showWarnings = FALSE)
+}
+
+VARS <- c("engagement", "performance", "energy", "demands", "resources", "motivation_rate")
+PALETTE <- c("Geyser", "Temps", "Spectral", "Zissou 1", "Roma")[5]
+COLORS <- grDevices::hcl.colors(n = 50, palette = PALETTE)
+
+inflow_col <- adjustcolor(COLORS[10], alpha.f = 1)
+outflow_col <- adjustcolor(COLORS[3], alpha.f = 1)
+
+COLORS_alpha <- adjustcolor(COLORS, alpha.f = .25)
+
+COLORS <- COLORS[c(37, 9, 32, 1, 47, 17)]
+stock_col <- adjustcolor(COLORS[1], alpha.f = .75)
+flow_col <- COLORS[6]
+
+health_path <- adjustcolor(COLORS[4], alpha.f = .75)
+motivation_path <- adjustcolor(COLORS[1], alpha.f = .85)
+health_path_fill <- adjustcolor(COLORS[4], alpha.f = .25)
+motivation_path_fill <- adjustcolor(COLORS[1], alpha.f = .25)
+performance_path <- adjustcolor(COLORS[2], alpha.f = .75)
+performance_path_fill <- adjustcolor(COLORS[2], alpha.f = .25)
+
+font_size <- 16
+font_size_xlab <- round(font_size * 1.4)
+font_size_legend <- round(font_size * 1.1)
+font_size_subplot <- font_size
+xlab <- "Time (days)"
+
+# Finer-grained simulation
+save_length_fine <- 500 # .01 # 1 # ** .01
+
+# Annotation template
+annot <- list(xanchor = "center", yanchor = "middle", showarrow = FALSE, xref = "paper", yref = "paper", font = list(size = font_size_subplot))
+annot_font <- list(family = font_family, size = font_size)
+
+# Default legend
+annot_legend <- list(
+  orientation = "h", # orientation
+  x = 0.5, # Center horizontally
+  y = -0.15, # Below the plot
+  xanchor = "center",
+  yanchor = "top",
+  # traceorder = "normal",
+  # tracegroupgap = 0,
+  # itemwidth = 15,
+  font = list(size = font_size_legend)
+)
+
+# Default x label annotation
+annot_xlab <- list(
+  text = xlab,
+  font = list(
+    size = font_size_xlab
+  ),
+  xref = "paper",
+  yref = "paper",
+  xanchor = "center",
+  yanchor = "top",
+  x = 0.5, y = -.1,
+  showarrow = FALSE
+)
+
+# Remove axis grid from plotly ploy
+rm_grid <- function(pl) {
+  plotly::layout(pl,
+    xaxis = list(showgrid = FALSE, showline = TRUE),
+    yaxis = list(showgrid = FALSE, showline = TRUE)
+  )
+}
+```
+
+
+
+
+```{r, include=FALSE, eval = has_internet(), error = TRUE}
+
+## Functions for creating figures
+fig_func_forms <- function() {
+  show_vars <- c("demands", "energy")
+  vars_ <- VARS[VARS %in% show_vars]
+  colors_ <- COLORS[VARS %in% show_vars]
+  ylim1 <- c(0, 4.1)
+  ylim2 <- c(0, 1.1)
+  margin <- 0.075
+  which <- "sims"
+  central <- "none"
+
+  x1 <- 0.2
+  x2 <- 0.82
+  y1 <- 1
+  y2 <- 0.36
+
+  annot_ <- list(size = font_size_subplot - 4, xanchor = "center", yanchor = "middle", showarrow = FALSE, xref = "paper", yref = "paper")
+
+  annot_axislabels <- utils::modifyList(annot_xlab, list(font = list(size = font_size_xlab - 2)))
+
+  annot_arrow <- utils::modifyList(annot_, list(
+    x = 0.5, y = 0.5, ax = 0, ay = 0,
+    axref = "paper", ayref = "paper", arrowhead = 2, arrowsize = 1.5, arrowwidth = 1.5, showarrow = TRUE
+  ))
+
+  explanation_font_size <- font_size_subplot
+
+  # Functional forms
+  exp_ff <- function(x, a) {
+    exp(-a * x)
+  }
+
+  x <- seq(0, 1, by = .01)
+
+  # Exponential decay function
+  slopes <- c(1, 3, 5)
+  df_exp <- data.frame(
+    x = rep(x, length(slopes)),
+    value = unlist(lapply(slopes, function(a) exp_ff(x, a = a))),
+    type = rep(slopes, each = length(x))
+  )
+
+  # Order legend increasingly by slope
+  df_exp$type <- factor(df_exp$type, levels = as.character(sort(slopes)))
+
+  # Ricker function
+  location <- 0.1
+  shapes <- c(1, 3, 5)
+  df_ricker <- data.frame(
+    x = rep(x, length(shapes)),
+    value = unlist(lapply(shapes, function(shape) ricker(x, shape = shape, location = location))),
+    type = rep(shapes, each = length(x))
+  )
+
+  # Order legend increasingly by slope
+  df_ricker$type <- factor(df_ricker$type, levels = as.character(sort(shapes)))
+
+  # Pick colours for linear and hill functional form
+  colors_exp <- grDevices::hcl.colors(n = 50, palette = "Roma")[c(20, 15, 8)]
+  colors_ricker <- grDevices::hcl.colors(n = 50, palette = "Roma")[c(45, 35, 28)] |> rev()
+
+  # Plot functional form
+  ylim <- c(0, 1.05)
+  pl_exp_ff <- plotly::plot_ly() |>
+    plotly::add_trace(
+      data = df_exp, x = ~x,
+      y = ~value,
+      colors = colors_exp,
+      color = ~type,
+      legendgroup = ~type,
+      type = "scatter",
+      mode = "lines"
+    ) |>
+    rm_grid() |>
+    plotly::layout(yaxis = list(range = ylim))
+
+  pl_ricker_ff <- plotly::plot_ly() |>
+    plotly::add_trace(
+      data = df_ricker, x = ~x,
+      y = ~value,
+      colors = colors_ricker,
+      color = ~type,
+      legendgroup = ~type,
+      type = "scatter",
+      mode = "lines"
+    ) |>
+    rm_grid() |>
+    plotly::layout(yaxis = list(range = ylim))
+
+
+  pl_spacer_rev <- plotly::plot_ly(
+    x = 0,
+    y = 0,
+    type = "scatter",
+    mode = "markers",
+    visible = FALSE,
+    showlegend = FALSE,
+    hoverinfo = "skip"
+  ) |>
+    plotly::layout(
+      xaxis = list(
+        visible = FALSE,
+        showgrid = FALSE,
+        zeroline = FALSE,
+        showticklabels = FALSE
+      ),
+      yaxis = list(
+        visible = FALSE,
+        showgrid = FALSE,
+        zeroline = FALSE,
+        showticklabels = FALSE
+      )
+    )
+
+  # Simulate the models
+  sims_exp <- ensemble(sfm_exp, n = 100, save_length = save_length_fine, 
+  save_sims = TRUE, language = "Julia")
+  sims_ricker <- ensemble(sfm_ricker, n = 100, save_length = save_length_fine, 
+  save_sims = TRUE, language = "Julia")
+
+  pl_exp <- plot(sims_exp, main = "", sub = "", which = which, central = central, ylim = ylim1, vars = vars_, colors = colors_, xlab = "") |> rm_grid()
+  pl_ricker <- plot(sims_ricker, main = "", sub = "", which = which, central = central, show_legend = FALSE, ylim = ylim2, vars = vars_, colors = colors_, xlab = "") |> rm_grid()
+
+  pl_exp <- plotly::style(pl_exp, legend = "legend4")
+  pl_ricker <- plotly::style(pl_ricker, legend = "legend4")
+
+  pl <- plotly::subplot(
+    pl_exp_ff, pl_ricker_ff,
+    pl_spacer_rev, pl_spacer_rev,
+    pl_exp, pl_ricker,
+    nrows = 3, margin = margin, heights = c(0.42, .14, 0.42),
+    titleY = FALSE, titleX = FALSE, shareX = FALSE, shareY = FALSE
+  ) |>
+    plotly::layout(
+      title = list(text = ""),
+      margin = list(l = 80, r = 80, t = 120, b = 55),
+      font = annot_font,
+      legend = utils::modifyList(
+        annot_legend,
+        list(
+          y = y1 + .075, x = 0.5,
+          title = list(text = "Steepness", font = list(size = font_size_legend)),
+          traceorder = "normal", orientation = "h"
+        )
+      ),
+      legend4 = utils::modifyList(
+        annot_legend,
+        list(
+          y = y2 + .09, x = 0.5,
+          title = list(text = "", font = list(size = font_size_legend)),
+          traceorder = "normal"
+        )
+      )
+    ) |>
+    plotly::layout(annotations = list(
+      # x-axis titles
+      utils::modifyList(annot_axislabels, list(text = "Energy", x = 0.5, y = y2 + .23)),
+
+      # y-axis titles
+      utils::modifyList(annot_axislabels, list(
+        text = "Rate of self-undermining", x = -.09, y = y1 - 0.185, xanchor = "center", yanchor = "middle",
+        font = list(size = font_size_xlab - 2),
+        textangle = -90
+      )),
+      utils::modifyList(annot_, list(x = 0.5, y = y1 + .1, text = "<i>A. Functional Forms</i>", font = list(size = font_size_xlab))),
+      utils::modifyList(annot_, list(x = x1, y = y1 + .185, text = "<i>Exponential Decay</i>", font = list(size = font_size_xlab))),
+      utils::modifyList(annot_, list(x = x2, y = y1 + .185, text = "<i>Ricker Function</i>", font = list(size = font_size_xlab))),
+
+      #  Explanations
+      utils::modifyList(
+        annot_arrow,
+        list(
+          ax = 0.3, ay = 0.9,
+          x = 0.025, y = 0.98,
+          text = "Maximal when<br>energy is zero", font = list(size = explanation_font_size)
+        )
+      ),
+      utils::modifyList(
+        annot_arrow,
+        list(
+          x = 0.6, y = .66,
+          ax = 0.9, ay = 0.9,
+          text = "Zero when<br>energy is zero", font = list(size = explanation_font_size)
+        )
+      ),
+
+      # x-axis titles
+      utils::modifyList(annot_axislabels, list(text = annot_xlab[["text"]], x = 0.5, y = -.05)),
+      utils::modifyList(annot_, list(x = 0.5, y = y2 + .11, text = "<i>B. Ensemble Timeseries</i>", font = list(size = font_size_xlab))),
+
+      #  Explanations
+      utils::modifyList(
+        annot_arrow,
+        list(
+          ax = 0.3, ay = 0.1, x = 0.15, y = 0.29,
+          text = "Demands keep rising<br>when energy is zero", font = list(size = explanation_font_size)
+        )
+      ),
+      utils::modifyList(
+        annot_arrow,
+        list(
+          x = 0.8, y = 0.18, ax = 0.8, ay = 0.32,
+          text = "Demands stabilize<br>when energy is near zero", font = list(size = explanation_font_size)
+        )
+      )
+    ))
+  # pl
+
+  export_plot(pl |> plotly::toWebGL(),
+    file.path(filepath_figs, "jdr_functional_forms_complete.pdf"),
+    width = 5.5, height = 5.5
+  )
+}
+
+
+fig_func_forms_rev <- function() {
+  # Functional forms
+  logistic_ff <- function(x, midpoint, slope) {
+    slope * x * (1 - x / midpoint)
+  }
+  probit_ff <- function(x, mean, sd) {
+    pnorm(x, mean = mean, sd = sd)
+  }
+  hill_ff <- function(x, midpoint, slope) {
+    x^slope / (midpoint^slope + x^slope)
+  }
+  x <- seq(0, 1, by = .01)
+  midpoint <- 0.5
+  ylim <- c(-0.3, 1.1)
+
+  # Logistic function
+  slopes <- c(1, 5, 8)
+  df_logistic <- data.frame(
+    x = rep(x, length(slopes)),
+    value = unlist(lapply(slopes, function(a) logistic_ff(x, midpoint = midpoint, slope = a))),
+    type = rep(slopes, each = length(x))
+  )
+
+  # Order legend increasingly by slope
+  df_logistic$type <- factor(df_logistic$type, levels = as.character(sort(slopes)))
+
+  # Probit function
+  slopes <- c(0.1, 0.3, 1)
+  df_probit <- data.frame(
+    x = rep(x, length(slopes)),
+    value = unlist(lapply(slopes, function(sd) probit_ff(x, mean = midpoint, sd = sd))),
+    type = rep(slopes, each = length(x))
+  )
+
+  # Order legend increasingly by slope
+  df_probit$type <- factor(df_probit$type, levels = as.character(sort(slopes)))
+
+  # Hill function
+  slopes <- c(1, 3, 10)
+  df_hill <- data.frame(
+    x = rep(x, length(slopes)),
+    value = unlist(lapply(slopes, function(slope) hill_ff(x, midpoint = midpoint, slope = slope))),
+    type = rep(slopes, each = length(x))
+  )
+
+  # Order legend increasingly by slope
+  df_hill$type <- factor(df_hill$type, levels = as.character(sort(slopes)))
+
+  # Simulate three models with different functional forms
+  sfm0_rev <- stockflow() |>
+    stock("Stock", eqn = 0.1) |>
+    sim_settings(only_stocks = FALSE, stop = 10, save_length = save_length_fine, dt = .01)
+  sfm1_rev <- sfm0_rev |> flow("Inflow", eqn = "1 * Stock * (1 - Stock / 0.5)", to = "Stock")
+  sfm2_rev <- sfm0_rev |> flow("Inflow", eqn = "pnorm(Stock, mean = 0.5, sd = 0.3)", to = "Stock")
+  sfm3_rev <- sfm0_rev |> flow("Inflow", eqn = "Stock^3 / (0.5^3 + Stock^3)", to = "Stock")
+  vars <- c("Stock", "Inflow")
+
+  pl1 <- plot(simulate(sfm1_rev), vars = vars, vars_display = "joint", fill_flows = FALSE)
+  pl2 <- plot(simulate(sfm2_rev), show_legend = FALSE, vars = vars, vars_display = "joint", fill_flows = FALSE)
+  pl3 <- plot(simulate(sfm3_rev), show_legend = FALSE, vars = vars, vars_display = "joint", fill_flows = FALSE)
+  pl_sim_rev <- plotly::subplot(pl1, pl2, pl3, nrows = 1, shareX = TRUE, shareY = FALSE)
+
+  # Pick colours for linear and hill functional form
+  colors_logistic <- grDevices::hcl.colors(n = 100, palette = "Roma")[c(1, 15, 30)]
+  colors_probit <- grDevices::hcl.colors(n = 100, palette = "Roma")[c(40, 55, 68)]
+  colors_hill <- grDevices::hcl.colors(n = 100, palette = "Roma")[c(72, 83, 100)]
+
+  titles_top <- paste0("<i>", c("A. Logistic Function", "B. Probit Function", "C. Hill Function"), "</i>")
+  titles_bottom <- paste0("<i>", c(
+    "D. Inflow =<br>s * Stock * (1 - Stock / K)<br>s = 1, K = 0.5",
+    "E. Inflow =<br>pnorm(Stock, mu, s)<br>s = 0.3, mu = 0.5",
+    "F. Inflow =<br>Stock^s / (K^s + Stock^s)<br>s = 3, K = 0.5"
+  ), "</i>")
+
+  x1 <- 0.16
+  x2 <- 0.50
+  x3 <- 0.85
+  y1 <- 1.15
+  y2 <- 0.4
+
+  annot_ <- list(
+    size = font_size_subplot - 4,
+    xanchor = "center",
+    yanchor = "middle",
+    showarrow = FALSE,
+    xref = "paper",
+    yref = "paper"
+  )
+
+  # Plot functional form
+  pl1 <- plotly::plot_ly() |>
+    plotly::add_trace(
+      data = df_logistic, x = ~x,
+      y = ~value,
+      colors = colors_logistic,
+      color = ~type,
+      legendgroup = ~type,
+      type = "scatter",
+      mode = "lines"
+    ) |>
+    plotly::layout(
+      yaxis = list(range = ylim, title = list(text = ""))
+      # margin = list(t = 0, b = 0, l = 0, r = 0)
+    ) |>
+    rm_grid()
+
+  pl2 <- plotly::plot_ly() |>
+    plotly::add_trace(
+      data = df_probit, x = ~x,
+      y = ~value,
+      colors = colors_probit,
+      color = ~type,
+      legendgroup = ~type,
+      type = "scatter",
+      mode = "lines"
+    ) |>
+    plotly::layout(
+      yaxis = list(range = ylim, title = list(text = ""))
+    ) |>
+    rm_grid()
+
+  pl3 <- plotly::plot_ly() |>
+    plotly::add_trace(
+      data = df_hill, x = ~x,
+      y = ~value,
+      colors = colors_hill,
+      color = ~type,
+      legendgroup = ~type,
+      type = "scatter",
+      mode = "lines"
+    ) |>
+    plotly::layout(
+      yaxis = list(range = ylim, title = list(text = ""))
+      # margin = list(t = 0, b = 0, l = 0, r = 0)
+    ) |>
+    rm_grid()
+
+  sim1_rev <- plot(simulate(sfm1_rev),
+    vars_display = "joint", fill_flows = FALSE,
+    vars = vars,
+    xlab = "", ylab = "", show_legend = TRUE, main = ""
+  )
+  sim2_rev <- plot(simulate(sfm2_rev), vars_display = "joint", fill_flows = FALSE, vars = vars, xlab = "", ylab = "", show_legend = FALSE, main = "")
+  sim3_rev <- plot(simulate(sfm3_rev), vars_display = "joint", fill_flows = FALSE, vars = vars, xlab = "", ylab = "", show_legend = FALSE, main = "")
+
+  # Route bottom row traces to legend2
+  sim1_rev <- plotly::style(sim1_rev, legend = "legend2") |> rm_grid()
+  sim2_rev <- plotly::style(sim2_rev, legend = "legend2") |> rm_grid()
+  sim3_rev <- plotly::style(sim3_rev, legend = "legend2") |> rm_grid()
+
+  pl_func_form_rev <- plotly::subplot(pl1, pl2, pl3,
+    nrows = 1,
+    shareX = TRUE,
+    shareY = TRUE,
+    titleY = TRUE,
+    titleX = FALSE,
+    margin = 0.025
+  ) |>
+    plotly::layout(title = "", yaxis = list(title = "")) |>
+    plotly::layout(
+      font = annot_font,
+      legend = utils::modifyList(annot_legend, list(
+        y = 0,
+        traceorder = "normal",
+        tracegroupgap = 0,
+        itemwidth = 15,
+        title = list(text = "Slope", font = list(size = font_size_legend))
+      ))
+    ) |>
+    plotly::layout(annotations = list(
+      utils::modifyList(annot_, list(x = x1, y = y1, text = titles_top[[1]])),
+      utils::modifyList(annot_, list(x = x2, y = y1, text = titles_top[[2]])),
+      utils::modifyList(annot_, list(x = x3, y = y1, text = titles_top[[3]]))
+    ))
+
+  pl_bottom_rev <- plotly::subplot(
+    sim1_rev, sim2_rev, sim3_rev,
+    nrows = 1,
+    shareX = TRUE,
+    shareY = FALSE,
+    titleY = FALSE,
+    titleX = FALSE,
+    margin = 0.025
+  ) |>
+    plotly::layout(title = "", yaxis = list(title = ""))
+
+  pl_spacer_rev <- plotly::plot_ly(
+    x = 0,
+    y = 0,
+    type = "scatter",
+    mode = "markers",
+    visible = FALSE,
+    showlegend = FALSE,
+    hoverinfo = "skip"
+  ) |>
+    plotly::layout(
+      xaxis = list(
+        visible = FALSE,
+        showgrid = FALSE,
+        zeroline = FALSE,
+        showticklabels = FALSE
+      ),
+      yaxis = list(
+        visible = FALSE,
+        showgrid = FALSE,
+        zeroline = FALSE,
+        showticklabels = FALSE
+      )
+      # margin = c(0.05, 0.05, 0.05, 0.05)
+    )
+
+  pl_final_rev <- plotly::subplot(
+    pl_spacer_rev,
+    pl_func_form_rev,
+    pl_spacer_rev,
+    pl_bottom_rev,
+    pl_spacer_rev,
+    nrows = 5,
+    titleY = TRUE,
+    heights = c(0.001, 0.35, 0.28, 0.35, 0.01),
+    margin = c(0.05, 0.05, 0.05, 0.05)
+  ) |>
+    plotly::layout(
+      margin = 0,
+      font = annot_font,
+      legend = utils::modifyList(annot_legend, list(
+        orientation = "v",
+        x = 1.1,
+        y = 1,
+        traceorder = "normal",
+        tracegroupgap = 0,
+        itemwidth = 15,
+        title = list(text = "Slope (s)", font = list(size = font_size_legend))
+      )),
+      legend2 = utils::modifyList(annot_legend, list(
+        orientation = "v",
+        x = 1.1,
+        y = y2 - .15,
+        traceorder = "normal",
+        tracegroupgap = 0,
+        itemwidth = 15
+      )),
+      annotations = list(
+        utils::modifyList(annot_, list(
+          text = "<i>Functional Forms</i>",
+          x = 0.5,
+          y = 1.08,
+          yanchor = "top",
+          font = list(size = font_size_xlab)
+        )),
+        utils::modifyList(annot_, list(
+          text = "<i>Timeseries</i>",
+          x = 0.5,
+          y = y2 + 0.08,
+          yanchor = "bottom",
+          font = list(size = font_size_xlab)
+        )),
+        utils::modifyList(annot_, list(x = x1, y = y2, text = titles_bottom[[1]])),
+        utils::modifyList(annot_, list(x = x2, y = y2, text = titles_bottom[[2]])),
+        utils::modifyList(annot_, list(x = x3, y = y2, text = titles_bottom[[3]])),
+        utils::modifyList(annot_, list(
+          text = "Input",
+          x = 0.5,
+          y = y2 + 0.24,
+          yanchor = "top",
+          font = list(size = font_size_xlab - 2)
+        )),
+        utils::modifyList(annot_, list(
+          text = "Output",
+          x = -.09,
+          y = 0.91,
+          yanchor = "top", textangle = -90,
+          font = list(size = font_size_xlab - 2)
+        )),
+        utils::modifyList(annot_, list(
+          text = "Time",
+          x = 0.5,
+          y = 0.01,
+          yanchor = "top",
+          font = list(size = font_size_xlab - 2)
+        ))
+      )
+    )
+  pl_final_rev
+
+  export_plot(pl_final_rev, file.path(filepath_figs, "revision_functional_forms.pdf"),
+    font_family = font_family,
+    width = 6, height = 5
+  )
+}
+
+fig_sfm_full <- function() {
+  sfm <- stockflow("jdr", version = 2)
+  order_vars <- c("engagement", "performance", "energy", "resources", "demands")
+  pl <- plot(sfm, show_eqn = FALSE, align = order_vars, order = order_vars, show_constants = FALSE, font_size = 24, flow_length = 1)
+  export_plot(pl, file.path(filepath_figs, "jdr_sfm_full.pdf"), font_family = font_family)
+}
+
+
+fig_sim_full <- function() {
+  show_vars <- c("engagement", "demands", "resources", "energy", "performance")
+  vars_ <- VARS[VARS %in% show_vars]
+  colors_ <- COLORS[VARS %in% show_vars]
+  ylim <- c(0, 1.5)
+
+  # Ensemble (plain)
+  sfm <- stockflow("jdr", version = 2) |> sim_settings(language = "julia")
+  sims_ens <- ensemble(sfm, n = 100, save_length = save_length_fine, save_sims = FALSE)
+
+  pl <- plot(sims_ens,
+    vars = vars_, colors = colors_, 
+    main = "", sub = "", ylim = ylim,
+    xlab = ""
+  ) |> rm_grid()
+
+  pl <- pl |>
+    plotly::layout(
+      title = list(text = ""),
+      font = annot_font,
+      legend = utils::modifyList(annot_legend, list(
+        y = -0.14,
+        traceorder = "normal"
+      ))
+    ) |>
+    plotly::layout(
+      annotations = list(
+        utils::modifyList(annot_xlab, list(y = -0.07))
+      )
+    )
+
+  export_plot(pl |> plotly::toWebGL(),
+    file.path(filepath_figs, "jdr_sim_full.pdf"),
+    font_family = font_family,
+    width = 5.5, height = 4.5
+  )
+}
+
+
+fig_noise <- function() {
+  show_vars <- c("engagement", "resources", "energy", "demands", "performance")
+  vars_ <- VARS[VARS %in% show_vars]
+  colors_ <- COLORS[VARS %in% show_vars]
+
+  sim <- simulate(sfm_noise, seed = 1) #, save_length = save_length_fine)
+
+  pl <- plot(sim,
+    vars = vars_, colors = colors_,
+    vars_display = "joint",
+    xlab = "", main = ""
+  ) |>
+    rm_grid() |>
+    plotly::layout(yaxis = list(range = c(0, 1.1)))
+
+  pl <- pl |>
+    plotly::layout(
+      legend = utils::modifyList(annot_legend, list(
+        y = -0.16
+      ))
+    ) |>
+    plotly::layout(
+      annotations = list(
+        utils::modifyList(annot_xlab, list(y = -0.075))
+      )
+    )
+  pl
+
+  export_plot(pl,
+    file.path(filepath_figs, "noise_JDR.pdf"),
+    font_family = font_family,
+    width = 4, height = 4
+  )
+}
+
+fig_model_boundary <- function() {
+  # Model boundary
+  show_vars <- c("engagement", "resources", "energy", "demands", "performance")
+
+  vars_ <- VARS[VARS %in% show_vars]
+  colors_ <- COLORS[VARS %in% show_vars]
+
+  sfm0 <- stockflow("jdr", version = 3)
+  sim1 <- simulate(sfm0,
+    save_length = save_length_fine,
+    only_stocks = FALSE
+  )
+  pl1 <- plot(sim1,
+    vars = vars_, ylim = c(0, 1.1), colors = colors_,
+    vars_display = "joint",
+    main = "", xlab = ""
+  )
+
+  sim2 <- simulate(sfm_boundary,
+    save_length = save_length_fine,
+    only_stocks = FALSE
+  )
+  pl2 <- plot(sim2,
+    vars = vars_, ylim = c(0, 1.4), colors = colors_,
+    vars_display = "joint",
+    main = "", xlab = ""
+  )
+
+  plot_func <- function(pl) {
+    pl |>
+      plotly::layout(
+        margin = list(autoexpand = FALSE, t = 0, b = 200, l = 50, r = 0),
+        margin = c(0, 0, 0, 0),
+        font = annot_font,
+        legend = utils::modifyList(annot_legend, list(
+          y = -0.35,
+          margin = list(t = 0, b = 0, l = 0, r = 0, pad = 0), # remove legend margins
+          font = list(size = font_size_legend + 1),
+          tracegroupgap = 0, # remove gap between legend items
+          entrywidth = 0,
+          entrywidthmode = "pixels",
+          x = 0.5
+        )),
+        annotations = list(
+          utils::modifyList(annot_xlab, list(y = -0.14))
+        )
+      ) |>
+      rm_grid()
+  }
+
+  export_plot(plot_func(pl1),
+    file.path(filepath_figs, "jdr_a_challenging_boundary.pdf"),
+    font_family = font_family,
+    width = 4, height = 3
+  )
+
+  export_plot(plot_func(pl2),
+    file.path(filepath_figs, "jdr_b_challenging_boundary.pdf"),
+    font_family = font_family,
+    width = 4, height = 3
+  )
+}
+
+
+fig_learning <- function() {
+  show_vars <- c("engagement", "demands")
+  vars_ <- VARS[match(show_vars, VARS)]
+  colors_ <- COLORS[match(show_vars, VARS)]
+  ylim <- c(0, 1.3)
+  margin <- 0.05
+  alpha <- .2
+  annot_ <- utils::modifyList(annot, list(font = list(size = font_size_subplot + 1)))
+
+  # Ensemble (parameters)
+  sfm <- sfm_ens_par |>
+    sim_settings(save_length = save_length_fine, save_sims = TRUE) |>
+    sim_settings(language = "julia")
+
+  # Parameter variation
+  sims_par <- ensemble(sfm,
+    n = n_ens_par,
+    conditions = conditions_ens_par
+  )
+
+  pl_pars <- list()
+  for (i in seq_along(unlist(conditions_ens_par))) {
+    pl_pars[[i]] <- plot(sims_par,
+      which = "sims", sim = 1:n_ens_par, ylim = ylim,
+      condition = i,
+      vars = vars_, colors = colors_, alpha = alpha,
+      main = "", sub = "", 
+      nrows = 1, central = "none", 
+      show_legend = FALSE, label_subplots = FALSE, xlab = ""
+    ) |>
+      # Remove grid lines
+      rm_grid()
+  }
+
+  # Intervention
+  show_vars <- c("engagement", "demands", "motivation_rate")
+  vars_ <- VARS[match(show_vars, VARS)]
+  colors_ <- COLORS[match(show_vars, VARS)]
+
+  sfm <- sim_settings(sfm_int, save_length = save_length_fine, 
+  only_stocks = FALSE, save_sims = TRUE) |> sim_settings(language = "julia")
+  sims_int <- ensemble(sfm, n = n_ens_par)
+
+  pl_int <- plot(sims_int,
+    which = "sims", sim = 1:n_ens_par,
+    alpha = alpha, central = "none",
+    show_legend = TRUE,
+    vars = vars_, colors = colors_, ylim = ylim,
+    main = "", sub = "",
+    wrap_width = 40
+  ) |> rm_grid()
+
+  # Plot thicker line for motivation_rate
+  col_ <- COLORS[match("motivation_rate", VARS)]
+  pl_int_with_rate <- pl_int |>
+    plotly::add_trace(
+      data = sims_int$summary[sims_int$summary$variable == "motivation_rate", , drop = FALSE],
+      x = ~time,
+      y = ~mean,
+      line = list(
+        color = col_, alpha = 1, width = 5
+      ),
+      showlegend = FALSE,
+      type = "scatter",
+      mode = "lines"
+    )
+
+  x1 <- 0.15
+  x2 <- 0.5
+  x3 <- 0.86
+  y1 <- 1.04
+
+  pl <- plotly::subplot(
+    pl_pars[[1]], pl_pars[[2]], pl_int_with_rate,
+    shareX = TRUE,
+    shareY = TRUE,
+    titleY = FALSE,
+    titleX = FALSE,
+    margin = 0.025,
+    nrows = 1 
+  ) |>
+    plotly::layout(
+      title = list(text = ""),
+      font = annot_font,
+      legend = utils::modifyList(annot_legend, list(y = -0.26))
+    ) |>
+    plotly::layout(
+      annotations = list(
+        utils::modifyList(annot_xlab, list(y = -0.12)),
+        utils::modifyList(annot_, list(x = x1, y = y1,
+         text = "<i>A. Parameter Variation:<br>Burnout</i>")),
+        utils::modifyList(annot_, list(x = x2, y = y1, 
+        text = "<i>B. Parameter Variation:<br>Bistability</i>")),
+        utils::modifyList(annot_, list(x = x3, y = y1, 
+        text = "<i>C. Intervention on<br>Motivation Rate</i>"))
+      )
+    )
+
+  export_plot(pl |> plotly::toWebGL(),
+    file.path(filepath_figs, "jdr_learning.pdf"),
+    font_family = font_family,
+    width = 6, height = 3
+  )
+}
+
+fig_sem_across_lags <- function() {
+  export_plot(
+    pl_sem_across_lags |>
+      plotly::layout(
+        font = annot_font,
+        legend = utils::modifyList(annot_legend, list(x = 1.7, y = 0.6)),
+        xaxis = list(
+          font = list(size = font_size)
+        ),
+        yaxis = list(
+          font = list(size = font_size)
+        )
+      ),
+    file.path(filepath_figs, "jdr_sem_across_lags.pdf"),
+    font_family = font_family,
+    width = 7, height = 3
+  )
+}
+```
+
+```{r, include=FALSE, eval = has_internet(), error = TRUE}
+if (recreate_figs) {
+  fig_func_forms()
+  fig_func_forms_rev()
+  fig_sfm_full()
+  fig_sim_full()
+  fig_noise()
+  fig_model_boundary()
+  fig_learning()
+  fig_sem_across_lags()
+}
+```
+
+
+
+
+Stop Julia session:
+
+```{r}
+use_julia(stop = TRUE)
+```
+
+
+## Session Information
+
+```{r echo=TRUE}
+sessionInfo()
+```
+
+
+
+
+
+## References

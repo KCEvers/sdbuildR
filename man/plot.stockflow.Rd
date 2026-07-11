@@ -10,7 +10,7 @@
   format_label = TRUE,
   wrap_width = 20,
   font_size = 18,
-  font_family = default_font_family(),
+  font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
   colors = NULL,
   color_dependency = "#999999",
   font_color = "black",

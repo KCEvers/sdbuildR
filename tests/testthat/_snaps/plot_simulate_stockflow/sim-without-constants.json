@@ -11,7 +11,8 @@
       "visible": true,
       "line": {
         "color": "rgba(200,122,138,1)",
-        "width": 2
+        "width": 2,
+        "dash": "solid"
       },
       "name": "Stock1",
       "marker": {
@@ -42,7 +43,7 @@
       "r": 50
     },
     "legend": {
-      "traceorder": "reversed",
+      "traceorder": "normal",
       "font": {
         "size": 14
       }

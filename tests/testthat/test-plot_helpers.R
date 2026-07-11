@@ -1,24 +1,24 @@
 test_that("validate_plot_params passes on NULL inputs", {
   expect_invisible(validate_plot_params())
   expect_invisible(validate_plot_params(
-    showlegend = NULL, vars = NULL, palette = NULL,
+    show_legend = NULL, vars = NULL, palette = NULL,
     colors = NULL, font_family = NULL, font_size = NULL, wrap_width = NULL
   ))
 })
 
-test_that("validate_plot_params passes on valid showlegend", {
-  expect_invisible(validate_plot_params(showlegend = TRUE))
-  expect_invisible(validate_plot_params(showlegend = FALSE))
+test_that("validate_plot_params passes on valid show_legend", {
+  expect_invisible(validate_plot_params(show_legend = TRUE))
+  expect_invisible(validate_plot_params(show_legend = FALSE))
 })
 
-test_that("validate_plot_params rejects non-logical showlegend", {
+test_that("validate_plot_params rejects non-logical show_legend", {
   expect_error(
-    validate_plot_params(showlegend = "yes"),
-    "showlegend.*logical"
+    validate_plot_params(show_legend = "yes"),
+    "show_legend.*logical"
   )
   expect_error(
-    validate_plot_params(showlegend = 1),
-    "showlegend.*logical"
+    validate_plot_params(show_legend = 1),
+    "show_legend.*logical"
   )
 })
 
@@ -281,10 +281,10 @@ test_that("plotly_theme sets margins correctly", {
   expect_equal(theme$margin$r, 25)
 })
 
-test_that("plotly_theme legend has reversed trace order", {
+test_that("plotly_theme legend has normal trace order", {
   theme <- plotly_theme()
 
-  expect_equal(theme$legend$traceorder, "reversed")
+  expect_equal(theme$legend$traceorder, "normal")
 })
 
 test_that("plotly_theme legend font scales with base font size", {

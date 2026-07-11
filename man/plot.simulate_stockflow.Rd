@@ -8,13 +8,18 @@
   x,
   show_constants = FALSE,
   vars = NULL,
+  order = NULL,
   palette = "Dark 2",
   colors = NULL,
   line_width = 2,
-  font_family = default_font_family(),
+  line_type = list(stock = "solid", flow = "solid", aux = "solid", constant = "dash",
+    lookup = "dash"),
+  vars_display = c("vstack", "hstack", "joint"),
+  fill_flows = TRUE,
+  font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
   font_size = 16,
   wrap_width = 25,
-  showlegend = TRUE,
+  show_legend = TRUE,
   format_label = TRUE,
   animation = c("none", "time"),
   control_options = list(),
@@ -29,6 +34,10 @@
 
 \item{vars}{Variables to plot. Defaults to \code{NULL} to plot all variables.}
 
+\item{order}{Optional character vector of model variable names giving the
+trace and legend order. Listed variables appear first; any plotted
+variables not listed keep their default relative order. Defaults to \code{NULL}.}
+
 \item{palette}{Colour palette. Must be one of hcl.pals().}
 
 \item{colors}{Colours for the plotted variables. A named vector (names are
@@ -40,6 +49,22 @@ assigns colours in plot order. \code{NULL} uses \code{palette}. Defaults to \cod
 value applied to all variables, a named per-variable vector (names are
 variable names), or an unnamed vector with one value per variable in plot
 order. Defaults to \code{2}.}
+
+\item{line_type}{Plotly line dash style for trajectories. Either a single
+dash string applied to all variables, a named per-variable vector (names are
+variable names), an unnamed vector in plot order, or a named list keyed by
+variable type (\code{stock}, \code{flow}, \code{aux}, \code{constant}, \code{lookup}). Defaults to
+solid stocks, flows, and auxiliaries, with dashed constants and lookups.}
+
+\item{vars_display}{How to arrange saved variables. Use \code{"vstack"} to stack
+stocks above flows, auxiliaries, constants, and lookups; \code{"hstack"} to put
+stocks beside non-stock variables; or \code{"joint"} to draw all variables in
+one panel. If only one variable group is available, a single panel is
+drawn. Defaults to \code{"vstack"}.}
+
+\item{fill_flows}{If \code{TRUE}, flow traces are filled
+down to zero. Auxiliaries, constants, and lookups are never filled.
+Defaults to \code{TRUE}.}
 
 \item{font_family}{Font family. Kebab-case names (e.g. \code{"eb-garamond"})
 are Fontsource ids (browse them at \url{https://fontsource.org/}), loaded as
@@ -54,7 +79,7 @@ e.g. in your .Rprofile.}
 
 \item{wrap_width}{Width of text wrapping for labels. Must be an integer. Defaults to 25.}
 
-\item{showlegend}{Whether to show legend. Must be \code{TRUE} or \code{FALSE}. Defaults to \code{TRUE}.}
+\item{show_legend}{Whether to show legend. Must be \code{TRUE} or \code{FALSE}. Defaults to \code{TRUE}.}
 
 \item{format_label}{If \code{TRUE}, apply default formatting (replacing periods and
 underscores with spaces) to variable labels that are the same as the
@@ -90,9 +115,10 @@ Visualize simulation results of a stock-and-flow model. Plot the evolution of st
 }
 \section{Styling variables}{
 
-Names in \code{colors} and \code{line_width} refer to the model variable names, not the
-labels shown in the legend. This is usually the safest way to style a plot,
-because labels may be wrapped, prettified, or customized for display.
+Names in \code{colors}, \code{line_width}, and \code{line_type} refer to the model variable
+names, not the labels shown in the legend. This is usually the safest way to
+style a plot, because labels may be wrapped, prettified, or customized for
+display.
 
 Use one value to style every trajectory:
 \code{plot(sim, line_width = 3)}.
@@ -115,6 +141,10 @@ plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
 
 # Add constants to the plot
 plot(sim, show_constants = TRUE)
+
+# Save and plot non-stock variables in a compact role-panel view
+sim_all <- simulate(sfm, only_stocks = FALSE)
+plot(sim_all, vars_display = "vstack", fill_flows = TRUE)
 
 # Cumulatively reveal the trajectories over time
 plot(sim, animation = "time")

@@ -65,7 +65,6 @@ test_that("plot.ensemble_stockflow() requires save_sims for which = 'sims'", {
   expect_error(plot(sims, which = "sims"), "Individual simulation data is required")
 })
 
-
 # ============================================================================
 # ROLE-KEYED line_width / alpha (central / spread / sims)
 # ============================================================================
@@ -124,6 +123,18 @@ make_aes_ens <- function() {
     central = c("mean", "median"), spread = c("quantile", "sd", "range")
   )
 }
+
+test_that("plot.ensemble_stockflow() respects trace order", {
+  sims <- make_aes_ens()
+  vars <- ens_var_names(sims)
+  requested_order <- rev(vars)
+  expected_labels <- unname(vapply(requested_order, ens_label_for_name, character(1), sims = sims))
+
+  pl <- plot(sims, which = "summary", order = requested_order)
+  legend_items <- plotly_dedupe_legend(plotly_traces(pl))
+
+  expect_equal(legend_items[["name"]], expected_labels)
+})
 
 test_that("line_width: a scalar styles every layer", {
   withr::local_pdf(NULL)
@@ -365,7 +376,7 @@ test_that("plot() sims: legend colours match trajectory colours", {
   for (tr in b[["x"]][["data"]]) {
     col <- tr[["line"]][["color"]]
     if (is.null(col) || is.null(tr[["name"]])) next
-    if (isTRUE(tr[["showlegend"]])) {
+    if (isTRUE(tr[["showlegend"]] %||% tr[["show_legend"]])) {
       legend_col[[tr[["name"]]]] <- to_rgb(col)
     } else {
       traj_col[[tr[["name"]]]] <- to_rgb(col)
@@ -438,17 +449,17 @@ test_that("plot.ensemble_stockflow() central = 'none' (no central line)", {
   expect_snapshot_plot("ens-central-tendency-false", pl)
 })
 
-test_that("plot.ensemble_stockflow() showlegend = FALSE", {
+test_that("plot.ensemble_stockflow() show_legend = FALSE", {
   sims <- make_r_ens()
   # Object-level expectation: no legend items when disabled
-  pl_noleg <- plot(sims, showlegend = FALSE)
+  pl_noleg <- plot(sims, show_legend = FALSE)
   expect_plotly(pl_noleg)
   traces <- plotly_traces(pl_noleg)
   expect_true(nrow(traces) > 0)
-  expect_true(all(!(traces$showlegend)))
+  expect_true(all(!(traces$show_legend)))
 
   # Snapshot last
-  expect_snapshot_plot("ens-showlegend-false", pl_noleg)
+  expect_snapshot_plot("ens-show_legend-false", pl_noleg)
 })
 
 

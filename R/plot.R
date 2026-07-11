@@ -494,7 +494,7 @@ plot.stockflow <- function(x,
                            format_label = TRUE,
                            wrap_width = 20,
                            font_size = 18,
-                           font_family = default_font_family(),
+                           font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
                            colors = NULL,
                            color_dependency = "#999999",
                            font_color = "black",
@@ -1149,7 +1149,7 @@ plot.stockflow <- function(x,
 prep_plot <- function(
   object, type_sim, df, constants,
   show_constants, vars, palette, colors, wrap_width,
-  format_label = TRUE
+  format_label = TRUE, order = NULL
 ) {
   # Get names of stocks and non-stock variables
   names_df <- get_names(object)
@@ -1218,6 +1218,10 @@ prep_plot <- function(
   ]
   highlight_these_names <- highlight_these_names[highlight_these_names %in% names_df[["name"]]]
 
+  names_df <- apply_trace_order(names_df, order = order, model_var = style_names)
+  highlight_these_names <- highlight_these_names[highlight_these_names %in% names_df[["name"]]]
+  highlight_these_names <- names_df[["name"]][names_df[["name"]] %in% highlight_these_names]
+
   # Prepare and standardize labels (handle duplicates, wrapping, special characters)
   names_df <- prepare_labels(names_df, wrap_width = wrap_width, format_label = format_label)
 
@@ -1243,9 +1247,11 @@ prep_plot <- function(
   )
 
   # Generate colors keyed by the display labels used in Plotly traces, while
-  # matching any user-supplied names against model variable names.
-  plot_var_names <- c(unname(highlight_names), unname(nonhighlight_names))
-  plot_labels <- c(names(highlight_names), names(nonhighlight_names))
+  # matching any user-supplied names against model variable names. Use the
+  # prepared names table order so an explicit `order` controls trace, legend,
+  # and positional aesthetic order instead of the highlight/nonhighlight split.
+  plot_var_names <- names_df[["name"]]
+  plot_labels <- names_df[["label"]]
   colors <- resolve_colors(colors, palette, plot_var_names,
     display_names = plot_labels, valid_names = style_names
   )
@@ -1258,8 +1264,94 @@ prep_plot <- function(
     colors = colors,
     labels = plot_labels,
     var_names = plot_var_names,
+    var_types = stats::setNames(names_df[["type"]][match(plot_var_names, names_df[["name"]])], plot_labels),
     style_names = style_names
   )
+}
+
+
+#' Combine prepared simulation data frames in plot order
+#'
+#' @param out Result from prep_plot().
+#' @returns Data frame with display-label factors ordered like out$labels.
+#' @noRd
+combine_prepped_sim_data <- function(out) {
+  df <- rbind(out[["df_highlight"]], out[["df_nonhighlight"]])
+  if (nrow(df) == 0L) {
+    return(df)
+  }
+  df[["variable"]] <- factor(as.character(df[["variable"]]), levels = out[["labels"]])
+  df
+}
+
+
+#' Build one simulation time-series panel
+#'
+#' @param df Prepared long data for one panel.
+#' @param colors,line_width,line_type Aesthetics keyed by display label.
+#' @param fill,fillcolor Optional fill attributes keyed by display label.
+#' @inheritParams add_trace_pair
+#' @returns Plotly object.
+#' @noRd
+build_sim_trace_panel <- function(df, colors, line_width, line_type,
+                                  fill = NULL, fillcolor = NULL,
+                                  show_legend = TRUE, type = "scatter",
+                                  frame = NULL) {
+  pl <- plotly::plot_ly()
+  add_trace_pair(pl,
+    df_highlight = df,
+    df_nonhighlight = NULL,
+    colors = colors,
+    line_width = line_width,
+    line_type = line_type,
+    fill = fill,
+    fillcolor = fillcolor,
+    x_col = "time",
+    y_col = "value",
+    show_legend = show_legend,
+    mode = "lines",
+    type = type,
+    frame = frame
+  )
+}
+
+
+#' Build flow fill vectors for role-panel simulation plots
+#'
+#' @param labels Display labels in plot order.
+#' @param var_types Variable types named by display label.
+#' @param colors Colours named by display label.
+#' @param fill_flows Whether to fill flow traces.
+#' @returns List with fill and fillcolor vectors.
+#' @noRd
+flow_fill_aes <- function(labels, var_types, colors, fill_flows) {
+  fill <- stats::setNames(rep(NA_character_, length(labels)), labels)
+  fillcolor <- stats::setNames(rep(NA_character_, length(labels)), labels)
+  flow_labels <- labels[unname(var_types[labels]) == "flow"]
+  if (isTRUE(fill_flows) && length(flow_labels) > 0L) {
+    fill[flow_labels] <- "tozeroy"
+    fillcolor[flow_labels] <- vapply(colors[flow_labels], plotly_translucent_color, character(1))
+  }
+  list(fill = fill, fillcolor = fillcolor)
+}
+
+
+#' Resolve variable display layout for simulation plots
+#'
+#' @param vars_display Character layout choice.
+#' @returns One of "vstack", "hstack", or "joint".
+#' @noRd
+clean_vars_display <- function(vars_display) {
+  choices <- c("vstack", "hstack", "joint")
+  if (length(vars_display) > 1L) vars_display <- vars_display[[1L]]
+  if (!is.character(vars_display) || length(vars_display) != 1L ||
+    !vars_display %in% choices) {
+    cli::cli_abort(c(
+      "x" = "Invalid {.arg vars_display} value.",
+      "i" = "Use one of {.val {choices}}."
+    ))
+  }
+  vars_display
 }
 
 
@@ -1270,6 +1362,9 @@ prep_plot <- function(
 #' @param x Output of [`simulate()`][simulate.stockflow()].
 #' @param show_constants If `TRUE`, include constants in plot. Defaults to `FALSE`.
 #' @param vars Variables to plot. Defaults to `NULL` to plot all variables.
+#' @param order Optional character vector of model variable names giving the
+#'   trace and legend order. Listed variables appear first; any plotted
+#'   variables not listed keep their default relative order. Defaults to `NULL`.
 #' @param palette Colour palette. Must be one of hcl.pals().
 #' @param colors Colours for the plotted variables. A named vector (names are
 #'   variable names) sets the colours of those variables and the palette fills
@@ -1279,6 +1374,19 @@ prep_plot <- function(
 #'   value applied to all variables, a named per-variable vector (names are
 #'   variable names), or an unnamed vector with one value per variable in plot
 #'   order. Defaults to `2`.
+#' @param line_type Plotly line dash style for trajectories. Either a single
+#'   dash string applied to all variables, a named per-variable vector (names are
+#'   variable names), an unnamed vector in plot order, or a named list keyed by
+#'   variable type (`stock`, `flow`, `aux`, `constant`, `lookup`). Defaults to
+#'   solid stocks, flows, and auxiliaries, with dashed constants and lookups.
+#' @param vars_display How to arrange saved variables. Use `"vstack"` to stack
+#'   stocks above flows, auxiliaries, constants, and lookups; `"hstack"` to put
+#'   stocks beside non-stock variables; or `"joint"` to draw all variables in
+#'   one panel. If only one variable group is available, a single panel is
+#'   drawn. Defaults to `"vstack"`.
+#' @param fill_flows If `TRUE`, flow traces are filled
+#'   down to zero. Auxiliaries, constants, and lookups are never filled.
+#'   Defaults to `TRUE`.
 #' @param font_family Font family. Kebab-case names (e.g. `"eb-garamond"`)
 #'   are Fontsource ids (browse them at <https://fontsource.org/>), loaded as
 #'   webfonts: no installation is needed, but internet access is required to
@@ -1289,7 +1397,7 @@ prep_plot <- function(
 #'   e.g. in your .Rprofile.
 #' @param font_size Font size. Defaults to 16.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
-#' @param showlegend Whether to show legend. Must be `TRUE` or `FALSE`. Defaults to `TRUE`.
+#' @param show_legend Whether to show legend. Must be `TRUE` or `FALSE`. Defaults to `TRUE`.
 #' @param format_label If `TRUE`, apply default formatting (replacing periods and
 #'   underscores with spaces) to variable labels that are the same as the
 #'   variable name. Applies to the legend and any condition controls. Defaults to
@@ -1313,9 +1421,10 @@ prep_plot <- function(
 #' @param ... Optional parameters
 #'
 #' @section Styling variables:
-#' Names in `colors` and `line_width` refer to the model variable names, not the
-#' labels shown in the legend. This is usually the safest way to style a plot,
-#' because labels may be wrapped, prettified, or customized for display.
+#' Names in `colors`, `line_width`, and `line_type` refer to the model variable
+#' names, not the labels shown in the legend. This is usually the safest way to
+#' style a plot, because labels may be wrapped, prettified, or customized for
+#' display.
 #'
 #' Use one value to style every trajectory:
 #' `plot(sim, line_width = 3)`.
@@ -1344,6 +1453,10 @@ prep_plot <- function(
 #' # Add constants to the plot
 #' plot(sim, show_constants = TRUE)
 #'
+#' # Save and plot non-stock variables in a compact role-panel view
+#' sim_all <- simulate(sfm, only_stocks = FALSE)
+#' plot(sim_all, vars_display = "vstack", fill_flows = TRUE)
+#'
 #' # Cumulatively reveal the trajectories over time
 #' plot(sim, animation = "time")
 #'
@@ -1355,13 +1468,17 @@ prep_plot <- function(
 plot.simulate_stockflow <- function(x,
                                     show_constants = FALSE,
                                     vars = NULL,
+                                    order = NULL,
                                     palette = "Dark 2",
                                     colors = NULL,
                                     line_width = 2,
-                                    font_family = default_font_family(),
+                                    line_type = list(stock = "solid", flow = "solid", aux = "solid", constant = "dash", lookup = "dash"),
+                                    vars_display = c("vstack", "hstack", "joint"),
+                                    fill_flows = TRUE,
+                                    font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
                                     font_size = 16,
                                     wrap_width = 25,
-                                    showlegend = TRUE,
+                                    show_legend = TRUE,
                                     format_label = TRUE,
                                     animation = c("none", "time"),
                                     control_options = list(),
@@ -1395,7 +1512,7 @@ plot.simulate_stockflow <- function(x,
 
   # Validate common plot parameters
   validate_plot_params(
-    showlegend = showlegend,
+    show_legend = show_legend,
     vars = vars,
     palette = palette,
     colors = colors,
@@ -1405,6 +1522,13 @@ plot.simulate_stockflow <- function(x,
     format_label = format_label,
     webgl = webgl
   )
+  vars_display <- clean_vars_display(vars_display)
+  if (!is.logical(fill_flows) || length(fill_flows) != 1L || is.na(fill_flows)) {
+    cli::cli_abort(c(
+      "x" = "Invalid {.arg fill_flows} argument.",
+      "i" = "The {.arg fill_flows} argument must be {.cls logical}."
+    ))
+  }
 
   dots <- list(...)
 
@@ -1421,13 +1545,15 @@ plot.simulate_stockflow <- function(x,
 
   out <- prep_plot(
     x[["object"]], "sim", x[["df"]], x[["constants"]], show_constants,
-    vars, palette, colors, wrap_width, format_label
+    vars, palette, colors, wrap_width, format_label,
+    order = order
   )
   highlight_names <- out[["highlight_names"]]
   nonhighlight_names <- out[["nonhighlight_names"]]
   df_highlight <- out[["df_highlight"]]
   df_nonhighlight <- out[["df_nonhighlight"]]
   colors <- out[["colors"]]
+  var_types <- out[["var_types"]]
 
   # Resolve per-variable line widths keyed by variable name (a single value, a named
   # per-variable vector, or a positional vector). Trajectories are the only
@@ -1436,9 +1562,19 @@ plot.simulate_stockflow <- function(x,
     default = 2, arg = "line_width", validate = "positive",
     display_names = out[["labels"]], valid_names = out[["style_names"]]
   )
+  line_type <- resolve_line_type(line_type, out[["var_names"]], unname(var_types[out[["labels"]]]),
+    display_names = out[["labels"]], valid_names = out[["style_names"]]
+  )
+
+  labels <- out[["labels"]]
+  stock_labels <- labels[unname(var_types[labels]) == "stock"]
+  nonstock_labels <- labels[unname(var_types[labels]) %in% c("flow", "aux", "constant", "lookup")]
+  role_panels <- vars_display != "joint" && length(nonstock_labels) > 0L
+  fill_aes <- flow_fill_aes(labels, var_types, colors, fill_flows = fill_flows)
+  fills_flows <- any(!is.na(fill_aes[["fill"]]) & nzchar(fill_aes[["fill"]]))
 
   # For time animation, cumulatively reveal each trajectory frame by frame.
-  if (animation == "time") {
+  if (animation == "time" && !role_panels) {
     df_highlight <- accumulate_by_time(df_highlight,
       max_frames = control_options[["max_frames"]]
     )
@@ -1450,25 +1586,118 @@ plot.simulate_stockflow <- function(x,
     frame <- NULL
   }
 
-  # Initialize plotly object
-  pl <- plotly::plot_ly()
+  # WebGL is fast for ordinary lines, but Plotly fill areas and animation frames
+  # need SVG scatter for reliable rendering.
+  if (fills_flows && isTRUE(webgl) && animation != "time") {
+    cli::cli_warn(c(
+      "!" = "Filled flow traces require Plotly SVG scatter traces.",
+      ">" = "Using {.code webgl = FALSE} for this plot."
+    ))
+  }
+  trace_type <- if (webgl && animation != "time" && !fills_flows) "scattergl" else "scatter"
 
-  # Add traces for highlight and nonhighlight variables. WebGL (scattergl) is
-  # used for performance, but plotly animation frames are unreliable under gl, so
-  # fall back to SVG scatter when animating.
-  trace_type <- if (webgl && animation != "time") "scattergl" else "scatter"
-  pl <- add_trace_pair(pl,
-    df_highlight = df_highlight,
-    df_nonhighlight = df_nonhighlight,
-    colors = colors,
-    line_width = line_width,
-    x_col = "time",
-    y_col = "value",
-    showlegend = showlegend,
-    mode = "lines",
-    type = trace_type,
-    frame = frame
-  )
+  if (role_panels) {
+    df_all <- combine_prepped_sim_data(out)
+    panels <- list()
+    frame_panels <- list()
+    if (length(stock_labels) > 0L) {
+      df_stock <- df_all[as.character(df_all[["variable"]]) %in% stock_labels, , drop = FALSE]
+      panels[["stock"]] <- build_sim_trace_panel(df_stock,
+        colors = colors, line_width = line_width, line_type = line_type,
+        show_legend = show_legend, type = trace_type,
+        frame = NULL
+      )
+      if (animation == "time") {
+        df_stock_frame <- accumulate_by_time(df_stock, max_frames = control_options[["max_frames"]])
+        frame_panels[["stock"]] <- build_sim_trace_panel(df_stock_frame,
+          colors = colors, line_width = line_width, line_type = line_type,
+          show_legend = show_legend, type = trace_type,
+          frame = ~.frame
+        )
+      }
+    }
+    if (length(nonstock_labels) > 0L) {
+      df_nonstock <- df_all[as.character(df_all[["variable"]]) %in% nonstock_labels, , drop = FALSE]
+      panels[["nonstock"]] <- build_sim_trace_panel(df_nonstock,
+        colors = colors, line_width = line_width, line_type = line_type,
+        fill = fill_aes[["fill"]], fillcolor = fill_aes[["fillcolor"]],
+        show_legend = show_legend, type = trace_type,
+        frame = NULL
+      )
+      if (animation == "time") {
+        df_nonstock_frame <- accumulate_by_time(df_nonstock, max_frames = control_options[["max_frames"]])
+        frame_panels[["nonstock"]] <- build_sim_trace_panel(df_nonstock_frame,
+          colors = colors, line_width = line_width, line_type = line_type,
+          fill = fill_aes[["fill"]], fillcolor = fill_aes[["fillcolor"]],
+          show_legend = show_legend, type = trace_type,
+          frame = ~.frame
+        )
+      }
+    }
+
+    if (length(panels) > 1L) {
+      subplot_args <- if (vars_display == "hstack") {
+        list(nrows = 1L, heights = NULL, widths = c(0.5, 0.5), shareX = FALSE)
+      } else {
+        list(nrows = length(panels), heights = c(0.5, 0.5), widths = NULL, shareX = TRUE)
+      }
+      if (animation == "time") {
+        pl <- subplot_linked_animation(unname(panels),
+          frame_plots = unname(frame_panels),
+          nrows = subplot_args[["nrows"]],
+          heights = subplot_args[["heights"]],
+          widths = subplot_args[["widths"]],
+          margin = 0.06, shareX = subplot_args[["shareX"]], titleY = TRUE
+        )
+      } else {
+        pl <- do.call(plotly::subplot, c(unname(panels), list(
+          nrows = subplot_args[["nrows"]],
+          heights = subplot_args[["heights"]],
+          widths = subplot_args[["widths"]],
+          margin = 0.06, shareX = subplot_args[["shareX"]], titleY = TRUE
+        )))
+      }
+    } else {
+      pl <- if (animation == "time") frame_panels[[1L]] else panels[[1L]]
+    }
+
+    n_frames <- if (animation == "time") {
+      length(unique(unlist(lapply(frame_panels, function(panel) {
+        frames <- plotly::plotly_build(panel)[["x"]][["frames"]]
+        vapply(frames, function(frame) frame[["name"]], character(1))
+      }))))
+    } else {
+      0L
+    }
+  } else {
+    # Initialize plotly object
+    pl <- plotly::plot_ly()
+
+    # Add traces for highlight and nonhighlight variables. WebGL (scattergl) is
+    # used for performance, but plotly animation frames are unreliable under gl, so
+    # fall back to SVG scatter when animating.
+    pl <- add_trace_pair(pl,
+      df_highlight = df_highlight,
+      df_nonhighlight = df_nonhighlight,
+      colors = colors,
+      line_width = line_width,
+      line_type = line_type,
+      fill = fill_aes[["fill"]],
+      fillcolor = fill_aes[["fillcolor"]],
+      x_col = "time",
+      y_col = "value",
+      show_legend = show_legend,
+      mode = "lines",
+      type = trace_type,
+      frame = frame,
+      trace_order = if (!is.null(order)) labels else NULL
+    )
+    n_frames <- if (animation == "time") {
+      length(unique(c(df_highlight[[".frame"]], df_nonhighlight[[".frame"]])))
+    } else {
+      0L
+    }
+  }
 
   # Customize layout using theme
   theme <- plotly_theme(
@@ -1479,35 +1708,53 @@ plot.simulate_stockflow <- function(x,
   pl <- plotly::layout(pl,
     legend = theme$legend,
     title = main,
-    xaxis = list(title = xlab, font = list(size = font_size)),
+    xaxis = list(title = if (role_panels && vars_display == "hstack") "" else xlab, font = list(size = font_size)),
+    xaxis2 = if (role_panels && vars_display == "hstack" && length(stock_labels) > 0L && length(nonstock_labels) > 0L) list(title = "", font = list(size = font_size)) else NULL,
     yaxis = list(title = ylab, font = list(size = font_size)),
+    yaxis2 = if (role_panels && length(stock_labels) > 0L && length(nonstock_labels) > 0L) list(title = ylab, font = list(size = font_size)) else NULL,
     font = theme$font,
     margin = theme$margin
   )
 
+  if (role_panels && vars_display == "hstack" && nzchar(xlab)) {
+    pl <- plotly::layout(pl,
+      margin = list(b = max(theme$margin$b, 75)),
+      annotations = list(list(
+        text = xlab,
+        x = 0.5,
+        y = -0.16,
+        xref = "paper",
+        yref = "paper",
+        xanchor = "center",
+        yanchor = "top",
+        showarrow = FALSE,
+        font = list(size = font_size, family = font_family)
+      ))
+    )
+  }
+
   # If there is only one trace, legend doesn't show
-  if (showlegend && (length(highlight_names) + length(nonhighlight_names)) == 1) {
+  if (show_legend && (length(highlight_names) + length(nonhighlight_names)) == 1) {
     pl <- plotly::layout(pl, showlegend = TRUE)
   }
 
   # Set x-axis limits if specified
   if ("xlim" %in% names(dots)) {
     pl <- plotly::layout(pl,
-      xaxis = list(range = dots[["xlim"]])
+      xaxis = list(range = dots[["xlim"]]),
+      xaxis2 = if (role_panels && vars_display == "hstack" && length(stock_labels) > 0L && length(nonstock_labels) > 0L) list(range = dots[["xlim"]]) else NULL
     )
   }
 
   if ("ylim" %in% names(dots)) {
     pl <- plotly::layout(pl,
-      yaxis = list(range = dots[["ylim"]])
+      yaxis = list(range = dots[["ylim"]]),
+      yaxis2 = if (role_panels && length(stock_labels) > 0L && length(nonstock_labels) > 0L) list(range = dots[["ylim"]]) else NULL
     )
   }
 
   # Add play button and time slider for the cumulative reveal animation.
   if (animation == "time") {
-    n_frames <- length(unique(c(
-      df_highlight[[".frame"]], df_nonhighlight[[".frame"]]
-    )))
     pl <- add_time_animation_controls(pl,
       time_unit = if (is.null(time_unit)) "" else time_unit,
       font_family = font_family,
@@ -1560,7 +1807,7 @@ plot.simulate_stockflow <- function(x,
 #'   e.g. in your .Rprofile.
 #' @param font_size Font size. Defaults to 16.
 #' @param wrap_width Width of text wrapping for labels. Must be an integer. Defaults to 25.
-#' @param showlegend Whether to show legend. Must be TRUE or FALSE. Defaults to TRUE.
+#' @param show_legend Whether to show legend. Must be TRUE or FALSE. Defaults to TRUE.
 #' @param label_subplots Whether to plot labels indicating the condition of the subplot.
 #' @param central Which central-tendency line to draw, given as preferences in
 #'   order: the first one that [ensemble()] computed is used. For example,
@@ -1639,6 +1886,7 @@ plot.ensemble_stockflow <- function(x,
                                     sim = seq(1, min(c(x[["n"]], 100))),
                                     condition = seq(1, min(c(x[["n_conditions"]], 9))),
                                     vars = NULL,
+                                    order = NULL,
                                     show_constants = FALSE,
                                     nrows = ceiling(sqrt(max(condition))),
                                     margin = .05,
@@ -1648,10 +1896,10 @@ plot.ensemble_stockflow <- function(x,
                                     alpha = list(central = 1, spread = 0.3, sims = 0.3),
                                     colors = NULL,
                                     line_width = list(central = 3, spread = 0, sims = 1),
-                                    font_family = default_font_family(),
+                                    font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
                                     font_size = 16,
                                     wrap_width = 25,
-                                    showlegend = TRUE,
+                                    show_legend = TRUE,
                                     label_subplots = TRUE,
                                     central = c("mean", "median", "none"),
                                     spread = c("quantile", "sd", "range"),
@@ -1678,7 +1926,7 @@ plot.ensemble_stockflow <- function(x,
 
   # Validate common plot parameters
   validate_plot_params(
-    showlegend = showlegend,
+    show_legend = show_legend,
     vars = vars,
     palette = palette,
     colors = colors,
@@ -1891,7 +2139,7 @@ plot.ensemble_stockflow <- function(x,
   out <- prep_plot(x[["object"]], "ensemble", summary_df,
     constants = x[["constants"]][["summary"]], show_constants = show_constants,
     vars = vars, palette = palette, colors = colors,
-    wrap_width = wrap_width, format_label = format_label
+    wrap_width = wrap_width, format_label = format_label, order = order
   )
   summary_df_highlight <- out[["df_highlight"]]
   summary_df_nonhighlight <- out[["df_nonhighlight"]]
@@ -1922,7 +2170,7 @@ plot.ensemble_stockflow <- function(x,
     out <- prep_plot(x[["object"]], "ensemble", df,
       constants = x[["constants"]][["df"]], show_constants = show_constants,
       vars = vars, palette = palette, colors = user_colors,
-      wrap_width = wrap_width, format_label = format_label
+      wrap_width = wrap_width, format_label = format_label, order = order
     )
     df_highlight <- out[["df_highlight"]]
     df_nonhighlight <- out[["df_nonhighlight"]]
@@ -2011,7 +2259,7 @@ plot.ensemble_stockflow <- function(x,
         q_high = q_high,
         mode = mode,
         colors = colors,
-        showlegend = showlegend,
+        show_legend = show_legend,
         dots = dots,
         main = main,
         xlab = xlab, ylab = ylab,
@@ -2069,7 +2317,7 @@ plot.ensemble_stockflow <- function(x,
       q_high = q_high,
       mode = mode,
       colors = colors,
-      showlegend = showlegend,
+      show_legend = show_legend,
       dots = dots,
       main = main,
       xlab = xlab, ylab = ylab,
@@ -2108,7 +2356,7 @@ plot.ensemble_stockflow <- function(x,
         mode = mode,
         colors = colors,
         # Only show legend if it's the last subplot
-        showlegend = ifelse(j_idx != length(condition), FALSE, showlegend),
+        show_legend = ifelse(j_idx != length(condition), FALSE, show_legend),
         dots = dots,
         main = main,
         xlab = xlab, ylab = ylab,
@@ -2329,7 +2577,7 @@ plot_ensemble_helper <- function(subplot_label,
                                  lw, al,
                                  q_low, q_high,
                                  mode,
-                                 colors, showlegend, dots,
+                                 colors, show_legend, dots,
                                  main, xlab, ylab,
                                  font_family, font_size, theme,
                                  frame = NULL, webgl = TRUE) {
@@ -2449,7 +2697,7 @@ plot_ensemble_helper <- function(subplot_label,
 
     # One legend entry per variable, but only when there is no summary trace to
     # carry the legend (otherwise it would be duplicated).
-    sim_showlegend <- if (plot_summary) FALSE else showlegend
+    sim_showlegend <- if (plot_summary) FALSE else show_legend
 
     # break_for_traces() inserts NA spacer rows between sims (and, when animating,
     # within each frame) so a single scattergl trace renders each sim as its own
@@ -2550,7 +2798,7 @@ plot_ensemble_helper <- function(subplot_label,
         list(pl,
           data = data, x = ~time, y = ~ get(central_tendency),
           color = ~variable, legendgroup = ~variable, type = "scatter",
-          mode = mode, colors = colors, showlegend = showlegend
+          mode = mode, colors = colors, showlegend = show_legend
         ),
         extra_uniform
       )
@@ -2570,7 +2818,7 @@ plot_ensemble_helper <- function(subplot_label,
         list(pl,
           data = dv, x = ~time, y = ~ get(central_tendency),
           name = v, legendgroup = v, type = "scatter", mode = mode,
-          showlegend = showlegend
+          showlegend = show_legend
         ),
         extra_by_var(v, dv)
       )
@@ -2652,7 +2900,7 @@ plot_ensemble_helper <- function(subplot_label,
   )
 
   # If there is only one trace, legend doesn't show
-  if (showlegend && (nr_var == 1)) {
+  if (show_legend && (nr_var == 1)) {
     pl <- plotly::layout(pl, showlegend = TRUE)
   }
 
@@ -2744,7 +2992,7 @@ plot_ensemble_helper <- function(subplot_label,
 #'   e.g. in your .Rprofile.
 #' @param font_size Font size. Defaults to `16`.
 #' @param wrap_width Label wrap width. Defaults to `25`.
-#' @param showlegend Whether to show the legend. Defaults to `TRUE`.
+#' @param show_legend Whether to show the legend. Defaults to `TRUE`.
 #' @param label_subplots Whether to title each subplot with its condition's
 #'   parameter overrides (or `"Baseline"`) and test number(s), e.g.
 #'   `"rate = 0 (test 2)"`. Defaults to `TRUE`.
@@ -2794,6 +3042,7 @@ plot_ensemble_helper <- function(subplot_label,
 plot.verify_stockflow <- function(x,
                                   test = NULL,
                                   vars = NULL,
+                                  order = NULL,
                                   show_constants = FALSE,
                                   label = NULL,
                                   ignore_case = TRUE,
@@ -2805,10 +3054,10 @@ plot.verify_stockflow <- function(x,
                                   palette = "Dark 2",
                                   colors = NULL,
                                   line_width = 2,
-                                  font_family = default_font_family(),
+                                  font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
                                   font_size = 16,
                                   wrap_width = 25,
-                                  showlegend = TRUE,
+                                  show_legend = TRUE,
                                   label_subplots = TRUE,
                                   alpha = 1,
                                   margin = .05,
@@ -2834,7 +3083,7 @@ plot.verify_stockflow <- function(x,
 
   # Validate common plot parameters
   validate_plot_params(
-    showlegend = showlegend,
+    show_legend = show_legend,
     vars = vars,
     palette = palette,
     colors = colors,
@@ -2934,7 +3183,7 @@ plot.verify_stockflow <- function(x,
   out <- prep_plot(sfm, "verify", df,
     constants = constants, show_constants = show_constants,
     vars = vars, palette = palette, colors = colors,
-    wrap_width = wrap_width, format_label = format_label
+    wrap_width = wrap_width, format_label = format_label, order = order
   )
   df_highlight <- out[["df_highlight"]]
   df_nonhighlight <- out[["df_nonhighlight"]]
@@ -3028,7 +3277,7 @@ plot.verify_stockflow <- function(x,
         q_high = q_high,
         mode = mode,
         colors = colors,
-        showlegend = showlegend,
+        show_legend = show_legend,
         dots = dots,
         main = main,
         xlab = xlab, ylab = ylab,
@@ -3074,7 +3323,7 @@ plot.verify_stockflow <- function(x,
       q_high = q_high,
       mode = mode,
       colors = colors,
-      showlegend = showlegend,
+      show_legend = show_legend,
       dots = dots,
       main = main,
       xlab = xlab, ylab = ylab,
@@ -3111,7 +3360,7 @@ plot.verify_stockflow <- function(x,
         mode = mode,
         colors = colors,
         # Only show legend if it's the last subplot
-        showlegend = ifelse(j_idx != length(condition), FALSE, showlegend),
+        show_legend = ifelse(j_idx != length(condition), FALSE, show_legend),
         dots = dots,
         main = main,
         xlab = xlab, ylab = ylab,

@@ -7,10 +7,10 @@ test_that("plot() creates a basic plot for simulation", {
   stock_labels <- df$label[df$type == "stock"]
   n_stocks <- length(stock_labels)
 
-  # Default is show only stocks and showlegend = TRUE
+  # Default is show only stocks and show_legend = TRUE
   trace_info <- plotly_traces(result)
   expect_setequal(trace_info[["name"]], stock_labels)
-  expect_true(all(trace_info[["showlegend"]]))
+  expect_true(all(trace_info[["show_legend"]]))
 })
 
 test_that("plot() method exists for simulate_stockflow objects", {
@@ -21,12 +21,12 @@ test_that("plot() method exists for simulate_stockflow objects", {
 # PARAMETER VALIDATION TESTS
 # ============================================================================
 
-test_that("plot() validates showlegend as logical", {
+test_that("plot() validates show_legend as logical", {
   sim <- sir_sim()
 
   expect_error(
-    plot(sim, showlegend = "yes"),
-    "showlegend"
+    plot(sim, show_legend = "yes"),
+    "show_legend"
   )
 })
 
@@ -153,6 +153,22 @@ trace_line_widths <- function(pl) {
   }, numeric(1))
 }
 
+trace_line_dashes <- function(pl) {
+  traces <- plotly::plotly_build(pl)[["x"]][["data"]]
+  vapply(traces, function(t) {
+    dash <- t[["line"]][["dash"]]
+    if (is.null(dash)) NA_character_ else as.character(dash)[1L]
+  }, character(1))
+}
+
+trace_fills <- function(pl) {
+  traces <- plotly::plotly_build(pl)[["x"]][["data"]]
+  vapply(traces, function(t) {
+    fill <- t[["fill"]]
+    if (is.null(fill)) NA_character_ else as.character(fill)[1L]
+  }, character(1))
+}
+
 test_that("plot() validates line_width as positive numeric", {
   sim <- sir_sim()
 
@@ -185,7 +201,7 @@ test_that("plot() applies a per-variable line_width vector", {
   n <- length(unique(as.data.frame(sim)[["variable"]]))
   lw <- seq_len(n)
 
-  pl <- plot(sim, line_width = lw)
+  pl <- plot(sim, line_width = lw, webgl = FALSE)
   widths <- trace_line_widths(pl)
 
   # Each requested width must appear exactly once across the traces.
@@ -196,6 +212,38 @@ test_that("plot() defaults to a line width of 2", {
   sim <- sir_sim()
   widths <- trace_line_widths(plot(sim))
   expect_true(all(widths == 2, na.rm = TRUE))
+})
+
+test_that("plot() validates line_type dash strings", {
+  sim <- sir_sim()
+  valid <- c("solid", "dot", "dash", "longdash", "dashdot", "longdashdot", "5px,10px,2px,2px")
+
+  for (dash in valid) {
+    expect_no_error(plot(sim, line_type = dash, webgl = FALSE))
+  }
+  expect_error(plot(sim, line_type = "wiggle", webgl = FALSE), "line_type")
+})
+
+test_that("plot() applies named and type-keyed line_type styles", {
+  sim <- sir_sim(only_stocks = FALSE)
+  names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
+  label_for <- stats::setNames(names_df[["label"]], names_df[["name"]])
+
+  pl_named <- plot(sim,
+    webgl = FALSE,
+    line_type = c(susceptible = "dot", new_infections = "5px,10px,2px,2px")
+  )
+  dashes_named <- stats::setNames(trace_line_dashes(pl_named), plotly_traces(pl_named)[["name"]])
+  expect_equal(dashes_named[[label_for[["susceptible"]]]], "dot")
+  expect_equal(dashes_named[[label_for[["new_infections"]]]], "5px,10px,2px,2px")
+
+  pl_type <- plot(sim, webgl = FALSE, line_type = list(stock = "dash", flow = "dot"))
+  traces_type <- plotly_traces(pl_type)
+  dashes_type <- stats::setNames(trace_line_dashes(pl_type), traces_type[["name"]])
+  stock_labels <- names_df[["label"]][names_df[["type"]] == "stock"]
+  flow_labels <- names_df[["label"]][names_df[["type"]] == "flow"]
+  expect_true(all(dashes_type[stock_labels] == "dash"))
+  expect_true(all(dashes_type[flow_labels] == "dot"))
 })
 
 # ============================================================================
@@ -212,28 +260,28 @@ test_that("plot() creates standard line plot for SIR simulation", {
   stock_labels <- df$label[df$type == "stock"]
   trace_info <- plotly_traces(pl)
   expect_setequal(trace_info[["name"]], stock_labels)
-  expect_true(all(trace_info$showlegend))
+  expect_true(all(trace_info$show_legend))
 
   expect_snapshot_plot("sim-sir-default", pl)
 })
 
-test_that("plot.simulate_stockflow() respects showlegend", {
+test_that("plot.simulate_stockflow() respects show_legend", {
   sim <- sir_sim()
   # Object-level expectations: legend toggles should reflect in built Plotly object
-  pl_true <- plot(sim, showlegend = TRUE)
-  pl_false <- plot(sim, showlegend = FALSE)
+  pl_true <- plot(sim, show_legend = TRUE)
+  pl_false <- plot(sim, show_legend = FALSE)
   expect_plotly(pl_true)
   expect_plotly(pl_false)
   traces_true <- plotly_traces(pl_true)
   traces_false <- plotly_traces(pl_false)
   expect_true(nrow(traces_true) > 0)
-  expect_true(all(traces_true$showlegend))
+  expect_true(all(traces_true$show_legend))
   expect_true(nrow(traces_false) > 0)
-  expect_true(all(!(traces_false$showlegend)))
+  expect_true(all(!(traces_false$show_legend)))
 
   # Snapshots last
   expect_snapshot_plot(
-    c("sim-showlegend-true", "sim-showlegend-false"),
+    c("sim-show_legend-true", "sim-show_legend-false"),
     list(pl_true, pl_false)
   )
 })
@@ -326,6 +374,45 @@ test_that("plot.simulate_stockflow() maps trace labels to source data and named 
   }
 })
 
+test_that("plot.simulate_stockflow() orders traces before applying aesthetics", {
+  sim <- sir_sim(only_stocks = FALSE)
+  names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = "label")
+  requested_order <- c("new_recoveries", "susceptible", "new_infections", "infected", "recovered")
+  expected_labels <- names_df[["label"]][match(requested_order, names_df[["name"]])]
+  colors <- stats::setNames(
+    c("red", "blue", "green", "purple", "orange"),
+    rev(requested_order)
+  )
+
+  pl <- plot(sim,
+    vars_display = "joint", order = requested_order,
+    colors = colors, webgl = FALSE
+  )
+  traces <- plotly_traces(pl)
+
+  expect_equal(traces[["name"]], expected_labels)
+  for (i in seq_along(requested_order)) {
+    expect_equal(
+      traces[["color"]][i],
+      normalize_color_string(colors[[requested_order[[i]]]])
+    )
+  }
+})
+
+test_that("plot.simulate_stockflow() validates and filters order", {
+  sim <- sir_sim(only_stocks = TRUE)
+
+  expect_error(plot(sim, order = "not_a_variable"), "order")
+  expect_error(plot(sim, order = numeric(1)), "order")
+  expect_error(plot(sim, order = ""), "order")
+
+  expect_warning(
+    pl <- plot(sim, order = c("new_infections", "infected")),
+    "not shown"
+  )
+  expect_equal(plotly_traces(pl)[["name"]][1], "Infected")
+})
+
 test_that("plot.simulate_stockflow() maps default palette colors to the correct labels", {
   # Regression test: with both stocks (highlight) and non-stocks (nonhighlight)
   # present and the default palette (colors = NULL), colours were assigned
@@ -393,7 +480,7 @@ test_that("plot.simulate_stockflow() with custom wrap width", {
     from = !!stock_name_clean
   )
   sim <- simulate(sfm, only_stocks = FALSE)
-  pl <- plot(sim, wrap_width = 10)
+  pl <- plot(sim, wrap_width = 10, webgl = FALSE)
   expect_plotly(pl)
   traces <- plotly_traces(pl)
   expect_true(all(grepl("<br", traces[["name"]])))
@@ -450,12 +537,12 @@ test_that("plot.simulate_stockflow() shows legend for single-variable plot", {
   sfm <- stockflow()
   sfm <- update(sfm, "Stock1", type = "stock")
   sim <- simulate(sfm)
-  pl <- plot(sim, showlegend = TRUE)
+  pl <- plot(sim, show_legend = TRUE, webgl = FALSE)
   expect_plotly(pl)
   trace_info <- plotly_traces(pl)
   expect_equal(nrow(trace_info), 1L)
   expect_equal(trace_info$name, "Stock1")
-  expect_true(all(trace_info$showlegend))
+  expect_true(all(trace_info$show_legend))
   expect_snapshot_plot("sim-single-var-legend", pl)
 })
 
@@ -464,13 +551,159 @@ test_that("plot.simulate_stockflow() works with both stocks and flow variables",
   sim <- sir_sim(only_stocks = FALSE)
   df <- as.data.frame(sim, direction = "long")
   var_names <- unique(df$variable)
-  pl <- plot(sim, showlegend = TRUE)
+  pl <- plot(sim, show_legend = TRUE, webgl = FALSE)
   expect_plotly(pl)
   trace_info <- plotly_traces(pl)
   expect_equal(nrow(trace_info), length(var_names))
-  expect_true(all(trace_info$showlegend))
+  expect_true(all(trace_info$show_legend))
 
   expect_snapshot_plot("sim-only-stocks-false", pl)
+})
+
+test_that("plot.simulate_stockflow() separates stocks from non-stock variables", {
+  sim <- sir_sim(only_stocks = FALSE)
+  names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
+  stock_labels <- names_df[["label"]][names_df[["type"]] == "stock"]
+  flow_labels <- names_df[["label"]][names_df[["type"]] == "flow"]
+
+  pl <- plot(sim, webgl = FALSE)
+  info <- plotly_subplot_grid(pl)
+  expect_true(info$is_subplot)
+  expect_equal(info$nrows, 2L)
+  expect_equal(info$ncols, 1L)
+  expect_equal(info$n_yaxes, 2L)
+  expect_true(info$shareX)
+
+  layout <- plotly_layout(pl)
+  y_domains <- list(layout[["yaxis"]][["domain"]], layout[["yaxis2"]][["domain"]])
+  y_heights <- vapply(y_domains, function(domain) diff(as.numeric(domain)), numeric(1))
+  expect_equal(unname(y_heights[1]), unname(y_heights[2]), tolerance = 0.01)
+
+  traces <- plotly_traces(pl)
+  expect_setequal(traces[["name"]][traces[["yaxis"]] == "y"], stock_labels)
+  expect_setequal(traces[["name"]][traces[["yaxis"]] == "y2"], flow_labels)
+  expect_true(all(traces[["visible"]] == "TRUE"))
+
+  fills <- stats::setNames(trace_fills(pl), traces[["name"]])
+  expect_true(all(fills[flow_labels] == "tozeroy"))
+  expect_true(all(is.na(fills[stock_labels])))
+})
+
+test_that("plot.simulate_stockflow() can put role panels side by side", {
+  sim <- sir_sim(only_stocks = FALSE)
+  names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
+  stock_labels <- names_df[["label"]][names_df[["type"]] == "stock"]
+  flow_labels <- names_df[["label"]][names_df[["type"]] == "flow"]
+
+  pl <- plot(sim, webgl = FALSE, vars_display = "hstack", xlab = "Shared time")
+  info <- plotly_subplot_grid(pl)
+  expect_true(info$is_subplot)
+  expect_equal(info$nrows, 1L)
+  expect_equal(info$ncols, 2L)
+  expect_equal(info$n_xaxes, 2L)
+  expect_equal(info$n_yaxes, 2L)
+  expect_false(info$shareY)
+
+  layout <- plotly_layout(pl)
+  x_domains <- list(layout[["xaxis"]][["domain"]], layout[["xaxis2"]][["domain"]])
+  x_widths <- vapply(x_domains, function(domain) diff(as.numeric(domain)), numeric(1))
+  expect_equal(unname(x_widths[1]), unname(x_widths[2]), tolerance = 0.01)
+
+  traces <- plotly_traces(pl)
+  expect_setequal(traces[["name"]][traces[["xaxis"]] == "x"], stock_labels)
+  expect_setequal(traces[["name"]][traces[["xaxis"]] == "x2"], flow_labels)
+  expect_setequal(traces[["name"]][traces[["yaxis"]] == "y"], stock_labels)
+  expect_setequal(traces[["name"]][traces[["yaxis"]] == "y2"], flow_labels)
+
+  fills <- stats::setNames(trace_fills(pl), traces[["name"]])
+  expect_true(all(fills[flow_labels] == "tozeroy"))
+  expect_true(all(is.na(fills[stock_labels])))
+
+  expect_equal(layout[["xaxis"]][["title"]], "")
+  expect_equal(layout[["xaxis2"]][["title"]], "")
+  x_titles <- vapply(layout[["annotations"]], function(annotation) {
+    annotation[["text"]] %||% NA_character_
+  }, character(1))
+  expect_equal(sum(x_titles == "Shared time", na.rm = TRUE), 1L)
+  x_title <- layout[["annotations"]][[which(x_titles == "Shared time")]]
+  expect_equal(x_title[["x"]], 0.5)
+  expect_equal(x_title[["xref"]], "paper")
+  expect_equal(x_title[["xanchor"]], "center")
+})
+
+test_that("plot.simulate_stockflow() can leave flow traces unfilled", {
+  sim <- sir_sim(only_stocks = FALSE)
+  names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
+  flow_labels <- names_df[["label"]][names_df[["type"]] == "flow"]
+
+  pl <- plot(sim, webgl = FALSE, fill_flows = FALSE)
+  traces <- plotly_traces(pl)
+  fills <- stats::setNames(trace_fills(pl), traces[["name"]])
+  expect_true(all(is.na(fills[flow_labels])))
+})
+
+test_that("plot.simulate_stockflow() preserves combined view when requested", {
+  sim <- sir_sim(only_stocks = FALSE)
+  names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
+  stock_labels <- names_df[["label"]][names_df[["type"]] == "stock"]
+  flow_labels <- names_df[["label"]][names_df[["type"]] == "flow"]
+
+  pl <- plot(sim, webgl = FALSE, vars_display = "joint")
+
+  info <- plotly_subplot_grid(pl)
+  expect_false(info$is_subplot)
+  traces <- plotly_traces(pl)
+  expect_true(all(traces[["yaxis"]] == "y"))
+
+  fills <- stats::setNames(trace_fills(pl), traces[["name"]])
+  expect_true(all(fills[flow_labels] == "tozeroy"))
+  expect_true(all(is.na(fills[stock_labels])))
+})
+
+test_that("plot.simulate_stockflow() can leave joint flow traces unfilled", {
+  sim <- sir_sim(only_stocks = FALSE)
+  names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
+  flow_labels <- names_df[["label"]][names_df[["type"]] == "flow"]
+
+  pl <- plot(sim, webgl = FALSE, vars_display = "joint", fill_flows = FALSE)
+  traces <- plotly_traces(pl)
+  fills <- stats::setNames(trace_fills(pl), traces[["name"]])
+  expect_true(all(is.na(fills[flow_labels])))
+})
+
+test_that("plot.simulate_stockflow() validates vars_display", {
+  sim <- sir_sim()
+  expect_error(plot(sim, vars_display = "rows"), "vars_display")
+})
+
+test_that("plot.simulate_stockflow() warns and falls back from WebGL for filled flows", {
+  sim <- sir_sim(only_stocks = FALSE)
+  expect_warning(
+    pl <- plot(sim, webgl = TRUE),
+    "SVG scatter"
+  )
+  types <- vapply(plotly::plotly_build(pl)[["x"]][["data"]], function(trace) {
+    trace[["type"]] %||% ""
+  }, character(1))
+  expect_false(any(types == "scattergl"))
+})
+
+test_that("plot.simulate_stockflow() draws constants unfilled and dashed in non-stock panel", {
+  sfm <- stockflow() |>
+    update("Stock1", type = "stock") |>
+    update("const_val", type = "constant", eqn = "75")
+  sim <- simulate(sfm)
+
+  pl <- plot(sim, vars = c("Stock1", "const_val"), webgl = FALSE)
+  traces <- plotly_traces(pl)
+  const_label <- format_label_default("const_val")
+  const_row <- traces[traces[["name"]] == const_label, , drop = FALSE]
+  expect_equal(const_row[["yaxis"]], "y2")
+
+  fills <- stats::setNames(trace_fills(pl), traces[["name"]])
+  dashes <- stats::setNames(trace_line_dashes(pl), traces[["name"]])
+  expect_true(is.na(fills[[const_label]]))
+  expect_equal(dashes[[const_label]], "dash")
 })
 
 test_that("plot.simulate_stockflow() handles variables with duplicate display labels", {
@@ -616,7 +849,9 @@ test_that("time animation builds cleanly when a variable is NaN at time zero", {
   expect_equal(built$x$frames[[1]]$name, as.character(min(all_times)))
   max_consecutive_finite <- function(y) {
     fin <- is.finite(unlist(y))
-    if (!any(fin)) return(0L)
+    if (!any(fin)) {
+      return(0L)
+    }
     runs <- rle(fin)
     max(runs$lengths[runs$values])
   }
@@ -681,6 +916,42 @@ test_that("plot.simulate_stockflow() rejects invalid control_options", {
   expect_error(plot(sim, control_options = list(transition_ms = -1)), "transition_ms")
   expect_error(plot(sim, control_options = list(max_frames = 1)), "max_frames")
   expect_error(plot(sim, control_options = list(duration = 0)), "duration")
+})
+
+test_that("plot.simulate_stockflow() preserves role panels in time animation", {
+  sim <- sir_sim(only_stocks = FALSE)
+  names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
+  flow_labels <- names_df[["label"]][names_df[["type"]] == "flow"]
+
+  pl <- plot(sim, animation = "time", webgl = FALSE)
+  built <- plotly::plotly_build(pl)[["x"]]
+  traces <- plotly_traces(pl)
+  expect_setequal(unique(traces[["yaxis"]]), c("y", "y2"))
+  expect_true(length(built[["frames"]]) > 0L)
+
+  flow_trace_idx <- which(traces[["name"]] %in% flow_labels)
+  expect_true(length(flow_trace_idx) > 0L)
+  first_frame <- built[["frames"]][[1L]]
+  expect_setequal(first_frame[["traces"]], seq_along(built[["data"]]) - 1L)
+
+  frame_hits <- match(flow_trace_idx - 1L, first_frame[["traces"]])
+  frame_fills <- vapply(first_frame[["data"]][frame_hits], function(trace) {
+    fill <- trace[["fill"]]
+    if (is.null(fill)) NA_character_ else as.character(fill)[1L]
+  }, character(1))
+  expect_true(all(frame_fills == "tozeroy"))
+})
+
+test_that("plot.simulate_stockflow() preserves hstack panels in time animation", {
+  sim <- sir_sim(only_stocks = FALSE)
+  pl <- plot(sim, animation = "time", vars_display = "hstack", webgl = FALSE)
+  built <- plotly::plotly_build(pl)[["x"]]
+  traces <- plotly_traces(pl)
+
+  expect_setequal(unique(traces[["xaxis"]]), c("x", "x2"))
+  expect_setequal(unique(traces[["yaxis"]]), c("y", "y2"))
+  expect_true(length(built[["frames"]]) > 0L)
+  expect_setequal(built[["frames"]][[1L]][["traces"]], seq_along(built[["data"]]) - 1L)
 })
 
 test_that("plot.simulate_stockflow() webgl toggles trace type", {
