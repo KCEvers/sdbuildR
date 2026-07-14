@@ -2437,6 +2437,9 @@ swap_onrender_js <- function() {
 #' @param spacing Optional pixel gap between stacked controls (see
 #'   control_geometry()). NULL uses the type-specific default.
 #' @param format_label Whether to prettify parameter names lacking a custom label.
+#' @param tick_labels Whether to show the slider's rail tick labels. When FALSE
+#'   the rail labels are hidden (useful when the condition labels are long) but
+#'   the currently selected label still shows in the slider title.
 #' @returns A combined plotly object with condition controls. The widget's
 #'   height is pinned (see control_geometry()) so the control geometry is exact.
 #' @noRd
@@ -2449,7 +2452,8 @@ assemble_condition_control_plot <- function(pl_list, condition_ids, type,
                                             object = NULL,
                                             max_labels = 10L,
                                             spacing = NULL,
-                                            format_label = TRUE) {
+                                            format_label = TRUE,
+                                            tick_labels = TRUE) {
   ydata <- capture_swapdata(pl_list)
   n_traces <- length(ydata[[1]])
 
@@ -2499,7 +2503,7 @@ assemble_condition_control_plot <- function(pl_list, condition_ids, type,
 
   # Single control: each step/button natively restyles to its condition's y
   # arrays (no JS needed). For a slider over a single parameter, the parameter
-  # label lives in the slider title (currentvalue prefix) and the tick labels
+  # label is in the slider title (currentvalue prefix) and the tick labels
   # carry only the values; otherwise the full condition labels are used.
   trace_idx <- seq_len(n_traces) - 1L
 
@@ -2511,7 +2515,10 @@ assemble_condition_control_plot <- function(pl_list, condition_ids, type,
     slider_prefix <- paste0(model_label_lookup(object, format_label)(cn), " = ")
     step_labels <- formatC(condition_table[condition_ids, cn], format = "g")
   }
-  if (type == "slider") {
+  # Thin the rail tick labels only when they are shown; when hidden, every step
+  # keeps its full label so the slider title (which reads the active step's
+  # label) is correct for every position.
+  if (type == "slider" && tick_labels) {
     step_labels <- thin_slider_labels(step_labels, max_labels)
   }
 
@@ -2524,16 +2531,24 @@ assemble_condition_control_plot <- function(pl_list, condition_ids, type,
   })
 
   if (type == "slider") {
-    plotly::layout(combined,
-      sliders = list(list(
-        # Full plot width: unlike the time-animation slider, there is no play
-        # button to leave a lane for.
-        active = 0, x = 0, len = 1, y = geo[["y"]][1],
-        pad = list(t = 10, b = 10),
-        currentvalue = list(prefix = slider_prefix),
-        steps = steps
-      ))
+    slider <- list(
+      # Full plot width: unlike the time-animation slider, there is no play
+      # button to leave a lane for.
+      active = 0, x = 0, len = 1, y = geo[["y"]][1],
+      pad = list(t = 10, b = 10),
+      currentvalue = list(prefix = slider_prefix),
+      steps = steps
     )
+    if (!tick_labels) {
+      # Hide the (long) rail tick labels by making the step-label font
+      # transparent, but keep the selected label in the slider title: give
+      # currentvalue an explicit visible font so it does not inherit the
+      # transparency.
+      slider[["font"]] <- list(color = "rgba(0,0,0,0)")
+      slider[["currentvalue"]][["font"]] <-
+        list(family = font_family, size = font_size)
+    }
+    plotly::layout(combined, sliders = list(slider))
   } else {
     plotly::layout(combined,
       updatemenus = list(list(

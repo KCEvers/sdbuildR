@@ -2,17 +2,19 @@ url: https://kcevers.github.io/sdbuildR/
 template:
   bootstrap: 5
   math-rendering: katex
+  #bslib:
+   # version: 5
 articles:
 - title: Vignettes
   navbar: ~
   contents:
-  - articles/summerschool2026
   - articles/build
   - articles/ensemble
   - articles/unit-tests
-  # - articles/jdr
+  - articles/jdr
   - articles/julia-setup
   - articles/import-export
+  - articles/summerschool2026
 reference:
 - title: Building stock-and-flow models
 - contents:

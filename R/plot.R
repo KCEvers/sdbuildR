@@ -1536,7 +1536,7 @@ plot.simulate_stockflow <- function(x,
   time_unit <- x[["object"]][["sim_settings"]][["time_units"]]
   params <- extract_plot_params(dots, defaults = list(
     main = x[["object"]][["meta"]][["name"]],
-    xlab = paste0("Time (", time_unit, ")"),
+    xlab = paste0("Time", ifelse(nzchar(time_unit), paste0(" (", time_unit, ")"), "")),
     ylab = ""
   ))
   main <- params$main
@@ -2043,7 +2043,7 @@ plot.ensemble_stockflow <- function(x,
   time_unit <- x[["object"]][["sim_settings"]][["time_units"]]
   params <- extract_plot_params(dots, defaults = list(
     main = paste0("Ensemble of ", x[["object"]][["meta"]][["name"]]),
-    xlab = paste0("Time (", time_unit, ")"),
+    xlab = paste0("Time", ifelse(nzchar(time_unit), paste0(" (", time_unit, ")"), "")),
     ylab = "",
     sub = default_sub,
     alpha = alpha
@@ -3165,7 +3165,7 @@ plot.verify_stockflow <- function(x,
   time_unit <- sfm[["sim_settings"]][["time_units"]]
   params <- extract_plot_params(dots, defaults = list(
     main = paste0("Unit Tests of ", sfm[["meta"]][["name"]]),
-    xlab = paste0("Time (", time_unit, ")"),
+    xlab = paste0("Time", ifelse(nzchar(time_unit), paste0(" (", time_unit, ")"), "")),
     ylab = "",
     sub = default_sub,
     alpha = alpha
@@ -3213,7 +3213,7 @@ plot.verify_stockflow <- function(x,
     sims = alpha_sims
   )
 
-  # For time animation, cumulatively reveal trajectories (see ensemble plot).
+  # For time animation, cumulatively reveal trajectories (see ensemble plot)
   if (animation == "time") {
     df_highlight <- accumulate_by_time(df_highlight,
       max_frames = control_options[["max_frames"]]
@@ -3226,7 +3226,7 @@ plot.verify_stockflow <- function(x,
     frame <- NULL
   }
 
-  # Whether to replace the subplot grid with a single condition selector.
+  # Whether to replace the subplot grid with a single condition selector
   condition_control <- condition_display %in% c("slider", "dropdown")
 
   # Check whether there are multiple time points
@@ -3303,7 +3303,11 @@ plot.verify_stockflow <- function(x,
       font_family = font_family, font_size = font_size,
       max_labels = control_options[["max_labels"]],
       spacing = control_options[["spacing"]],
-      format_label = format_label
+      format_label = format_label,
+      # Verify condition labels are long descriptions (e.g. "rate = 0
+      # (test 2)"); keep them off the slider rail ticks but show the
+      # selected one in the slider title.
+      tick_labels = FALSE
     )
   } else if (!create_subplots) {
     j_idx <- 1

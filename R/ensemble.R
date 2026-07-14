@@ -405,8 +405,8 @@ normalize_ensemble_conditions <- function(object, conditions, cross) {
     missing_names <- names_conditions[!idx]
     abort_ensemble(c(
       "x" = "Unknown parameters in {.arg conditions}.",
-      "i" = "The following parameters do not exist in the model: {paste0('{.code ', missing_names, '}', collapse = ', ')}.",
-      ">" = "Available variables to vary: {paste0(allowed_names, collapse = ', ')}"
+      "i" = "The following parameters do not exist in the model: {.code {missing_names}}.",
+      ">" = "Available variables to vary: {.code {allowed_names}}."
     ))
   }
 
@@ -415,8 +415,8 @@ normalize_ensemble_conditions <- function(object, conditions, cross) {
     invalid_names <- names_conditions[!idx]
     abort_ensemble(c(
       "x" = "Flows or auxiliaries cannot be varied, only stocks and constants.",
-      "i" = "Cannot vary: {paste0('{.code ', invalid_names, '}', collapse = ', ')}.",
-      ">" = "Available variables to vary: {paste0(allowed_names, collapse = ', ')}"
+      "i" = "Cannot vary: {.code {invalid_names}}.",
+      ">" = "Available variables to vary: {.code {allowed_names}}"
     ))
   }
 
@@ -426,8 +426,8 @@ normalize_ensemble_conditions <- function(object, conditions, cross) {
       abort_ensemble(c(
         "x" = "Mismatched conditions lengths with {.arg cross = FALSE}.",
         "i" = "When {.arg cross = FALSE}, all conditions vectors must have equal length.",
-        "i" = "Found lengths: {paste0(unique(conditions_lengths), collapse = ', ')} for parameters {paste0(names(conditions), collapse = ', ')}.",
-        ">" = "Either use {.code cross = TRUE} or equalize all conditions vectors."
+        "i" = "Found lengths: {.code {unique(conditions_lengths)}} for parameters {.code {names(conditions)}}",
+        ">" = "Either use {.code cross = TRUE} or ensure all conditions vectors have equal lengths."
       ))
     }
 
@@ -789,7 +789,7 @@ validate_ensemble_stockflow <- function(x) {
   if (length(missing_fields) > 0) {
     cli::cli_abort(c(
       "x" = "Ensemble object is missing fields.",
-      "!" = "Missing: {paste0('{.field ', missing_fields, '}', collapse = ', ')}."
+      "!" = "Missing: {.field {missing_fields}}."
     ))
   }
 
@@ -811,7 +811,7 @@ validate_ensemble_stockflow <- function(x) {
     if (length(missing_summary_cols) > 0) {
       cli::cli_abort(c(
         "x" = "Ensemble {.arg summary} is missing expected columns.",
-        "!" = "Missing: {paste0('{.field ', missing_summary_cols, '}', collapse = ', ')}."
+        "!" = "Missing: {.field {missing_summary_cols}}."
       ))
     }
 
@@ -834,7 +834,7 @@ validate_ensemble_stockflow <- function(x) {
       if (length(missing_df_cols) > 0) {
         cli::cli_abort(c(
           "x" = "Ensemble {.arg df} is missing expected columns.",
-          "!" = "Missing: {paste0('{.field ', missing_df_cols, '}', collapse = ', ')}."
+          "!" = "Missing: {.field {missing_df_cols}}."
         ))
       }
     }

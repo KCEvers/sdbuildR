@@ -1,8 +1,8 @@
 ---
-title: "Setting up Julia"
+title: "Setting Up Julia"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Setting up Julia}
+  %\VignetteIndexEntry{Setting Up Julia}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -22,7 +22,7 @@ library(JuliaConnectoR)
 ```
 
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, cache=FALSE}
 # Disable WebGL: many plotly widgets per HTML page can exceed the browser WebGL
 # context limit and render blank. SVG always renders.
 options(sdbuildR.webgl = FALSE)

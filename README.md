@@ -5,9 +5,9 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/kcevers/sdbuildR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/kcevers/sdbuildR/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
-coverage](https://codecov.io/gh/KCEvers/sdbuildR/graph/badge.svg)](https://app.codecov.io/gh/KCEvers/sdbuildR)
+coverage](https://codecov.io/gh/kcevers/sdbuildR/graph/badge.svg)](https://app.codecov.io/gh/kcevers/sdbuildR)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/sdbuildR)](https://CRAN.R-project.org/package=sdbuildR)
 <!-- badges: end -->
@@ -61,7 +61,7 @@ The development version can be installed from GitHub:
 
 ``` r
 if (!require("remotes")) install.packages("remotes")
-remotes::install_github("KCEvers/sdbuildR")
+remotes::install_github("kcevers/sdbuildR")
 ```
 
 ## Overview of main features
@@ -73,26 +73,27 @@ guide)](https://kcevers.github.io/sdbuildR/articles/julia-setup.html)
 for a major speed-up on large or repeated runs. All package capabilities
 are described in the vignettes:
 
-  - [Get
-    started](https://kcevers.github.io/sdbuildR/articles/sdbuildR.html):
-    A guided tour of the main features.
-  - [Build](https://kcevers.github.io/sdbuildR/articles/build.html):
-    Build, modify, and simulate stock-and-flow models.
-  - [Ensemble
-    simulations](https://kcevers.github.io/sdbuildR/articles/ensemble.html):
-    Explore a model’s behaviour across parameter ranges and initial
-    conditions.
-  - [Unit
-    tests](https://kcevers.github.io/sdbuildR/articles/unit-tests.html):
-    Verify models behave as intended with unit tests.
-    <!-- * [Job Demands-Resources Theory](https://kcevers.github.io/sdbuildR/articles/jdr.html): An example of formalizing psychological theory with sdbuildR. -->
-  - [Julia
-    setup](https://kcevers.github.io/sdbuildR/articles/julia-setup.html):
-    Set up Julia for faster
-    simulations.
-  - [Import/Export](https://kcevers.github.io/sdbuildR/articles/import-export.html):
-    Import models from deSolve or Insight Maker, and export to other
-    formats.
+- [Get
+  Started](https://kcevers.github.io/sdbuildR/articles/sdbuildR.html): A
+  guided tour of the main features.
+- [Build](https://kcevers.github.io/sdbuildR/articles/build.html):
+  Build, modify, and simulate stock-and-flow models.
+- [Ensemble
+  Simulations](https://kcevers.github.io/sdbuildR/articles/ensemble.html):
+  Explore a model’s behaviour across parameter ranges and initial
+  conditions.
+- [Unit
+  Tests](https://kcevers.github.io/sdbuildR/articles/unit-tests.html):
+  Verify models behave as intended with unit tests.
+- [Job Demands-Resources
+  Theory](https://kcevers.github.io/sdbuildR/articles/jdr.html): An
+  example of formalizing psychological theory with sdbuildR.
+- [Julia
+  Setup](https://kcevers.github.io/sdbuildR/articles/julia-setup.html):
+  Set up Julia for faster simulations.
+- [Import/Export](https://kcevers.github.io/sdbuildR/articles/import-export.html):
+  Import models from deSolve or Insight Maker, and export to other
+  formats.
 
 ## Other system dynamics software
 
@@ -113,8 +114,8 @@ by [PySD](https://doi.org/10.21105/joss.04329).
 
 sdbuildR is under active development and may have bugs, particularly in
 complex model translations. We encourage users to report [issues on
-GitHub](https://github.com/KCEvers/sdbuildR/issues) - your input helps
-the package improve\! Use `summary()` to run model diagnostics, and use
+GitHub](https://github.com/kcevers/sdbuildR/issues) - your input helps
+the package improve! Use `summary()` to run model diagnostics, and use
 the vignettes for guidance.
 
 ## Citation

@@ -215,8 +215,17 @@ export_desolve_ <- function(object) {
 }
 
 
-build_stockflow_code_ <- function(object) {
+build_stockflow_code_ <- function(object, format_with_nse = FALSE) {
   check_stockflow(object)
+
+  # How to emit an NSE argument (variable/function name, cross-reference, or
+  # equation): as a bare symbol/expression when format_with_nse is TRUE,
+  # otherwise as a quoted string. Both forms are accepted by the building-block
+  # helpers (stock(), custom_func(), ...), but quoting is the safer default
+  # since it also handles non-syntactic names and equations containing quotes.
+  fmt_nse <- function(x) {
+    if (format_with_nse) x else encodeString(x, quote = "\"")
+  }
 
   # Simulation specifications — filter out defaults. Use the realised defaults
   # (new_sim_settings()) rather than formals(), since some defaults (central,
@@ -261,7 +270,7 @@ build_stockflow_code_ <- function(object) {
     ""
   }
 
-  # Funcs (custom functions) — name is NSE (bare symbol, no quotes)
+  # Funcs (custom functions); if format_with_nse is TRUE, name is NSE (bare symbol, no quotes)
   func_df <- get_funcs(object)
   if (nrow(func_df) > 0) {
     func_cols <- intersect(c("name", "eqn", "doc"), names(func_df))
@@ -272,7 +281,7 @@ build_stockflow_code_ <- function(object) {
 
     func_str <- vapply(seq_len(nrow(func_df)), function(i) {
       row <- as.list(func_df[i, , drop = FALSE])
-      func_name <- row[["name"]] # bare symbol, no quotes
+      func_name <- row[["name"]]
       row[["name"]] <- NULL
 
       # Filter out defaults
@@ -282,15 +291,17 @@ build_stockflow_code_ <- function(object) {
 
       args_str <- vapply(names(row), function(nm) {
         val <- row[[nm]]
-        # eqn is NSE in custom_func() — emit unquoted
-        if (nm == "eqn" || !is.character(val)) {
+        # eqn is NSE in custom_func() — bare expression or quoted string
+        if (nm == "eqn") {
+          paste0(nm, " = ", fmt_nse(val))
+        } else if (!is.character(val)) {
           paste0(nm, " = ", val)
         } else {
           paste0(nm, " = \"", val, "\"")
         }
       }, character(1))
 
-      paste0("custom_func(", paste(c(func_name, args_str), collapse = ", "), ")")
+      paste0("custom_func(", paste(c(fmt_nse(func_name), args_str), collapse = ", "), ")")
     }, character(1)) |>
       paste0(collapse = " |>\n\t")
 
@@ -328,6 +339,7 @@ build_stockflow_code_ <- function(object) {
   )
 
   # Variables — use type-specific helpers; name/to/from/source are NSE (bare symbols)
+  # if format_with_nse is TRUE;
   # func-type variables are handled above via custom_func(), so exclude them here
   vars_df <- object[["variables"]]
   vars_df <- vars_df[vars_df[["type"]] != "func", , drop = FALSE]
@@ -396,8 +408,12 @@ build_stockflow_code_ <- function(object) {
               paste0("c(", paste(val, collapse = ", "), ")")
             }
             paste0(nm, " = ", formatted)
-          } else if (nm %in% c(nse_skip, nse_expr)) {
-            paste0(nm, " = ", val) # bare expression, no quotes
+          } else if (nm %in% nse_expr) {
+            # equation: bare expression (NSE) or quoted string
+            paste0(nm, " = ", fmt_nse(val))
+          } else if (nm %in% nse_skip) {
+            # variable cross-reference: bare symbol (NSE) or quoted string
+            paste0(nm, " = ", fmt_nse(val))
           } else if (is.character(val)) {
             paste0(nm, " = \"", val, "\"")
           } else {
@@ -405,7 +421,7 @@ build_stockflow_code_ <- function(object) {
           }
         }, character(1))
 
-        paste0(func_name, "(", paste(c(var_name, args_str), collapse = ", "), ")")
+        paste0(func_name, "(", paste(c(fmt_nse(var_name), args_str), collapse = ", "), ")")
       })
     var_str <- paste0(" |>\n\t", paste0(unlist(var_str), collapse = " |>\n\t"))
   } else {
