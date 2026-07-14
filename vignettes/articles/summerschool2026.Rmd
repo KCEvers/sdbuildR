@@ -18,7 +18,8 @@ knitr::opts_chunk$set(
   fig.width = 6, # Set default figure width to 6 inches
   fig.height = 4, # Set default figure height to 3 inches
   fig.align = "center", # Center all figures
-  out.width = "80%" # Display figures at 80% of container width
+  out.width = "80%", # Display figures at 80% of container width
+  cache.path = "summerschool2026_cache/" # keep cache dir next to the .Rmd
   # fig.retina = 2,         # Optimize for retina displays
   # dpi = 96               # Standard DPI for web
 )
@@ -648,7 +649,35 @@ In iterative steps, we construct a simple model of a queue of people waiting for
 
 <details><summary>Scroll through steps</summary>
 
-#### A Stock with No Flows
+
+```{r, include=FALSE}
+
+# Each named block above advances `sfm` by one step. Map each block to the
+# title shown on its panel.
+df_queue <- data.frame(
+  section = c(
+    "queue-stock", "queue-inflow", "queue-outflow",
+    "queue-outflow-large", "queue-stock-dependent",
+    "queue-multiple-outflows", "queue-multiple-stocks",
+    # "queue-constant",
+     "queue-aux"
+  ),
+  title = c(
+    "A Stock with No Flows",
+    "Inflows Increase a Stock",
+    "Outflows Decrease a Stock",
+    "What Happens When the Outflow Is Larger Than the Inflow?",
+    "Making the Outflow Stock-Dependent",
+    "Multiple Outflows",
+    "Multiple Stocks",
+    # "Add a Constant for Service Rate",
+    "Add an Auxiliary for Satisfaction"
+  ),
+  stringsAsFactors = FALSE
+)
+
+df_queue$letter <- LETTERS[seq_len(nrow(df_queue))]
+```
 
 ```{r queue-stock, echo = FALSE, fig.height=1}
 sfm <- stockflow() |>
@@ -657,17 +686,16 @@ sfm <- stockflow() |>
   meta(name = "")
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, fig.height=1}
 sfm |> plot()
 ```
 
 ```{r, echo = FALSE}
 sfm |>
   simulate() |>
-  plot(animation = "time")
+  plot(animation = "time", main = df_queue$title[1])
 ```
 
-#### Inflows Increase a Stock
 
 ```{r queue-inflow, echo=FALSE}
 sfm <- sfm |>
@@ -681,10 +709,9 @@ sfm |> plot()
 ```{r, echo = FALSE}
 sfm |>
   simulate() |>
-  plot(animation = "time")
+  plot(animation = "time", main = df_queue$title[2])
 ```
 
-#### Outflows Decrease a Stock
 
 ```{r queue-outflow, echo=FALSE}
 sfm <- sfm |>
@@ -698,10 +725,9 @@ sfm |> plot()
 ```{r, echo = FALSE}
 sfm |>
   simulate() |>
-  plot(animation = "time")
+  plot(animation = "time", main = df_queue$title[3])
 ```
 
-#### What Happens When the Outflow Is Larger Than the Inflow?
 
 ```{r queue-outflow-large, echo=FALSE}
 sfm <- update(sfm, service, eqn = 2)
@@ -714,10 +740,9 @@ sfm |> plot()
 ```{r, echo = FALSE}
 sfm |>
   simulate() |>
-  plot(animation = "time")
+  plot(animation = "time", main = df_queue$title[4])
 ```
 
-#### Making the Outflow Stock-Dependent
 
 ```{r queue-stock-dependent, echo=FALSE}
 sfm <- update(sfm, service, eqn = .5 * queue)
@@ -730,10 +755,9 @@ sfm |> plot()
 ```{r, echo = FALSE}
 sfm |>
   simulate() |>
-  plot(animation = "time")
+  plot(animation = "time", main = df_queue$title[5])
 ```
 
-#### Multiple Outflows
 
 ```{r queue-multiple-outflows, echo=FALSE}
 sfm <- sfm |>
@@ -750,10 +774,9 @@ sfm |> plot()
 ```{r, echo = FALSE}
 sfm |>
   simulate() |>
-  plot(animation = "time")
+  plot(animation = "time", main = df_queue$title[6])
 ```
 
-#### Multiple Stocks
 
 ```{r queue-multiple-stocks, echo=FALSE}
 sfm <- sfm |>
@@ -768,18 +791,9 @@ sfm |> plot()
 ```{r, echo = FALSE}
 sfm |>
   simulate() |>
-  plot(animation = "time")
+  plot(animation = "time", main = df_queue$title[7])
 ```
 
-#### Add a Constant for Service Rate
-
-```{r queue-constant, echo=FALSE}
-sfm <- sfm |>
-  constant(service_rate, eqn = .5, label = "Service Rate") |>
-  update(service, eqn = service_rate * queue)
-```
-
-#### Add an Auxiliary for Satisfaction
 
 ```{r queue-aux, echo=FALSE}
 sfm <- sfm |>
@@ -793,38 +807,16 @@ sfm |> plot()
 ```{r, echo = FALSE}
 sfm |>
   simulate() |>
-  plot(animation = "time")
+  plot(animation = "time", main = df_queue$title[8])
 ```
-
 
 
 </details>
 
+
+
 ```{r queue-panels, include = TRUE, echo = FALSE, message = FALSE, warning = FALSE}
 library(bslib)
-
-# Each named block above advances `sfm` by one step. Map each block to the
-# title shown on its panel.
-df_queue <- data.frame(
-  section = c(
-    "queue-stock", "queue-inflow", "queue-outflow",
-    "queue-outflow-large", "queue-stock-dependent",
-    "queue-multiple-outflows", "queue-multiple-stocks",
-    "queue-constant", "queue-aux"
-  ),
-  title = c(
-    "A Stock with No Flows",
-    "Inflows Increase a Stock",
-    "Outflows Decrease a Stock",
-    "What Happens When the Outflow Is Larger Than the Inflow?",
-    "Making the Outflow Stock-Dependent",
-    "Multiple Outflows",
-    "Multiple Stocks",
-    "Add a Constant for Service Rate",
-    "Add an Auxiliary for Satisfaction"
-  ),
-  stringsAsFactors = FALSE
-)
 
 # Force the grViz SVG to scale to its container so the diagram fits the panel.
 # viz.js emits a viewBox, so height:auto keeps the aspect ratio.
@@ -861,7 +853,7 @@ queue_panels <- lapply(seq_len(nrow(df_queue)), function(i) {
   )
   pl <- plot(sim,
     vars = vars,
-    animation = "time", main = "",
+    animation = "time", main = df_queue$title[i],
     control_options = list(frame_ms = frame_ms),
     colors = queue_colors[vars],
     show_legend = TRUE,
@@ -869,20 +861,28 @@ queue_panels <- lapply(seq_len(nrow(df_queue)), function(i) {
   )
 
   nav_panel(
-    df_queue$title[i],
-    htmltools::div(
+    df_queue$letter[i],
+    pl,
+    accordion(
+      open = TRUE,
+      accordion_panel(
+        "Stock-and-flow diagram",
+        htmltools::div(
           class = "sfm-diagram",
           DiagrammeR::grViz(diagram, width = "100%", height = "100%")
-        ),
-    # DiagrammeR::grViz(diagram),
-    pl
+        )
+      )
+    )
   )
 })
 
-do.call(navset_card_pill, c(
-  queue_panels,
-  list(selected = df_queue$title[1])
-))
+htmltools::tagList(
+  diagram_css,
+  do.call(navset_card_pill, c(
+    queue_panels,
+    list(selected = df_queue$letter[1])
+  ))
+)
 ```
 
 
@@ -973,7 +973,7 @@ Stock-and-flow models force us to specify how a state increases and decreases ov
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-  echo = TRUE
+  echo = TRUE, fig.height = 5
 )
 ```
 
@@ -1033,7 +1033,7 @@ We now use stock-and-flow modeling to formalize a simplified model of burnout. W
 
 
 
-```{r, warning = FALSE, message = FALSE, echo = FALSE, fig.height=6}
+```{r, warning = FALSE, message = FALSE, echo = FALSE, fig.height=5}
 fig <- plotly::plot_ly(
   x = numeric(0),
   y = numeric(0),
@@ -1105,7 +1105,7 @@ sfm <- stock(sfm, name = engagement, eqn = .3)
 
 Plot stock-and-flow diagram:
 
-```{r}
+```{r, fig.height = 1}
 sfm |> plot()
 ```
 
@@ -1327,7 +1327,7 @@ sfm <- sfm |>
 
 Run 50 simulations with different initial conditions:
 
-```{r}
+```{r ensemble-init, cache = TRUE}
 sims <- ensemble(sfm, n = 50)
 ```
 
@@ -1348,7 +1348,7 @@ plot(sims, which = "sims")
 
 Ensemble simulations can also be used to explore the sensitivity of the model to changes in parameter values.
 
-```{r}
+```{r ensemble-params, cache = TRUE}
 # Reload model from library to reset any changes made above
 sfm <- stockflow("burnout") |>
   update(engagement, eqn = runif(1, min = 0, max = 4)) |>
@@ -1428,7 +1428,7 @@ sfm <- sim_settings(sfm, save_sims = TRUE)
 
 Run 100 simulations:
 
-```{r}
+```{r ensemble-parallel, cache = TRUE}
 sims <- ensemble(sfm, n = 100)
 ```
 
