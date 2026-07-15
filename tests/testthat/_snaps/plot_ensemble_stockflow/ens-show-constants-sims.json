@@ -9,7 +9,8 @@
       "mode": "lines",
       "line": {
         "color": "#30A37C4D",
-        "width": 1
+        "width": 1,
+        "dash": "dash"
       },
       "showlegend": false,
       "visible": "legendonly",
@@ -39,7 +40,8 @@
       "mode": "lines",
       "line": {
         "color": "#00A0AE4D",
-        "width": 1
+        "width": 1,
+        "dash": "dash"
       },
       "showlegend": false,
       "visible": "legendonly",
@@ -69,7 +71,8 @@
       "mode": "lines",
       "line": {
         "color": "#7E8FC74D",
-        "width": 1
+        "width": 1,
+        "dash": "dash"
       },
       "showlegend": false,
       "visible": "legendonly",
@@ -99,7 +102,8 @@
       "mode": "lines",
       "line": {
         "color": "#BA7BB84D",
-        "width": 1
+        "width": 1,
+        "dash": "dash"
       },
       "showlegend": false,
       "visible": "legendonly",
@@ -129,7 +133,8 @@
       "mode": "lines",
       "line": {
         "color": "#C87A8A4D",
-        "width": 1
+        "width": 1,
+        "dash": "solid"
       },
       "showlegend": false,
       "visible": true,
@@ -159,7 +164,8 @@
       "mode": "lines",
       "line": {
         "color": "#B289554D",
-        "width": 1
+        "width": 1,
+        "dash": "solid"
       },
       "showlegend": false,
       "visible": true,
@@ -189,7 +195,8 @@
       "mode": "lines",
       "line": {
         "color": "#82994C4D",
-        "width": 1
+        "width": 1,
+        "dash": "solid"
       },
       "showlegend": false,
       "visible": true,
@@ -220,7 +227,8 @@
       "showlegend": true,
       "line": {
         "color": "#30A37CFF",
-        "width": 3
+        "width": 3,
+        "dash": "dash"
       },
       "visible": "legendonly",
       "marker": {
@@ -249,7 +257,8 @@
       "showlegend": true,
       "line": {
         "color": "#00A0AEFF",
-        "width": 3
+        "width": 3,
+        "dash": "dash"
       },
       "visible": "legendonly",
       "marker": {
@@ -278,7 +287,8 @@
       "showlegend": true,
       "line": {
         "color": "#7E8FC7FF",
-        "width": 3
+        "width": 3,
+        "dash": "dash"
       },
       "visible": "legendonly",
       "marker": {
@@ -307,7 +317,8 @@
       "showlegend": true,
       "line": {
         "color": "#BA7BB8FF",
-        "width": 3
+        "width": 3,
+        "dash": "dash"
       },
       "visible": "legendonly",
       "marker": {
@@ -336,7 +347,8 @@
       "showlegend": true,
       "line": {
         "color": "#C87A8AFF",
-        "width": 3
+        "width": 3,
+        "dash": "solid"
       },
       "visible": true,
       "marker": {
@@ -365,7 +377,8 @@
       "showlegend": true,
       "line": {
         "color": "#B28955FF",
-        "width": 3
+        "width": 3,
+        "dash": "solid"
       },
       "visible": true,
       "marker": {
@@ -394,7 +407,8 @@
       "showlegend": true,
       "line": {
         "color": "#82994CFF",
-        "width": 3
+        "width": 3,
+        "dash": "solid"
       },
       "visible": true,
       "marker": {

@@ -1218,7 +1218,12 @@ prep_plot <- function(
   ]
   highlight_these_names <- highlight_these_names[highlight_these_names %in% names_df[["name"]]]
 
-  names_df <- apply_trace_order(names_df, order = order, model_var = style_names)
+  # `order` defaults to `vars` in the plot methods, so any name it lists that is
+  # hidden was already reported by the `vars` filtering above; pass `vars` as
+  # `reported` to avoid warning about the same drop a second time.
+  names_df <- apply_trace_order(names_df,
+    order = order, model_var = style_names, reported = vars
+  )
   highlight_these_names <- highlight_these_names[highlight_these_names %in% names_df[["name"]]]
   highlight_these_names <- names_df[["name"]][names_df[["name"]] %in% highlight_these_names]
 
@@ -1362,9 +1367,11 @@ clean_vars_display <- function(vars_display) {
 #' @param x Output of [`simulate()`][simulate.stockflow()].
 #' @param show_constants If `TRUE`, include constants in plot. Defaults to `FALSE`.
 #' @param vars Variables to plot. Defaults to `NULL` to plot all variables.
-#' @param order Optional character vector of model variable names giving the
-#'   trace and legend order. Listed variables appear first; any plotted
-#'   variables not listed keep their default relative order. Defaults to `NULL`.
+#' @param order Character vector of model variable names giving the trace and
+#'   legend order. Listed variables appear first; any plotted variables not
+#'   listed keep their default relative order. Defaults to `vars`, so the order
+#'   in which variables are listed in `vars` is followed unless `order` is set
+#'   explicitly.
 #' @param palette Colour palette. Must be one of hcl.pals().
 #' @param colors Colours for the plotted variables. A named vector (names are
 #'   variable names) sets the colours of those variables and the palette fills
@@ -1374,11 +1381,15 @@ clean_vars_display <- function(vars_display) {
 #'   value applied to all variables, a named per-variable vector (names are
 #'   variable names), or an unnamed vector with one value per variable in plot
 #'   order. Defaults to `2`.
-#' @param line_type Plotly line dash style for trajectories. Either a single
-#'   dash string applied to all variables, a named per-variable vector (names are
-#'   variable names), an unnamed vector in plot order, or a named list keyed by
-#'   variable type (`stock`, `flow`, `aux`, `constant`, `lookup`). Defaults to
-#'   solid stocks, flows, and auxiliaries, with dashed constants and lookups.
+#' @param line_type Dash style of the plotted lines. Each value is one of
+#'   `"solid"`, `"dot"`, `"dash"`, `"longdash"`, `"dashdot"`, `"longdashdot"`, or
+#'   a pixel pattern such as `"5px,10px"`. Supply a single style for every
+#'   variable (`line_type = "dash"`), a named vector to style variables
+#'   individually (`line_type = c(S = "solid", I = "dot")`), an unnamed vector in
+#'   plot order, or a list keyed by variable type to style each type at once
+#'   (`line_type = list(stock = "solid", flow = "dash")`; the types are `stock`,
+#'   `flow`, `aux`, `constant`, and `lookup`). By default stocks, flows, and
+#'   auxiliaries are solid and constants and lookups are dashed.
 #' @param vars_display How to arrange saved variables. Use `"vstack"` to stack
 #'   stocks above flows, auxiliaries, constants, and lookups; `"hstack"` to put
 #'   stocks beside non-stock variables; or `"joint"` to draw all variables in
@@ -1386,7 +1397,8 @@ clean_vars_display <- function(vars_display) {
 #'   drawn. Defaults to `"vstack"`.
 #' @param fill_flows If `TRUE`, flow traces are filled
 #'   down to zero. Auxiliaries, constants, and lookups are never filled.
-#'   Defaults to `TRUE`.
+#'   Defaults to `TRUE`. Filled flows always render with SVG `scatter`, as WebGL
+#'   does not support fills (see `webgl`).
 #' @param font_family Font family. Kebab-case names (e.g. `"eb-garamond"`)
 #'   are Fontsource ids (browse them at <https://fontsource.org/>), loaded as
 #'   webfonts: no installation is needed, but internet access is required to
@@ -1417,14 +1429,14 @@ clean_vars_display <- function(vars_display) {
 #'   performance with many lines; if `FALSE`, use SVG (`scatter`). Defaults to
 #'   `getOption("sdbuildR.webgl", default = TRUE)`. Set
 #'   `options(sdbuildR.webgl = FALSE)` (e.g. in vignettes or dashboards, or when
-#'   a plot renders blank) to disable WebGL globally.
+#'   a plot renders blank) to disable WebGL globally. WebGL is not supported for
+#'   filled flow traces (`fill_flows = TRUE`) or time animations; these always
+#'   render with SVG `scatter` regardless of `webgl`.
 #' @param ... Optional parameters
 #'
 #' @section Styling variables:
 #' Names in `colors`, `line_width`, and `line_type` refer to the model variable
-#' names, not the labels shown in the legend. This is usually the safest way to
-#' style a plot, because labels may be wrapped, prettified, or customized for
-#' display.
+#' names, not the labels shown in the legend.
 #'
 #' Use one value to style every trajectory:
 #' `plot(sim, line_width = 3)`.
@@ -1432,9 +1444,6 @@ clean_vars_display <- function(vars_display) {
 #' Use a named vector to style selected variables and leave the rest at their
 #' defaults or palette colours:
 #' `plot(sim, colors = c(susceptible = "#377EB8"), line_width = c(infected = 4))`.
-#'
-#' Unnamed vectors are still accepted and are applied in plot order, but named
-#' vectors are easier to read and less sensitive to filtering with `vars`.
 #'
 #' @returns Plotly object
 #' @export
@@ -1447,28 +1456,36 @@ clean_vars_display <- function(vars_display) {
 #' sim <- simulate(sfm)
 #' plot(sim)
 #'
-#' # The default plot title and axis labels can be changed like so:
-#' plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
-#'
-#' # Add constants to the plot
-#' plot(sim, show_constants = TRUE)
-#'
-#' # Save and plot non-stock variables in a compact role-panel view
+#' # When all variables are saved in the output, the stocks are plotted 
+#' # separately from the other variables by default:
 #' sim_all <- simulate(sfm, only_stocks = FALSE)
-#' plot(sim_all, vars_display = "vstack", fill_flows = TRUE)
+#' plot(sim_all)
+#' 
+#' # Plot all variables in one panel:
+#' plot(sim_all, vars_display = "joint")
 #'
-#' # Cumulatively reveal the trajectories over time
-#' plot(sim, animation = "time")
+#' # Animate the simulation over time:
+#' plot(sim_all, animation = "time")
 #'
+#' @examplesIf Sys.getenv("NOT_CRAN") == "true"
 #' # Slow the animation down to ~10 seconds in total, or speed up the
 #' # individual frames
 #' plot(sim, animation = "time", control_options = list(duration = 10))
 #' plot(sim, animation = "time", control_options = list(frame_ms = 40))
 #'
+#' ## Styling options
+#' # The default plot title and axis labels can be changed like so:
+#' plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
+#'
+#' # Add constants to the plot
+#' plot(sim, show_constants = TRUE)
+#' 
+#' # Plot selected variables:
+#' plot(sim, vars = c("susceptible", "infected"))
 plot.simulate_stockflow <- function(x,
                                     show_constants = FALSE,
                                     vars = NULL,
-                                    order = NULL,
+                                    order = vars,
                                     palette = "Dark 2",
                                     colors = NULL,
                                     line_width = 2,
@@ -1592,13 +1609,8 @@ plot.simulate_stockflow <- function(x,
   }
 
   # WebGL is fast for ordinary lines, but Plotly fill areas and animation frames
-  # need SVG scatter for reliable rendering.
-  if (fills_flows && isTRUE(webgl) && animation != "time") {
-    cli::cli_warn(c(
-      "!" = "Filled flow traces require Plotly SVG scatter traces.",
-      ">" = "Using {.code webgl = FALSE} for this plot."
-    ))
-  }
+  # need SVG scatter for reliable rendering, so silently fall back to `scatter`
+  # for those (documented in the `webgl` @param).
   trace_type <- if (webgl && animation != "time" && !fills_flows) "scattergl" else "scatter"
 
   if (role_panels) {
@@ -1891,7 +1903,7 @@ plot.ensemble_stockflow <- function(x,
                                     sim = seq(1, min(c(x[["n"]], 100))),
                                     condition = seq(1, min(c(x[["n_conditions"]], 9))),
                                     vars = NULL,
-                                    order = NULL,
+                                    order = vars,
                                     show_constants = FALSE,
                                     nrows = ceiling(sqrt(max(condition))),
                                     margin = .05,
@@ -1901,6 +1913,7 @@ plot.ensemble_stockflow <- function(x,
                                     alpha = list(central = 1, spread = 0.3, sims = 0.3),
                                     colors = NULL,
                                     line_width = list(central = 3, spread = 0, sims = 1),
+                                    line_type = list(stock = "solid", flow = "solid", aux = "solid", constant = "dash", lookup = "dash"),
                                     font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
                                     font_size = 16,
                                     wrap_width = 25,
@@ -2151,6 +2164,13 @@ plot.ensemble_stockflow <- function(x,
   colors <- out[["colors"]]
   labels <- out[["labels"]]
   var_names <- out[["var_names"]]
+  var_types <- out[["var_types"]]
+
+  # Resolve line dash styles to a per-label vector (a single dash, a named
+  # per-variable vector, or a list keyed by variable type).
+  line_type <- resolve_line_type(line_type, var_names, unname(var_types[labels]),
+    display_names = labels, valid_names = out[["style_names"]]
+  )
 
   # Resolve the role-keyed line widths and opacities to per-variable vectors for
   # each layer (central line, spread band, individual trajectories). A scalar or
@@ -2265,6 +2285,7 @@ plot.ensemble_stockflow <- function(x,
         mode = mode,
         colors = colors,
         show_legend = show_legend,
+        line_type = line_type,
         dots = dots,
         main = main,
         xlab = xlab, ylab = ylab,
@@ -2322,6 +2343,7 @@ plot.ensemble_stockflow <- function(x,
       q_high = q_high,
       mode = mode,
       colors = colors,
+      line_type = line_type,
       show_legend = show_legend,
       dots = dots,
       main = main,
@@ -2362,6 +2384,7 @@ plot.ensemble_stockflow <- function(x,
         colors = colors,
         # Only show legend if it's the last subplot
         show_legend = ifelse(j_idx != length(condition), FALSE, show_legend),
+        line_type = line_type,
         dots = dots,
         main = main,
         xlab = xlab, ylab = ylab,
@@ -2582,7 +2605,7 @@ plot_ensemble_helper <- function(subplot_label,
                                  lw, al,
                                  q_low, q_high,
                                  mode,
-                                 colors, show_legend, dots,
+                                 colors, line_type = NULL, show_legend, dots,
                                  main, xlab, ylab,
                                  font_family, font_size, theme,
                                  frame = NULL, webgl = TRUE) {
@@ -2618,7 +2641,8 @@ plot_ensemble_helper <- function(subplot_label,
   # plotted variable shares the same width and opacity; otherwise each variable
   # needs its own trace to carry its own width/opacity.
   ct_uniform <- length(unique(unname(lw_ct))) == 1L &&
-    length(unique(unname(al_ct))) == 1L
+    length(unique(unname(al_ct))) == 1L &&
+    (is.null(line_type) || length(unique(unname(line_type))) == 1L)
   spread_uniform <- length(unique(unname(lw_spread))) == 1L &&
     length(unique(unname(al_spread))) == 1L
 
@@ -2724,6 +2748,11 @@ plot_ensemble_helper <- function(subplot_label,
       for (v in levels(droplevels(d[["variable"]]))) {
         dv <- d[d[["variable"]] == v, , drop = FALSE]
         if (nrow(dv) == 0) next
+        sim_line <- list(
+          color = grDevices::adjustcolor(colors[[v]], alpha.f = al_sims[[v]]),
+          width = unname(lw_sims[[v]])
+        )
+        if (!is.null(line_type)) sim_line[["dash"]] <- unname(line_type[v])
         args <- list(
           pl,
           data = if (webgl) break_for_traces(dv) else dv,
@@ -2733,10 +2762,7 @@ plot_ensemble_helper <- function(subplot_label,
           legendgroup = v,
           type = trace_type,
           mode = mode,
-          line = list(
-            color = grDevices::adjustcolor(colors[[v]], alpha.f = al_sims[[v]]),
-            width = unname(lw_sims[[v]])
-          ),
+          line = sim_line,
           showlegend = sim_showlegend,
           visible = visible
         )
@@ -2848,13 +2874,17 @@ plot_ensemble_helper <- function(subplot_label,
   # Plot mean/median points/lines
   if (plot_summary) {
     if (mode == "lines") {
+      line_uniform <- list(width = unname(lw_ct)[1]) # thicker line for mean
+      if (!is.null(line_type)) line_uniform[["dash"]] <- unname(line_type)[1]
       pl <- add_ct_pair(pl,
-        extra_uniform = list(line = list(width = unname(lw_ct)[1])), # thicker line for mean
+        extra_uniform = list(line = line_uniform),
         extra_by_var = function(v, dv) {
-          list(line = list(
+          line_v <- list(
             width = unname(lw_ct[v]),
             color = grDevices::adjustcolor(colors[[v]], alpha.f = al_ct[[v]])
-          ))
+          )
+          if (!is.null(line_type)) line_v[["dash"]] <- unname(line_type[v])
+          list(line = line_v)
         }
       )
     } else if (mode == "markers" && which == "summary" && !is.null(q_low)) {
@@ -3034,7 +3064,8 @@ plot_ensemble_helper <- function(subplot_label,
 #'
 #' @examples
 #' sfm <- stockflow("sir") |>
-#'   unit_test(expr = all(susceptible >= 0))
+#'   unit_test(expr = all(susceptible >= 0)) |>
+#'   unit_test(expr = all(infected >= 0), conditions = list(infected = 100))
 #' res <- verify(sfm)
 #' plot(res)
 #'
@@ -3042,12 +3073,12 @@ plot_ensemble_helper <- function(subplot_label,
 #' plot(res, condition_display = "slider")
 #' plot(res, condition_display = "dropdown")
 #'
-#' # Cumulatively reveal the trajectories over time
-#' plot(res, animation = "time")
+#' # Animate the simulation over time (one condition at a time)
+#' plot(res, animation = "time", condition = 1)
 plot.verify_stockflow <- function(x,
                                   test = NULL,
                                   vars = NULL,
-                                  order = NULL,
+                                  order = vars,
                                   show_constants = FALSE,
                                   label = NULL,
                                   ignore_case = TRUE,
@@ -3059,6 +3090,7 @@ plot.verify_stockflow <- function(x,
                                   palette = "Dark 2",
                                   colors = NULL,
                                   line_width = 2,
+                                  line_type = list(stock = "solid", flow = "solid", aux = "solid", constant = "dash", lookup = "dash"),
                                   font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
                                   font_size = 16,
                                   wrap_width = 25,
@@ -3195,6 +3227,13 @@ plot.verify_stockflow <- function(x,
   colors <- out[["colors"]]
   labels <- out[["labels"]]
   var_names <- out[["var_names"]]
+  var_types <- out[["var_types"]]
+
+  # Resolve line dash styles to a per-label vector (a single dash, a named
+  # per-variable vector, or a list keyed by variable type).
+  line_type <- resolve_line_type(line_type, var_names, unname(var_types[labels]),
+    display_names = labels, valid_names = out[["style_names"]]
+  )
 
   # verify() only draws individual trajectories (no central line or band), so
   # `line_width`/`alpha` style the `sims` layer; the other roles are placeholders
@@ -3283,6 +3322,7 @@ plot.verify_stockflow <- function(x,
         mode = mode,
         colors = colors,
         show_legend = show_legend,
+        line_type = line_type,
         dots = dots,
         main = main,
         xlab = xlab, ylab = ylab,
@@ -3332,6 +3372,7 @@ plot.verify_stockflow <- function(x,
       q_high = q_high,
       mode = mode,
       colors = colors,
+      line_type = line_type,
       show_legend = show_legend,
       dots = dots,
       main = main,
@@ -3370,6 +3411,7 @@ plot.verify_stockflow <- function(x,
         colors = colors,
         # Only show legend if it's the last subplot
         show_legend = ifelse(j_idx != length(condition), FALSE, show_legend),
+        line_type = line_type,
         dots = dots,
         main = main,
         xlab = xlab, ylab = ylab,

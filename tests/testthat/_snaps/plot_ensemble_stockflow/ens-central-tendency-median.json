@@ -117,7 +117,8 @@
       "showlegend": true,
       "line": {
         "color": "rgba(200,122,138,1)",
-        "width": 3
+        "width": 3,
+        "dash": "solid"
       },
       "visible": true,
       "name": "Infected",
@@ -149,7 +150,8 @@
       "showlegend": true,
       "line": {
         "color": "rgba(107,157,89,1)",
-        "width": 3
+        "width": 3,
+        "dash": "solid"
       },
       "visible": true,
       "name": "Recovered",
@@ -181,7 +183,8 @@
       "showlegend": true,
       "line": {
         "color": "rgba(95,150,194,1)",
-        "width": 3
+        "width": 3,
+        "dash": "solid"
       },
       "visible": true,
       "name": "Susceptible",

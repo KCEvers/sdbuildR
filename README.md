@@ -139,7 +139,7 @@ citation("sdbuildR")
 #> To cite package 'sdbuildR' in publications use:
 #> 
 #>   Evers, K. (2026). sdbuildR: An Accessible Interface for
-#>   Stock-and-Flow Modelling in R. R package version 2.2.0.
+#>   Stock-and-Flow Modelling in R. R package version 2.2.1.
 #>   https://doi.org/10.32614/CRAN.package.sdbuildR
 #> 
 #> A BibTeX entry for LaTeX users is
@@ -148,7 +148,7 @@ citation("sdbuildR")
 #>     title = {{sdbuildR}: An Accessible Interface for Stock-and-Flow Modelling in R},
 #>     author = {Kyra Caitlin Evers},
 #>     year = {2026},
-#>     note = {R package version 2.2.0},
+#>     note = {R package version 2.2.1},
 #>     url = {https://kcevers.github.io/sdbuildR/},
 #>     doi = {10.32614/CRAN.package.sdbuildR},
 #>   }

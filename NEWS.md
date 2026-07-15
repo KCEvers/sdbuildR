@@ -1,11 +1,39 @@
 # sdbuildR 2.2.1
 
+* Updated the vignette "Formalizing Job-Demands Resources Theory" and added teaching materials for summer school Theory Building in Psychology in the Github Pages website.
+
+* `plot.simulate_stockflow()` gained several new arguments for laying out and
+  styling trajectories:
+    * `vars_display` chooses how variables are arranged across panels.
+      `"vstack"` (the default) stacks stocks in a panel above the other
+      variables; `"hstack"` places the stock panel beside the others; and
+      `"joint"` draws every variable together in a single panel. For example,
+      `plot(sfm, vars_display = "joint")`.
+    * `line_type` sets the line dash style. Pass one style for everything
+      (`line_type = "dash"`), one style per variable
+      (`line_type = c(S = "solid", I = "dot")`), or one style per variable type
+      (`line_type = list(stock = "solid", flow = "dash")`). By default, stocks,
+      flows, and auxiliaries are solid while constants and lookups are dashed.
+    * `order` sets the order in which variables appear in the legend and are
+      drawn. For example, `order = c("I", "S")` puts `I` first; any variables you
+      leave out follow in their usual order. `order` defaults to `vars`, so the
+      order you list variables in `vars` is followed unless you set `order`
+      explicitly.
+    * `fill_flows` shades the area under flow lines. Use `fill_flows = FALSE` to
+      draw flows as plain lines.
+    * `show_legend` shows or hides the legend, e.g. `show_legend = FALSE`.
+      `line_type`, `order`, and `show_legend` also work in
+      `plot.ensemble_stockflow()` and `plot.verify_stockflow()`.
+
+* `export_model(sfm, format = "sdbuildR")` now quotes non-standard-evaluation arguments. For example, instead of `stock(a, eqn = runif(1))`, it returns `stock("a", eqn = "runif(1)")`.
+
+
 # sdbuildR 2.2.0
 
 * Renamed several `plot.stockflow()` arguments for clarity: `minlen` is now
   `flow_length`, `nodesep` is now `spacing`, `pad` is now `margin`,
   `dependency_col` is now `color_dependency`, and `label_col` is now
-  `font_color`. The old names are no longer recognised.
+  `font_color`. The old names are no longer recognized.
 
 * Fixed time animations for variables that start with non-finite values, such
   as `NaN` from a `0/0` ratio at initialization. These plots now build without

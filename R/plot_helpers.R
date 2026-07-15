@@ -495,9 +495,14 @@ prepare_layout_groups <- function(x, plot_var, model_var, arg, min_len = 2L) {
 #' @param names_df Data frame with a `name` column for plotted variables.
 #' @param order Character vector of model variable names, or NULL.
 #' @param model_var Character vector of all model variable names for typo checks.
+#' @param reported Character vector of names whose absence from the plot has
+#'   already been reported elsewhere (typically `vars`, since `order` defaults to
+#'   `vars`). These are skipped when warning about ordered-but-not-shown
+#'   variables so the same drop is not reported twice.
 #' @returns `names_df`, reordered so requested variables appear first.
 #' @noRd
-apply_trace_order <- function(names_df, order = NULL, model_var = names_df[["name"]]) {
+apply_trace_order <- function(names_df, order = NULL, model_var = names_df[["name"]],
+                              reported = NULL) {
   if (is.null(order)) {
     return(names_df)
   }
@@ -532,7 +537,9 @@ apply_trace_order <- function(names_df, order = NULL, model_var = names_df[["nam
   }
 
   plot_var <- names_df[["name"]]
-  not_plotted <- setdiff(order, plot_var)
+  # Names already reported as dropped (e.g. by `vars` filtering) are excluded so
+  # that defaulting `order = vars` does not warn twice about the same variable.
+  not_plotted <- setdiff(setdiff(order, plot_var), reported)
   if (length(not_plotted) > 0L) {
     cli::cli_warn(c(
       "!" = paste0(
@@ -1904,7 +1911,9 @@ add_time_animation_controls <- function(pl,
         prefix = cv_prefix,
         suffix = cv_suffix,
         xanchor = "center",
-        font = list(family = font_family, size = font_size)
+        # Plotly's default currentvalue colour is a light grey (#ccc); set the
+        # normal text colour so the slider title is not greyed out.
+        font = list(family = font_family, size = font_size, color = "#444444")
       ),
       x = 0,
       xanchor = "left",
@@ -2541,12 +2550,12 @@ assemble_condition_control_plot <- function(pl_list, condition_ids, type,
     )
     if (!tick_labels) {
       # Hide the (long) rail tick labels by making the step-label font
-      # transparent, but keep the selected label in the slider title: give
-      # currentvalue an explicit visible font so it does not inherit the
-      # transparency.
+      # transparent, but keep the selected label in the slider title. The
+      # currentvalue font inherits its colour from the slider font, so set an
+      # explicit visible colour on it or the title would vanish too.
       slider[["font"]] <- list(color = "rgba(0,0,0,0)")
       slider[["currentvalue"]][["font"]] <-
-        list(family = font_family, size = font_size)
+        list(family = font_family, size = font_size, color = "#444444")
     }
     plotly::layout(combined, sliders = list(slider))
   } else {

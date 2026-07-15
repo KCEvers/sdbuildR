@@ -188,7 +188,7 @@ import_insightmaker <- function(url,
   # - ctx$vendor_meta: meta info for import_metadata
   ctx <- .import_step(
     file_to_stockflow(read_file, ext),
-    x = "Failed to convert Insight Maker model structure to XMILE format.",
+    x = "Failed to convert Insight Maker model structure.",
     i = "Check for unsupported Insight Maker syntax or model structure."
   )
 

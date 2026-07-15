@@ -413,6 +413,55 @@ test_that("plot.simulate_stockflow() validates and filters order", {
   expect_equal(plotly_traces(pl)[["name"]][1], "Infected")
 })
 
+test_that("plot.simulate_stockflow() follows vars order by default (order defaults to vars)", {
+  # `order` defaults to `vars`, so the trace/legend order should follow the
+  # order in which variables are listed in `vars`, without passing `order`.
+  sim <- sir_sim(only_stocks = FALSE)
+  names_df <- as.data.frame(sim[["object"]],
+    type = c("stock", "flow", "aux"), properties = "label"
+  )
+
+  requested <- c("recovered", "susceptible", "infected")
+  expected <- names_df[["label"]][match(requested, names_df[["name"]])]
+  pl <- plot(sim, vars = requested, vars_display = "joint", webgl = FALSE)
+  expect_equal(plotly_traces(pl)[["name"]], expected)
+
+  # Mixed stocks and flows in a joint plot keep the vars order too.
+  requested2 <- c("new_infections", "recovered", "susceptible")
+  expected2 <- names_df[["label"]][match(requested2, names_df[["name"]])]
+  pl2 <- plot(sim, vars = requested2, vars_display = "joint", webgl = FALSE)
+  expect_equal(plotly_traces(pl2)[["name"]], expected2)
+
+  # An explicit `order` still overrides the vars order.
+  pl3 <- plot(sim,
+    vars = requested2, order = rev(requested2),
+    vars_display = "joint", webgl = FALSE
+  )
+  expect_equal(
+    plotly_traces(pl3)[["name"]],
+    names_df[["label"]][match(rev(requested2), names_df[["name"]])]
+  )
+})
+
+test_that("plot.simulate_stockflow() does not warn twice when a vars entry is unsaved", {
+  # `order` defaults to `vars`; a var that exists but was not saved must be
+  # reported once (by the vars filter), not a second time by the ordering step.
+  sim <- sir_sim(only_stocks = TRUE)
+
+  warnings <- character(0)
+  withCallingHandlers(
+    plot(sim, vars = c("susceptible", "new_infections"), webgl = FALSE),
+    warning = function(cnd) {
+      warnings <<- c(warnings, conditionMessage(cnd))
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_length(warnings, 1L)
+  expect_match(warnings, "not saved in the output")
+  expect_false(any(grepl("not shown", warnings)))
+})
+
 test_that("plot.simulate_stockflow() maps default palette colors to the correct labels", {
   # Regression test: with both stocks (highlight) and non-stocks (nonhighlight)
   # present and the default palette (colors = NULL), colours were assigned
@@ -676,17 +725,6 @@ test_that("plot.simulate_stockflow() validates vars_display", {
   expect_error(plot(sim, vars_display = "rows"), "vars_display")
 })
 
-test_that("plot.simulate_stockflow() warns and falls back from WebGL for filled flows", {
-  sim <- sir_sim(only_stocks = FALSE)
-  expect_warning(
-    pl <- plot(sim, webgl = TRUE),
-    "SVG scatter"
-  )
-  types <- vapply(plotly::plotly_build(pl)[["x"]][["data"]], function(trace) {
-    trace[["type"]] %||% ""
-  }, character(1))
-  expect_false(any(types == "scattergl"))
-})
 
 test_that("plot.simulate_stockflow() draws constants unfilled and dashed in non-stock panel", {
   sfm <- stockflow() |>

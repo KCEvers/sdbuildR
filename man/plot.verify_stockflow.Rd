@@ -8,7 +8,7 @@
   x,
   test = NULL,
   vars = NULL,
-  order = NULL,
+  order = vars,
   show_constants = FALSE,
   label = NULL,
   ignore_case = TRUE,
@@ -20,6 +20,8 @@
   palette = "Dark 2",
   colors = NULL,
   line_width = 2,
+  line_type = list(stock = "solid", flow = "solid", aux = "solid", constant = "dash",
+    lookup = "dash"),
   font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
   font_size = 16,
   wrap_width = 25,
@@ -44,9 +46,11 @@ Combines with \code{label} and \code{status} as AND intersection.}
 \item{vars}{Variable names to retain in the data frame. Only applies when
 \code{which = "sims"}. Defaults to \code{NULL} to include all variables.}
 
-\item{order}{Optional character vector of model variable names giving the
-trace and legend order. Listed variables appear first; any plotted
-variables not listed keep their default relative order. Defaults to \code{NULL}.}
+\item{order}{Character vector of model variable names giving the trace and
+legend order. Listed variables appear first; any plotted variables not
+listed keep their default relative order. Defaults to \code{vars}, so the order
+in which variables are listed in \code{vars} is followed unless \code{order} is set
+explicitly.}
 
 \item{show_constants}{If \code{TRUE}, include constants in plot. Defaults to \code{FALSE}.}
 
@@ -81,6 +85,16 @@ an unnamed vector assigns colours in plot order. Defaults to \code{NULL}.}
 \item{line_width}{Line width of the trajectories. Either a single value, a
 named per-variable vector (names are variable names), or an unnamed vector
 with one value per variable in plot order. Defaults to \code{2}.}
+
+\item{line_type}{Dash style of the plotted lines. Each value is one of
+\code{"solid"}, \code{"dot"}, \code{"dash"}, \code{"longdash"}, \code{"dashdot"}, \code{"longdashdot"}, or
+a pixel pattern such as \code{"5px,10px"}. Supply a single style for every
+variable (\code{line_type = "dash"}), a named vector to style variables
+individually (\code{line_type = c(S = "solid", I = "dot")}), an unnamed vector in
+plot order, or a list keyed by variable type to style each type at once
+(\code{line_type = list(stock = "solid", flow = "dash")}; the types are \code{stock},
+\code{flow}, \code{aux}, \code{constant}, and \code{lookup}). By default stocks, flows, and
+auxiliaries are solid and constants and lookups are dashed.}
 
 \item{font_family}{Font family. Kebab-case names (e.g. \code{"eb-garamond"})
 are Fontsource ids (browse them at \url{https://fontsource.org/}), loaded as
@@ -133,7 +147,9 @@ to cumulatively reveal trajectories over time. Defaults to \code{"none"}.}
 performance with many lines; if \code{FALSE}, use SVG (\code{scatter}). Defaults to
 \code{getOption("sdbuildR.webgl", default = TRUE)}. Set
 \code{options(sdbuildR.webgl = FALSE)} (e.g. in vignettes or dashboards, or when
-a plot renders blank) to disable WebGL globally.}
+a plot renders blank) to disable WebGL globally. WebGL is not supported for
+filled flow traces (\code{fill_flows = TRUE}) or time animations; these always
+render with SVG \code{scatter} regardless of \code{webgl}.}
 
 \item{...}{Additional arguments passed to \code{\link[=plot.simulate_stockflow]{plot.simulate_stockflow()}}.}
 }
@@ -170,7 +186,8 @@ drawn.
 
 \examples{
 sfm <- stockflow("sir") |>
-  unit_test(expr = all(susceptible >= 0))
+  unit_test(expr = all(susceptible >= 0)) |>
+  unit_test(expr = all(infected >= 0), conditions = list(infected = 100))
 res <- verify(sfm)
 plot(res)
 
@@ -178,8 +195,8 @@ plot(res)
 plot(res, condition_display = "slider")
 plot(res, condition_display = "dropdown")
 
-# Cumulatively reveal the trajectories over time
-plot(res, animation = "time")
+# Animate the simulation over time (one condition at a time)
+plot(res, animation = "time", condition = 1)
 }
 \seealso{
 \code{\link[=verify]{verify()}}, \code{\link[=plot.simulate_stockflow]{plot.simulate_stockflow()}}, \code{\link[=plot.ensemble_stockflow]{plot.ensemble_stockflow()}}
