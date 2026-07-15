@@ -1536,13 +1536,18 @@ plot.simulate_stockflow <- function(x,
   time_unit <- x[["object"]][["sim_settings"]][["time_units"]]
   params <- extract_plot_params(dots, defaults = list(
     main = x[["object"]][["meta"]][["name"]],
+    sub = "",
     xlab = paste0("Time", ifelse(nzchar(time_unit), paste0(" (", time_unit, ")"), "")),
     ylab = ""
   ))
   main <- params$main
+  sub <- params$sub
   xlab <- params$xlab
   ylab <- params$ylab
 
+  # Append subtitle to main title
+  main <- paste0(main, "<span style='font-size:", font_size, "px;'>\n", sub, "</span>")
+  
   out <- prep_plot(
     x[["object"]], "sim", x[["df"]], x[["constants"]], show_constants,
     vars, palette, colors, wrap_width, format_label,

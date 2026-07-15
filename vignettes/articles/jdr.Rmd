@@ -12,18 +12,6 @@ editor_options:
 
 
 ```{r setup, include=FALSE, cache=FALSE}
-# knitr::opts_chunk$set(
-#   collapse = TRUE,
-#   include = TRUE,
-#   eval = TRUE,
-#   comment = "#>",
-#   fig.width = 12, # 1
-#   fig.height = 4, # 3
-#   fig.align = "center", # Center all figures
-#   out.width = "80%" # Display figures at 80% of container width
-# )
-
-
 knitr::opts_chunk$set(
   collapse = TRUE,
   include = TRUE,
@@ -33,8 +21,7 @@ knitr::opts_chunk$set(
   fig.height = 4,
   fig.align = "center",
   out.width = "80%",
-  cache.path = "jdr_cache/", # keep cache dir next to the .Rmd
-  autodep = TRUE # auto-detect cross-chunk dependencies
+  cache.path = "jdr_cache/"
 )
 
 # Allow LaTeX-style inline markup in prose. The `document` hook rewrites the
@@ -77,7 +64,7 @@ options(sdbuildR.font_family = font_family)
 ```
 
 
-```{r include=FALSE}
+```{r, include=FALSE}
 # Set recreate_figs <- TRUE to reproduce the figures in the paper
 recreate_figs <- interactive()
 ```
@@ -192,7 +179,7 @@ The model now consists of two stocks: energy and demands. Energy has a constant 
 
 To implement this in the model, we first try an exponential decay function:
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height=3}
 # Functional forms
 exp_ff <- function(x, a) {
   exp(-a * x)
@@ -227,6 +214,7 @@ pl_exp_ff <- plotly::plot_ly() |>
     mode = "lines"
   ) |>
   plotly::layout(
+    font = list(family = "stix-two-text", size = 16),
     xaxis = list(title = "Energy"),
     yaxis = list(range = ylim, title = "Rate of self-undermining behaviour")
   )
@@ -246,18 +234,13 @@ sfm_exp <- sfm |>
 ```{r}
 sfm_exp |>
   simulate() |>
-  plot()
-```
-
-
-```{r, include=FALSE}
-getOption("sdbuildR.webgl") #**
+  plot(main = "Self-Undermining: Exponential Decay")
 ```
 
 This function reaches its maximum at zero energy, with a slope determining its steepness. As shown above, this functional form indeed produces the burnout phenomenon, but job demands grow without bounds. When a model displays implausible behaviour, it helps to revisit the theoretical propositions embedded in the equations. The exponential decay function keeps increasing demands even when energy has collapsed, implying that no energy is needed to engage in self-undermining behaviour. To formalize the notion that some energy is required to self-undermine, we may revise the model with an alternative functional form, such as a Ricker function. The Ricker is zero when energy is zero, peaks at low values of energy, and steeply drops off as energy increases [@bolker_ecological_2008]. As such, the Ricker function does not further inflate demands when energy is zero, producing the burnout phenomenon with demands stabilizing at a plateau. 
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height=3}
 # Ricker function
 location <- 0.1
 shapes <- c(1, 3, 5)
@@ -283,13 +266,14 @@ pl_ricker_ff <- plotly::plot_ly() |>
     mode = "lines"
   ) |>
   plotly::layout(
+    font = list(family = "stix-two-text", size = 16),
     xaxis = list(title = "Energy"),
     yaxis = list(range = ylim, title = "Rate of self-undermining behaviour")
   )
 
 pl_ricker_ff
 ```
-e
+
 
 
 ```{r}
@@ -305,7 +289,7 @@ sfm_ricker <- sfm_exp |>
 ```{r}
 sfm_ricker |>
   simulate() |>
-  plot()
+  plot(main = "Self-Undermining: Ricker Functional Form")
 ```
 
 
@@ -374,7 +358,7 @@ As ensemble simulations are often memory-intensive, only summary statistics and 
 
 To support computationally intensive simulations, \texttt{sdbuildR} enables parallelization supported by the \texttt{future} package [@bengtsson_unifying_2021]. The parallelization backend needs to be configured prior to running ensemble simulations:
 
-```{r, eval=interactive()}
+```{r, eval=FALSE}
 future::plan(future::multisession,
   workers = parallelly::availableCores() - 1
 )
@@ -382,7 +366,7 @@ future::plan(future::multisession,
 
 If enabled, \code{ensemble()} will distribute the ensemble simulations across the parallel workers. Parallelization can be ended with:
 
-```{r, eval=interactive()}
+```{r, eval=FALSE}
 future::plan(future::sequential)
 ```
 
@@ -436,7 +420,7 @@ plot(sims, vars = vars)
 ```
 
 ```{r}
-plot(sims, vars = vars, which = "sims")
+plot(sims, vars = vars, which = "sims", central = "none")
 ```
 
 
@@ -449,10 +433,11 @@ Note that (ensemble) simulations can be made reproducible by setting a seed:
 sfm <- sim_settings(sfm, seed = 123)
 ```
 
-As we will continue experimenting with the model, we save a copy of the current model:
+As we will continue experimenting with the model, we save a copy of the current model, and we save only the main variables for computational efficiency:
 
 ```{r}
-sfm0 <- sfm
+vars <- c("engagement", "demands", "resources", "energy", "performance")
+sfm0 <- sfm <- sim_settings(sfm, vars = vars)
 ```
 
 
@@ -474,9 +459,9 @@ To follow the rationale of how this model is formalized, either a) unfold the co
 df_jdr <- data.frame(
   section = c(
     "jdr-recovery", "jdr-effort", "jdr-work",
-    "jdr-resources", "jdr-engagement", 
+    "jdr-resources", "jdr-engagement",
     "jdr-motivation", "jdr-proactive",
-    "jdr-exo-resources", "jdr-exo-demands", 
+    "jdr-exo-resources", "jdr-exo-demands",
     "jdr-effort-buffer", "jdr-work-boost", "jdr-performance"
   ),
   titles = c(
@@ -767,6 +752,11 @@ sfm |>
 
 
 
+```{r}
+sfm <- sim_settings(sfm, vars = c("engagement", "demands", "resources", "energy", "performance"))
+```
+
+
 ```{r, include=FALSE}
 # ## rest of model
 # sfm <- sfm_ricker
@@ -836,6 +826,13 @@ compare_models(stockflow("jdr", version = 2), sfm)
 
 ```{r bslib-navset, echo = FALSE, message=FALSE, warning = FALSE}
 library(bslib)
+
+# Tell bslib the page is Bootstrap 5 so the navset renders BS5 nav markup
+# (<a class="nav-link active">) instead of the Bootstrap 3 fallback
+# (<li class="active">). pkgdown serves Bootstrap 5, whose tab JS tracks the
+# active tab on the anchor; without this, clicking a pill never deactivates the
+# previous pane, so panels stack on top of each other.
+shiny::shinyOptions(bootstrapTheme = bslib::bs_theme(version = 5))
 
 # Force the grViz SVG to scale to its container so the diagram fits the panel.
 # viz.js emits a viewBox, so height:auto keeps the aspect ratio.
@@ -1072,10 +1069,10 @@ unit_tests(sfm)
 
 Plot all tests:
 
-```{r, fig.height=10}
+```{r, fig.height=7}
 sfm |>
   verify() |>
-  plot(nrows = 3)
+  plot()
 ```
 
 
@@ -1094,7 +1091,7 @@ sfm <- sfm0 |>
   update(exo_demands, eqn = D_deterministic + D_stochastic)
 
 sim <- simulate(sfm, seed = 1)
-plot(sim, vars = c("demands", "energy", "engagement", "resources", "performance"))
+plot(sim)
 ```
 
 ```{r, include = FALSE}
@@ -1135,7 +1132,7 @@ plot(sims2, vars = vars, main = "Without Self-Undermining Behaviour")
 
 
 
-As presented above, in our implementation of JD-R theory, removing self-undermining behaviour changes little to the model's behaviour. Self-undermining behaviour is thus less empirically relevant: it is not required for burnout to occur. More generally, systematically removing components reveals which aspects of the theory are necessary for the target phenomenon and which are theoretically redundant, directly assessing empirical relevance  [@vanDongen_2025_productive].
+As presented above, in our implementation of JD-R theory, removing self-undermining behaviour has little effect on the model's behaviour. Self-undermining behaviour is thus less empirically relevant: it is not required for burnout to occur. More generally, systematically removing components reveals which aspects of the theory are necessary for the target phenomenon and which are theoretically redundant, directly assessing empirical relevance  [@vanDongen_2025_productive].
 
 ### Challenging the Model Boundary
 
@@ -1154,10 +1151,11 @@ dependencies(sfm0, name = performance, reverse = TRUE)
 Job performance has no effect on any part of the system. In other words, it is merely an outcome variable, illustrating a case of open-loop thinking. However, it seems plausible that engagement does not only increase job performance, but that performance itself contributes to engagement. To represent this idea, we add a new inflow to engagement that grows with performance:
 
 ```{r, fig.height=3}
-sfm2 <- constant(sfm0, performance_effect,
-  eqn = .225,
-  label = "Effect Job Performance on Work Engagement"
-) |>
+sfm2 <- sfm0 |>
+  constant(performance_effect,
+    eqn = .225,
+    label = "Effect Job Performance on Work Engagement"
+  ) |>
   flow(pride,
     eqn = performance_effect * hill(performance, slope = 2, midpoint = 0.5),
     to = engagement
@@ -1166,15 +1164,17 @@ sfm2 <- constant(sfm0, performance_effect,
 
 
 ```{r}
-sim1 <- simulate(sfm0)
-pl1 <- plot(sim1, vars = vars)
-
+sim <- simulate(sfm0)
 sim2 <- simulate(sfm2)
-pl2 <- plot(sim2, vars = vars, show_legend = FALSE)
+```
 
-pl <- plotly::subplot(pl1, pl2, nrows = 2, shareY = TRUE) |>
-  plotly::layout(title = "Model Boundary")
-pl
+
+```{r}
+plot(sim)
+```
+
+```{r}
+plot(sim2)
 ```
 
 As shown above, this feedback loop saves the system from burning out. Expanding the model boundary thus has the potential to change model behaviour.
@@ -1317,15 +1317,24 @@ sfm <- sim_settings(sfm,
   vars = "engagement", stop = 1000, save_times = 1000
 )
 sims <- ensemble(sfm, n = n)
-as.data.frame(sims,
-  direction = "wide",
-  which = "sims"
-)$engagement |>
-  round() |>
-  table() |>
-  proportions() |>
-  as.data.frame() |>
-  setNames(c("Engagement", "Proportion"))
+```
+
+```{r}
+get_prop <- function(sims) {
+  as.data.frame(sims,
+    direction = "wide",
+    which = "sims"
+  )$engagement |>
+    round() |>
+    table() |>
+    proportions() |>
+    as.data.frame() |>
+    setNames(c("Engagement", "Proportion"))
+}
+```
+
+```{r}
+get_prop(sims)
 ```
 
 A shorter intervention is not as effective.
@@ -1333,13 +1342,10 @@ A shorter intervention is not as effective.
 ```{r intervention-shorter-duration-long-julia, cache = TRUE}
 sfm2 <- update(sfm, duration, eqn = 7)
 sims2 <- ensemble(sfm2, n = n)
+```
 
-as.data.frame(sims2, direction = "wide", which = "sims")$engagement |>
-  round() |>
-  table() |>
-  proportions() |>
-  as.data.frame() |>
-  setNames(c("Engagement", "Proportion"))
+```{r}
+get_prop(sims2)
 ```
 
 
@@ -1349,7 +1355,7 @@ as.data.frame(sims2, direction = "wide", which = "sims")$engagement |>
 Finally, formal models are powerful tools for supporting theoretically informed experimental and statistical design. 
 The derivation chain from theory to empirical test involves a multitude of decisions that the theory itself does not constrain.
 Though meta-analyses may quantify the impact of such decisions, they do not resolve whether discrepant findings reflect mere design artefacts or genuine challenges to the theory [@meehl_why_1990].
-By contrast, a formally specified theory predicts what discrepancies are \textit{implied by the theory itself}. As an illustration, we use our JD-R model to predict the results of a cross-lagged panel model, a widely used analysis in the JD-R literature [@upadyaya_job_2016; @hakanen_job_2008; @sorjonen_questionable_2024]. We assess the cross-lagged relationship between job demands and work engagement with \texttt{lavaan} [@rosseel_lavaan_2012] on an ensemble dataset (*n = 10,000*), sampled at day 20 (wave~1) and three months later at day 110 (wave~2). 
+By contrast, a formally specified theory predicts what discrepancies are \textit{implied by the theory itself}. As an illustration, we use our JD-R model to predict the results of a cross-lagged panel model, a widely used analysis in the JD-R literature [@upadyaya_job_2016; @hakanen_job_2008; @sorjonen_questionable_2024]. We assess the cross-lagged relationship between job demands and work engagement with \texttt{lavaan} [@rosseel_lavaan_2012] on an ensemble dataset (*n = 10,000*), sampled at day 20 (wave 1) and three months later at day 110 (wave 2). 
 
 As shown below, our model implies that engagement and demands have strong autoregressive effects. Counter-intuitively, higher demands lead to higher future work engagement. Engagement has little effect on future demands. 
 Furthermore, our JD-R model allows us to assess how these effects depend on the time between waves. For instance, as shown below, though the autoregressive effects stay consistent, the effect of engagement on future demands flips in sign as the time between waves increases. If provided with only a verbal theory, there would be no principled basis for anticipating this lag dependence.
@@ -1577,22 +1583,22 @@ pl <- plotly::plot_ly(results_df,
     )
   ) |>
   plotly::layout(
+    font = list(family = "stix-two-text"),
     xaxis = list(tickvals = list(10, 50, 90, 130, 170)),
     legend = list(
       orientation = "h", # orientation
-      x = 0.5, # Center horizontally
-      y = -0.25, # Below the plot
-      xanchor = "center",
-      yanchor = "top"
+      x = 1, y = 0.45,
+      # x = 0.6, # Center horizontally
+      # y = -0.35, # Below the plot
+      # xanchor = "center",
+      yanchor = "middle"
     )
   )
 ```
 
 
-```{r, echo=FALSE}
-plotly::layout(pl,
-  margin = list(t = 100)
-)
+```{r, echo=FALSE, fig.height = 3}
+pl
 ```
 
 ```{r include=FALSE}
@@ -1661,9 +1667,6 @@ annot_legend <- list(
   y = -0.15, # Below the plot
   xanchor = "center",
   yanchor = "top",
-  # traceorder = "normal",
-  # tracegroupgap = 0,
-  # itemwidth = 15,
   font = list(size = font_size_legend)
 )
 

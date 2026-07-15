@@ -495,7 +495,7 @@ test_that("plot.simulate_stockflow() with custom title, axis labels, and limits"
     xlab = "Custom X", ylab = "Custom Y", xlim = c(0, 50), ylim = c(0, 800)
   )
   layout <- plotly_layout(pl)
-  expect_equal(layout$title, "Custom Simulation Title")
+  expect_true(grepl("Custom Simulation Title", layout$title))
   expect_equal(layout$xaxis$title, "Custom X")
   expect_equal(layout$yaxis$title, "Custom Y")
   expect_equal(layout$xaxis$range, c(0, 50))
@@ -782,7 +782,7 @@ test_that("plot.simulate_stockflow() uses default titles", {
 
   pl <- plot(sim)
   layout <- plotly_layout(pl)
-  expect_equal(layout$title, sfm$meta$name)
+  expect_true(grepl(sfm$meta$name, layout$title))
   expect_true(grepl("^Time", layout$xaxis$title))
   expect_equal(layout$yaxis$title, "")
   expect_plotly(pl)

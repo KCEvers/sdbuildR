@@ -82,7 +82,7 @@
         "size": 14
       }
     },
-    "title": "Susceptible-Infected-Recovered (SIR)",
+    "title": "Susceptible-Infected-Recovered (SIR)<span style='font-size:16px;'><br /><\/span>",
     "xaxis": {
       "domain": [0, 1],
       "automargin": true,

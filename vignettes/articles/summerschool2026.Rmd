@@ -651,16 +651,13 @@ In iterative steps, we construct a simple model of a queue of people waiting for
 
 
 ```{r, include=FALSE}
-
-# Each named block above advances `sfm` by one step. Map each block to the
-# title shown on its panel.
 df_queue <- data.frame(
   section = c(
     "queue-stock", "queue-inflow", "queue-outflow",
     "queue-outflow-large", "queue-stock-dependent",
     "queue-multiple-outflows", "queue-multiple-stocks",
     # "queue-constant",
-     "queue-aux"
+    "queue-aux"
   ),
   title = c(
     "A Stock with No Flows",
@@ -682,7 +679,11 @@ df_queue$letter <- LETTERS[seq_len(nrow(df_queue))]
 ```{r queue-stock, echo = FALSE, fig.height=1}
 sfm <- stockflow() |>
   stock(queue, eqn = 0, label = "People Waiting in Queue") |>
-  sim_settings(stop = 10, time_units = "hours", only_stocks = FALSE) |>
+  sim_settings(
+    stop = 10, time_units = "hours",
+    save_length = 101,
+    only_stocks = FALSE
+  ) |>
   meta(name = "")
 ```
 
@@ -818,6 +819,13 @@ sfm |>
 ```{r queue-panels, include = TRUE, echo = FALSE, message = FALSE, warning = FALSE}
 library(bslib)
 
+# Tell bslib the page is Bootstrap 5 so the navset renders BS5 nav markup
+# (<a class="nav-link active">) instead of the Bootstrap 3 fallback
+# (<li class="active">). pkgdown serves Bootstrap 5, whose tab JS tracks the
+# active tab on the anchor; without this, clicking a pill never deactivates the
+# previous pane, so panels stack on top of each other.
+shiny::shinyOptions(bootstrapTheme = bslib::bs_theme(version = 5))
+
 # Force the grViz SVG to scale to its container so the diagram fits the panel.
 # viz.js emits a viewBox, so height:auto keeps the aspect ratio.
 diagram_css <- htmltools::tags$style(htmltools::HTML(
@@ -926,30 +934,28 @@ functional_forms_widget(
 The stock-and-flow framework can be applied to model a wide range of phenomena.
 
 
-```{r}
+```{r, fig.height=3}
 sfm <- stockflow("SIR")
 plot(sfm, show_eqn = FALSE)
 sfm |>
-  simulate() |>
+  simulate(save_length = 101) |>
   plot()
 ```
 
 
-```{r}
-sfm <- stockflow("predator_prey") |>
-  sim_settings(stop = 50, time_units = "days")
+```{r, fig.height=3}
+sfm <- stockflow("predator_prey")
 sfm |>
-  simulate() |>
+  simulate(save_length = 101) |>
   plot()
 ```
 
 
 
-```{r}
-sfm <- stockflow("fitzhugh_nagumo") |>
-  meta(name = "FitzHugh-Nagumo (Neuronal Dynamics)")
+```{r, fig.height=3}
+sfm <- stockflow("fitzhugh_nagumo")
 sfm |>
-  simulate() |>
+  simulate(save_length = 101) |>
   plot()
 ```
 
@@ -1008,7 +1014,7 @@ Simulate the model and plot the resulting time series:
 
 ```{r}
 sfm |>
-  simulate() |>
+  simulate(save_length = 101) |>
   plot()
 ```
 
@@ -1094,6 +1100,11 @@ sfm <- sim_settings(sfm,
 )
 
 print(sfm)
+```
+
+```{r, include=FALSE}
+# Save fewer timepoints to reduce output size
+sfm <- sim_settings(sfm, save_length = 101)
 ```
 
 
@@ -1312,20 +1323,19 @@ sfm |>
 Update simulation settings to prepare for ensemble simulations:
 
 ```{r}
-sfm <- sfm |>
-  sim_settings(
-    # Save only 50 time points
-    save_length = 50,
+sfm <- sim_settings(sfm,
+  # Save only 50 time points
+  save_length = 50,
 
-    # Save only stocks (not flows or auxiliaries)
-    only_stocks = TRUE,
+  # Save only stocks (not flows or auxiliaries)
+  only_stocks = TRUE,
 
-    # Save individual simulation runs (not just summary statistics)
-    save_sims = TRUE
-  )
+  # Save individual simulation runs (not just summary statistics)
+  save_sims = TRUE
+)
 ```
 
-Run 50 simulations with different initial conditions:
+Run 50 simulations from different initial conditions:
 
 ```{r ensemble-init, cache = TRUE}
 sims <- ensemble(sfm, n = 50)
@@ -1375,10 +1385,8 @@ Let's return to the simpler model with a static recovery rate:
 
 ```{r}
 sfm <- sfm |>
-
   # Remove the outflow and auxiliary
   discard(c(overcommitment, new_projects)) |>
-
   # Change recovery_rate back to a constant
   change_type(enjoyment, new_type = "constant")
 
@@ -1420,16 +1428,10 @@ n_workers <- max(c(1, parallel::detectCores() - 3))
 future::plan(future::multisession, workers = n_workers)
 ```
 
-If configured, `ensemble()` will automatically run simulations in parallel. Otherwise, it will run sequentially.
-
-```{r}
-sfm <- sim_settings(sfm, save_sims = TRUE)
-```
-
-Run 100 simulations:
+If configured, `ensemble()` will automatically run simulations in parallel. Otherwise, it will run sequentially. Run 100 simulations:
 
 ```{r ensemble-parallel, cache = TRUE}
-sims <- ensemble(sfm, n = 100)
+sims <- ensemble(sfm, n = 100, save_sims = TRUE)
 ```
 
 Individual simulation runs:

@@ -164,7 +164,7 @@ template_registry <- function() {
       build = function() {
         stockflow() |>
           meta(name = "Coffee cup", caption = "Coffee cup cooling or heating from Meadows' Thinking in Systems (Chapter 1)") |>
-          sim_settings(stop = 100, dt = 1, time_units = "minute", language = "Julia") |>
+          sim_settings(stop = 100, dt = 1, time_units = "minute") |>
           update("coffee_temperature", "stock", eqn = "100", label = "Coffee temperature") |>
           update("cooling", "flow", eqn = "discrepancy * .1", to = "coffee_temperature", label = "Cooling or heating") |>
           update("discrepancy", "aux", eqn = "room_temperature - coffee_temperature", label = "Discrepancy") |>
@@ -380,7 +380,7 @@ template_registry <- function() {
       # ),
       build = function() {
         stockflow() |>
-          meta(name = "FitzHugh-Nagumo", caption = "Excitable neuron model with fast voltage and slow recovery") |>
+          meta(name = "FitzHugh-Nagumo (Neuronal Dynamics)", caption = "Excitable neuron model with fast voltage and slow recovery") |>
           sim_settings(start = 0, stop = 120, dt = 0.01, time_units = "ms") |>
           update("voltage", "stock", eqn = "-1", label = "Voltage") |>
           update("recovery", "stock", eqn = "1", label = "Recovery") |>

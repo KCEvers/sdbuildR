@@ -113,7 +113,7 @@
         "size": 14
       }
     },
-    "title": "My Model",
+    "title": "My Model<span style='font-size:16px;'><br /><\/span>",
     "font": {
       "family": "stix-two-text",
       "size": 16
