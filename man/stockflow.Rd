@@ -14,7 +14,7 @@ and a default meta. If specified, \code{template} should be one of:
 \item \strong{logistic_model}: Population growth with carrying capacity (v1.0.0)
 \item \strong{sir}: Epidemic model (Susceptible-Infected-Recovered) (v1.0.0)
 \item \strong{predator_prey}: Lotka-Volterra dynamics (v1.0.0)
-\item \strong{cusp}: Cusp catastrophe model (v1.0.0)
+\item \strong{cusp}: Cusp catastrophe (v1.0.0)
 \item \strong{crielaard2022}: Eating behavior (doi: 10.1037/met0000484) (v1.0.0)
 \item \strong{coffee_cup}: Temperature equilibration (Meadows) (v1.0.0)
 \item \strong{bank_account}: Compound interest (Meadows) (v1.0.0)
@@ -23,10 +23,12 @@ and a default meta. If specified, \code{template} should be one of:
 \item \strong{vanderpol}: Van der Pol oscillator (v1.0.0)
 \item \strong{duffing}: Forced Duffing oscillator (v1.0.0)
 \item \strong{chua}: Chua's circuit (chaotic) (v1.0.0)
-\item \strong{burnout}: Toy model of burnout as used in Evers et al. (under review) (v1.0.0)
-\item \strong{burnout}: Toy model of burnout as used in Evers et al. (under review) (v2.0.0)
+\item \strong{burnout}: Toy model of burnout (v1.0.0)
 \item \strong{fitzhugh_nagumo}: Two-variable excitable neuron model (v1.0.0)
 \item \strong{queue}: Simple demonstration model of people waiting in a queue (v1.0.0)
+\item \strong{jdr}: Job Demands-Resources Theory (JD-R, version 1.0.0) as formalized in Evers et al. (under review) (v1.0.0)
+\item \strong{jdr}: Job Demands-Resources Theory (JD-R, version 2.0.0) as formalized in Evers et al. (under review) (v2.0.0)
+\item \strong{jdr}: Job Demands-Resources Theory (JD-R, version 3.0.0) as formalized in Evers et al. (under review) (v3.0.0)
 }}
 
 \item{version}{Optional semantic version of the template to load. Flexible in

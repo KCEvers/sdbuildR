@@ -8,13 +8,18 @@
   x,
   show_constants = FALSE,
   vars = NULL,
+  order = vars,
   palette = "Dark 2",
   colors = NULL,
   line_width = 2,
-  font_family = default_font_family(),
+  line_type = list(stock = "solid", flow = "solid", aux = "solid", constant = "dash",
+    lookup = "dash"),
+  vars_display = c("vstack", "hstack", "joint"),
+  fill_flows = TRUE,
+  font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
   font_size = 16,
   wrap_width = 25,
-  showlegend = TRUE,
+  show_legend = TRUE,
   format_label = TRUE,
   animation = c("none", "time"),
   control_options = list(),
@@ -29,6 +34,12 @@
 
 \item{vars}{Variables to plot. Defaults to \code{NULL} to plot all variables.}
 
+\item{order}{Character vector of model variable names giving the trace and
+legend order. Listed variables appear first; any plotted variables not
+listed keep their default relative order. Defaults to \code{vars}, so the order
+in which variables are listed in \code{vars} is followed unless \code{order} is set
+explicitly.}
+
 \item{palette}{Colour palette. Must be one of hcl.pals().}
 
 \item{colors}{Colours for the plotted variables. A named vector (names are
@@ -40,6 +51,27 @@ assigns colours in plot order. \code{NULL} uses \code{palette}. Defaults to \cod
 value applied to all variables, a named per-variable vector (names are
 variable names), or an unnamed vector with one value per variable in plot
 order. Defaults to \code{2}.}
+
+\item{line_type}{Dash style of the plotted lines. Each value is one of
+\code{"solid"}, \code{"dot"}, \code{"dash"}, \code{"longdash"}, \code{"dashdot"}, \code{"longdashdot"}, or
+a pixel pattern such as \code{"5px,10px"}. Supply a single style for every
+variable (\code{line_type = "dash"}), a named vector to style variables
+individually (\code{line_type = c(S = "solid", I = "dot")}), an unnamed vector in
+plot order, or a list keyed by variable type to style each type at once
+(\code{line_type = list(stock = "solid", flow = "dash")}; the types are \code{stock},
+\code{flow}, \code{aux}, \code{constant}, and \code{lookup}). By default stocks, flows, and
+auxiliaries are solid and constants and lookups are dashed.}
+
+\item{vars_display}{How to arrange saved variables. Use \code{"vstack"} to stack
+stocks above flows, auxiliaries, constants, and lookups; \code{"hstack"} to put
+stocks beside non-stock variables; or \code{"joint"} to draw all variables in
+one panel. If only one variable group is available, a single panel is
+drawn. Defaults to \code{"vstack"}.}
+
+\item{fill_flows}{If \code{TRUE}, flow traces are filled
+down to zero. Auxiliaries, constants, and lookups are never filled.
+Defaults to \code{TRUE}. Filled flows always render with SVG \code{scatter}, as WebGL
+does not support fills (see \code{webgl}).}
 
 \item{font_family}{Font family. Kebab-case names (e.g. \code{"eb-garamond"})
 are Fontsource ids (browse them at \url{https://fontsource.org/}), loaded as
@@ -54,7 +86,7 @@ e.g. in your .Rprofile.}
 
 \item{wrap_width}{Width of text wrapping for labels. Must be an integer. Defaults to 25.}
 
-\item{showlegend}{Whether to show legend. Must be \code{TRUE} or \code{FALSE}. Defaults to \code{TRUE}.}
+\item{show_legend}{Whether to show legend. Must be \code{TRUE} or \code{FALSE}. Defaults to \code{TRUE}.}
 
 \item{format_label}{If \code{TRUE}, apply default formatting (replacing periods and
 underscores with spaces) to variable labels that are the same as the
@@ -78,7 +110,9 @@ all defaults.}
 performance with many lines; if \code{FALSE}, use SVG (\code{scatter}). Defaults to
 \code{getOption("sdbuildR.webgl", default = TRUE)}. Set
 \code{options(sdbuildR.webgl = FALSE)} (e.g. in vignettes or dashboards, or when
-a plot renders blank) to disable WebGL globally.}
+a plot renders blank) to disable WebGL globally. WebGL is not supported for
+filled flow traces (\code{fill_flows = TRUE}) or time animations; these always
+render with SVG \code{scatter} regardless of \code{webgl}.}
 
 \item{...}{Optional parameters}
 }
@@ -90,9 +124,8 @@ Visualize simulation results of a stock-and-flow model. Plot the evolution of st
 }
 \section{Styling variables}{
 
-Names in \code{colors} and \code{line_width} refer to the model variable names, not the
-labels shown in the legend. This is usually the safest way to style a plot,
-because labels may be wrapped, prettified, or customized for display.
+Names in \code{colors}, \code{line_width}, and \code{line_type} refer to the model variable
+names, not the labels shown in the legend.
 
 Use one value to style every trajectory:
 \code{plot(sim, line_width = 3)}.
@@ -100,9 +133,6 @@ Use one value to style every trajectory:
 Use a named vector to style selected variables and leave the rest at their
 defaults or palette colours:
 \code{plot(sim, colors = c(susceptible = "#377EB8"), line_width = c(infected = 4))}.
-
-Unnamed vectors are still accepted and are applied in plot order, but named
-vectors are easier to read and less sensitive to filtering with \code{vars}.
 }
 
 \examples{
@@ -110,20 +140,33 @@ sfm <- stockflow("sir")
 sim <- simulate(sfm)
 plot(sim)
 
+# When all variables are saved in the output, the stocks are plotted 
+# separately from the other variables by default:
+sim_all <- simulate(sfm, only_stocks = FALSE)
+plot(sim_all)
+
+# Plot all variables in one panel:
+plot(sim_all, vars_display = "joint")
+
+# Animate the simulation over time:
+plot(sim_all, animation = "time")
+
+\dontshow{if (Sys.getenv("NOT_CRAN") == "true") withAutoprint(\{ # examplesIf}
+# Slow the animation down to ~10 seconds in total, or speed up the
+# individual frames
+plot(sim, animation = "time", control_options = list(duration = 10))
+plot(sim, animation = "time", control_options = list(frame_ms = 40))
+
+## Styling options
 # The default plot title and axis labels can be changed like so:
 plot(sim, main = "Simulated trajectory", xlab = "Time", ylab = "Value")
 
 # Add constants to the plot
 plot(sim, show_constants = TRUE)
 
-# Cumulatively reveal the trajectories over time
-plot(sim, animation = "time")
-
-# Slow the animation down to ~10 seconds in total, or speed up the
-# individual frames
-plot(sim, animation = "time", control_options = list(duration = 10))
-plot(sim, animation = "time", control_options = list(frame_ms = 40))
-
+# Plot selected variables:
+plot(sim, vars = c("susceptible", "infected"))
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=simulate.stockflow]{simulate()}}, \code{\link[=as.data.frame.simulate_stockflow]{as.data.frame.simulate_stockflow()}}, \code{\link[=plot.simulate_stockflow]{plot.simulate_stockflow()}}

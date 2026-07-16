@@ -50,7 +50,7 @@ resolve_summary_choice <- function(pref, available) {
 #' Validate common parameters used across all plotting functions (plot.simulate_stockflow,
 #' plot.stockflow, plot.ensemble_stockflow).
 #'
-#' @param showlegend Logical, whether to show legend.
+#' @param show_legend Logical, whether to show legend.
 #' @param vars Character vector of variable names to plot, or NULL.
 #' @param palette Character, color palette name.
 #' @param colors Character vector of colors, or NULL.
@@ -63,7 +63,7 @@ resolve_summary_choice <- function(pref, available) {
 #' @returns Invisibly returns a list of validation results. Throws cli errors if validation fails.
 #' @noRd
 #'
-validate_plot_params <- function(showlegend = NULL,
+validate_plot_params <- function(show_legend = NULL,
                                  vars = NULL,
                                  palette = NULL,
                                  colors = NULL,
@@ -73,7 +73,7 @@ validate_plot_params <- function(showlegend = NULL,
                                  label_subplots = NULL,
                                  format_label = NULL,
                                  webgl = NULL) {
-  .assert_plot_type(showlegend, "showlegend", "logical", "Use {.code TRUE} or {.code FALSE}.")
+  .assert_plot_type(show_legend, "show_legend", "logical", "Use {.code TRUE} or {.code FALSE}.")
 
   .assert_plot_type(webgl, "webgl", "logical", "Use {.code TRUE} or {.code FALSE}.")
 
@@ -312,7 +312,7 @@ node_tooltip <- function(type, label, name, eqn,
 #' @returns List with plotly layout specifications.
 #' @noRd
 #'
-plotly_theme <- function(font_family = default_font_family(),
+plotly_theme <- function(font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
                          font_size = 16,
                          margin_t = 50,
                          margin_b = 50,
@@ -323,7 +323,7 @@ plotly_theme <- function(font_family = default_font_family(),
     font = list(family = font_family, size = font_size),
     margin = list(t = margin_t, b = margin_b, l = margin_l, r = margin_r),
     legend = list(
-      traceorder = "reversed",
+      traceorder = "normal",
       font = list(size = ceiling(font_size * legend_font_scale))
     ),
     xaxis = list(font = list(size = font_size)),
@@ -487,6 +487,74 @@ prepare_layout_groups <- function(x, plot_var, model_var, arg, min_len = 2L) {
 
   # Keep only groups with enough drawn members to matter
   x[vapply(x, function(g) length(g) >= min_len, logical(1))]
+}
+
+
+#' Reorder plotted variables for time-series plots
+#'
+#' @param names_df Data frame with a `name` column for plotted variables.
+#' @param order Character vector of model variable names, or NULL.
+#' @param model_var Character vector of all model variable names for typo checks.
+#' @param reported Character vector of names whose absence from the plot has
+#'   already been reported elsewhere (typically `vars`, since `order` defaults to
+#'   `vars`). These are skipped when warning about ordered-but-not-shown
+#'   variables so the same drop is not reported twice.
+#' @returns `names_df`, reordered so requested variables appear first.
+#' @noRd
+apply_trace_order <- function(names_df, order = NULL, model_var = names_df[["name"]],
+                              reported = NULL) {
+  if (is.null(order)) {
+    return(names_df)
+  }
+
+  if (!is.character(order)) {
+    cli::cli_abort(c(
+      "x" = "Invalid {.arg order} argument.",
+      ">" = "The {.arg order} argument must be a character vector of model variable names."
+    ))
+  }
+
+  order <- unique(trimws(order))
+  order <- order[nzchar(order)]
+  if (length(order) == 0L) {
+    cli::cli_abort(c(
+      "x" = "Empty {.arg order} vector.",
+      ">" = "Provide at least one variable name."
+    ))
+  }
+
+  unknown <- setdiff(order, model_var)
+  if (length(unknown) > 0L) {
+    cli::cli_abort(c(
+      "!" = paste0(
+        "{.arg order}: ",
+        paste0(unknown, collapse = ", "),
+        ifelse(length(unknown) == 1L, " is not a variable", " are not variables"),
+        " in the model."
+      ),
+      "i" = paste0("Model variables: ", paste0(sort(model_var), collapse = ", "))
+    ))
+  }
+
+  plot_var <- names_df[["name"]]
+  # Names already reported as dropped (e.g. by `vars` filtering) are excluded so
+  # that defaulting `order = vars` does not warn twice about the same variable.
+  not_plotted <- setdiff(setdiff(order, plot_var), reported)
+  if (length(not_plotted) > 0L) {
+    cli::cli_warn(c(
+      "!" = paste0(
+        "{.arg order}: ",
+        paste0(not_plotted, collapse = ", "),
+        ifelse(length(not_plotted) == 1L, " is", " are"),
+        " not shown in the plot and will be ignored."
+      ),
+      "i" = "Hidden by {.arg vars}, {.arg show_constants}, or simulation output settings."
+    ))
+  }
+
+  requested <- order[order %in% plot_var]
+  remaining <- plot_var[!plot_var %in% requested]
+  names_df[match(c(requested, remaining), plot_var), , drop = FALSE]
 }
 
 
@@ -757,6 +825,135 @@ resolve_aes <- function(x, roles, defaults, var_names, arg, validate_by_role,
       )
     }),
     roles
+  )
+}
+
+
+#' Validate Plotly line dash strings
+#'
+#' @param x Character vector of dash strings.
+#' @param arg Argument name for messages.
+#' @noRd
+validate_plotly_dash <- function(x, arg = "line_type") {
+  fixed <- c("solid", "dot", "dash", "longdash", "dashdot", "longdashdot")
+  dash_length <- "^\\s*\\d+(?:\\.\\d+)?px\\s*(?:,\\s*\\d+(?:\\.\\d+)?px\\s*)+$"
+  ok <- x %in% fixed | grepl(dash_length, x, perl = TRUE)
+  if (any(!ok)) {
+    bad <- unique(x[!ok])
+    cli::cli_abort(c(
+      "x" = "Invalid {.arg {arg}} value{?s}: {.val {bad}}.",
+      "i" = "Use a Plotly dash string such as {.val solid}, {.val dash}, {.val dot}, {.val dashdot}, or a pixel pattern like {.val 5px,10px,2px,2px}."
+    ))
+  }
+  invisible(TRUE)
+}
+
+
+#' Expand a character aesthetic to a full per-variable named vector
+#'
+#' Mirrors expand_aes() for non-numeric aesthetics such as Plotly line dashes.
+#'
+#' @param raw Leaf spec (scalar, named vector, unnamed vector, or NULL).
+#' @param var_names Character vector of variable names (defines length/order).
+#' @param default Single character used for `NULL` and unspecified variables.
+#' @param arg Argument name for messages.
+#' @param display_names Character vector used to name the returned vector.
+#' @param valid_names Character vector of valid model variable names for warning
+#'   unknown names; defaults to `var_names`.
+#' @param validator Optional function called on the resulting values.
+#' @returns Character vector named by `display_names`.
+#' @noRd
+expand_character_aes <- function(raw, var_names, default, arg,
+                                 display_names = var_names,
+                                 valid_names = var_names,
+                                 validator = NULL) {
+  n <- length(var_names)
+  if (is.null(raw)) raw <- default
+
+  if (!is.character(raw) || length(raw) == 0L) {
+    cli::cli_abort(c(
+      "x" = "Invalid {.arg {arg}} argument.",
+      "i" = "The {.arg {arg}} argument must be {.cls character}."
+    ))
+  }
+
+  if (length(raw) == 1L && is.null(names(raw))) {
+    out <- stats::setNames(rep(unname(raw), n), display_names)
+    if (!is.null(validator)) validator(out, arg = arg)
+    return(out)
+  }
+
+  if (!is.null(names(raw))) {
+    out <- stats::setNames(rep(default, n), var_names)
+    hit <- intersect(names(raw), var_names)
+    out[hit] <- raw[hit]
+    unknown <- setdiff(names(raw), valid_names)
+    if (length(unknown) > 0) {
+      cli::cli_warn(c(
+        "!" = "Ignoring {.arg {arg}} name{?s} not matching a model variable: {.val {unknown}}.",
+        "i" = "Plotted variables: {.val {var_names}}."
+      ))
+    }
+    out <- stats::setNames(unname(out), display_names)
+    if (!is.null(validator)) validator(out, arg = arg)
+    return(out)
+  }
+
+  if (length(raw) < n) {
+    cli::cli_abort(c(
+      "x" = "Insufficient {.arg {arg}} values provided.",
+      "i" = "The {.arg {arg}} vector has length {.val {length(raw)}}, but {.val {n}} variables need values.",
+      ">" = "Provide a single value, {.val {n}} values, a named vector, or omit {.arg {arg}}."
+    ))
+  }
+  out <- stats::setNames(unname(raw[seq_len(n)]), display_names)
+  if (!is.null(validator)) validator(out, arg = arg)
+  out
+}
+
+
+#' Resolve line types for simulation traces
+#'
+#' @param line_type User line_type argument.
+#' @param var_names Model variable names in plot order.
+#' @param var_types Variable types matching `var_names`.
+#' @param display_names Display labels matching `var_names`.
+#' @param valid_names Valid model variable names for warnings.
+#' @returns Character vector of Plotly dash strings named by display label.
+#' @noRd
+resolve_line_type <- function(line_type, var_names, var_types,
+                              display_names = var_names,
+                              valid_names = var_names) {
+  roles <- c("stock", "flow", "aux", "constant", "lookup")
+  defaults <- c(
+    stock = "solid", flow = "solid", aux = "solid",
+    constant = "dash", lookup = "dash"
+  )
+
+  if (is.list(line_type)) {
+    raw <- split_aes_roles(line_type, roles, "line_type")
+    by_role <- stats::setNames(vector("list", length(roles)), roles)
+    for (role in roles) {
+      by_role[[role]] <- expand_character_aes(raw[[role]], var_names,
+        default = defaults[[role]], arg = "line_type",
+        display_names = display_names, valid_names = valid_names,
+        validator = validate_plotly_dash
+      )
+    }
+    out <- vapply(seq_along(var_names), function(i) {
+      role <- var_types[[i]]
+      if (!role %in% roles) role <- "aux"
+      unname(by_role[[role]][[display_names[[i]]]])
+    }, character(1))
+    out <- stats::setNames(out, display_names)
+    validate_plotly_dash(out, arg = "line_type")
+    return(out)
+  }
+
+  expand_character_aes(line_type, var_names,
+    default = "solid", arg = "line_type",
+    display_names = display_names, valid_names = valid_names,
+    validator = validate_plotly_dash
   )
 }
 
@@ -1073,7 +1270,7 @@ add_visibility_pair <- function(pl, add_fn,
 #' @param df_nonhighlight Data frame with nonhighlight variables.
 #' @param colors Character vector of colors for variables.
 #' @param x_col Character, name of x-axis column (e.g., "time").
-#' @param showlegend Logical, whether to show legend.
+#' @param show_legend Logical, whether to show legend.
 #' @param mode Character, "lines", "markers", or "lines+markers".
 #' @param type Character, trace type (default "scatter").
 #' @param opacity Numeric, opacity/transparency (0-1).
@@ -1094,14 +1291,18 @@ add_trace_pair <- function(pl,
                            colors = NULL,
                            x_col = "time",
                            y_col = "value",
-                           showlegend = TRUE,
+                           show_legend = TRUE,
                            mode = "lines",
                            type = "scatter",
                            opacity = 1,
                            line_width = NULL,
+                           line_type = NULL,
+                           fill = NULL,
+                           fillcolor = NULL,
                            marker_size = NULL,
                            split = NULL,
                            frame = NULL,
+                           trace_order = NULL,
                            visible_highlight = TRUE,
                            visible_nonhighlight = "legendonly") {
   # Build an explicit variable->color mapping for variables actually present in
@@ -1152,15 +1353,49 @@ add_trace_pair <- function(pl,
       lw <- line_width[vars_present]
     }
   }
-  # When all widths are identical, a single color-mapped trace suffices; otherwise
-  # each variable needs its own trace so it can carry its own width.
+  lt <- NULL
+  if (!is.null(line_type) && length(vars_present) > 0) {
+    if (length(line_type) == 1 && is.null(names(line_type))) {
+      lt <- stats::setNames(rep(unname(line_type), length(vars_present)), vars_present)
+    } else {
+      lt <- line_type[vars_present]
+    }
+  }
+  fl <- NULL
+  if (!is.null(fill) && length(vars_present) > 0) {
+    fl <- fill[vars_present]
+  }
+  fc <- NULL
+  if (!is.null(fillcolor) && length(vars_present) > 0) {
+    fc <- fillcolor[vars_present]
+  }
+
+  # When all per-line styles are identical and no per-variable fill is needed, a
+  # single color-mapped trace suffices; otherwise each variable needs its own
+  # trace so it can carry its own width, dash, and fill attributes.
   uniform_width <- is.null(lw) || length(unique(unname(lw))) == 1L
+  uniform_dash <- is.null(lt) || length(unique(unname(lt))) == 1L
+  needs_variable_fill <- !is.null(fl) && any(!is.na(fl) & nzchar(fl))
+  uniform_style <- uniform_width && uniform_dash && !needs_variable_fill
+
+  line_for <- function(variable = NULL) {
+    out <- list()
+    if (is.null(variable)) {
+      if (!is.null(lw)) out[["width"]] <- unname(lw)[1]
+      if (!is.null(lt)) out[["dash"]] <- unname(lt)[1]
+    } else {
+      if (!is.null(lw)) out[["width"]] <- unname(lw[variable])
+      if (!is.null(colors)) out[["color"]] <- unname(colors[variable])
+      if (!is.null(lt)) out[["dash"]] <- unname(lt[variable])
+    }
+    if (length(out) == 0L) NULL else out
+  }
 
   # Build the trace(s) for one data frame (highlight or nonhighlight), injecting
   # split/frame only when supplied so behaviour is identical to before when
   # neither is requested.
   add_one <- function(pl, data, showlegend_val, visible_val) {
-    if (uniform_width) {
+    if (uniform_style) {
       args <- list(
         pl,
         data = data,
@@ -1175,14 +1410,16 @@ add_trace_pair <- function(pl,
         showlegend = showlegend_val,
         visible = visible_val
       )
-      if (!is.null(lw)) args[["line"]] <- list(width = unname(lw)[1])
+      line <- line_for()
+      if (!is.null(line)) args[["line"]] <- line
       if (!is.null(split)) args[["split"]] <- split
       if (!is.null(frame)) args[["frame"]] <- frame
       return(do.call(plotly::add_trace, args))
     }
 
-    # Per-variable widths: add one trace per variable, setting line colour and
-    # width explicitly (plotly cannot map width across colour levels).
+    # Per-variable styles: add one trace per variable, setting line colour,
+    # width, dash, and fill explicitly (plotly cannot map these across colour
+    # levels in one trace).
     for (v in levels(droplevels(data[["variable"]]))) {
       dv <- data[data[["variable"]] == v, , drop = FALSE]
       if (nrow(dv) == 0) next
@@ -1196,10 +1433,13 @@ add_trace_pair <- function(pl,
         type = type,
         mode = mode,
         opacity = opacity,
-        line = list(width = unname(lw[v]), color = unname(colors[v])),
         showlegend = showlegend_val,
         visible = visible_val
       )
+      line <- line_for(v)
+      if (!is.null(line)) args[["line"]] <- line
+      if (!is.null(fl) && !is.na(fl[v]) && nzchar(fl[v])) args[["fill"]] <- unname(fl[v])
+      if (!is.null(fc) && !is.na(fc[v]) && nzchar(fc[v])) args[["fillcolor"]] <- unname(fc[v])
       if (!is.null(split)) args[["split"]] <- split
       if (!is.null(frame)) args[["frame"]] <- frame
       pl <- do.call(plotly::add_trace, args)
@@ -1207,11 +1447,50 @@ add_trace_pair <- function(pl,
     pl
   }
 
+  if (!is.null(trace_order)) {
+    ordered_vars <- trace_order[trace_order %in% vars_present]
+    add_ordered_one <- function(pl, variable, data, visible_val) {
+      dv <- data[as.character(data[["variable"]]) == variable, , drop = FALSE]
+      if (nrow(dv) == 0) {
+        return(pl)
+      }
+      args <- list(
+        pl,
+        data = dv,
+        x = ~ get(x_col),
+        y = ~ get(y_col),
+        name = variable,
+        legendgroup = variable,
+        type = type,
+        mode = mode,
+        opacity = opacity,
+        showlegend = if (is.null(split)) show_legend else FALSE,
+        visible = visible_val
+      )
+      line <- line_for(variable)
+      if (!is.null(line)) args[["line"]] <- line
+      if (!is.null(fl) && !is.na(fl[variable]) && nzchar(fl[variable])) args[["fill"]] <- unname(fl[variable])
+      if (!is.null(fc) && !is.na(fc[variable]) && nzchar(fc[variable])) args[["fillcolor"]] <- unname(fc[variable])
+      if (!is.null(split)) args[["split"]] <- split
+      if (!is.null(frame)) args[["frame"]] <- frame
+      do.call(plotly::add_trace, args)
+    }
+
+    for (v in ordered_vars) {
+      if (v %in% vars_highlight) {
+        pl <- add_ordered_one(pl, v, df_highlight, visible_highlight)
+      } else if (v %in% vars_nonhighlight) {
+        pl <- add_ordered_one(pl, v, df_nonhighlight, visible_nonhighlight)
+      }
+    }
+    return(pl)
+  }
+
   # Add nonhighlight traces first (will be hidden behind highlight traces)
   if (!is.null(df_nonhighlight) && nrow(df_nonhighlight) > 0) {
     # When splitting, individual trajectories must not each add a legend entry.
     pl <- add_one(pl, df_nonhighlight,
-      showlegend_val = if (is.null(split)) showlegend else FALSE,
+      showlegend_val = if (is.null(split)) show_legend else FALSE,
       visible_val = visible_nonhighlight
     )
   }
@@ -1219,12 +1498,96 @@ add_trace_pair <- function(pl,
   # Add highlight traces (will be visible by default)
   if (!is.null(df_highlight) && nrow(df_highlight) > 0) {
     pl <- add_one(pl, df_highlight,
-      showlegend_val = if (is.null(split)) showlegend else FALSE,
+      showlegend_val = if (is.null(split)) show_legend else FALSE,
       visible_val = visible_highlight
     )
   }
 
   pl
+}
+
+
+#' Make a translucent fill color from a line color
+#'
+#' @param col Colour string.
+#' @param alpha Alpha value for the returned colour.
+#' @returns Colour string with alpha applied.
+#' @noRd
+plotly_translucent_color <- function(col, alpha = 0.25) {
+  if (is.null(col) || is.na(col) || !nzchar(as.character(col)[1L])) {
+    col <- "#1f77b4"
+  }
+  col <- as.character(col)[1L]
+  if (grepl("^rgba?\\(", col)) {
+    nums <- as.numeric(strsplit(gsub("rgba?\\(|\\)", "", col), ",")[[1]])
+    if (length(nums) >= 3L) {
+      if (max(nums[1:3], na.rm = TRUE) <= 1) nums[1:3] <- round(nums[1:3] * 255)
+      return(sprintf("rgba(%d,%d,%d,%s)", nums[1], nums[2], nums[3], alpha))
+    }
+  }
+  grDevices::adjustcolor(col, alpha.f = alpha)
+}
+
+
+#' Combine animated subplots with linked frames
+#'
+#' @param plots List of static plotly objects used to compose the subplot.
+#' @param frame_plots Optional list of animated plotly objects used as the frame
+#'   source. Defaults to `plots`.
+#' @param nrows Number of subplot rows.
+#' @param heights Optional relative row heights.
+#' @param widths Optional relative column widths.
+#' @param margin Subplot margin.
+#' @param shareX Whether to share x axes.
+#' @param titleY Whether subplot should preserve y-axis titles.
+#' @returns Plotly object with frames reconstructed across subplots.
+#' @noRd
+subplot_linked_animation <- function(plots, frame_plots = plots,
+                                     nrows = length(plots), heights = NULL,
+                                     widths = NULL,
+                                     margin = 0.06, shareX = TRUE,
+                                     titleY = TRUE) {
+  builds <- lapply(frame_plots, plotly::plotly_build)
+  frame_names <- lapply(builds, function(b) {
+    vapply(b$x$frames, function(f) as.character(f$name), character(1))
+  })
+  if (length(frame_names[[1]]) == 0L) {
+    cli::cli_abort(c("x" = "Animated subplot has no animation frames."))
+  }
+  same <- vapply(frame_names[-1], identical, logical(1), frame_names[[1]])
+  if (!all(same)) {
+    cli::cli_abort(c("x" = "All animated panels must have identical animation frames."))
+  }
+
+  args <- c(plots, list(
+    nrows = nrows, heights = heights, widths = widths,
+    margin = margin, shareX = shareX, titleY = titleY
+  ))
+  sp <- do.call(plotly::subplot, args)
+  sp <- plotly::plotly_build(sp)
+
+  n_traces <- vapply(builds, function(b) length(b$x$data), integer(1))
+  offsets <- cumsum(c(0L, utils::head(n_traces, -1L)))
+
+  sp$x$frames <- lapply(seq_along(frame_names[[1]]), function(i) {
+    frame <- list(name = frame_names[[1]][i], data = list(), traces = integer(0))
+    for (k in seq_along(builds)) {
+      built_frame <- builds[[k]]$x$frames[[i]]
+      trace_idx <- unlist(built_frame$traces)
+      for (j in seq_along(trace_idx)) {
+        new_idx <- offsets[[k]] + trace_idx[[j]]
+        trace <- built_frame$data[[j]]
+        base <- sp$x$data[[new_idx + 1L]]
+        trace$xaxis <- base$xaxis
+        trace$yaxis <- base$yaxis
+        frame$data[[length(frame$data) + 1L]] <- trace
+        frame$traces <- c(frame$traces, new_idx)
+      }
+    }
+    frame
+  })
+
+  sp
 }
 
 
@@ -1413,6 +1776,81 @@ accumulate_by_time <- function(df, time_col = "time", frame_col = ".frame",
 }
 
 
+#' Ensure Plotly animation controls have target scaffold objects
+#'
+#' Plotly creates `aniSlider`/`aniButton` layout objects automatically when it
+#' builds traces mapped with `frame`. Manually reconstructed subplot frames do
+#' not have that scaffold, so add a minimal compatible one before calling
+#' `animation_slider()` and `animation_button()`.
+#'
+#' @param pl Plotly object with built animation frames.
+#' @param frame_ms Frame duration in milliseconds.
+#' @param transition_ms Transition duration in milliseconds.
+#' @returns Plotly object with animation-control scaffold objects.
+#' @noRd
+ensure_animation_scaffold <- function(pl, frame_ms, transition_ms) {
+  pl <- plotly::plotly_build(pl)
+  frames <- pl$x$frames
+  if (length(frames) == 0L) {
+    return(pl)
+  }
+
+  frame_names <- vapply(frames, function(frame) as.character(frame$name), character(1))
+  animate_opts <- list(
+    transition = list(duration = transition_ms, easing = "linear"),
+    frame = list(duration = frame_ms, redraw = FALSE),
+    mode = "immediate"
+  )
+
+  sliders <- pl$x$layout$sliders
+  has_slider <- length(sliders) > 0L && any(vapply(sliders, function(obj) {
+    "aniSlider" %in% class(obj)
+  }, logical(1)))
+  if (!has_slider) {
+    steps <- lapply(frame_names, function(name) {
+      list(
+        method = "animate",
+        args = list(list(name), animate_opts),
+        label = name,
+        value = name
+      )
+    })
+    slider <- structure(list(
+      currentvalue = list(prefix = ".frame: ", xanchor = "right", font = list()),
+      steps = steps,
+      visible = TRUE,
+      pad = list(t = 40)
+    ), class = "aniSlider")
+    pl$x$layout$sliders <- c(sliders, list(slider))
+  }
+
+  buttons <- pl$x$layout$updatemenus
+  has_button <- length(buttons) > 0L && any(vapply(buttons, function(obj) {
+    "aniButton" %in% class(obj)
+  }, logical(1)))
+  if (!has_button) {
+    button <- structure(list(
+      type = "buttons",
+      direction = "right",
+      showactive = FALSE,
+      y = 0,
+      x = 0,
+      yanchor = "top",
+      xanchor = "right",
+      pad = list(t = 60, r = 5),
+      buttons = list(list(
+        label = "Play",
+        method = "animate",
+        args = list(NULL, c(list(fromcurrent = TRUE), animate_opts))
+      ))
+    ), class = "aniButton")
+    pl$x$layout$updatemenus <- c(buttons, list(button))
+  }
+
+  pl
+}
+
+
 #' Add Plotly animation controls (play button and time slider)
 #'
 #' @param pl Plotly object with animation frames.
@@ -1427,7 +1865,7 @@ accumulate_by_time <- function(df, time_col = "time", frame_col = ".frame",
 #' @noRd
 add_time_animation_controls <- function(pl,
                                         time_unit = "",
-                                        font_family = default_font_family(),
+                                        font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
                                         font_size = 16,
                                         frame_ms = 100,
                                         transition_ms = 0,
@@ -1438,6 +1876,10 @@ add_time_animation_controls <- function(pl,
     frame = frame_ms,
     transition = transition_ms,
     redraw = FALSE
+  )
+  pl <- ensure_animation_scaffold(pl,
+    frame_ms = frame_ms,
+    transition_ms = transition_ms
   )
 
   # The slider replaces the x-axis, so drop the axis title and ticks. The slider
@@ -1469,7 +1911,9 @@ add_time_animation_controls <- function(pl,
         prefix = cv_prefix,
         suffix = cv_suffix,
         xanchor = "center",
-        font = list(family = font_family, size = font_size)
+        # Plotly's default currentvalue colour is a light grey (#ccc); set the
+        # normal text colour so the slider title is not greyed out.
+        font = list(family = font_family, size = font_size, color = "#444444")
       ),
       x = 0,
       xanchor = "left",
@@ -2002,6 +2446,9 @@ swap_onrender_js <- function() {
 #' @param spacing Optional pixel gap between stacked controls (see
 #'   control_geometry()). NULL uses the type-specific default.
 #' @param format_label Whether to prettify parameter names lacking a custom label.
+#' @param tick_labels Whether to show the slider's rail tick labels. When FALSE
+#'   the rail labels are hidden (useful when the condition labels are long) but
+#'   the currently selected label still shows in the slider title.
 #' @returns A combined plotly object with condition controls. The widget's
 #'   height is pinned (see control_geometry()) so the control geometry is exact.
 #' @noRd
@@ -2014,7 +2461,8 @@ assemble_condition_control_plot <- function(pl_list, condition_ids, type,
                                             object = NULL,
                                             max_labels = 10L,
                                             spacing = NULL,
-                                            format_label = TRUE) {
+                                            format_label = TRUE,
+                                            tick_labels = TRUE) {
   ydata <- capture_swapdata(pl_list)
   n_traces <- length(ydata[[1]])
 
@@ -2064,7 +2512,7 @@ assemble_condition_control_plot <- function(pl_list, condition_ids, type,
 
   # Single control: each step/button natively restyles to its condition's y
   # arrays (no JS needed). For a slider over a single parameter, the parameter
-  # label lives in the slider title (currentvalue prefix) and the tick labels
+  # label is in the slider title (currentvalue prefix) and the tick labels
   # carry only the values; otherwise the full condition labels are used.
   trace_idx <- seq_len(n_traces) - 1L
 
@@ -2076,7 +2524,10 @@ assemble_condition_control_plot <- function(pl_list, condition_ids, type,
     slider_prefix <- paste0(model_label_lookup(object, format_label)(cn), " = ")
     step_labels <- formatC(condition_table[condition_ids, cn], format = "g")
   }
-  if (type == "slider") {
+  # Thin the rail tick labels only when they are shown; when hidden, every step
+  # keeps its full label so the slider title (which reads the active step's
+  # label) is correct for every position.
+  if (type == "slider" && tick_labels) {
     step_labels <- thin_slider_labels(step_labels, max_labels)
   }
 
@@ -2089,16 +2540,24 @@ assemble_condition_control_plot <- function(pl_list, condition_ids, type,
   })
 
   if (type == "slider") {
-    plotly::layout(combined,
-      sliders = list(list(
-        # Full plot width: unlike the time-animation slider, there is no play
-        # button to leave a lane for.
-        active = 0, x = 0, len = 1, y = geo[["y"]][1],
-        pad = list(t = 10, b = 10),
-        currentvalue = list(prefix = slider_prefix),
-        steps = steps
-      ))
+    slider <- list(
+      # Full plot width: unlike the time-animation slider, there is no play
+      # button to leave a lane for.
+      active = 0, x = 0, len = 1, y = geo[["y"]][1],
+      pad = list(t = 10, b = 10),
+      currentvalue = list(prefix = slider_prefix),
+      steps = steps
     )
+    if (!tick_labels) {
+      # Hide the (long) rail tick labels by making the step-label font
+      # transparent, but keep the selected label in the slider title. The
+      # currentvalue font inherits its colour from the slider font, so set an
+      # explicit visible colour on it or the title would vanish too.
+      slider[["font"]] <- list(color = "rgba(0,0,0,0)")
+      slider[["currentvalue"]][["font"]] <-
+        list(family = font_family, size = font_size, color = "#444444")
+    }
+    plotly::layout(combined, sliders = list(slider))
   } else {
     plotly::layout(combined,
       updatemenus = list(list(

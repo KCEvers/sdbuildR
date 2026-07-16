@@ -9,7 +9,8 @@
       "mode": "lines",
       "line": {
         "color": "#C87A8AFF",
-        "width": 2
+        "width": 2,
+        "dash": "solid"
       },
       "showlegend": true,
       "visible": true,
@@ -39,7 +40,7 @@
       "r": 50
     },
     "legend": {
-      "traceorder": "reversed",
+      "traceorder": "normal",
       "font": {
         "size": 17
       }

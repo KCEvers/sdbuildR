@@ -1,18 +1,24 @@
 url: https://kcevers.github.io/sdbuildR/
+## Disable pkgdown 2.2.0's "Building docs for llms" step: it globs every built
+## HTML page and spawns a pandoc subprocess per page in the same R process that
+## holds a live Julia session, which the CI runner kills (SIGTERM / exit 143).
+llm-docs: false
 template:
   bootstrap: 5
   math-rendering: katex
+  #bslib:
+   # version: 5
 articles:
 - title: Vignettes
   navbar: ~
   contents:
-  - articles/summerschool2026
   - articles/build
   - articles/ensemble
   - articles/unit-tests
-  # - articles/jdr
   - articles/julia-setup
   - articles/import-export
+  - articles/jdr
+  - articles/summerschool2026
 reference:
 - title: Building stock-and-flow models
 - contents:

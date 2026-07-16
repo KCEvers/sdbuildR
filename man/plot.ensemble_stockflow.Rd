@@ -10,6 +10,7 @@
   sim = seq(1, min(c(x[["n"]], 100))),
   condition = seq(1, min(c(x[["n_conditions"]], 9))),
   vars = NULL,
+  order = vars,
   show_constants = FALSE,
   nrows = ceiling(sqrt(max(condition))),
   margin = 0.05,
@@ -19,10 +20,12 @@
   alpha = list(central = 1, spread = 0.3, sims = 0.3),
   colors = NULL,
   line_width = list(central = 3, spread = 0, sims = 1),
-  font_family = default_font_family(),
+  line_type = list(stock = "solid", flow = "solid", aux = "solid", constant = "dash",
+    lookup = "dash"),
+  font_family = getOption("sdbuildR.font_family", default = "stix-two-text"),
   font_size = 16,
   wrap_width = 25,
-  showlegend = TRUE,
+  show_legend = TRUE,
   label_subplots = TRUE,
   central = c("mean", "median", "none"),
   spread = c("quantile", "sd", "range"),
@@ -44,6 +47,12 @@
 \item{condition}{Indices of the condition(s) to plot. Defaults to 1:9.}
 
 \item{vars}{Variables to plot. Defaults to \code{NULL} to plot all variables.}
+
+\item{order}{Character vector of model variable names giving the trace and
+legend order. Listed variables appear first; any plotted variables not
+listed keep their default relative order. Defaults to \code{vars}, so the order
+in which variables are listed in \code{vars} is followed unless \code{order} is set
+explicitly.}
 
 \item{show_constants}{If \code{TRUE}, include constants in plot. Defaults to \code{FALSE}.}
 
@@ -76,6 +85,16 @@ single value or per-variable vector. Unspecified layers/variables fall back
 to the defaults. Defaults to \code{list(central = 3, spread = 0, sims = 1)}
 (a \code{spread} width of \code{0} draws no band border).}
 
+\item{line_type}{Dash style of the plotted lines. Each value is one of
+\code{"solid"}, \code{"dot"}, \code{"dash"}, \code{"longdash"}, \code{"dashdot"}, \code{"longdashdot"}, or
+a pixel pattern such as \code{"5px,10px"}. Supply a single style for every
+variable (\code{line_type = "dash"}), a named vector to style variables
+individually (\code{line_type = c(S = "solid", I = "dot")}), an unnamed vector in
+plot order, or a list keyed by variable type to style each type at once
+(\code{line_type = list(stock = "solid", flow = "dash")}; the types are \code{stock},
+\code{flow}, \code{aux}, \code{constant}, and \code{lookup}). By default stocks, flows, and
+auxiliaries are solid and constants and lookups are dashed.}
+
 \item{font_family}{Font family. Kebab-case names (e.g. \code{"eb-garamond"})
 are Fontsource ids (browse them at \url{https://fontsource.org/}), loaded as
 webfonts: no installation is needed, but internet access is required to
@@ -89,7 +108,7 @@ e.g. in your .Rprofile.}
 
 \item{wrap_width}{Width of text wrapping for labels. Must be an integer. Defaults to 25.}
 
-\item{showlegend}{Whether to show legend. Must be TRUE or FALSE. Defaults to TRUE.}
+\item{show_legend}{Whether to show legend. Must be TRUE or FALSE. Defaults to TRUE.}
 
 \item{label_subplots}{Whether to plot labels indicating the condition of the subplot.}
 
@@ -145,7 +164,9 @@ animated) and a single condition (one panel); combining it with
 performance with many lines; if \code{FALSE}, use SVG (\code{scatter}). Defaults to
 \code{getOption("sdbuildR.webgl", default = TRUE)}. Set
 \code{options(sdbuildR.webgl = FALSE)} (e.g. in vignettes or dashboards, or when
-a plot renders blank) to disable WebGL globally.}
+a plot renders blank) to disable WebGL globally. WebGL is not supported for
+filled flow traces (\code{fill_flows = TRUE}) or time animations; these always
+render with SVG \code{scatter} regardless of \code{webgl}.}
 
 \item{...}{Optional parameters}
 }

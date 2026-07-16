@@ -1,0 +1,10 @@
+sims-exp	sims_exp
+sims-ricker	sims_ricker
+sims-jdr-full	sims
+sims-jdr-full-b	n	sims1	vars	.jdr_cache/sims-jdr-full-b_67586a7a9ac0741351afd72f80216c91_meta
+sims-jdr-reduced	sims2	.jdr_cache/sims-jdr-reduced_82541535899386bd572a726ef465f1db_meta
+ensemble-parameter-variation-julia	conditions	n	sfm	sims
+intervention-ensemble-julia	n	sfm	sims	.jdr_cache/intervention-ensemble-julia_3797b6b0a740d66790dfd6ba183b0e9d_meta
+intervention-effectiveness-long-julia	n	sfm	sims
+intervention-shorter-duration-long-julia	sfm2	sims2
+sem-simulation-study	n	sfm	sims	vars	.jdr_cache/sem-simulation-study_bddb9de15e636fee857230d65e3f3208_meta

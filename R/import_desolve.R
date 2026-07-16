@@ -66,7 +66,7 @@ import_desolve <- function(model, params, init, times,
   if (!identical(fargs, c("t", "state", "parameters"))) {
     cli::cli_abort(c(
       "{.arg model} must have exactly the arguments {.code (t, state, parameters)}.",
-      "x" = "Found: {.code ({paste(fargs, collapse = ', ')})}."
+      "x" = "Found: {.code {fargs}}."
     ))
   }
 

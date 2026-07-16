@@ -11,26 +11,12 @@
 # (e.g. "Times New Roman") is passed through untouched and resolved as a
 # system font.
 #
-# The package's default font (see default_font_family()) is bundled under
+# The package's default font is bundled under
 # inst/fonts/ and embedded directly in the widget as a data: URI, so plots
 # render in it even without internet. For any other Fontsource id, R itself
 # still never downloads the font: a small CSS @font-face rule pointing at the
 # hosted woff2 files is attached to the widget, and whatever displays the plot
 # fetches them at render time, falling back to a default font when offline.
-
-
-#' Default font family for plots and diagrams
-#'
-#' Reads the sdbuildR.font_family option, so users can set their preferred
-#' default once (e.g. in .Rprofile) instead of passing font_family to every
-#' plot() call. The shipped default is the "stix-two-text" webfont
-#' (STIX Two Text, the serif used by scientific publishers).
-#'
-#' @returns Character font family name.
-#' @noRd
-default_font_family <- function() {
-  getOption("sdbuildR.font_family", default = "stix-two-text")
-}
 
 
 #' Is this font family a Fontsource webfont id?
@@ -71,7 +57,7 @@ webfont_faces <- function() {
 
 #' Directory of bundled woff2 files for a webfont id, or "" if not bundled
 #'
-#' The package ships its default font (see default_font_family()) under
+#' The package ships its default font under
 #' `inst/fonts/<id>/` so plots render in it without internet access. Any
 #' other webfont id is not bundled and is loaded from the Fontsource CDN.
 #'

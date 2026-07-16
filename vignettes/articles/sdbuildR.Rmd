@@ -1,8 +1,8 @@
 ---
-title: "Get started with sdbuildR"
+title: "Get Started With sdbuildR"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Get started with sdbuildR}
+  %\VignetteIndexEntry{Get Started With sdbuildR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -19,7 +19,7 @@ library(sdbuildR)
 ```
 
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, cache=FALSE}
 # Disable WebGL: many plotly widgets per HTML page can exceed the browser WebGL
 # context limit and render blank. SVG always renders.
 options(sdbuildR.webgl = FALSE)
@@ -104,7 +104,7 @@ sfm <- sfm |>
 ```
 
 
-Simulation settings such as the time range and time step (`dt`) are configured with `sim_settings()`.
+Simulation settings such as the duration and time unit used to label the axis are configured with `sim_settings()`.
 
 ```{r}
 sfm <- sfm |>
@@ -126,7 +126,9 @@ Running multiple simulations (i.e., an ensemble) provides insight into a model's
 
 ```{r ensemble_setup}
 sfm_ens <- sfm |>
-  update(c(Susceptible, Infected, Recovered), eqn = runif(1, 1, 1000)) |>
+  update(c(Susceptible, Infected, Recovered),
+    eqn = runif(1, 1, 1000)
+  ) |>
   # Save fewer values for computational efficiency
   sim_settings(stop = 50, save_by = 1)
 ```
@@ -142,7 +144,7 @@ See the [Ensemble](https://kcevers.github.io/sdbuildR/articles/ensemble.html) vi
 
 ### Unit tests
 
-Stock-and-flow models can easily become complex, producing unexpected behaviours as the model is developed. Unit tests assert that a model behaves as expected. An expression that evaluates to `TRUE` means the test passes. Here we check that the susceptible population never becomes negative, and that the total population is conserved:
+Stock-and-flow models can easily become complex, producing surprising results as the model is developed. Unit tests assert that a model behaves as expected. An expression that evaluates to `TRUE` means the test passes. Here we check that the susceptible population never becomes negative, and that the total population is conserved:
 
 ```{r unit_tests}
 sfm <- sfm |>
@@ -160,8 +162,8 @@ See the [Unit tests](https://kcevers.github.io/sdbuildR/articles/unit-tests.html
 ## Learn more
 
 * [Build](https://kcevers.github.io/sdbuildR/articles/build.html): Build, modify, and simulate stock-and-flow models.
-* [Ensemble simulations](https://kcevers.github.io/sdbuildR/articles/ensemble.html): Explore a model's behaviour across parameter ranges and initial conditions.
-* [Unit tests](https://kcevers.github.io/sdbuildR/articles/unit-tests.html): Verify models behave as intended with unit tests.
-<!-- * [Job Demands-Resources Theory](https://kcevers.github.io/sdbuildR/articles/jdr.html): An example of formalizing psychological theory with sdbuildR. -->
-* [Julia setup](https://kcevers.github.io/sdbuildR/articles/julia-setup.html): Speed up simulations with Julia.
+* [Ensemble Simulations](https://kcevers.github.io/sdbuildR/articles/ensemble.html): Explore a model's behaviour across parameter ranges and initial conditions.
+* [Unit Tests](https://kcevers.github.io/sdbuildR/articles/unit-tests.html): Verify models behave as intended with unit tests.
+* [Job Demands-Resources Theory](https://kcevers.github.io/sdbuildR/articles/jdr.html): An example of formalizing psychological theory with sdbuildR.
+* [Julia Setup](https://kcevers.github.io/sdbuildR/articles/julia-setup.html): Speed up simulations with Julia.
 * [Import/Export](https://kcevers.github.io/sdbuildR/articles/import-export.html): Import models from deSolve or Insight Maker, and export to other formats.

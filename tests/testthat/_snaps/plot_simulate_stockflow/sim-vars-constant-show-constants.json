@@ -11,7 +11,8 @@
       "visible": true,
       "line": {
         "color": "rgba(200,122,138,1)",
-        "width": 2
+        "width": 2,
+        "dash": "solid"
       },
       "name": "Stock1",
       "marker": {
@@ -44,7 +45,8 @@
       "visible": true,
       "line": {
         "color": "rgba(107,157,89,1)",
-        "width": 2
+        "width": 2,
+        "dash": "dash"
       },
       "name": "const val",
       "marker": {
@@ -63,45 +65,59 @@
         "color": "rgba(107,157,89,1)"
       },
       "xaxis": "x",
-      "yaxis": "y",
+      "yaxis": "y2",
       "frame": null
     }
   ],
   "layout": {
+    "xaxis": {
+      "domain": [0, 1],
+      "automargin": true,
+      "title": "Time (seconds)",
+      "anchor": "y2",
+      "font": {
+        "size": 16
+      }
+    },
+    "yaxis2": {
+      "domain": [0, 0.44],
+      "automargin": true,
+      "title": "",
+      "anchor": "x",
+      "font": {
+        "size": 16
+      }
+    },
+    "yaxis": {
+      "domain": [0.56, 1],
+      "automargin": true,
+      "title": "",
+      "anchor": "x",
+      "font": {
+        "size": 16
+      }
+    },
+    "annotations": [],
+    "shapes": [],
+    "images": [],
     "margin": {
       "b": 50,
       "l": 50,
       "t": 50,
       "r": 50
     },
+    "hovermode": "closest",
+    "showlegend": true,
     "legend": {
-      "traceorder": "reversed",
+      "traceorder": "normal",
       "font": {
         "size": 14
       }
     },
-    "title": "My Model",
-    "xaxis": {
-      "domain": [0, 1],
-      "automargin": true,
-      "title": "Time (seconds)",
-      "font": {
-        "size": 16
-      }
-    },
-    "yaxis": {
-      "domain": [0, 1],
-      "automargin": true,
-      "title": "",
-      "font": {
-        "size": 16
-      }
-    },
+    "title": "My Model<span style='font-size:16px;'><br /><\/span>",
     "font": {
       "family": "stix-two-text",
       "size": 16
-    },
-    "hovermode": "closest",
-    "showlegend": true
+    }
   }
 }

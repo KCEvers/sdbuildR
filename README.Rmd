@@ -24,8 +24,8 @@ options(sdbuildR.font_family = font_family)
 # sdbuildR: An Accessible Interface for Stock-and-Flow Modelling in R
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/KCEvers/sdbuildR/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/KCEvers/sdbuildR/graph/badge.svg)](https://app.codecov.io/gh/KCEvers/sdbuildR)
+[![R-CMD-check](https://github.com/kcevers/sdbuildR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/kcevers/sdbuildR/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/kcevers/sdbuildR/graph/badge.svg)](https://app.codecov.io/gh/kcevers/sdbuildR)
 [![CRAN status](https://www.r-pkg.org/badges/version/sdbuildR)](https://CRAN.R-project.org/package=sdbuildR)
 <!-- badges: end -->
 
@@ -60,7 +60,7 @@ export_plot(
 )
 ```
 
-![](man/figures/README-sir-diagram.svg)
+![Stock-and-flow diagram of the SIR model, showing the Susceptible, Infected, and Recovered stocks connected by infection and recovery flows.](man/figures/README-sir-diagram.svg)
 
 
 ```{r quickstart-sim, eval=FALSE}
@@ -78,7 +78,7 @@ export_plot(
 )
 ```
 
-![](man/figures/README-sir-sim.png)
+![Simulated dynamics of the SIR model over time, showing the Susceptible stock declining, the Infected stock rising then falling, and the Recovered stock increasing.](man/figures/README-sir-sim.png)
 
 The [**Get started guide**](https://kcevers.github.io/sdbuildR/articles/sdbuildR.html) provides a step-by-step tutorial on building and simulating stock-and-flow models using interactive plots.
 
@@ -95,19 +95,19 @@ The development version can be installed from GitHub:
 
 ```{r eval=FALSE, include=TRUE}
 if (!require("remotes")) install.packages("remotes")
-remotes::install_github("KCEvers/sdbuildR")
+remotes::install_github("kcevers/sdbuildR")
 ```
 
 ## Overview of main features
 
 sdbuildR is designed to support the iterative process of building, simulating, and testing stock-and-flow models. Models can flexibly be modified and simulated in either R or Julia [(see setup guide)](https://kcevers.github.io/sdbuildR/articles/julia-setup.html) for a major speed-up on large or repeated runs. All package capabilities are described in the vignettes:
 
-* [Get started](https://kcevers.github.io/sdbuildR/articles/sdbuildR.html): A guided tour of the main features.
+* [Get Started](https://kcevers.github.io/sdbuildR/articles/sdbuildR.html): A guided tour of the main features.
 * [Build](https://kcevers.github.io/sdbuildR/articles/build.html): Build, modify, and simulate stock-and-flow models.
-* [Ensemble simulations](https://kcevers.github.io/sdbuildR/articles/ensemble.html): Explore a model's behaviour across parameter ranges and initial conditions.
-* [Unit tests](https://kcevers.github.io/sdbuildR/articles/unit-tests.html): Verify models behave as intended with unit tests.
-<!-- * [Job Demands-Resources Theory](https://kcevers.github.io/sdbuildR/articles/jdr.html): An example of formalizing psychological theory with sdbuildR. -->
-* [Julia setup](https://kcevers.github.io/sdbuildR/articles/julia-setup.html): Set up Julia for faster simulations.
+* [Ensemble Simulations](https://kcevers.github.io/sdbuildR/articles/ensemble.html): Explore a model's behaviour across parameter ranges and initial conditions.
+* [Unit Tests](https://kcevers.github.io/sdbuildR/articles/unit-tests.html): Verify models behave as intended with unit tests.
+* [Job Demands-Resources Theory](https://kcevers.github.io/sdbuildR/articles/jdr.html): An example of formalizing psychological theory with sdbuildR.
+* [Julia Setup](https://kcevers.github.io/sdbuildR/articles/julia-setup.html): Set up Julia for faster simulations.
 * [Import/Export](https://kcevers.github.io/sdbuildR/articles/import-export.html): Import models from deSolve or Insight Maker, and export to other formats.
 
 ## Other system dynamics software
@@ -117,7 +117,7 @@ sdbuildR is heavily based on common system dynamics software such as [Vensim](ht
 
 ## Troubleshooting
 
-sdbuildR is under active development and may have bugs, particularly in complex model translations. We encourage users to report [issues on GitHub](https://github.com/KCEvers/sdbuildR/issues) - your input helps the package improve! Use `summary()` to run model diagnostics, and use the vignettes for guidance.
+sdbuildR is under active development and may have bugs, particularly in complex model translations. We encourage users to report [issues on GitHub](https://github.com/kcevers/sdbuildR/issues) - your input helps the package improve! Use `summary()` to run model diagnostics, and use the vignettes for guidance.
 
 ## Citation
 

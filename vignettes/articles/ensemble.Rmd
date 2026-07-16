@@ -1,11 +1,11 @@
 ---
-title: "Ensemble simulations"
+title: "Ensemble Simulations"
 output: 
   rmarkdown::html_vignette:
     toc: true
     toc_depth: 2
 vignette: >
-  %\VignetteIndexEntry{Ensemble simulations}
+  %\VignetteIndexEntry{Ensemble Simulations}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -19,7 +19,9 @@ knitr::opts_chunk$set(
   fig.width = 10,
   fig.height = 4,
   fig.align = "center", # Center all figures
-  out.width = "80%" # Display figures at 80% of container width
+  out.width = "80%", # Display figures at 80% of container width
+  cache = TRUE, # enable caching
+  cache.path = "ensemble_cache/" # keep cache dir next to the .Rmd
   # fig.retina = 2,         # Optimize for retina displays
   # dpi = 96               # Standard DPI for web
 )
@@ -30,7 +32,7 @@ library(sdbuildR)
 ```
 
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, cache=FALSE}
 # Disable WebGL: many plotly widgets per HTML page can exceed the browser WebGL
 # context limit and render blank. SVG always renders.
 options(sdbuildR.webgl = FALSE)
@@ -43,14 +45,14 @@ options(sdbuildR.font_family = font_family)
 # getOption("sdbuildR.font_family")
 ```
 
-```{r, echo = FALSE, eval = interactive()}
+```{r, include = FALSE, echo = FALSE, eval = interactive()}
 # # Check if the Julia environment is set up, and if not, install it (for local pkgdown::build_site())
 # if (!nzchar(system.file("Manifest.toml", package = "sdbuildR"))) {
 #   install_julia_env()
 # }
 ```
 
-After having built a stock-and-flow model, you may want to explore how different parameter values affect the model's behaviour. Running multiple simulations with varying parameters is also called an ensemble, which provides insight into the range of possible outcomes and uncertainty associated with your model. In this vignette, we will explore how to set up and run ensemble simulations using the sdbuildR package. 
+After having built a stock-and-flow model, you may want to explore how different parameter values affect the model's behaviour. Running multiple simulations (possibly with varying parameters) is also called an ensemble, which provides insight into the range of possible model behaviours and associated uncertainty. In this vignette, we will explore how to set up and run ensemble simulations using the sdbuildR package. 
 
 ## Setting up the model
 
@@ -61,7 +63,6 @@ sfm <- stockflow("crielaard2022")
 print(sfm)
 ```
 
-Simulations run in R by default. If you want to use Julia for faster execution or additional parallelization options, you can activate the Julia environment for sdbuildR and change the simulation language to Julia (see below). For guidance on installing and setting up the Julia environment, see [this vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html).
 
 Without changing the parameters, we can run a single simulation to see how the model behaves:
 
@@ -121,7 +122,11 @@ The plot shows the mean and confidence interval of the stocks (mean with 95% con
 
 ```{r}
 sfm <- sim_settings(sfm, save_sims = TRUE)
-# or pass `save_sims = TRUE` directly to `ensemble()`:
+```
+
+Or pass `save_sims = TRUE` directly to `ensemble()`:
+
+```{r}
 sims <- ensemble(sfm, n = 30, save_sims = TRUE)
 ```
 
@@ -173,7 +178,7 @@ sims <- ensemble(sfm,
   n = 100,
   quantiles = c(0.1, 0.9)
 )
-head(sims)
+head(sims, n = 1)
 ```
 
 Here, quantiles appear as columns `quant1`, `quant2` which correspond to `sims$quantiles`.
@@ -186,7 +191,7 @@ sims <- ensemble(sfm,
   central = "median",
   spread = "sd"
 )
-head(sims)
+head(sims, n = 1)
 ```
 
 
@@ -304,7 +309,7 @@ sims$conditions
 
 To explore the effect of each parameter interactively, use `condition_display = "slider"` or `condition_display = "dropdown"`:
 
-```{r, fig.height = 6}
+```{r, fig.height = 3}
 plot(sims, condition_display = "slider")
 ```
 

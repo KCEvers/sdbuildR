@@ -433,7 +433,7 @@ plotly_traces <- function(pl) {
     legendgroup = vapply(traces, function(t) scal(t[["legendgroup"]]), character(1)),
     type = vapply(traces, function(t) scal(t[["type"]]), character(1)),
     mode = vapply(traces, function(t) scal(t[["mode"]]), character(1)),
-    showlegend = vapply(traces, function(t) isTRUE(t[["showlegend"]]), logical(1)),
+    show_legend = vapply(traces, function(t) isTRUE(t[["showlegend"]] %||% t[["show_legend"]]), logical(1)),
     visible = vapply(traces, function(t) {
       v <- t[["visible"]]
       if (is.null(v)) {
@@ -491,13 +491,13 @@ plotly_check_legend_colors <- function(pl, expected = NULL) {
 
   res <- do.call(rbind, lapply(split(df, df$group), function(rows) {
     g <- rows$group[1L]
-    legend_color <- unique(rows$color[rows$showlegend])
+    legend_color <- unique(rows$color[rows$show_legend])
     trace_colors <- unique(rows$color)
     out <- data.frame(
       group = g,
       legend_color = paste(legend_color, collapse = "|"),
       trace_colors = paste(trace_colors, collapse = "|"),
-      n_legend = sum(rows$showlegend),
+      n_legend = sum(rows$show_legend),
       ok = length(legend_color) == 1L && all(trace_colors == legend_color),
       stringsAsFactors = FALSE
     )
@@ -558,8 +558,8 @@ plotly_dedupe_legend <- function(traces) {
   na_key <- is.na(key)
   key[na_key] <- paste0("__trace", traces$trace[na_key])
 
-  # order groups by first appearance, then put showlegend = TRUE first within each
-  ord <- order(match(key, unique(key)), !traces$showlegend)
+  # order groups by first appearance, then put show_legend = TRUE first within each
+  ord <- order(match(key, unique(key)), !traces$show_legend)
   t2 <- traces[ord, , drop = FALSE]
   out <- t2[!duplicated(key[ord]), , drop = FALSE]
   rownames(out) <- NULL

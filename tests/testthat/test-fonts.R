@@ -51,7 +51,7 @@ test_that("webfont_css() is NULL for system fonts", {
 test_that("the default font is bundled and embedded offline", {
   # The shipped default must be present on disk so plots render without
   # internet; if this fails the font files are missing from inst/fonts/
-  default <- default_font_family()
+  default <- getOption("sdbuildR.font_family", default = "stix-two-text")
   dir <- webfont_local_dir(default)
   expect_true(nzchar(dir))
   faces <- vapply(webfont_faces(), function(f) f$stem, character(1))

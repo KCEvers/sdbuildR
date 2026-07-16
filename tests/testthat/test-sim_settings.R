@@ -295,11 +295,6 @@ test_that("sim_settings() allows multiple save arguments when all but one are NA
 
 # --- Save parameter: legacy names hard-deprecated -------------------------------
 
-test_that("sim_settings() errors on legacy save_at and save_n", {
-  expect_error(sim_settings(stockflow(), save_at = 1), "no longer supported")
-  expect_error(sim_settings(stockflow(), save_n = 100), "no longer supported")
-})
-
 test_that("sim_settings() errors on unknown arguments", {
   expect_error(sim_settings(stockflow(), not_an_arg = 1), "Unknown argument")
 })

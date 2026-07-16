@@ -127,20 +127,19 @@ sim_settings <- function(object,
   }
   check_stockflow(object)
 
-  # Hard-deprecate legacy save arguments and reject unknown arguments with a
-  # helpful message rather than a generic "unused argument" error.
+
   dots <- list(...)
   if (length(dots) > 0) {
     dot_names <- names(dots) %||% rep("", length(dots))
-    legacy <- intersect(dot_names, c("save_at", "save_n"))
-    if (length(legacy) > 0) {
-      cli::cli_abort(c(
-        "{.arg {legacy}} {?is/are} no longer supported.",
-        "i" = "Use {.arg save_by} (regular interval, mirrors {.code seq(by=)}), {.arg save_times} (explicit output times), or {.arg save_length} (number of output times, mirrors {.code seq(length.out=)}).",
-        ">" = "Replace {.code save_at = <interval>} with {.arg save_by}, {.code save_at = <vector>} with {.arg save_times}, and {.code save_n} with {.arg save_length}."
-      ))
-    }
-    unknown <- dot_names[!nzchar(dot_names) | !dot_names %in% c("save_at", "save_n")]
+    # legacy <- intersect(dot_names, c("save_at", "save_n"))
+    # if (length(legacy) > 0) {
+    #   cli::cli_abort(c(
+    #     "{.arg {legacy}} {?is/are} no longer supported.",
+    #     "i" = "Use {.arg save_by} (regular interval, mirrors {.code seq(by=)}), {.arg save_times} (explicit output times), or {.arg save_length} (number of output times, mirrors {.code seq(length.out=)}).",
+    #     ">" = "Replace {.code save_at = <interval>} with {.arg save_by}, {.code save_at = <vector>} with {.arg save_times}, and {.code save_n} with {.arg save_length}."
+    #   ))
+    # }
+    unknown <- dot_names[!nzchar(dot_names)] # dot_names[!nzchar(dot_names) | !dot_names %in% c("save_at", "save_n")]
     cli::cli_abort(c(
       "Unknown argument{?s} passed to {.fn sim_settings}: {.arg {unknown}}."
     ))

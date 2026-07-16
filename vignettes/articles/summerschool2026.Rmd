@@ -16,9 +16,10 @@ knitr::opts_chunk$set(
   comment = "#>",
   echo = FALSE, # Hide code by default
   fig.width = 6, # Set default figure width to 6 inches
-  fig.height = 3, # Set default figure height to 3 inches
+  fig.height = 4, # Set default figure height to 3 inches
   fig.align = "center", # Center all figures
-  out.width = "80%" # Display figures at 80% of container width
+  out.width = "80%", # Display figures at 80% of container width
+  cache.path = "summerschool2026_cache/" # keep cache dir next to the .Rmd
   # fig.retina = 2,         # Optimize for retina displays
   # dpi = 96               # Standard DPI for web
 )
@@ -64,7 +65,7 @@ pre,
 library(sdbuildR)
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, cache=FALSE}
 # Disable WebGL: many plotly widgets per HTML page can exceed the browser WebGL
 # context limit and render blank. SVG always renders.
 options(sdbuildR.webgl = FALSE)
@@ -79,6 +80,25 @@ frame_ms <- 200
 ```
 
 
+These materials were developed for a stock-and-flow modelling workshop given at the Summer School [Theory Building in Psychology](https://theorymethodssociety.org/summer_school.html) (University of Amsterdam, July 2026; rendered materials can be accessed [here](https://kcevers.github.io/sdbuildR/articles/summerschool2026.html)). 
+As the materials supported a lecture, they contain limited written explanations. For more detailed guidance on stock-and-flow modelling, see the [Build](https://kcevers.github.io/sdbuildR/articles/build.html) vignette.
+
+
+## Package Setup
+
+First install the package from GitHub:
+
+```{r, echo = TRUE, eval = FALSE}
+if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
+remotes::install_github("kcevers/sdbuildR")
+```
+
+
+```{r, echo=TRUE, message=FALSE}
+library(sdbuildR)
+```
+
+
 ```{r include=FALSE}
 # Helper function
 sprintf_arg <- function(template, values) {
@@ -87,12 +107,10 @@ sprintf_arg <- function(template, values) {
   }
   return(template)
 }
-# font_family <- "Times New Roman"
 
 # Plotting parameters
 PALETTE <- c("Geyser", "Temps", "Spectral", "Zissou 1", "Roma")[5]
 COLORS <- grDevices::hcl.colors(n = 50, palette = PALETTE)
-# scales::show_col(COLORS)
 
 inflow_col <- adjustcolor(COLORS[10], alpha.f = 1)
 outflow_col <- adjustcolor(COLORS[3], alpha.f = 1)
@@ -100,15 +118,7 @@ outflow_col <- adjustcolor(COLORS[3], alpha.f = 1)
 inflow_fill <- adjustcolor(inflow_col, alpha.f = .5)
 outflow_fill <- adjustcolor(outflow_col, alpha.f = .5)
 
-# scales::show_col( grDevices::hcl.colors(n = 50, palette = "Greens"))
-increase_col <- adjustcolor(
-  grDevices::hcl.colors(n = 50, palette = "Greens")[20],
-  alpha.f = 1)
-decrease_col <- adjustcolor(COLORS[2], alpha.f = 1)
 decrease_col_strong <- adjustcolor(COLORS[1], alpha.f = 1)
-# scales::show_col(c(increase_col, decrease_col))
-increase_fill <- adjustcolor(increase_col, alpha.f = .8)
-decrease_fill <- adjustcolor(decrease_col, alpha.f = .4)
 
 COLORS_alpha <- adjustcolor(COLORS, alpha.f = .25)
 
@@ -118,52 +128,10 @@ stock2_col <- adjustcolor(COLORS[2], alpha.f = .75)
 aux_col <- adjustcolor(COLORS[3], alpha.f = .75)
 flow_col <- COLORS[6]
 
-line_width <- 1.5
-line_width_stock <- line_width + 2
-
 font_size <- 16
-font_size_xlab <- round(font_size * 1.4)
-font_size_legend <- round(font_size * 1.1)
-font_size_subplot <- font_size # round(font_size * 1.5)
-xlab <- "Time (days)"
-
-# Finer-grained simulation
-save_by_fine <- .1 # .01
-save_by_coarse <- 1
 
 # Annotation template
-annot <- list(xanchor = "center", yanchor = "middle", showarrow = FALSE, xref = "paper", yref = "paper", font = list(size = font_size_subplot))
 annot_font <- list(size = font_size, family = font_family)
-annot_legend <- list(
-  orientation = "h", # orientation
-  x = 0.5, # Center horizontally
-  y = -0.15, # Below the plot
-  xanchor = "center",
-  yanchor = "top",
-  # traceorder = "normal",
-  # tracegroupgap = 0,
-  # itemwidth = 15,
-  font = list(size = font_size_legend)
-)
-annot_xlab <- list(
-  text = xlab,
-  font = list(
-    size = font_size_xlab
-  ),
-  xref = "paper",
-  yref = "paper",
-  xanchor = "center",
-  yanchor = "top",
-  x = 0.5, y = -.1,
-  showarrow = FALSE
-)
-
-rm_grid <- function(pl) {
-  plotly::layout(pl,
-    xaxis = list(showgrid = FALSE, showline = TRUE),
-    yaxis = list(showgrid = FALSE, showline = TRUE)
-  )
-}
 ```
 
 
@@ -184,12 +152,12 @@ rm_grid <- function(pl) {
 # data small; the shape-determining parameters index the precomputed grid.
 #
 functional_forms_widget <- function(
-  var = "engagement", 
-height = 430,
-xlab = tools::toTitleCase(var), ylab = "Motivation",
-xlim = c(0, 1), ylim = c(-0.03, 1.08), n_points = 201, 
-forms = c("constant", "linear", "hill", "ricker"),
-arg_labels = list()
+  var = "engagement",
+  height = 430,
+  xlab = tools::toTitleCase(var), ylab = "Motivation",
+  xlim = c(0, 1), ylim = c(-0.03, 1.08), n_points = 201,
+  forms = c("constant", "linear", "hill", "ricker"),
+  arg_labels = list()
 ) {
   for (pkg in c("plotly", "htmlwidgets", "htmltools")) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
@@ -593,7 +561,7 @@ function(el, x, data) {
     showlegend = FALSE,
     margin = list(l = 55, r = 15, t = 10, b = 45)
   ) |>
-  plotly::layout(font = utils::modifyList(annot_font, list(family = font_family)))
+    plotly::layout(font = utils::modifyList(annot_font, list(family = font_family)))
   p <- plotly::config(p, displayModeBar = FALSE)
   p <- htmlwidgets::prependContent(p, css, controls)
   htmlwidgets::onRender(p, js, data = payload)
@@ -601,155 +569,12 @@ function(el, x, data) {
 ```
 
 
-```{r, echo = FALSE}
-#' Combine animated sdbuildR plots into one subplot with a linked animation
-#'
-#' plotly::subplot() does not merge animation frames, so this builds each
-#' plot, builds the subplot, and reconstructs the frames: for every frame
-#' name, the trace updates of all plots are concatenated, with trace indices
-#' offset to the subplot's trace order and re-anchored to the subplot's axes.
-#' The animation controls (slider + play button) of the first plot are
-#' reused, so the sdbuildR styling is preserved. All plots must share the
-#' same animation frames (e.g. come from the same simulation).
-subplot_linked_animation <- function(..., nrows = 2, heights = NULL,
-                                     margin = 0.08, shareX = TRUE,
-                                     titleY = TRUE) {
-  plots <- list(...)
-  builds <- lapply(plots, plotly::plotly_build)
+## Conceptual Understanding of Stock-and-Flow Models
 
-  frame_names <- lapply(builds, function(b) {
-    vapply(b$x$frames, function(f) as.character(f$name), character(1))
-  })
-  if (length(frame_names[[1]]) == 0) {
-    stop("The first plot has no animation frames.")
-  }
-  same <- vapply(frame_names[-1], identical, logical(1), frame_names[[1]])
-  if (!all(same)) {
-    stop("All plots must have identical animation frames (same time grid).")
-  }
-
-  sp <- plotly::subplot(plots,
-    nrows = nrows, heights = heights, margin = margin,
-    shareX = shareX, titleY = titleY
-  )
-  sp <- plotly::plotly_build(sp)
-
-  n_traces <- vapply(builds, function(b) length(b$x$data), integer(1))
-  offsets <- cumsum(c(0L, utils::head(n_traces, -1L)))
-
-  sp$x$frames <- lapply(seq_along(frame_names[[1]]), function(i) {
-    fr <- list(name = frame_names[[1]][i], data = list(), traces = integer(0))
-    for (k in seq_along(builds)) {
-      bfr <- builds[[k]]$x$frames[[i]]
-      idx <- unlist(bfr$traces)
-      for (j in seq_along(idx)) {
-        tr <- bfr$data[[j]]
-        new_idx <- offsets[k] + idx[j]
-        base <- sp$x$data[[new_idx + 1L]]
-        tr$xaxis <- base$xaxis
-        tr$yaxis <- base$yaxis
-        fr$data[[length(fr$data) + 1L]] <- tr
-        fr$traces <- c(fr$traces, new_idx)
-      }
-    }
-    fr
-  })
-
-  # One set of animation controls for the whole subplot, in package style
-  sp$x$layout$sliders <- builds[[1]]$x$layout$sliders
-  sp$x$layout$updatemenus <- builds[[1]]$x$layout$updatemenus
-
-  # subplot() merges layouts with later plots winning, so a plot with
-  # main = "" wipes out the first plot's title; restore the first non-empty one
-  titles <- lapply(builds, function(b) b$x$layout$title)
-  has_title <- vapply(titles, function(tt) {
-    txt <- if (is.list(tt)) tt$text else tt
-    !is.null(txt) && nzchar(txt)
-  }, logical(1))
-  if (any(has_title)) {
-    sp$x$layout$title <- titles[[which(has_title)[1]]]
-  }
-  sp
-}
-
-#' Fill the area between a trace and zero, preserved across animation frames
-#'
-#' Sets fill = "tozeroy" on the matched trace(s) of a (possibly animated)
-#' plotly figure, and re-applies the fill in every animation frame so the
-#' shaded area grows together with the cumulative-reveal line. By default the
-#' fill colour is a translucent version of the trace's own line colour, so
-#' the package palette is preserved; pass fillcolor (e.g. increase_fill) to
-#' override.
-#'
-#' @param sp Plotly object (e.g. from subplot_linked_animation()).
-#' @param trace Trace name(s) (matched against trace $name) or 1-based indices.
-#' @param fillcolor Fill colour; NULL (default) derives it from the line colour.
-#' @param alpha Opacity of the derived fill colour. Defaults to 0.25.
-fill_to_zero <- function(sp, trace, fillcolor = NULL, alpha = 0.25) {
-  sp <- plotly::plotly_build(sp)
-
-  nm <- vapply(sp$x$data, function(tr) {
-    if (is.null(tr$name)) "" else as.character(tr$name)
-  }, character(1))
-  idx <- if (is.character(trace)) which(nm %in% trace) else as.integer(trace)
-  if (length(idx) == 0) {
-    stop("No trace matches: ", paste(trace, collapse = ", "),
-         ". Available: ", paste(unique(nm), collapse = ", "))
-  }
-
-  translucent <- function(col, alpha) {
-    if (grepl("^rgba?\\(", col)) {
-      nums <- as.numeric(strsplit(gsub("rgba?\\(|\\)", "", col), ",")[[1]])
-      sprintf("rgba(%d,%d,%d,%s)", nums[1], nums[2], nums[3], alpha)
-    } else {
-      grDevices::adjustcolor(col, alpha.f = alpha)
-    }
-  }
-
-  for (i in idx) {
-    fc <- fillcolor
-    if (is.null(fc)) {
-      lc <- sp$x$data[[i]]$line$color
-      if (is.null(lc)) lc <- "#1f77b4"
-      fc <- translucent(lc, alpha)
-    }
-    sp$x$data[[i]]$fill <- "tozeroy"
-    sp$x$data[[i]]$fillcolor <- fc
-    for (f in seq_along(sp$x$frames)) {
-      hit <- which(unlist(sp$x$frames[[f]]$traces) == (i - 1L))
-      for (h in hit) {
-        sp$x$frames[[f]]$data[[h]]$fill <- "tozeroy"
-        sp$x$frames[[f]]$data[[h]]$fillcolor <- fc
-      }
-    }
-  }
-  sp
-}
-
-```
-
-
-
-
-
-## Formalizing Theory with Stock-and-Flow Models
-
-<!-- 
-The **stock** value is the amount of something at a moment in time. A **flow** is the process that changes that amount per unit of time.
-
-A stock represents the accumulated history of its net flow.
-
-
-Stocks are **states** -->
-
-```{r, echo = FALSE, message=FALSE}
-library(sdbuildR)
-```
 
 
 
 ```{r, echo=FALSE}
-
 {
   viz_str <- '
    digraph sfm {
@@ -757,7 +582,7 @@ library(sdbuildR)
       graph [layout = dot, rankdir = LR, center=true, outputorder="edgesfirst", pad=%(pad)s, nodesep=0.3, splines = true, concentrate = false]
 
       # Shared across all nodes (persists until overridden)
-      node [fontsize=18,fontname="Times New Roman",fontcolor="black"]
+      node [fontsize=18,fontname="%(font_family)s",fontcolor="black"]
 
       # Define stock nodes
       node [shape=box,style=filled,fillcolor="#83d3d4"]
@@ -771,15 +596,15 @@ library(sdbuildR)
       # Define external cloud nodes
       node [shape=doublecircle, fixedsize=true, width = .25, height = .25, orientation=15]
       "Cloud1" [label=%(label_sink)s, tooltip = "Outside model boundary\nSink of: Outflow"]
-        "Cloud2" [label=%(label_source)s, tooltip = "Outside model boundary\nSource of: Inflow"]
+      "Cloud2" [label=%(label_source)s, tooltip = "Outside model boundary\nSource of: Inflow"]
 
       # Define auxiliary nodes
-      
-      
+
+
 
       # Define constant nodes
-      
-      
+
+
 
       # Define flow edges (stock -> flow_node)
       edge [style = "", arrowhead="none", color="black:#f48153:black", penwidth=1.1, minlen=1, tailport="e", headport="w"]
@@ -793,522 +618,351 @@ library(sdbuildR)
 
       # Define dependency edges
       edge [style = "", color="#999999", arrowsize=0.8, penwidth=1, constraint=false, tailport = "_", headport="_"]
-      
 
-      
+
+
 
 
       # Rank groupings
-      
+
 
     }
   '
 
   viz_str <- sprintf_arg(viz_str, list(
     pad = ".9",
+    font_family = font_family,
     label_source = '<Unspecified source<BR/><FONT POINT-SIZE="13" COLOR="black">(outside of model boundary)</FONT><BR/><BR/><BR/><BR/><FONT COLOR="white">.</FONT>>',
     label_sink = '<Unspecified sink<BR/><FONT POINT-SIZE="13" COLOR="black">(outside of model boundary)</FONT><BR/><BR/><BR/><BR/><FONT COLOR="white">.</FONT>>'
   ))
-
 }
 
-  pl <- DiagrammeR::grViz(viz_str)
-  pl
+pl <- DiagrammeR::grViz(viz_str)
+pl
 ```
 
 
 
-## A Concrete Example: A Queue of People Waiting for Service
+### A Concrete Example: A Queue of People Waiting for Service
 
-```{r, fig.height=2}
+In iterative steps, we construct a simple model of a queue of people waiting for service. Either scroll through the steps below by unfolding the section, or use the widget.
+
+<details><summary>Scroll through steps</summary>
+
+
+```{r, include=FALSE}
+df_queue <- data.frame(
+  section = c(
+    "queue-stock", "queue-inflow", "queue-outflow",
+    "queue-outflow-large", "queue-stock-dependent",
+    "queue-multiple-outflows", "queue-multiple-stocks",
+    # "queue-constant",
+    "queue-aux"
+  ),
+  title = c(
+    "A Stock with No Flows",
+    "Inflows Increase a Stock",
+    "Outflows Decrease a Stock",
+    "What Happens When the Outflow Is Larger Than the Inflow?",
+    "Making the Outflow Stock-Dependent",
+    "Multiple Outflows",
+    "Multiple Stocks",
+    # "Add a Constant for Service Rate",
+    "Add an Auxiliary for Satisfaction"
+  ),
+  stringsAsFactors = FALSE
+)
+
+df_queue$letter <- LETTERS[seq_len(nrow(df_queue))]
+```
+
+```{r queue-stock, echo = FALSE, fig.height=1}
 sfm <- stockflow() |>
   stock(queue, eqn = 0, label = "People Waiting in Queue") |>
-  sim_settings(stop = 10, time_units = "hours", only_stocks = FALSE) |>
+  sim_settings(
+    stop = 10, time_units = "hours",
+    save_length = 101,
+    only_stocks = FALSE
+  ) |>
   meta(name = "")
-
-plot(sfm)
 ```
 
-```{r}
-sfm |> simulate() |> plot()
+```{r, echo = FALSE, fig.height=1}
+sfm |> plot()
+```
+
+```{r, echo = FALSE}
+sfm |>
+  simulate() |>
+  plot(animation = "time", main = df_queue$title[1])
 ```
 
 
-### Inflows Increase a Stock
-
-<!-- 
-What **process** causes the state to change? A stock increases with inflows and decreases with outflows.
- -->
-
-```{r, fig.height=2}
+```{r queue-inflow, echo=FALSE}
 sfm <- sfm |>
   flow(arrivals, eqn = 1, to = queue, label = "Arrivals")
+```
 
-plot(sfm)
+```{r, echo = FALSE}
+sfm |> plot()
+```
+
+```{r, echo = FALSE}
+sfm |>
+  simulate() |>
+  plot(animation = "time", main = df_queue$title[2])
 ```
 
 
-
-```{r, fig.height=5}
-sim <- simulate(sfm)
-
-pl1 <- plot(sim, vars = "queue", animation = "time", control_options = list(frame_ms = frame_ms), 
-colors = stock_col,
-# showlegend = FALSE, main = "People Waiting in Queue"
-showlegend = TRUE
-)
-
-pl2 <- plot(sim, vars = "arrivals", animation = "time", control_options = list(frame_ms = frame_ms),
-colors = inflow_col,
-# showlegend = FALSE, main = ""
-showlegend = TRUE
-)
-
-pl <- subplot_linked_animation(pl1, pl2, nrows = 2) |>
-  fill_to_zero("Arrivals") 
-# Update traceorder in legend to normal
-pl$x$layout$legend$traceorder <- "normal"
-
-pl
-```
-
-<!-- 
-Note: stocks **accumulate** over time. 
-
-Note: don't specify origin of source 
-
-Flows are **instantaneous** rates. You have to simulate over time to see how they accumulate into stocks. 
-
-Note: fractional people (simplification and unavoidable with stock-and-flow models in continuous time). -->
-
-
-```{r}
-df <- as.data.frame(sim, direction = "wide")
-# Rename columns with variable labels
-df_prop <- as.data.frame(sfm, properties = "label")
-idx <- match(names(df)[-1], df_prop$name)
-names(df)[-1] <- df_prop$label[idx]
-names(df)[1] <- "Time"
-gt::gt(head(df))
-```
-
-<!-- Ask audience question: What happens when we double the flow rate? -->
-<!-- Ask audience question: What happens when we set the flow rate to zero? -->
-
-
-
-### Outflows Decrease a Stock
-
-What **processes** cause the state to change?
-
-```{r}
+```{r queue-outflow, echo=FALSE}
 sfm <- sfm |>
   flow(service, eqn = .5, from = queue, label = "Service")
+```
 
-plot(sfm)
+```{r, echo = FALSE}
+sfm |> plot()
+```
+
+```{r, echo = FALSE}
+sfm |>
+  simulate() |>
+  plot(animation = "time", main = df_queue$title[3])
 ```
 
 
-```{r, fig.height=5}
-sim <- simulate(sfm)
-
-pl1 <- plot(sim, vars = "queue", animation = "time", control_options = list(frame_ms = frame_ms), 
-colors = stock_col,
-# showlegend = FALSE, main = "People Waiting in Queue"
-showlegend = TRUE
-)
-
-
-pl2 <- plot(sim, vars = c("arrivals", "service"), animation = "time", control_options = list(frame_ms = frame_ms),
-colors = c(inflow_col, outflow_col),
-ylim = c(0, 1.1),
-# showlegend = FALSE, main = ""
-showlegend = TRUE
-)
-
-pl <- subplot_linked_animation(pl1, pl2, nrows = 2) |>
-  fill_to_zero("Arrivals") |>
-  fill_to_zero("Service") 
-# Update traceorder in legend to normal
-pl$x$layout$legend$traceorder <- "normal"
-
-pl
-```
-
-
-```{r}
-df <- as.data.frame(sim, direction = "wide")
-# Rename columns with variable labels
-df_prop <- as.data.frame(sfm, properties = "label")
-idx <- match(names(df)[-1], df_prop$name)
-names(df)[-1] <- df_prop$label[idx]
-names(df)[1] <- "Time"
-gt::gt(head(df))
-```
-
-
-### What Happens When the Outflow Is Larger Than the Inflow?
-
-```{r}
+```{r queue-outflow-large, echo=FALSE}
 sfm <- update(sfm, service, eqn = 2)
+```
 
-plot(sfm)
+```{r, echo = FALSE}
+sfm |> plot()
+```
+
+```{r, echo = FALSE}
+sfm |>
+  simulate() |>
+  plot(animation = "time", main = df_queue$title[4])
 ```
 
 
-```{r, fig.height=5}
-sim <- simulate(sfm)
-
-pl1 <- plot(sim, vars = "queue", animation = "time", control_options = list(frame_ms = frame_ms), 
-colors = stock_col,
-# showlegend = FALSE, main = "People Waiting in Queue"
-showlegend = TRUE
-)
-
-
-pl2 <- plot(sim, 
-vars = c("arrivals", "service"),
- animation = "time", control_options = list(frame_ms = frame_ms),
-colors = c(inflow_col, outflow_col),
-ylim = c(0, 2.1),
-# showlegend = FALSE, main = ""
-showlegend = TRUE
-)
-
-pl <- subplot_linked_animation(pl1, pl2, nrows = 2) |>
-  fill_to_zero("Arrivals") |>
-  fill_to_zero("Service") 
-# Update traceorder in legend to normal
-pl$x$layout$legend$traceorder <- "normal"
-
-pl
-```
-
-
-
-```{r}
-df <- as.data.frame(sim, direction = "wide")
-# Rename columns with variable labels
-df_prop <- as.data.frame(sfm, properties = "label")
-idx <- match(names(df)[-1], df_prop$name)
-names(df)[-1] <- df_prop$label[idx]
-names(df)[1] <- "Time"
-gt::gt(head(df))
-```
-
-
-### Making the Outflow Stock-Dependent
-
-```{r}
+```{r queue-stock-dependent, echo=FALSE}
 sfm <- update(sfm, service, eqn = .5 * queue)
-plot(sfm)
+```
+
+```{r, echo = FALSE}
+sfm |> plot()
+```
+
+```{r, echo = FALSE}
+sfm |>
+  simulate() |>
+  plot(animation = "time", main = df_queue$title[5])
 ```
 
 
-This is a **negative feedback loop**: the more people, the greater the outflow, which reduces the amount of people in the queue.
-
-A **positive** feedback loop **amplifies**, whereas a **negative** feedback loop **dampens** or **balances**.
-
-
-
-
-```{r, fig.height=5}
-sim <- simulate(sfm)
-
-pl1 <- plot(sim, vars = "queue", animation = "time", control_options = list(frame_ms = frame_ms), 
-colors = stock_col,
-# showlegend = FALSE, main = "People Waiting in Queue"
-showlegend = TRUE
-)
-
-
-pl2 <- plot(sim, 
-vars = c("arrivals", "service"),
- animation = "time", control_options = list(frame_ms = frame_ms),
-colors = c(inflow_col, outflow_col),
-ylim = c(0, 1.1),
-# showlegend = FALSE, main = ""
-showlegend = TRUE
-)
-
-pl <- subplot_linked_animation(pl1, pl2, nrows = 2) |>
-  fill_to_zero("Arrivals") |>
-  fill_to_zero("Service") 
-# Update traceorder in legend to normal
-pl$x$layout$legend$traceorder <- "normal"
-
-pl
-```
-
-
-
-### Functional Forms
-
-**Functional form**: mathematical relationship specifying how one variable affects another.
-
-```{r}
-#| echo: false
-functional_forms_widget(forms = c("constant", "linear"), 
-ylab = "Service", xlab = "People Waiting in Queue", var = "queue",
-arg_labels = list(constant = c(value = "service rate"),
-                    linear   = c(slope = "service rate")))
-```
-
-
-
-### Multiple Outflows
-
-```{r}
+```{r queue-multiple-outflows, echo=FALSE}
 sfm <- sfm |>
-  flow(leave, eqn = .1 * queue^2, from = queue, 
-  label = "Life Is Too Short")
-
-plot(sfm)
+  flow(leave,
+    eqn = queue^10, from = queue,
+    label = "Tired of Waiting"
+  )
 ```
 
-```{r, fig.height=5}
-sim <- simulate(sfm)
-
-pl1 <- plot(sim, vars = "queue", animation = "time", control_options = list(frame_ms = frame_ms), 
-colors = stock_col,
-# showlegend = FALSE, main = "People Waiting in Queue"
-showlegend = TRUE
-)
-
-
-pl2 <- plot(sim, 
-vars = c("arrivals", "service", "leave"),
- animation = "time", control_options = list(frame_ms = frame_ms),
-colors = c(inflow_col, outflow_col, decrease_col_strong),
-ylim = c(0, 1.1),
-# showlegend = FALSE, main = ""
-showlegend = TRUE
-)
-
-pl <- subplot_linked_animation(pl1, pl2, nrows = 2) |>
-  fill_to_zero("Arrivals") |>
-  fill_to_zero("Service") |>
-  fill_to_zero("Life Is Too Short")
-# Update traceorder in legend to normal
-pl$x$layout$legend$traceorder <- "normal"
-
-pl
+```{r, echo = FALSE}
+sfm |> plot()
 ```
 
-### Multiple Stocks
+```{r, echo = FALSE}
+sfm |>
+  simulate() |>
+  plot(animation = "time", main = df_queue$title[6])
+```
 
 
-```{r}
+```{r queue-multiple-stocks, echo=FALSE}
 sfm <- sfm |>
-stock(served, eqn = 0, label = "People Served") |>
-update(service, to = served)
+  stock(served, eqn = 0, label = "People Served") |>
+  update(service, to = served)
+```
 
-plot(sfm)
+```{r, echo = FALSE}
+sfm |> plot()
+```
+
+```{r, echo = FALSE}
+sfm |>
+  simulate() |>
+  plot(animation = "time", main = df_queue$title[7])
 ```
 
 
-
-
-```{r, fig.height=5}
-sim <- simulate(sfm)
-
-pl1 <- plot(sim, vars = c("queue", "served"), animation = "time", control_options = list(frame_ms = frame_ms), 
-colors = c(stock_col, stock2_col),
-# showlegend = FALSE, main = "People Waiting in Queue"
-showlegend = TRUE
-)
-
-
-pl2 <- plot(sim, 
-vars = c("arrivals", "service", "leave"),
- animation = "time", control_options = list(frame_ms = frame_ms),
-colors = c(inflow_col, outflow_col, decrease_col_strong),
-ylim = c(0, 1.1),
-# showlegend = FALSE, main = ""
-showlegend = TRUE
-)
-
-pl <- subplot_linked_animation(pl1, pl2, nrows = 2) |>
-  fill_to_zero("Arrivals") |>
-  fill_to_zero("Service") |>
-  fill_to_zero("Life Is Too Short")
-# Update traceorder in legend to normal
-pl$x$layout$legend$traceorder <- "normal"
-
-pl
-```
-
-
-### Add a Constant for Service Rate
-
-```{r}
-sfm <- sfm |> 
-  constant(service_rate, eqn = .5, label = "Service Rate") |>
-  update(service, eqn = service_rate * queue)
-
-order_vars <- c("leave", "service", "service_rate")
-plot(sfm, show_constants = TRUE, align = order_vars, order = order_vars, spacing = .5)
-```
-
-### Add an Auxiliary for Satisfaction
-
-```{r}
-sfm <- sfm |> 
+```{r queue-aux, echo=FALSE}
+sfm <- sfm |>
   aux(satisfaction, eqn = service / (service + leave), label = "Satisfaction")
+```
 
-order_vars <- list(c("leave", "service", "service_rate"), c("served", "satisfaction"))
-plot(sfm, show_constants = TRUE, show_aux = TRUE, align = order_vars, order = order_vars, spacing = .5)
+```{r, echo = FALSE}
+sfm |> plot()
+```
 
+```{r, echo = FALSE}
+sfm |>
+  simulate() |>
+  plot(animation = "time", main = df_queue$title[8])
 ```
 
 
+</details>
 
 
-```{r, fig.height=5}
-sim <- simulate(sfm)
 
-pl1 <- plot(sim, vars = c("queue", "served"), animation = "time", control_options = list(frame_ms = frame_ms), 
-colors = c(stock_col, stock2_col),
-# showlegend = FALSE, main = "People Waiting in Queue"
-showlegend = TRUE
+```{r queue-panels, include = TRUE, echo = FALSE, message = FALSE, warning = FALSE}
+library(bslib)
+
+# Tell bslib the page is Bootstrap 5 so the navset renders BS5 nav markup
+# (<a class="nav-link active">) instead of the Bootstrap 3 fallback
+# (<li class="active">). pkgdown serves Bootstrap 5, whose tab JS tracks the
+# active tab on the anchor; without this, clicking a pill never deactivates the
+# previous pane, so panels stack on top of each other.
+shiny::shinyOptions(bootstrapTheme = bslib::bs_theme(version = 5))
+
+# Force the grViz SVG to scale to its container so the diagram fits the panel.
+# viz.js emits a viewBox, so height:auto keeps the aspect ratio.
+diagram_css <- htmltools::tags$style(htmltools::HTML(
+  ".sfm-diagram { width: 100%; overflow-x: auto; }
+   .sfm-diagram svg { width: 100% !important; height: auto !important; max-width: 100%; }"
+))
+
+
+# One colour per variable, reused across panels so each variable keeps its
+# colour as the model grows.
+queue_colors <- c(
+  queue = stock_col, served = stock2_col,
+  arrivals = inflow_col, service = outflow_col,
+  leave = decrease_col_strong, satisfaction = aux_col
 )
 
+# Retrieve a named block's source text.
+get_code <- function(label) paste(knitr::knit_code$get(label), collapse = "\n")
 
-pl2 <- plot(sim, 
-vars = c("arrivals", "service", "leave", "satisfaction"),
- animation = "time", control_options = list(frame_ms = frame_ms),
-colors = c(inflow_col, outflow_col, decrease_col_strong, aux_col),
-ylim = c(0, 1.1),
-# showlegend = FALSE, main = ""
-showlegend = TRUE
+# Rebuild the model step by step, capturing a diagram and a simulation after
+# each named block.
+build_env <- new.env(parent = knitr::knit_global())
+queue_panels <- lapply(seq_len(nrow(df_queue)), function(i) {
+  eval(parse(text = get_code(df_queue$section[i])), envir = build_env)
+  model <- build_env$sfm
+
+  diagram <- plot(model, show_constants = TRUE, show_aux = TRUE)$x$diagram
+
+  sim <- simulate(model)
+  vars <- intersect(
+    names(queue_colors),
+    names(as.data.frame(sim, direction = "wide"))[-1]
+  )
+  pl <- plot(sim,
+    vars = vars,
+    animation = "time", main = df_queue$title[i],
+    control_options = list(frame_ms = frame_ms),
+    colors = queue_colors[vars],
+    show_legend = TRUE,
+    webgl = FALSE
+  )
+
+  nav_panel(
+    df_queue$letter[i],
+    pl,
+    accordion(
+      open = TRUE,
+      accordion_panel(
+        "Stock-and-flow diagram",
+        htmltools::div(
+          class = "sfm-diagram",
+          DiagrammeR::grViz(diagram, width = "100%", height = "100%")
+        )
+      )
+    )
+  )
+})
+
+htmltools::tagList(
+  diagram_css,
+  do.call(navset_card_pill, c(
+    queue_panels,
+    list(selected = df_queue$letter[1])
+  ))
 )
-
-pl <- subplot_linked_animation(pl1, pl2, nrows = 2) |>
-  fill_to_zero("Arrivals") |>
-  fill_to_zero("Service") |>
-  fill_to_zero("Life Is Too Short")
-# Update traceorder in legend to normal
-pl$x$layout$legend$traceorder <- "normal"
-
-pl
 ```
-
-
 
 
 
 ### Recap
 
-Stock-and-flow models **formalize the processes by which states change** over time. 
 
-<!-- The change in a stock is the difference between inflows and outflows -->
+- Stock-and-flow models **formalize the processes by which states change** over time. 
 
+- Stocks are **accumulations** of a quantity, and flows are the **processes that increase or decrease** those accumulations. The change in a stock is the **net flow** (inflow minus outflow) into that stock.
 
+- A model can have multiple stocks, and each stock can have multiple inflows and outflows.
 
-```{r, echo=FALSE}
+- Stocks are **continuous quantities**, meaning we can end up with fractional values (e.g., 3.5 people in a queue). This is a simplifying assumption.
 
-{
-  # pl <- plot(sfm, show_eqn = FALSE, show_tooltip = FALSE)
-  # cat(pl$x$diagram)
-
-  viz_str <- '
-   digraph sfm {
-
-      graph [layout = dot, rankdir = LR, center=true, outputorder="edgesfirst", pad=%(pad)s, nodesep=0.3, splines = true, concentrate = false]
-
-      # Shared across all nodes (persists until overridden)
-      node [fontsize=18,fontname="Times New Roman",fontcolor="black"]
-
-      # Define stock nodes
-      node [shape=box,style=filled,fillcolor="#83d3d4"]
-      "Stock" [id="Stock",label="Stock", tooltip = "Stock: Stock\nInitial value: 0\nInflows: Inflow\nOutflows: Outflow"]
-
-      # Define flow nodes (intermediate nodes for flows)
-      node [style = "",shape=plaintext, fontsize=16, width=0.6, height=0.3]
-      "Inflow" [id="Inflow",label="Inflow", tooltip = "Flow: Inflow\nEquation: 0\nFrom: outside model boundary\nTo: Stock"]
-        "Outflow" [id="Outflow",label="Outflow", tooltip = "Flow: Outflow\nEquation: 0\nFrom: Stock\nTo: outside model boundary"]
-
-      # Define external cloud nodes
-      node [shape=doublecircle, fixedsize=true, width = .25, height = .25, orientation=15]
-      "Cloud1" [label=%(label_sink)s, tooltip = "Outside model boundary\nSink of: Outflow"]
-        "Cloud2" [label=%(label_source)s, tooltip = "Outside model boundary\nSource of: Inflow"]
-
-      # Define auxiliary nodes
-      
-      
-
-      # Define constant nodes
-      
-      
-
-      # Define flow edges (stock -> flow_node)
-      edge [style = "", arrowhead="none", color="black:#f48153:black", penwidth=1.1, minlen=1, tailport="e", headport="w"]
-      "Cloud2" -> "Inflow"
-        "Stock" -> "Outflow"
-
-      # Define flow edges (flow_node -> stock)
-      edge [style = "", arrowhead="normal", color="black:#f48153:black", arrowsize=1.5, penwidth=1.1, minlen=1, tailport="e", headport="w"]
-      "Inflow" -> "Stock"
-        "Outflow" -> "Cloud1"
-
-      # Define dependency edges
-      edge [style = "", color="#999999", arrowsize=0.8, penwidth=1, constraint=false, tailport = "_", headport="_"]
-      
-
-      
+- When the outflow depends on the stock, the model contains a **negative feedback loop**: the more people in the queue, the greater the outflow, which in turn shrinks the queue. A **positive** feedback loop **amplifies**; a **negative** feedback loop **dampens** or **balances**.
 
 
-      # Rank groupings
-      
 
-    }
-  '
 
-  viz_str <- sprintf_arg(viz_str, list(
-    pad = ".9",
-    label_source = '<Unspecified source<BR/><FONT POINT-SIZE="13" COLOR="black">(outside of model boundary)</FONT><BR/><BR/><BR/><BR/><FONT COLOR="white">.</FONT>>',
-    label_sink = '<Unspecified sink<BR/><FONT POINT-SIZE="13" COLOR="black">(outside of model boundary)</FONT><BR/><BR/><BR/><BR/><FONT COLOR="white">.</FONT>>'
-  ))
+### Functional Forms
 
-}
+A **functional form** is the mathematical relationship specifying how one variable affects another. Above, we modified the service outflow from a constant to a linear function of the queue. This is visualized in the widget below:
 
-  pl <- DiagrammeR::grViz(viz_str)
-  pl
+```{r, include = TRUE, echo = FALSE, message=FALSE, warning=FALSE}
+functional_forms_widget(
+  forms = c("constant", "linear"),
+  ylab = "Service", xlab = "People Waiting in Queue", var = "queue",
+  arg_labels = list(
+    constant = c(value = "service rate"),
+    linear = c(slope = "service rate")
+  )
+)
 ```
-
-
 
 
 
 
 ## Applied Examples of Stock-and-Flow Models
 
-This framework can be applied to model a wide range of phenomena.
+The stock-and-flow framework can be applied to model a wide range of phenomena.
 
 
-```{r}
+```{r, fig.height=3}
 sfm <- stockflow("SIR")
 plot(sfm, show_eqn = FALSE)
-sfm |> simulate() |> plot()
+sfm |>
+  simulate(save_length = 101) |>
+  plot()
 ```
 
 
-```{r}
-sfm <- stockflow("predator_prey") |>
-  sim_settings(stop = 50, time_units = "days")
-sfm |> simulate() |> plot()
+```{r, fig.height=3}
+sfm <- stockflow("predator_prey")
+sfm |>
+  simulate(save_length = 101) |>
+  plot()
 ```
 
 
 
-```{r}
-sfm <- stockflow("fitzhugh_nagumo") |>
-  meta(name = "FitzHugh-Nagumo (Neuronal Dynamics)")
-sfm |> simulate() |> plot()
+```{r, fig.height=3}
+sfm <- stockflow("fitzhugh_nagumo")
+sfm |>
+  simulate(save_length = 101) |>
+  plot()
 ```
 
 
 ## Stock-and-Flow Models to Build Psychological Theory
+
+Similarly, we may use stock-and-flow models to formalize psychological theory. For example, we can model the dynamics of knowledge acquisition and forgetting:
 
 ```{r}
 stockflow() |>
@@ -1319,48 +973,13 @@ stockflow() |>
 ```
 
 
+Stock-and-flow models force us to specify how a state increases and decreases over time.
 
-
-```{r}
-stockflow() |>
-  stock(Stock, label = "Self-Esteem") |>
-  flow(Inflow, label = "Positive Experiences", to = Stock) |>
-  flow(Outflow, label = "Negative Experiences", from = Stock) |>
-  plot(show_eqn = FALSE)
-```
-
-
-```{r}
-stockflow() |>
-  stock(Stock, label = "Fear") |>
-  flow(Inflow, label = "Perceived Threat", to = Stock) |>
-  flow(Outflow, label = "Coping Mechanisms", from = Stock) |>
-  flow(Outflow2, label = "Homeostatic Regulation", from = Stock) |>
-  plot(show_eqn = FALSE, wrap_width = 15)
-```
-
-
-
-## Package Setup
-
-The workshop materials are available at <https://kcevers.github.io/sdbuildR/articles/summerschool2026.html>.
-
-Install the package from GitHub:
-
-```{r, eval = FALSE}
-if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
-remotes::install_github("kcevers/sdbuildR")
-```
-
-
-```{r, echo=TRUE, message=FALSE}
-library(sdbuildR)
-```
-
+## Building Stock-and-Flow Models in R
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-  echo = TRUE
+  echo = TRUE, fig.height = 5
 )
 ```
 
@@ -1394,7 +1013,9 @@ plot(sfm, show_constants = TRUE)
 Simulate the model and plot the resulting time series:
 
 ```{r}
-sfm |> simulate() |> plot()
+sfm |>
+  simulate(save_length = 101) |>
+  plot()
 ```
 
 The pipe operator `|>` passes the result on its left into the function on its right. For example, `x |> f(y)` is interpreted as `f(x, y)`.
@@ -1402,45 +1023,53 @@ The pipe operator `|>` passes the result on its left into the function on its ri
 The timeseries can also be inspected in data frame format:
 
 ```{r}
-sfm |> simulate() |> as.data.frame(direction = "wide") |> head()
+sfm |>
+  simulate() |>
+  as.data.frame(direction = "wide") |>
+  head()
 ```
 
 
 
 ## A Simplified Model of Burnout
 
-Draw the **target phenomenon**:
+We now use stock-and-flow modeling to formalize a simplified model of burnout. We first draw the **target phenomenon**:
 
 <!-- On board: draw overshoot and collapse pattern of engagement over six months, time unit day -->
 
 
 
 ```{r, warning = FALSE, message = FALSE, echo = FALSE, fig.height=5}
-
-fig <- plotly::plot_ly()
-fig <- plotly::layout(fig, dragmode="drawopenpath", 
-title = 'Burnout') |>
-plotly::layout(
-xaxis = list(title = "Time (days)", range = c(0, 180), dtick = 30),
-yaxis = list(title = "Engagement", range = c(0, 4),
-dtick = 1),
-font = annot_font
+fig <- plotly::plot_ly(
+  x = numeric(0),
+  y = numeric(0),
+  type = "scatter",
+  mode = "lines"
 )
+fig <- plotly::layout(fig,
+  dragmode = "drawopenpath",
+  title = "Burnout"
+) |>
+  plotly::layout(
+    margin = list(t = 100),
+    xaxis = list(title = "Time (days)", range = c(0, 180), dtick = 30),
+    yaxis = list(
+      title = "Engagement", range = c(0, 4),
+      dtick = 1
+    ),
+    font = list(family = font_family, size = 16)
+  )
 
 fig <- fig |>
   plotly::config(modeBarButtonsToAdd = list(
-  "drawopenpath", 
-  "eraseshape" ) )
+    "drawopenpath",
+    "eraseshape"
+  ))
 
 fig
 ```
 
 
-
-
-
-
-### Building a Model from Scratch
 
 Create an empty stock-and-flow model:
 
@@ -1461,15 +1090,21 @@ sfm <- meta(sfm, name = "Burnout")
 Change simulation settings:
 
 ```{r}
-sfm <- sim_settings(sfm, 
+sfm <- sim_settings(sfm,
 
   # Run simulation for 6 months (~ 180 days)
-  stop = round(365/2), time_unit = "days", 
+  stop = round(365 / 2), time_unit = "days",
 
   # Return all variables in output (not just stocks)
-  only_stocks = FALSE)
+  only_stocks = FALSE
+)
 
 print(sfm)
+```
+
+```{r, include=FALSE}
+# Save fewer timepoints to reduce output size
+sfm <- sim_settings(sfm, save_length = 101)
 ```
 
 
@@ -1481,14 +1116,16 @@ sfm <- stock(sfm, name = engagement, eqn = .3)
 
 Plot stock-and-flow diagram:
 
-```{r}
+```{r, fig.height = 1}
 sfm |> plot()
 ```
 
 Simulate and visualise timeseries:
 
 ```{r}
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot(animation = "time")
 ```
 
 
@@ -1496,7 +1133,7 @@ sfm |> simulate() |> plot()
 
 ```{r}
 sfm <- constant(sfm, decay_rate, eqn = .05) |>
-       flow(decay, eqn = decay_rate, from = engagement)
+  flow(decay, eqn = decay_rate, from = engagement)
 ```
 
 
@@ -1509,13 +1146,9 @@ sfm |> plot()
 Simulate and visualise timeseries:
 
 ```{r}
-sfm |> simulate() |> plot()
-```
-
-Animate the simulation over time:
-
-```{r}
-sfm |> simulate() |> plot(animation = "time")
+sfm |>
+  simulate() |>
+  plot(animation = "time")
 ```
 
 
@@ -1535,15 +1168,18 @@ sfm |> plot()
 Simulate and visualise timeseries:
 
 ```{r}
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot(animation = "time")
 ```
+
 
 
 ### Adding an Inflow
 
 ```{r}
 sfm <- constant(sfm, enjoyment, eqn = .3) |>
-       flow(motivation, eqn = enjoyment, to = engagement)
+  flow(motivation, eqn = enjoyment, to = engagement)
 ```
 
 
@@ -1556,7 +1192,9 @@ sfm |> plot()
 Simulate and visualise timeseries:
 
 ```{r}
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot(animation = "time")
 ```
 
 The stock settles at a steady state where inflow == outflow.
@@ -1575,10 +1213,11 @@ sfm |> plot()
 
 ```{r}
 sfm <- sfm |>
-    flow(overcommitment, 
-         eqn = enjoyment * new_projects, 
-         from = enjoyment) |>
-    aux(new_projects, eqn = .1 * engagement)
+  flow(overcommitment,
+    eqn = enjoyment * new_projects,
+    from = enjoyment
+  ) |>
+  aux(new_projects, eqn = .1 * engagement)
 ```
 
 
@@ -1591,7 +1230,9 @@ sfm |> plot()
 Simulate and visualise timeseries:
 
 ```{r}
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot(animation = "time")
 ```
 
 ### Recap
@@ -1606,6 +1247,41 @@ In other words, the inflow rate changed from an **exogenous to an endogenous var
 
 
 
+The table below provides an overview of each model revision and the behaviour it produces. 
+
+
+```{r echo = FALSE}
+eqn_interpretation_table <- data.frame(
+  Panel = LETTERS[1:5],
+  `Stocks` = c("engagement", "engagement", "engagement", "engagement", "engagement, enjoyment"),
+  `Constants` = c("", "`decay_rate`", "`decay_rate`", "`decay_rate`, `enjoyment`", "`decay_rate`"),
+  `Recovery eqn (inflow)` = c("", "", "", "`enjoyment`", "`enjoyment`"),
+  `Depletion eqn (outflow)` = c("", "`decay_rate`", "`decay_rate * engagement`", "`decay_rate * engagement`", "`decay_rate * engagement`"),
+  Interpretation = c(
+    "No process of change",
+    "Engagement decreases at a constant rate",
+    "Engagement decreases at a rate proportional to its current value",
+    "Engagement changes at a rate equal to a constant minus a rate proportional to its current value",
+    "Engagement recovers at a rate which itself changes over time"
+  ),
+  Behaviour = c(
+    "Static",
+    "Linear decrease",
+    "Exponential decrease towards zero",
+    "Stability when recovery and depletion are equal",
+    "Rise and collapse"
+  ),
+  check.names = FALSE
+)
+
+kableExtra::kbl(eqn_interpretation_table,
+  format = "markdown",
+  caption = "Connecting Equations to Model Behaviour"
+) |>
+  kableExtra::kable_styling()
+```
+
+
 
 ## Dependence on Initial Condition
 
@@ -1615,10 +1291,10 @@ If you did not complete all steps above, load the model from the model library:
 sfm <- stockflow("burnout")
 ```
 
-Initialize the engagement stock with a random value between 0 and 4:
+Rather than a fixed value, initialize the engagement stock with a random value between 0 and 4:
 
 ```{r}
-sfm <- update(sfm, engagement, eqn = runif(1, min = 0, max = 4)) 
+sfm <- update(sfm, engagement, eqn = runif(1, min = 0, max = 4))
 ```
 
 Equations are stored as expressions. Note the initial value of engagement:
@@ -1630,7 +1306,15 @@ as.data.frame(sfm, properties = "eqn")
 This means that each simulation will have a different initial value for engagement:
 
 ```{r}
-sfm |> simulate() |> plot()
+sfm |>
+  simulate() |>
+  plot()
+```
+
+```{r}
+sfm |>
+  simulate() |>
+  plot()
 ```
 
 
@@ -1639,21 +1323,21 @@ sfm |> simulate() |> plot()
 Update simulation settings to prepare for ensemble simulations:
 
 ```{r}
-sfm <- sfm |>
-
-  # Save only 50 time points 
-  sim_settings(save_length = 50, 
+sfm <- sim_settings(sfm,
+  # Save only 50 time points
+  save_length = 50,
 
   # Save only stocks (not flows or auxiliaries)
-  only_stocks = TRUE, 
+  only_stocks = TRUE,
 
   # Save individual simulation runs (not just summary statistics)
-  save_sims = TRUE)
+  save_sims = TRUE
+)
 ```
 
-Run 50 simulations with different initial conditions:
+Run 50 simulations from different initial conditions:
 
-```{r}
+```{r ensemble-init, cache = TRUE}
 sims <- ensemble(sfm, n = 50)
 ```
 
@@ -1670,6 +1354,27 @@ plot(sims, which = "sims")
 ```
 
 
+## Parameter Sensitivity
+
+Ensemble simulations can also be used to explore the sensitivity of the model to changes in parameter values.
+
+```{r ensemble-params, cache = TRUE}
+# Reload model from library to reset any changes made above
+sfm <- stockflow("burnout") |>
+  update(engagement, eqn = runif(1, min = 0, max = 4)) |>
+  sim_settings(save_length = 50, only_stocks = TRUE, save_sims = TRUE)
+
+# Specify a range of values of decay_rate to vary
+conditions <- list(decay_rate = c(0.005, 0.01, 0.05, 0.1, 0.2))
+
+# Run 50 simulations for each condition
+sims <- ensemble(sfm, n = 50, conditions = conditions)
+```
+
+```{r}
+plot(sims, which = "sims", condition_display = "slider")
+```
+
 
 ## Assignment: Expressing Theoretical Ideas with Equations
 
@@ -1680,12 +1385,10 @@ Let's return to the simpler model with a static recovery rate:
 
 ```{r}
 sfm <- sfm |>
-
- # Remove the outflow and auxiliary
- discard(c(overcommitment, new_projects)) |>
-
- # Change recovery_rate back to a constant
- change_type(enjoyment, new_type = "constant")
+  # Remove the outflow and auxiliary
+  discard(c(overcommitment, new_projects)) |>
+  # Change recovery_rate back to a constant
+  change_type(enjoyment, new_type = "constant")
 
 sfm |> plot(show_constants = TRUE)
 ```
@@ -1696,7 +1399,7 @@ This model has a constant inflow. The functional form of the motivation inflow c
 ### Functional Forms
 
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
 functional_forms_widget()
 ```
 
@@ -1714,29 +1417,21 @@ Explore the functional forms above:
 
 
 
-## Bonus Material
 
-
-### Parallel Simulations
+## Parallel Simulations
 
 If you have a multi-core machine, you can run simulations in parallel to speed up simulations:
 
-```{r}
+```{r, eval = interactive()}
 # Set up parallel execution (3 cores less than the total number of available cores)
 n_workers <- max(c(1, parallel::detectCores() - 3))
 future::plan(future::multisession, workers = n_workers)
 ```
 
-If configured, `ensemble()` will automatically run simulations in parallel. Otherwise, it will run sequentially.
+If configured, `ensemble()` will automatically run simulations in parallel. Otherwise, it will run sequentially. Run 100 simulations:
 
-```{r}
-sfm <- sim_settings(sfm, save_sims = TRUE)
-```
-
-Run 100 simulations:
-
-```{r}
-sims <- ensemble(sfm, n = 100)
+```{r ensemble-parallel, cache = TRUE}
+sims <- ensemble(sfm, n = 100, save_sims = TRUE)
 ```
 
 Individual simulation runs:
@@ -1746,32 +1441,11 @@ plot(sims, which = "sims")
 ```
 
 
-
-### Parameter Sensitivity
-
-Ensemble simulations can also be used to explore the sensitivity of the model to changes in parameter values.
-
-```{r}
-# Reload model from library to reset any changes made above
-sfm <- stockflow("burnout", version = 2) |>
-  update(engagement, eqn = runif(1, min = 0, max = 4)) |>
-  sim_settings(save_length = 50, only_stocks = TRUE, save_sims = TRUE)
-
-# Specify a range of values of decay_rate to vary
-conditions <- list(decay_rate = c(0.005, 0.01, 0.05, 0.1, 0.2))
-
-# Run 50 simulations for each condition
-sims <- ensemble(sfm, n = 50, conditions = conditions)
-```
-
-```{r}
-plot(sims, which = "sims", condition_display = "slider")
-```
-
 If parallel execution was configured above, restore sequential execution:
 
-```{r}
+```{r, eval = interactive()}
 future::plan(future::sequential)
 ```
+
 
 

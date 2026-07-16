@@ -106,7 +106,8 @@
       "showlegend": true,
       "line": {
         "color": "#C87A8AFF",
-        "width": 8
+        "width": 8,
+        "dash": "solid"
       },
       "visible": true,
       "marker": {
@@ -135,7 +136,8 @@
       "showlegend": true,
       "line": {
         "color": "#6B9D59FF",
-        "width": 3
+        "width": 3,
+        "dash": "solid"
       },
       "visible": true,
       "marker": {
@@ -164,7 +166,8 @@
       "showlegend": true,
       "line": {
         "color": "#5F96C2FF",
-        "width": 3
+        "width": 3,
+        "dash": "solid"
       },
       "visible": true,
       "marker": {
@@ -192,7 +195,7 @@
       "r": 50
     },
     "legend": {
-      "traceorder": "reversed",
+      "traceorder": "normal",
       "font": {
         "size": 14
       }

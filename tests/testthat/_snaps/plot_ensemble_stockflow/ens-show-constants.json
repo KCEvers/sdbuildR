@@ -255,30 +255,28 @@
     {
       "x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "y": [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+      "name": "Contact rate",
       "legendgroup": "Contact rate",
       "type": "scatter",
       "mode": "lines",
       "showlegend": true,
       "line": {
-        "color": "rgba(48,163,124,1)",
-        "width": 3
+        "color": "#30A37CFF",
+        "width": 3,
+        "dash": "dash"
       },
       "visible": "legendonly",
-      "name": "Contact rate",
       "marker": {
-        "color": "rgba(48,163,124,1)",
+        "color": "rgba(127,127,127,1)",
         "line": {
-          "color": "rgba(48,163,124,1)"
+          "color": "rgba(127,127,127,1)"
         }
       },
-      "textfont": {
-        "color": "rgba(48,163,124,1)"
-      },
       "error_y": {
-        "color": "rgba(48,163,124,1)"
+        "color": "rgba(127,127,127,1)"
       },
       "error_x": {
-        "color": "rgba(48,163,124,1)"
+        "color": "rgba(127,127,127,1)"
       },
       "xaxis": "x",
       "yaxis": "y",
@@ -287,30 +285,28 @@
     {
       "x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "y": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "name": "Infection rate",
       "legendgroup": "Infection rate",
       "type": "scatter",
       "mode": "lines",
       "showlegend": true,
       "line": {
-        "color": "rgba(0,160,174,1)",
-        "width": 3
+        "color": "#00A0AEFF",
+        "width": 3,
+        "dash": "dash"
       },
       "visible": "legendonly",
-      "name": "Infection rate",
       "marker": {
-        "color": "rgba(0,160,174,1)",
+        "color": "rgba(188,189,34,1)",
         "line": {
-          "color": "rgba(0,160,174,1)"
+          "color": "rgba(188,189,34,1)"
         }
       },
-      "textfont": {
-        "color": "rgba(0,160,174,1)"
-      },
       "error_y": {
-        "color": "rgba(0,160,174,1)"
+        "color": "rgba(188,189,34,1)"
       },
       "error_x": {
-        "color": "rgba(0,160,174,1)"
+        "color": "rgba(188,189,34,1)"
       },
       "xaxis": "x",
       "yaxis": "y",
@@ -319,30 +315,28 @@
     {
       "x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "y": [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+      "name": "Recovery rate",
       "legendgroup": "Recovery rate",
       "type": "scatter",
       "mode": "lines",
       "showlegend": true,
       "line": {
-        "color": "rgba(126,143,199,1)",
-        "width": 3
+        "color": "#7E8FC7FF",
+        "width": 3,
+        "dash": "dash"
       },
       "visible": "legendonly",
-      "name": "Recovery rate",
       "marker": {
-        "color": "rgba(126,143,199,1)",
+        "color": "rgba(23,190,207,1)",
         "line": {
-          "color": "rgba(126,143,199,1)"
+          "color": "rgba(23,190,207,1)"
         }
       },
-      "textfont": {
-        "color": "rgba(126,143,199,1)"
-      },
       "error_y": {
-        "color": "rgba(126,143,199,1)"
+        "color": "rgba(23,190,207,1)"
       },
       "error_x": {
-        "color": "rgba(126,143,199,1)"
+        "color": "rgba(23,190,207,1)"
       },
       "xaxis": "x",
       "yaxis": "y",
@@ -351,30 +345,28 @@
     {
       "x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "y": [1839.54, 1839.54, 1839.54, 1839.54, 1839.54, 1839.54, 1839.54, 1839.54, 1839.54, 1839.54, 1839.54],
+      "name": "Total population",
       "legendgroup": "Total population",
       "type": "scatter",
       "mode": "lines",
       "showlegend": true,
       "line": {
-        "color": "rgba(186,123,184,1)",
-        "width": 3
+        "color": "#BA7BB8FF",
+        "width": 3,
+        "dash": "dash"
       },
       "visible": "legendonly",
-      "name": "Total population",
       "marker": {
-        "color": "rgba(186,123,184,1)",
+        "color": "rgba(31,119,180,1)",
         "line": {
-          "color": "rgba(186,123,184,1)"
+          "color": "rgba(31,119,180,1)"
         }
       },
-      "textfont": {
-        "color": "rgba(186,123,184,1)"
-      },
       "error_y": {
-        "color": "rgba(186,123,184,1)"
+        "color": "rgba(31,119,180,1)"
       },
       "error_x": {
-        "color": "rgba(186,123,184,1)"
+        "color": "rgba(31,119,180,1)"
       },
       "xaxis": "x",
       "yaxis": "y",
@@ -383,30 +375,28 @@
     {
       "x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "y": [485.85, 819.84, 976.74, 987.84, 933.46, 859.01, 782.5, 709.96, 643.06, 582.03, 526.61],
+      "name": "Infected",
       "legendgroup": "Infected",
       "type": "scatter",
       "mode": "lines",
       "showlegend": true,
       "line": {
-        "color": "rgba(200,122,138,1)",
-        "width": 3
+        "color": "#C87A8AFF",
+        "width": 3,
+        "dash": "solid"
       },
       "visible": true,
-      "name": "Infected",
       "marker": {
-        "color": "rgba(200,122,138,1)",
+        "color": "rgba(255,127,14,1)",
         "line": {
-          "color": "rgba(200,122,138,1)"
+          "color": "rgba(255,127,14,1)"
         }
       },
-      "textfont": {
-        "color": "rgba(200,122,138,1)"
-      },
       "error_y": {
-        "color": "rgba(200,122,138,1)"
+        "color": "rgba(255,127,14,1)"
       },
       "error_x": {
-        "color": "rgba(200,122,138,1)"
+        "color": "rgba(255,127,14,1)"
       },
       "xaxis": "x",
       "yaxis": "y",
@@ -415,30 +405,28 @@
     {
       "x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "y": [529.2, 593.82, 684.42, 783.42, 880.05, 970.11, 1052.55, 1127.5, 1195.43, 1256.94, 1312.61],
+      "name": "Recovered",
       "legendgroup": "Recovered",
       "type": "scatter",
       "mode": "lines",
       "showlegend": true,
       "line": {
-        "color": "rgba(178,137,85,1)",
-        "width": 3
+        "color": "#B28955FF",
+        "width": 3,
+        "dash": "solid"
       },
       "visible": true,
-      "name": "Recovered",
       "marker": {
-        "color": "rgba(178,137,85,1)",
+        "color": "rgba(44,160,44,1)",
         "line": {
-          "color": "rgba(178,137,85,1)"
+          "color": "rgba(44,160,44,1)"
         }
       },
-      "textfont": {
-        "color": "rgba(178,137,85,1)"
-      },
       "error_y": {
-        "color": "rgba(178,137,85,1)"
+        "color": "rgba(44,160,44,1)"
       },
       "error_x": {
-        "color": "rgba(178,137,85,1)"
+        "color": "rgba(44,160,44,1)"
       },
       "xaxis": "x",
       "yaxis": "y",
@@ -447,30 +435,28 @@
     {
       "x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "y": [824.49, 425.88, 178.38, 68.28, 26.02, 10.42, 4.48, 2.08, 1.04, 0.56, 0.32],
+      "name": "Susceptible",
       "legendgroup": "Susceptible",
       "type": "scatter",
       "mode": "lines",
       "showlegend": true,
       "line": {
-        "color": "rgba(130,153,76,1)",
-        "width": 3
+        "color": "#82994CFF",
+        "width": 3,
+        "dash": "solid"
       },
       "visible": true,
-      "name": "Susceptible",
       "marker": {
-        "color": "rgba(130,153,76,1)",
+        "color": "rgba(214,39,40,1)",
         "line": {
-          "color": "rgba(130,153,76,1)"
+          "color": "rgba(214,39,40,1)"
         }
       },
-      "textfont": {
-        "color": "rgba(130,153,76,1)"
-      },
       "error_y": {
-        "color": "rgba(130,153,76,1)"
+        "color": "rgba(214,39,40,1)"
       },
       "error_x": {
-        "color": "rgba(130,153,76,1)"
+        "color": "rgba(214,39,40,1)"
       },
       "xaxis": "x",
       "yaxis": "y",
@@ -485,7 +471,7 @@
       "r": 50
     },
     "legend": {
-      "traceorder": "reversed",
+      "traceorder": "normal",
       "font": {
         "size": 14
       }
