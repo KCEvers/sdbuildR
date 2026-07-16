@@ -1,0 +1,42 @@
+/* --------------------------------------------------------------------------
+   Style bslib navset_* pills under pkgdown's Bootstrap 5.
+
+   bslib's navset_*() helpers emit shiny-legacy markup: bare <li>/<a> elements
+   (no .nav-item / .nav-link) plus, for navset_pill_list(), a BS3 .well sidebar
+   and .nav-stacked list. In a bslib-themed HTML doc that markup is styled by
+   bundled shim CSS; pkgdown's plain Bootstrap 5 ships no such shim, so the
+   pills render as unstyled links and the sidebar loses its background.
+   These rules restore a standard pill appearance, including the active state.
+   -------------------------------------------------------------------------- */
+
+.nav-pills > li > a {
+  display: block;
+  padding: var(--bs-nav-link-padding-y, 0.5rem) var(--bs-nav-link-padding-x, 1rem);
+  border-radius: var(--bs-nav-pills-border-radius, var(--bs-border-radius));
+  color: var(--bs-nav-link-color, var(--bs-link-color));
+  text-decoration: none;
+}
+
+.nav-pills > li > a:hover {
+  background-color: var(--bs-tertiary-bg);
+}
+
+/* Active state: bslib marks <li class="active"> initially; BS5's tab JS moves
+   .active onto the <a> after a click, so cover both. */
+.nav-pills > li.active > a,
+.nav-pills > li > a.active {
+  color: var(--bs-nav-pills-link-active-color, #fff);
+  background-color: var(--bs-nav-pills-link-active-bg, var(--bs-primary));
+}
+
+/* navset_pill_list(): vertical list inside a BS3 .well sidebar. */
+.nav-pills.nav-stacked {
+  flex-direction: column;
+}
+
+.well {
+  background-color: var(--bs-tertiary-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  padding: 0.75rem;
+}
