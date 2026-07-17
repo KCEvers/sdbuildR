@@ -74,7 +74,7 @@ for the ps/eps formats, which fall back to system fonts.
 if (requireNamespace("DiagrammeRsvg", quietly = TRUE) &&
   requireNamespace("rsvg", quietly = TRUE)) {
   sfm <- stockflow("sir")
-  file <- tempfile(fileext = ".png")
+  file <- tempfile(fileext = ".svg")
 
   # With a system font the diagram is rendered by rsvg; the default
   # webfont would instead require webshot2 and a headless browser
@@ -84,7 +84,6 @@ if (requireNamespace("DiagrammeRsvg", quietly = TRUE) &&
   file.remove(file)
 }
 
-\dontshow{if (has_internet()) withAutoprint(\{ # examplesIf}
 \dontrun{
 # requires internet
 # Only if suggested dependencies are installed
@@ -92,12 +91,12 @@ if (requireNamespace("htmlwidgets", quietly = TRUE) &&
   requireNamespace("webshot2", quietly = TRUE)) {
   # Requires Chrome to save plotly plot:
   sim <- simulate(sfm)
+  file <- tempfile(fileext = ".pdf")
   export_plot(plot(sim), file)
 
   # Remove plot
   file.remove(file)
 }
 }
-\dontshow{\}) # examplesIf}
 }
 \concept{convenience}

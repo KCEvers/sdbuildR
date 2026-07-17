@@ -2,6 +2,6 @@
 
 0 errors | 0 warnings | 0 notes
 
-This is an update of an existing CRAN package.
+### 2.2.1 -> 2.2.2
 
-No reverse dependencies.
+I have shortened the test time on CRAN from 549 to ~240 seconds, and also shortened the example times for `export_plot()`, `as.data.frame.ensemble_stockflow()`, `plot.simulate_stockflow()`.

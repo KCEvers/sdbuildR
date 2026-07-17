@@ -458,6 +458,9 @@ test_that("ensemble() R reports progress without error under future plan", {
 
 
 test_that("ensemble respects sim_settings save_sims and per-call override via ...", {
+
+  skip_on_cran()
+
   sfm <- stockflow("sir") |>
     sim_settings(save_sims = TRUE)
 

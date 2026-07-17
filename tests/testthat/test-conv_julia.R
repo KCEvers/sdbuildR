@@ -133,6 +133,8 @@ test_that("Julia conversion rejects or handles previously unchecked edge cases",
 
 
 test_that("converting functions to Julia with named arguments", {
+  skip_on_cran()
+
   sfm <- stockflow("predator_prey")
   var_names <- get_model_var(sfm)
   name <- var_names[1]

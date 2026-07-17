@@ -72,7 +72,6 @@ test_that("import_metadata structure is created correctly", {
   im <- sfm[["import_metadata"]]
 
   # Check required fields
-
   expect_equal(im$vendor, "insightmaker")
   expect_equal(im$file_path, model_file)
   expect_null(im$url)
@@ -89,26 +88,10 @@ test_that("import_metadata structure is created correctly", {
 
   # Check vendor_meta is a list
   expect_type(im$vendor_meta, "list")
-})
 
 
-test_that("import_metadata preserves original InsightMaker info", {
-  folder <- test_path("testdata", "insightmaker", "cran")
 
-  model_file <- list.files(
-    path = folder,
-    pattern = "\\.InsightMaker$",
-    full.names = TRUE
-  )[1]
-
-  sfm <- expect_no_error({
-    suppressWarnings({
-      import_insightmaker(file = model_file)
-    })
-  })
-
-  im <- sfm[["import_metadata"]]
-
+  ## import_metadata preserves original InsightMaker info
   # Original variables should match current variables in count
   expect_equal(nrow(im$original_variables), nrow(sfm[["variables"]]))
 
@@ -120,24 +103,9 @@ test_that("import_metadata preserves original InsightMaker info", {
 
   # Original IDs should be non-empty for InsightMaker models
   expect_true(all(!is.na(im$original_variables$original_id)))
-})
 
 
-test_that("import_metadata is NOT in as.data.frame() output", {
-  folder <- test_path("testdata", "insightmaker", "cran")
-
-  model_file <- list.files(
-    path = folder,
-    pattern = "\\.InsightMaker$",
-    full.names = TRUE
-  )[1]
-
-  sfm <- expect_no_error({
-    suppressWarnings({
-      import_insightmaker(file = model_file)
-    })
-  })
-
+  ## import_metadata is NOT in as.data.frame() output
   df <- as.data.frame(sfm)
 
   # InsightMaker-specific columns should NOT be in data frame output

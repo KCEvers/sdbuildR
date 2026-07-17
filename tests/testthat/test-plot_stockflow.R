@@ -28,6 +28,8 @@ test_that("plot() returns DiagrammeR grViz object", {
 # ============================================================================
 
 test_that("plot() checks vars argument", {
+  skip_on_cran()
+
   sfm <- stockflow("sir")
 
   expect_error(
@@ -49,6 +51,9 @@ test_that("plot() checks vars argument", {
 # ============================================================================
 
 test_that("plot() creates diagram for SIR template", {
+  snapshot_names <- "stockflow-SIR-model-diagram"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow("sir")
   pl <- plot(sfm, show_aux = FALSE, show_constants = FALSE)
   nodes <- extract_diagram_nodes(pl)
@@ -60,13 +65,13 @@ test_that("plot() creates diagram for SIR template", {
   expect_true(all(edges$to %in% var_names))
   expect_true(length(unique(nodes$id)) == nrow(nodes))
 
-  expect_snapshot_plot(
-    "stockflow-SIR-model-diagram",
-    pl
-  )
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() creates diagram for simple single-stock model", {
+  snapshot_names <- "stockflow-simple-stock-flow"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow()
   sfm1 <- update(sfm, "Stock1", type = "stock", label = "Population")
   sfm2 <- update(sfm1, "Flow1", type = "flow", label = "Birth", from = "Stock1")
@@ -79,10 +84,13 @@ test_that("plot() creates diagram for simple single-stock model", {
   expect_true(all(edges$to %in% var_names))
   expect_true(length(unique(nodes$id)) == nrow(nodes))
 
-  expect_snapshot_plot("stockflow-simple-stock-flow", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() creates diagram with auxiliary variables and dependencies", {
+  snapshot_names <- "stockflow-diagram-with-dependencies"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow()
   sfm1 <- update(sfm, "S", type = "stock")
   sfm2 <- update(sfm1, "I", type = "stock")
@@ -97,10 +105,13 @@ test_that("plot() creates diagram with auxiliary variables and dependencies", {
   expect_true(all(edges$to %in% var_names))
   expect_true(length(unique(nodes$id)) == nrow(nodes))
 
-  expect_snapshot_plot("stockflow-diagram-with-dependencies", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() with show_dependencies = FALSE hides dependency arrows", {
+  snapshot_names <- "stockflow-no-dependencies"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow()
   sfm1 <- update(sfm, "S", type = "stock")
   sfm2 <- update(sfm1, "aux1", type = "aux", eqn = "S * 2")
@@ -113,10 +124,13 @@ test_that("plot() with show_dependencies = FALSE hides dependency arrows", {
   expect_true(length(unique(nodes$id)) == nrow(nodes))
   expect_true(nrow(edges) == 0)
 
-  expect_snapshot_plot("stockflow-no-dependencies", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() with show_constants = TRUE displays constants", {
+  snapshot_names <- "stockflow-with-constants"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow()
   sfm1 <- update(sfm, "Stock1", type = "stock")
   sfm2 <- update(sfm1, "const1", type = "constant", eqn = "5")
@@ -128,10 +142,13 @@ test_that("plot() with show_constants = TRUE displays constants", {
   expect_setequal(nodes$name, var_names)
   expect_true(nrow(edges) == 0)
 
-  expect_snapshot_plot("stockflow-with-constants", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() with show_constants = FALSE hides constants", {
+  snapshot_names <- "stockflow-without-constants"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow()
   sfm1 <- update(sfm, "Stock1", type = "stock")
   sfm2 <- update(sfm1, "const1", type = "constant", eqn = "5")
@@ -143,10 +160,13 @@ test_that("plot() with show_constants = FALSE hides constants", {
   expect_true(nrow(edges) == 0)
   expect_true(length(unique(nodes$id)) == nrow(nodes))
 
-  expect_snapshot_plot("stockflow-without-constants", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() with show_aux = FALSE hides auxiliary variables", {
+  snapshot_names <- "stockflow-no-auxiliaries"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow("sir")
   pl <- plot(sfm, show_aux = FALSE, show_constants = TRUE)
   nodes <- extract_diagram_nodes(pl)
@@ -158,10 +178,13 @@ test_that("plot() with show_aux = FALSE hides auxiliary variables", {
   expect_true(all(edges$to %in% var_names))
   expect_true(length(unique(nodes$id)) == nrow(nodes))
 
-  expect_snapshot_plot("stockflow-no-auxiliaries", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() filters variables correctly", {
+  snapshot_names <- c("stockflow-filtered-variables", "stockflow-single-variable-filter")
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow("sir")
   var_names <- c("susceptible", "infected")
   pl <- plot(sfm, vars = var_names, show_aux = TRUE, show_constants = TRUE)
@@ -182,13 +205,13 @@ test_that("plot() filters variables correctly", {
   expect_true(length(unique(nodes$id)) == nrow(nodes))
   expect_true(nrow(edges) == 0)
 
-  expect_snapshot_plot(
-    c("stockflow-filtered-variables", "stockflow-single-variable-filter"),
-    list(pl_filtered, pl)
-  )
+  expect_snapshot_plot(snapshot_names, list(pl_filtered, pl))
 })
 
 test_that("plot() applies custom stock color", {
+  snapshot_names <- "stockflow-custom-stock-color"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow("sir")
   stock_color <- "#FF6B6B"
   df <- as.data.frame(sfm, properties = "type")
@@ -199,10 +222,13 @@ test_that("plot() applies custom stock color", {
   expect_equal(nrow(stock_nodes), length(stock_names))
   expect_true(all(stock_nodes$fillcolor == stock_color))
 
-  expect_snapshot_plot("stockflow-custom-stock-color", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() applies custom flow color", {
+  snapshot_names <- "stockflow-custom-flow-color"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow("sir")
   flow_color <- "#4ECDC4"
   pl <- plot(sfm, colors = list(flow = flow_color))
@@ -211,7 +237,7 @@ test_that("plot() applies custom flow color", {
   # Flows are drawn as black-bordered bands in the flow colour.
   expect_true(grepl(paste0("black:", flow_color, ":black"), d, fixed = TRUE))
 
-  expect_snapshot_plot("stockflow-custom-flow-color", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 # ============================================================================
@@ -330,6 +356,9 @@ test_that("plot() colors: invalid specifications raise errors", {
 })
 
 test_that("plot() applies custom dependency color", {
+  snapshot_names <- "stockflow-custom-dependency-color"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow("sir")
   dependency_color <- "#FFE66D"
   df <- as.data.frame(sfm, properties = "type")
@@ -338,10 +367,13 @@ test_that("plot() applies custom dependency color", {
   # dependency_edges <- edges[edges$rel == "dependency", ]
   # expect_true(all(dependency_edges$color == dependency_color))
 
-  expect_snapshot_plot("stockflow-custom-dependency-color", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() with custom font size", {
+  snapshot_names <- "stockflow-large-font"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow()
   sfm1 <- update(sfm, "Stock1", type = "stock", label = "Population")
   font_size <- 12
@@ -349,10 +381,13 @@ test_that("plot() with custom font size", {
   nodes <- extract_diagram_nodes(pl)
   expect_true(all(nodes$font.size == font_size))
 
-  expect_snapshot_plot("stockflow-large-font", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.stockflow() with custom wrap width", {
+  snapshot_names <- "stockflow-wrap-width-small"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow()
   sfm1 <- update(sfm, "VeryLongStockNameThatShouldWrap",
     type = "stock", label = "Very Long Stock Name That Should Wrap"
@@ -362,27 +397,33 @@ test_that("plot.stockflow() with custom wrap width", {
   nodes <- extract_diagram_nodes(pl)
   expect_true(grepl("\n", nodes$label, fixed = TRUE)) # check that label contains a newline (indicating wrapping)
 
-  expect_snapshot_plot("stockflow-wrap-width-small", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.stockflow() with format_label = FALSE preserves original labels", {
+  snapshot_names <- "stockflow-format-label-false"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow()
   sfm1 <- update(sfm, "Stock_1", type = "stock", label = "Stock_1")
 
   pl <- plot(sfm1, format_label = FALSE, show_eqn = FALSE)
   nodes <- extract_diagram_nodes(pl)
   expect_true(nodes$label == "Stock_1")
-  expect_snapshot_plot("stockflow-format-label-false", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.stockflow() with format_label = TRUE removes underscores", {
+  snapshot_names <- "stockflow-format-label-true"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow()
   sfm1 <- update(sfm, "Stock_1", type = "stock", label = "Stock_1")
 
   pl <- plot(sfm1, format_label = TRUE, show_eqn = FALSE)
   nodes <- extract_diagram_nodes(pl)
   expect_true(nodes$label == "Stock 1")
-  expect_snapshot_plot("stockflow-format-label-true", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 # ============================================================================
@@ -390,6 +431,9 @@ test_that("plot.stockflow() with format_label = TRUE removes underscores", {
 # ============================================================================
 
 test_that("plot() with show_eqn = TRUE (default) shows equations beneath labels", {
+  snapshot_names <- "stockflow-show-eqn"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow("sir")
   pl <- plot(sfm, show_constants = TRUE)
   d <- pl[["x"]][["diagram"]]
@@ -403,7 +447,7 @@ test_that("plot() with show_eqn = TRUE (default) shows equations beneath labels"
   # HTML-like labels (label=< ... >) are used when show_eqn = TRUE.
   expect_true(grepl("label=<", d, fixed = TRUE))
 
-  expect_snapshot_plot("stockflow-show-eqn", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() show_eqn uses a type-specific prefix for every variable type", {
@@ -427,21 +471,27 @@ test_that("plot() with show_eqn = FALSE does not show equations in labels", {
 })
 
 test_that("plot.stockflow() show_tooltip = TRUE (default) adds equation tooltips", {
+  snapshot_names <- "stockflow-tooltip"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow("sir")
   pl <- plot(sfm, show_constants = TRUE, show_tooltip = TRUE)
   d <- pl[["x"]][["diagram"]]
 
   expect_true(grepl("tooltip", d, fixed = TRUE))
-  expect_snapshot_plot("stockflow-tooltip", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.stockflow() with show_tooltip = FALSE omits tooltips", {
+  snapshot_names <- "stockflow-no-tooltip"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow("sir")
   pl <- plot(sfm, show_tooltip = FALSE, show_constants = TRUE)
   d <- pl[["x"]][["diagram"]]
 
   expect_false(grepl("tooltip", d, fixed = TRUE))
-  expect_snapshot_plot("stockflow-no-tooltip", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.stockflow() validates show_tooltip", {
@@ -497,6 +547,9 @@ test_that("plot.stockflow() cloud tooltips state they are outside the model boun
 })
 
 test_that("plot() show_eqn uses font_color for the equation text", {
+  snapshot_names <- "stockflow-show-eqn-label-col"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow("sir")
   label_color <- "#123456"
   pl <- plot(sfm, show_eqn = TRUE, font_color = label_color)
@@ -506,7 +559,7 @@ test_that("plot() show_eqn uses font_color for the equation text", {
   expect_true(grepl(paste0("COLOR=\"", label_color, "\""), d, fixed = TRUE))
   expect_true(grepl(label_color, d, fixed = TRUE))
 
-  expect_snapshot_plot("stockflow-show-eqn-label-col", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() show_eqn wraps long equations to wrap_width", {
@@ -525,6 +578,9 @@ test_that("plot() validates show_eqn", {
 })
 
 test_that("plot() applies font_color to node fontcolor", {
+  snapshot_names <- "stockflow-label-col"
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
   sfm <- stockflow("sir")
   label_color <- "#654321"
   pl <- plot(sfm, font_color = label_color)
@@ -532,5 +588,5 @@ test_that("plot() applies font_color to node fontcolor", {
 
   expect_true(grepl(label_color, d, fixed = TRUE))
 
-  expect_snapshot_plot("stockflow-label-col", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })

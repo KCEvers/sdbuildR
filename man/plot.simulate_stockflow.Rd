@@ -145,13 +145,13 @@ plot(sim)
 sim_all <- simulate(sfm, only_stocks = FALSE)
 plot(sim_all)
 
+\dontshow{if (Sys.getenv("NOT_CRAN") == "true") withAutoprint(\{ # examplesIf}
 # Plot all variables in one panel:
 plot(sim_all, vars_display = "joint")
 
 # Animate the simulation over time:
 plot(sim_all, animation = "time")
 
-\dontshow{if (Sys.getenv("NOT_CRAN") == "true") withAutoprint(\{ # examplesIf}
 # Slow the animation down to ~10 seconds in total, or speed up the
 # individual frames
 plot(sim, animation = "time", control_options = list(duration = 10))

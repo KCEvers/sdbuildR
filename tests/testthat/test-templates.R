@@ -15,55 +15,20 @@ test_that("templates() with unknown name throws an error", {
 # Clean creation: every template loads without error, warning, or message
 # ============================================================================
 
-test_that("templates() with valid name creates stockflow without error/warning/message", {
-  for (nm in templates()) {
-    expect_no_error(sfm <- templates(nm))
-    expect_no_warning(sfm <- templates(nm))
-    expect_no_message(sfm <- templates(nm))
+test_that("templates() with valid name creates stockflow and simulates without error/warning/message", {
+
+  if (Sys.getenv("NOT_CRAN") == "true") {
+    template_names <- templates()
+  } else {
+    # On CRAN, only test a small subset of templates to save time
+    template_names <- templates()[1:2]
+  }
+
+  for (nm in template_names) {
+    expect_no_error(expect_no_warning(expect_no_message(sfm <- templates(nm))))
     expect_s3_class(sfm, "stockflow")
     expect_gt(nrow(as.data.frame(sfm)), 0)
-  }
-})
 
-
-# ============================================================================
-# Structural checks — stock counts only (no variable name assumptions)
-# ============================================================================
-
-test_that("SIR template has exactly 3 stocks", {
-  expect_equal(nrow(as.data.frame(templates("sir"), type = "stock")), 3)
-})
-
-test_that("Lorenz template has exactly 3 stocks", {
-  expect_equal(nrow(as.data.frame(templates("Lorenz"), type = "stock")), 3)
-})
-
-test_that("Rossler template has exactly 3 stocks", {
-  expect_equal(nrow(as.data.frame(templates("Rossler"), type = "stock")), 3)
-})
-
-test_that("predator_prey template has exactly 2 stocks", {
-  expect_equal(nrow(as.data.frame(templates("predator_prey"), type = "stock")), 2)
-})
-
-test_that("bank_account template has exactly 1 stock", {
-  expect_equal(nrow(as.data.frame(templates("bank_account"), type = "stock")), 1)
-})
-
-test_that("logistic_model template has exactly 1 stock", {
-  expect_equal(nrow(as.data.frame(templates("logistic_model"), type = "stock")), 1)
-})
-
-
-# ============================================================================
-# Simulation + plot: all templates simulate and produce a plotly object
-# Simulation tests skip if Julia is not available (some templates use Julia)
-# ============================================================================
-
-test_that("templates() with each template name simulates and produces a plotly object", {
-  for (nm in templates()) {
-    skip_if_julia_not_ready()
-    sfm <- templates(nm)
     sim <- simulate(sfm, only_stocks = FALSE, seed = 42)
     expect_true(sim$success)
     wide <- as.data.frame(sim, direction = "wide")
@@ -74,12 +39,51 @@ test_that("templates() with each template name simulates and produces a plotly o
   }
 })
 
+
+# ============================================================================
+# Structural checks — stock counts only (no variable name assumptions)
+# ============================================================================
+
+test_that("SIR template has exactly 3 stocks", {
+  skip_on_cran()
+
+  expect_equal(nrow(as.data.frame(templates("sir"), type = "stock")), 3)
+})
+
+test_that("Lorenz template has exactly 3 stocks", {
+  skip_on_cran()
+  expect_equal(nrow(as.data.frame(templates("Lorenz"), type = "stock")), 3)
+})
+
+test_that("Rossler template has exactly 3 stocks", {
+  skip_on_cran()
+  expect_equal(nrow(as.data.frame(templates("Rossler"), type = "stock")), 3)
+})
+
+test_that("predator_prey template has exactly 2 stocks", {
+  skip_on_cran()
+  expect_equal(nrow(as.data.frame(templates("predator_prey"), type = "stock")), 2)
+})
+
+test_that("bank_account template has exactly 1 stock", {
+  skip_on_cran()
+  expect_equal(nrow(as.data.frame(templates("bank_account"), type = "stock")), 1)
+})
+
+test_that("logistic_model template has exactly 1 stock", {
+  skip_on_cran()
+  expect_equal(nrow(as.data.frame(templates("logistic_model"), type = "stock")), 1)
+})
+
+
+
 # ============================================================================
 # Simulation accuracy — conservation and convergence (language = "R" where possible)
 # ============================================================================
 
 test_that("SIR: sum of all stocks is constant over time (population conservation)", {
-  skip_if_julia_not_ready()
+  skip_on_cran()
+  
   sfm <- sim_settings(templates("sir"), only_stocks = TRUE)
   sim <- simulate(sfm, seed = 42)
   wide <- as.data.frame(sim, direction = "wide")
@@ -89,6 +93,7 @@ test_that("SIR: sum of all stocks is constant over time (population conservation
 })
 
 test_that("logistic_model: stock eventually converges within 2% of carrying capacity K", {
+  skip_on_cran()
   sfm <- sim_settings(templates("logistic_model"),
     stop = 120, dt = 0.1,
     language = "R"
@@ -103,6 +108,7 @@ test_that("logistic_model: stock eventually converges within 2% of carrying capa
 })
 
 test_that("bank_account: the single stock strictly increases over time", {
+  skip_on_cran()
   sfm <- sim_settings(templates("bank_account"), language = "R")
   sim <- simulate(sfm, seed = 42)
   wide <- as.data.frame(sim, direction = "wide")
@@ -111,7 +117,7 @@ test_that("bank_account: the single stock strictly increases over time", {
 })
 
 test_that("predator_prey: both stocks remain non-negative throughout simulation", {
-  skip_if_julia_not_ready()
+  skip_on_cran()
   sfm <- sim_settings(templates("predator_prey"), stop = 50, dt = 0.01)
   sim <- simulate(sfm, only_stocks = TRUE, seed = 42)
   wide <- as.data.frame(sim, direction = "wide")

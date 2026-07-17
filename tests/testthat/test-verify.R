@@ -15,7 +15,8 @@ test_that("new_stockflow() initialises unit_tests as empty list", {
 # ==============================================================================
 
 test_that("unit_test() adds a test to the list", {
-  sfm <- make_verifiable_sfm() |>
+    skip_on_cran()
+sfm <- make_verifiable_sfm() |>
     unit_test(label = "S is non-negative", expr = all(S >= 0))
 
   expect_equal(length(sfm[["unit_tests"]]), 1L)
@@ -30,7 +31,8 @@ test_that("unit_test() adds a test to the list", {
 })
 
 test_that("unit_test() auto-generates label from expression", {
-  sfm <- make_verifiable_sfm() |>
+    skip_on_cran()
+sfm <- make_verifiable_sfm() |>
     unit_test(expr = all(S >= 0))
 
   # A human-readable label should be generated (not the raw deparse)
@@ -41,7 +43,8 @@ test_that("unit_test() auto-generates label from expression", {
 
 
 test_that("unit_test() auto-generates unique labels for similar expressions", {
-  sfm <- make_verifiable_sfm() |>
+   skip_on_cran()
+ sfm <- make_verifiable_sfm() |>
     unit_test(expr = mean(S >= 0)) |>
     unit_test(expr = mean(S) >= 0)
 
@@ -52,7 +55,8 @@ test_that("unit_test() auto-generates unique labels for similar expressions", {
 })
 
 test_that("unit_test() upserts: same label replaces existing test", {
-  sfm <- make_verifiable_sfm() |>
+   skip_on_cran()
+ sfm <- make_verifiable_sfm() |>
     unit_test(label = "test A", expr = all(S >= 0)) |>
     unit_test(label = "test A", expr = all(S > 0)) # overwrite
 
@@ -61,7 +65,8 @@ test_that("unit_test() upserts: same label replaces existing test", {
 })
 
 test_that("unit_test() upserts: same test replaces existing test", {
-  sfm <- make_verifiable_sfm() |>
+   skip_on_cran()
+ sfm <- make_verifiable_sfm() |>
     unit_test(label = "test A", expr = all(S >= 0)) |>
     unit_test(test = 1, expr = all(S > 0)) # overwrite
 
@@ -70,6 +75,7 @@ test_that("unit_test() upserts: same test replaces existing test", {
 })
 
 test_that("unit_test() stores conditions correctly", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(
       label = "at zero rate, S is constant",
@@ -82,6 +88,9 @@ test_that("unit_test() stores conditions correctly", {
 })
 
 test_that("unit_test() respects active = FALSE", {
+
+  skip_on_cran()
+
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "always skipped", expr = FALSE, active = FALSE)
 
@@ -91,57 +100,53 @@ test_that("unit_test() respects active = FALSE", {
   expect_equal(v[["results"]][[1]][["status"]], "skip")
 })
 
-test_that("unit_test() errors on bad conditions (unknown name)", {
-  sfm <- make_verifiable_sfm()
-  expect_error(
-    unit_test(sfm, label = "x", expr = all(S >= 0), conditions = list(nonexistent = 1)),
-    regexp = "not found as stocks or constants"
-  )
-})
-
-test_that("unit_test() errors on unnamed conditions", {
-  sfm <- make_verifiable_sfm()
-  expect_error(
-    unit_test(sfm, label = "x", expr = all(S >= 0), conditions = list(1)),
-    regexp = "must be named"
-  )
-})
-
-test_that("unit_test() errors when expr references undefined variable", {
-  sfm <- make_verifiable_sfm()
-  expect_error(
-    unit_test(sfm, label = "x", expr = all(Nonexistent >= 0)),
-    regexp = "not found in model"
-  )
-})
-
 test_that("unit_test() allows base-R symbols in expr (e.g., Inf, pi)", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm()
   expect_no_error(unit_test(sfm, label = "x", expr = all(S < Inf)))
 })
 
-test_that("unit_test() errors on invalid syntax when expr is character", {
+test_that("unit_test() errors appropriately", {
+    skip_on_cran()
+
   sfm <- make_verifiable_sfm()
+
+  # on invalid syntax when expr is character
   expect_error(
     unit_test(sfm, label = "bad syntax", expr = "all(S >= 0 & )"),
     regexp = "invalid R syntax|Failed to parse"
   )
-})
 
-test_that("unit_test() errors when character expr contains multiple expressions", {
-  sfm <- make_verifiable_sfm()
+# unit_test() errors on bad conditions (unknown name)
+  expect_error(
+    unit_test(sfm, label = "x", expr = all(S >= 0), conditions = list(nonexistent = 1)),
+    regexp = "not found as stocks or constants"
+  )
+
+# unit_test() errors on unnamed conditions
+  expect_error(
+    unit_test(sfm, label = "x", expr = all(S >= 0), conditions = list(1)),
+    regexp = "must be named"
+  )
+
+# unit_test() errors when expr references undefined variable
+  expect_error(
+    unit_test(sfm, label = "x", expr = all(Nonexistent >= 0)),
+    regexp = "not found in model"
+  )
+
+# unit_test() errors when character expr contains multiple expressions
   expect_error(
     unit_test(sfm, label = "multi expr", expr = "all(S >= 0); all(S < 200)"),
     regexp = "exactly one expression"
   )
-})
 
-test_that("unit_test() requires explicit label when auto-generated label collides", {
-  sfm <- make_verifiable_sfm() |>
+# unit_test() requires explicit label when auto-generated label collides
+  sfm1 <- make_verifiable_sfm() |>
     unit_test(expr = all(S >= 0))
 
   expect_error(
-    unit_test(sfm, expr = all(S >= 0)),
+    unit_test(sfm1, expr = all(S >= 0)),
     regexp = "Auto-generated label.*already exists|identical expression already exists"
   )
 })
@@ -151,6 +156,7 @@ test_that("unit_test() requires explicit label when auto-generated label collide
 # ==============================================================================
 
 test_that("discard_unit_test() removes by label", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "test A", expr = all(S >= 0)) |>
     unit_test(label = "test B", expr = all(S < 200)) |>
@@ -163,6 +169,7 @@ test_that("discard_unit_test() removes by label", {
 })
 
 test_that("discard_unit_test() removes by integer index", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "test A", expr = all(S >= 0)) |>
     unit_test(label = "test B", expr = all(S < 200)) |>
@@ -175,6 +182,7 @@ test_that("discard_unit_test() removes by integer index", {
 })
 
 test_that("discard_unit_test() warns when label not found", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm()
   expect_error(
     discard_unit_test(sfm, "does not exist"),
@@ -183,6 +191,7 @@ test_that("discard_unit_test() warns when label not found", {
 })
 
 test_that("discard_unit_test() warns when index out of range", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "only test", expr = all(S >= 0))
   expect_error(
@@ -197,6 +206,7 @@ test_that("discard_unit_test() warns when index out of range", {
 # ==============================================================================
 
 test_that("unit_tests() returns unit_tests_stockflow with correct count", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "a", expr = all(S >= 0)) |>
     unit_test(label = "b", expr = all(S < 200))
@@ -207,11 +217,13 @@ test_that("unit_tests() returns unit_tests_stockflow with correct count", {
 })
 
 test_that("unit_tests() prints without error for empty model", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm()
   expect_no_error(print(unit_tests(sfm)))
 })
 
 test_that("unit_tests() snapshot for defined tests", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S is non-negative", expr = all(S >= 0)) |>
     unit_test(label = "inactive test", expr = FALSE, active = FALSE)
@@ -225,26 +237,17 @@ test_that("unit_tests() snapshot for defined tests", {
 # ==============================================================================
 
 test_that("verify.stockflow() returns verify_stockflow class", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S is non-negative", expr = all(S >= 0))
 
   result <- silence(verify(sfm))
   expect_s3_class(result, "verify_stockflow")
-})
 
-test_that("verify.stockflow() passes a correct test", {
-  sfm <- make_verifiable_sfm() |>
-    unit_test(label = "S is non-negative", expr = all(S >= 0))
-
-  result <- silence(verify(sfm))
+#  verify.stockflow() passes a correct test
   expect_equal(result[["results"]][[1]][["status"]], "pass")
-})
 
-test_that("verify result includes expr_str, conditions, and outcome for passing test", {
-  sfm <- make_verifiable_sfm() |>
-    unit_test(label = "S is non-negative", expr = all(S >= 0))
-
-  result <- silence(verify(sfm))
+  # verify result includes expr_str, conditions, and outcome for passing test
   res_entry <- result[["results"]][[1]]
 
   expect_equal(res_entry[["expr_str"]], "all(S >= 0)")
@@ -254,18 +257,15 @@ test_that("verify result includes expr_str, conditions, and outcome for passing 
 })
 
 test_that("verify.stockflow() fails an incorrect test", {
+
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S is always zero", expr = all(S == 0))
 
   result <- silence(verify(sfm))
   expect_equal(result[["results"]][[1]][["status"]], "fail")
-})
 
-test_that("verify result includes outcome = FALSE for failing test", {
-  sfm <- make_verifiable_sfm() |>
-    unit_test(label = "S is always zero", expr = all(S == 0))
-
-  result <- silence(verify(sfm))
+#verify result includes outcome = FALSE for failing test
   res_entry <- result[["results"]][[1]]
 
   expect_equal(res_entry[["expr_str"]], "all(S == 0)")
@@ -275,6 +275,8 @@ test_that("verify result includes outcome = FALSE for failing test", {
 })
 
 test_that("verify.stockflow() fails FALSE character expression", {
+
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "char false", expr = "all(S == 0)")
 
@@ -283,19 +285,16 @@ test_that("verify.stockflow() fails FALSE character expression", {
 })
 
 test_that("verify.stockflow() errors if expression returns numeric scalar", {
+
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "numeric output", expr = mean(S > 0.2))
 
   result <- silence(verify(sfm))
   expect_equal(result[["results"]][[1]][["status"]], "error")
   expect_match(result[["results"]][[1]][["message"]], "logical scalar")
-})
 
-test_that("verify result includes outcome and conditions for error status", {
-  sfm <- make_verifiable_sfm() |>
-    unit_test(label = "numeric output", expr = mean(S > 0.2))
-
-  result <- silence(verify(sfm))
+# verify result includes outcome and conditions for error status
   res_entry <- result[["results"]][[1]]
 
   expect_equal(res_entry[["expr_str"]], "mean(S > 0.2)")
@@ -305,6 +304,7 @@ test_that("verify result includes outcome and conditions for error status", {
 })
 
 test_that("verify.stockflow() errors if expression returns logical vector", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "vector output", expr = S > 0)
 
@@ -315,6 +315,8 @@ test_that("verify.stockflow() errors if expression returns logical vector", {
 
 
 test_that("verify.stockflow() works with conditions", {
+
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(
       label      = "at zero rate, S does not decrease",
@@ -332,6 +334,7 @@ test_that("verify.stockflow() works with conditions", {
 })
 
 test_that("verify.stockflow() errors when no tests defined", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm()
   expect_error(verify(sfm), regexp = "No unit tests")
 })
@@ -340,6 +343,7 @@ test_that("verify.stockflow() errors when no tests defined", {
 # --- sims always retained ---
 
 test_that("verify() always returns non-NULL sims (no save_sims needed)", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |> unit_test(expr = all(S >= 0))
   result <- silence(verify(sfm))
   expect_false(is.null(result[["sims"]]))
@@ -348,6 +352,7 @@ test_that("verify() always returns non-NULL sims (no save_sims needed)", {
 })
 
 test_that("verify() returns sims as nested list and j as named int vector", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0))
   result <- silence(verify(sfm))
@@ -361,6 +366,7 @@ test_that("verify() returns sims as nested list and j as named int vector", {
 })
 
 test_that("verify() deduplicates sims: two tests sharing conditions map to the same index", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0)) |>
     unit_test(label = "S ends positive", expr = tail(S, 1) > 0) |>
@@ -397,6 +403,7 @@ test_that("verify() deduplicates sims: two tests sharing conditions map to the s
 
 
 test_that("as.data.frame.verify_stockflow returns a data frame with expected columns", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0))
   result <- silence(verify(sfm))
@@ -406,17 +413,10 @@ test_that("as.data.frame.verify_stockflow returns a data frame with expected col
   expect_equal(nrow(df), 1L)
 })
 
-test_that("as.data.frame.verify_stockflow stores compact FALSE failure messages", {
-  sfm <- make_verifiable_sfm() |>
-    unit_test(label = "S is zero", expr = all(S == 0))
 
-  result <- silence(verify(sfm))
-  df <- as.data.frame(result)
-
-  expect_equal(df[["message"]], "Expected: TRUE\nActual: FALSE")
-})
 
 test_that("as.data.frame.verify_stockflow test filter works", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0)) |>
     unit_test(
@@ -431,6 +431,7 @@ test_that("as.data.frame.verify_stockflow test filter works", {
 })
 
 test_that("as.data.frame.verify_stockflow sims test display shows only requested numbers", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "A", expr = all(S >= 0)) |>
     unit_test(label = "B", expr = all(S > 0))
@@ -445,6 +446,7 @@ test_that("as.data.frame.verify_stockflow sims test display shows only requested
 })
 
 test_that("head.verify_stockflow and tail.verify_stockflow return data frames", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0))
   result <- silence(verify(sfm))
@@ -453,6 +455,7 @@ test_that("head.verify_stockflow and tail.verify_stockflow return data frames", 
 })
 
 test_that("verify result for passing test includes error_type = NA", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S is non-negative", expr = all(S >= 0))
 
@@ -464,6 +467,7 @@ test_that("verify result for passing test includes error_type = NA", {
 })
 
 test_that("verify result for failing test includes error_type = NA", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S is always zero", expr = all(S == 0))
 
@@ -475,6 +479,7 @@ test_that("verify result for failing test includes error_type = NA", {
 })
 
 test_that("error_type = 'expr_syntax' when expression has parse error", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "syntax error", expr = all(S >= 0)) # Will be modified after
 
@@ -490,6 +495,7 @@ test_that("error_type = 'expr_syntax' when expression has parse error", {
 })
 
 test_that("error_type = 'expr_result' when expression returns numeric instead of logical", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "numeric output", expr = mean(S > 0.2))
 
@@ -502,6 +508,7 @@ test_that("error_type = 'expr_result' when expression returns numeric instead of
 })
 
 test_that("error_type = 'expr_result' when expression returns logical vector instead of scalar", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "vector output", expr = S > 0)
 
@@ -514,6 +521,7 @@ test_that("error_type = 'expr_result' when expression returns logical vector ins
 })
 
 test_that("status = 'fail' with informative message when expression returns NA", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "na output", expr = NA)
 
@@ -526,6 +534,7 @@ test_that("status = 'fail' with informative message when expression returns NA",
 })
 
 test_that("status = 'fail' with informative message when expression returns Inf", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "inf output", expr = Inf)
 
@@ -538,6 +547,7 @@ test_that("status = 'fail' with informative message when expression returns Inf"
 })
 
 test_that("status = 'fail' with informative message when expression returns NaN", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "nan output", expr = NaN)
 
@@ -550,6 +560,7 @@ test_that("status = 'fail' with informative message when expression returns NaN"
 })
 
 test_that("error_type = 'expr_eval' when expression references undefined variable", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "undefined var", expr = all(S >= 0)) # Will be modified
 
@@ -565,6 +576,7 @@ test_that("error_type = 'expr_eval' when expression references undefined variabl
 })
 
 test_that("verify() test parameter runs only specified tests", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "A", expr = all(S >= 0)) |>
     unit_test(label = "B", expr = all(S == 0))
@@ -576,6 +588,7 @@ test_that("verify() test parameter runs only specified tests", {
 })
 
 test_that("as.data.frame test_indices preserved correctly", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "A", expr = all(S >= 0)) |>
     unit_test(label = "B", expr = all(S > 0))
@@ -585,6 +598,7 @@ test_that("as.data.frame test_indices preserved correctly", {
 })
 
 test_that("unit_tests() label partial match works", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0)) |>
     unit_test(label = "S constant", expr = all(diff(S) == 0))
@@ -594,6 +608,7 @@ test_that("unit_tests() label partial match works", {
 })
 
 test_that("unit_tests() label vector matches either (OR)", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0)) |>
     unit_test(label = "S constant", expr = all(diff(S) == 0))
@@ -602,27 +617,23 @@ test_that("unit_tests() label vector matches either (OR)", {
 })
 
 test_that("unit_tests() label is case-insensitive by default", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S Non-Negative", expr = all(S >= 0))
   res <- unit_tests(sfm, label = "non-negative")
   expect_equal(res$n, 1L)
-})
 
-test_that("unit_tests() label ignore_case = FALSE respects case", {
-  sfm <- make_verifiable_sfm() |>
-    unit_test(label = "S Non-Negative", expr = all(S >= 0))
+# unit_tests() label ignore_case = FALSE respects case
   expect_warning(unit_tests(sfm, label = "non-negative", ignore_case = FALSE),
     regexp = "No tests matched"
   )
-})
 
-test_that("unit_tests() label warns on no match", {
-  sfm <- make_verifiable_sfm() |>
-    unit_test(label = "S non-negative", expr = all(S >= 0))
+# unit_tests() label warns on no match
   expect_warning(unit_tests(sfm, label = "xyz_no_match"), regexp = "No tests matched")
 })
 
 test_that("unit_tests() test and label combine as intersection", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0)) |>
     unit_test(label = "S constant", expr = all(diff(S) == 0))
@@ -632,6 +643,7 @@ test_that("unit_tests() test and label combine as intersection", {
 })
 
 test_that("as.data.frame label filter works", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0)) |>
     unit_test(label = "S constant", expr = all(diff(S) == 0))
@@ -642,6 +654,7 @@ test_that("as.data.frame label filter works", {
 })
 
 test_that("as.data.frame label vector matches either", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0)) |>
     unit_test(label = "S constant", expr = all(diff(S) == 0))
@@ -651,6 +664,7 @@ test_that("as.data.frame label vector matches either", {
 })
 
 test_that("as.data.frame test and label combine (intersection)", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0)) |>
     unit_test(label = "S constant", expr = all(diff(S) == 0))
@@ -661,6 +675,7 @@ test_that("as.data.frame test and label combine (intersection)", {
 })
 
 test_that("as.data.frame label errors no match", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-negative", expr = all(S >= 0))
   result <- silence(verify(sfm))
@@ -669,6 +684,7 @@ test_that("as.data.frame label errors no match", {
 
 
 test_that("verify().results always includes error_type field", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "pass test", expr = all(S >= 0)) |>
     unit_test(label = "fail test", expr = all(S == 0)) |>
@@ -712,6 +728,9 @@ test_that("print.verify_stockflow() snapshot for failing FALSE tests", {
 # ==============================================================================
 
 test_that("discard() removes unit test that only references the discarded variable", {
+  
+  skip_on_cran()
+  
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S only", expr = all(S >= 0))
 
@@ -725,6 +744,7 @@ test_that("discard() removes unit test that only references the discarded variab
 })
 
 test_that("discard() keeps unit test that references other variables too", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S and rate", expr = all(S >= 0) && rate > 0)
 
@@ -734,6 +754,7 @@ test_that("discard() keeps unit test that references other variables too", {
 })
 
 test_that("discard() warns when removing a unit test", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S only", expr = all(S >= 0))
 
@@ -743,6 +764,7 @@ test_that("discard() warns when removing a unit test", {
 })
 
 test_that("discard() strips removed variable from conditions", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-neg", expr = all(S >= 0), conditions = list(rate = 0))
 
@@ -754,6 +776,7 @@ test_that("discard() strips removed variable from conditions", {
 })
 
 test_that("discard() warns about lingering expr reference when multiple vars in expr", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "both vars", expr = all(S >= 0) && drain > 0)
 
@@ -767,6 +790,7 @@ test_that("discard() warns about lingering expr reference when multiple vars in 
 # ==============================================================================
 
 test_that("unit_test() populates assemble$unit_tests$deps", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-neg", expr = all(S >= 0), conditions = list(rate = 0))
 
@@ -778,6 +802,7 @@ test_that("unit_test() populates assemble$unit_tests$deps", {
 })
 
 test_that("unit_test() updates deps when modifying a test", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "test", expr = all(S >= 0)) |>
     unit_test(label = "test", expr = all(drain >= 0)) # overwrite
@@ -787,6 +812,7 @@ test_that("unit_test() updates deps when modifying a test", {
 })
 
 test_that("discard_unit_test() invalidates test deps cache", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "test A", expr = all(S >= 0)) |>
     discard_unit_test("test A")
@@ -796,6 +822,7 @@ test_that("discard_unit_test() invalidates test deps cache", {
 })
 
 test_that("get_test_deps() lazily recomputes when cache is NULL", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S non-neg", expr = all(S >= 0))
 
@@ -815,6 +842,7 @@ test_that("get_test_deps() lazily recomputes when cache is NULL", {
 # ==============================================================================
 
 test_that("unit_test() errors on duplicate expression", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "test A", expr = all(S >= 0))
 
@@ -825,6 +853,7 @@ test_that("unit_test() errors on duplicate expression", {
 })
 
 test_that("unit_test() warns when test is not sequential (gap)", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "test A", expr = all(S >= 0))
 
@@ -841,6 +870,7 @@ test_that("unit_test() warns when test is not sequential (gap)", {
 # ==============================================================================
 
 test_that("discard() handles variable referenced in both expr and conditions", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "rate test", expr = all(rate > -1), conditions = list(rate = 0))
 
@@ -850,6 +880,7 @@ test_that("discard() handles variable referenced in both expr and conditions", {
 })
 
 test_that("discard() with multiple variables removes affected tests and strips conditions", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S test", expr = all(S >= 0)) |>
     unit_test(label = "rate test", expr = all(drain > 0), conditions = list(rate = 0))
@@ -869,6 +900,7 @@ test_that("discard() with multiple variables removes affected tests and strips c
 # ==============================================================================
 
 test_that("get_test_deps() returns empty list for model with no unit tests", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm()
   td <- get_test_deps(sfm)
   expect_equal(td[["deps"]], list())
@@ -880,6 +912,7 @@ test_that("get_test_deps() returns empty list for model with no unit tests", {
 # ==============================================================================
 
 test_that("discard_unit_test() removes multiple tests by index", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "A", expr = all(S >= 0)) |>
     unit_test(label = "B", expr = all(S > 0)) |>
@@ -896,6 +929,7 @@ test_that("discard_unit_test() removes multiple tests by index", {
 # ==============================================================================
 
 test_that("verify.stockflow() passes test referencing a flow (non-stock)", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "drain is positive", expr = all(drain > 0))
 
@@ -904,6 +938,7 @@ test_that("verify.stockflow() passes test referencing a flow (non-stock)", {
 })
 
 test_that("verify.stockflow() passes test referencing a constant (non-stock)", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "rate is 0.1", expr = expect_equal(rate[[1]], 0.1))
 
@@ -912,6 +947,7 @@ test_that("verify.stockflow() passes test referencing a constant (non-stock)", {
 })
 
 test_that("verify.stockflow() passes mixed stock and non-stock tests", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S is non-negative", expr = all(S >= 0)) |>
     unit_test(label = "drain is positive", expr = all(drain > 0))
@@ -925,6 +961,7 @@ test_that("verify.stockflow() passes mixed stock and non-stock tests", {
 # --- Conditions are actually applied to the simulation ---
 
 test_that("verify(): constant-only condition is present in sim", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "x", expr = all(S >= 0), conditions = list(rate = 0))
   result <- silence(verify(sfm))
@@ -934,6 +971,7 @@ test_that("verify(): constant-only condition is present in sim", {
 })
 
 test_that("verify(): stock initial-value condition is present in sim", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "x", expr = all(S >= 0), conditions = list(S = 50))
   result <- silence(verify(sfm))
@@ -943,6 +981,7 @@ test_that("verify(): stock initial-value condition is present in sim", {
 })
 
 test_that("verify(): mixed conditions are both present in sim", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "x", expr = all(S >= 0), conditions = list(S = 50, rate = 0))
   result <- silence(verify(sfm))
@@ -1049,6 +1088,7 @@ test_that("verify(): mixed conditions are both present in Julia sim", {
 })
 
 test_that("verify() augments sfm vars with test refs (fixes vars/only_stocks conflict)", {
+  skip_on_cran()
   sfm <- make_verifiable_sfm()
 
   # User limits sim_settings to only include stock 'S'
@@ -1066,41 +1106,21 @@ test_that("verify() augments sfm vars with test refs (fixes vars/only_stocks con
 })
 
 
-test_that("plot.verify_stockflow respects vars argument and returns plotly", {
-  res <- make_verify_model(n_tests = 1)
-  pl <- plot(res, vars = "S")
-  expect_plotly(pl)
-})
-
-
 # ==============================================================================
 # as.data.frame — condition filter (which = "tests")
 # ==============================================================================
 
-# Helper shared across this section: 2-test result with 2 distinct conditions
-# Test 1 → condition 1 (baseline)
-# Test 2 → condition 2 (rate = 0)
-make_two_condition_result <- function() {
-  sfm <- make_verifiable_sfm() |>
-    unit_test(label = "S non-negative", expr = all(S >= 0)) |>
-    unit_test(
-      label = "S constant at zero rate",
-      expr = all(diff(S) == 0),
-      conditions = list(rate = 0)
-    )
-  silence(verify(sfm))
-}
+
 
 test_that("condition column in which='tests' output is an integer vector", {
+  skip_on_cran()
   res <- make_two_condition_result()
   df <- as.data.frame(res)
   expect_true(is.integer(df[["condition"]]))
   expect_equal(df[["condition"]], c(1L, 2L))
-})
 
-test_that("as.data.frame condition filter (tests): single condition keeps only matching tests", {
-  res <- make_two_condition_result()
 
+# as.data.frame condition filter (tests): single condition keeps only matching tests
   df1 <- as.data.frame(res, condition = 1)
   expect_equal(nrow(df1), 1L)
   expect_equal(df1[["label"]], "S non-negative")
@@ -1110,17 +1130,13 @@ test_that("as.data.frame condition filter (tests): single condition keeps only m
   expect_equal(nrow(df2), 1L)
   expect_equal(df2[["label"]], "S constant at zero rate")
   expect_equal(df2[["condition"]], 2L)
-})
 
-test_that("as.data.frame condition filter (tests): vector keeps tests from all listed conditions", {
-  res <- make_two_condition_result()
+#  as.data.frame condition filter (tests): vector keeps tests from all listed conditions
   df <- as.data.frame(res, condition = c(1, 2))
   expect_equal(nrow(df), 2L)
   expect_setequal(df[["condition"]], c(1L, 2L))
-})
 
-test_that("as.data.frame condition filter (tests): combined with test filter gives intersection", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (tests): combined with test filter gives intersection
   # test = 1 is condition 1, so condition = 1 should return 1 row
   df <- as.data.frame(res, test = 1L, condition = 1)
   expect_equal(nrow(df), 1L)
@@ -1130,18 +1146,14 @@ test_that("as.data.frame condition filter (tests): combined with test filter giv
     as.data.frame(res, test = 1L, condition = 2),
     regexp = "No tests with condition"
   )
-})
 
-test_that("as.data.frame condition filter (tests): combined with status filter gives intersection", {
-  res <- make_two_condition_result()
+#  as.data.frame condition filter (tests): combined with status filter gives intersection
   # Both tests pass; filtering to passing tests in condition 1 gives 1 row
   df <- as.data.frame(res, condition = 1, status = "pass")
   expect_equal(nrow(df), 1L)
   expect_equal(df[["condition"]], 1L)
-})
 
-test_that("as.data.frame condition filter (tests): combined with label filter gives intersection", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (tests): combined with label filter gives intersection
   df <- as.data.frame(res, condition = 1, label = "non-negative")
   expect_equal(nrow(df), 1L)
   expect_equal(df[["label"]], "S non-negative")
@@ -1150,34 +1162,26 @@ test_that("as.data.frame condition filter (tests): combined with label filter gi
     as.data.frame(res, condition = 1, label = "zero rate"),
     regexp = "No tests with condition number"
   )
-})
 
-test_that("as.data.frame condition filter (tests): out-of-range condition errors", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (tests): out-of-range condition errors
   expect_error(
     as.data.frame(res, condition = 99),
     regexp = "Condition number.*not found"
   )
-})
 
-test_that("as.data.frame condition filter (tests): non-integer condition errors", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (tests): non-integer condition errors
   expect_error(
     as.data.frame(res, condition = 1.5),
     regexp = "must be an integer"
   )
-})
 
-test_that("as.data.frame condition filter (tests): NA condition errors", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (tests): NA condition errors
   expect_error(
     as.data.frame(res, condition = NA_integer_),
     regexp = "must be an integer"
   )
-})
 
-test_that("as.data.frame condition filter (tests): no-match after other filters errors clearly", {
-  res <- make_two_condition_result()
+#as.data.frame condition filter (tests): no-match after other filters errors clearly
   # Filter status to "fail" first (both pass → nothing left) then condition
   expect_error(
     as.data.frame(res, status = "fail", condition = 1),
@@ -1191,6 +1195,7 @@ test_that("as.data.frame condition filter (tests): no-match after other filters 
 # ==============================================================================
 
 test_that("as.data.frame condition filter (sims): single condition keeps only that simulation", {
+  skip_on_cran()
   res <- make_two_condition_result()
 
   df1 <- as.data.frame(res, which = "sims", condition = 1)
@@ -1200,16 +1205,12 @@ test_that("as.data.frame condition filter (sims): single condition keeps only th
   df2 <- as.data.frame(res, which = "sims", condition = 2)
   expect_true(all(df2[["condition"]] == 2L))
   expect_false(any(df2[["condition"]] == 1L))
-})
 
-test_that("as.data.frame condition filter (sims): vector keeps all listed conditions", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (sims): vector keeps all listed conditions
   df <- as.data.frame(res, which = "sims", condition = c(1, 2))
   expect_setequal(unique(df[["condition"]]), c(1L, 2L))
-})
 
-test_that("as.data.frame condition filter (sims): combined with test filter is intersection", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (sims): combined with test filter is intersection
   # test 1 maps to condition 1 — requesting condition 1 is consistent
   df <- as.data.frame(res, which = "sims", test = 1L, condition = 1)
   expect_true(all(df[["condition"]] == 1L))
@@ -1219,41 +1220,31 @@ test_that("as.data.frame condition filter (sims): combined with test filter is i
     as.data.frame(res, which = "sims", test = 1L, condition = 2),
     regexp = "No simulations match"
   )
-})
 
-test_that("as.data.frame condition filter (sims): combined with status filter is intersection", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (sims): combined with status filter is intersection
   # Both conditions pass; filtering to pass + condition 1 keeps condition 1 only
   df <- as.data.frame(res, which = "sims", condition = 1, status = "pass")
   expect_true(all(df[["condition"]] == 1L))
-})
 
-test_that("as.data.frame condition filter (sims): out-of-range condition errors", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (sims): out-of-range condition errors
   expect_error(
     as.data.frame(res, which = "sims", condition = 99),
     regexp = "Condition number.*not found"
   )
-})
 
-test_that("as.data.frame condition filter (sims): non-integer condition errors", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (sims): non-integer condition errors
   expect_error(
     as.data.frame(res, which = "sims", condition = 1.5),
     regexp = "must be an integer"
   )
-})
 
-test_that("as.data.frame condition filter (sims): NA condition errors", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (sims): NA condition errors
   expect_error(
     as.data.frame(res, which = "sims", condition = NA_integer_),
     regexp = "must be an integer"
   )
-})
 
-test_that("as.data.frame condition filter (sims): wide direction still respects condition filter", {
-  res <- make_two_condition_result()
+# as.data.frame condition filter (sims): wide direction still respects condition filter
   df <- as.data.frame(res, which = "sims", direction = "wide", condition = 1)
   expect_true(all(df[["condition"]] == 1L))
   # wide format: variables become columns
@@ -1269,27 +1260,19 @@ test_that("as.data.frame(verify, which='sims', vars=) filters by variable", {
   res <- make_verify_model(n_tests = 2)
   df <- as.data.frame(res, which = "sims", vars = "S")
   expect_equal(unique(df$variable), "S")
-})
 
-test_that("as.data.frame(verify, which='sims', type=) filters by type", {
-  res <- make_verify_model(n_tests = 2)
+# as.data.frame(verify, which='sims', type=) filters by type
   df <- as.data.frame(res, which = "sims", type = "stock")
   expect_true(all(df$variable == "S"))
-})
 
-test_that("as.data.frame(verify, which='sims'): unknown vars errors as a typo", {
-  res <- make_verify_model(n_tests = 2)
+# as.data.frame(verify, which='sims'): unknown vars errors as a typo
   expect_error(as.data.frame(res, which = "sims", vars = "nope"), "not.*variable")
-})
 
-test_that("as.data.frame(verify, which='sims'): variable not saved gives informative error", {
-  res <- make_verify_model(n_tests = 2)
+# as.data.frame(verify, which='sims'): variable not saved gives informative error
   # 'drain' is a flow in the model but is not saved in the verify output by default
   expect_error(as.data.frame(res, which = "sims", vars = "drain"), "not saved in the output")
-})
 
-test_that("as.data.frame(verify, which='tests') informs that vars/type apply only to sims", {
-  res <- make_verify_model(n_tests = 2)
+# as.data.frame(verify, which='tests') informs that vars/type apply only to sims
   expect_message(df <- as.data.frame(res, which = "tests", type = "stock"), "only apply")
   # tests table is returned unaffected by the ignored filter
   expect_false("variable" %in% names(df))

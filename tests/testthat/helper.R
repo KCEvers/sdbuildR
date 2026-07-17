@@ -1,5 +1,5 @@
 # Test Helper Functions
-expect_snapshot_plot <- function(name, code, fileext = NULL, width = 4, height = 4) {
+expect_snapshot_plot <- function(name, code, width = 4, height = 4) {
   withr::local_pdf(NULL)
 
   if (!is.character(name) || length(name) == 0L || any(!nzchar(name))) {
@@ -30,37 +30,23 @@ expect_snapshot_plot <- function(name, code, fileext = NULL, width = 4, height =
   }, character(1))
 
   if (anyNA(plot_types)) {
-    stop("Unable to determine file extension for plot snapshot. Please specify fileext.")
+    stop("Unable to determine plot type for snapshot; expected a plotly or grViz object.")
   }
 
   if (length(unique(plot_types)) > 1L) {
     stop("All plots must be of the same type (plotly or grViz).")
   }
 
-  if (is.null(fileext)) {
-    fileext <- ifelse(plot_types == "plotly", ".png", ".svg")
-  } else {
-    fileext <- rep_len(fileext, length(plots))
-  }
+  img_ext <- vapply(plot_types, function(type) snapshot_exts(type)[["image"]], character(1))
   width <- rep_len(width, length(plots))
   height <- rep_len(height, length(plots))
 
   plotly_idx <- which(plot_types == "plotly")
 
-  # Announce all plotly files before touching skips. This way, if a skip aborts
-  # the test, testthat will not auto-delete later snapshot files from the group.
-  if (length(plotly_idx) > 0L) {
-    for (i in plotly_idx) {
-      announce_snapshot_file(name = paste0(name[[i]], ".json"))
-      announce_snapshot_file(name = paste0(name[[i]], ".png"))
-    }
-  }
-
-  skip_on_cran()
-  skip_if(
-    length(plotly_idx) > 0L && !has_internet(),
-    "No internet connection for plot snapshot test"
-  )
+  # Announcing the snapshot files and skipping on CRAN is the caller's job:
+  # announce_plot_snapshot_files() runs at the top of the test, before any setup,
+  # so that setup does not run on CRAN. Announcing there rather than here is also
+  # what stops testthat from deleting this group's snapshots when a skip fires.
 
   for (i in seq_along(plots)) {
     pl <- plots[[i]]
@@ -73,13 +59,15 @@ expect_snapshot_plot <- function(name, code, fileext = NULL, width = 4, height =
       # skip_on_os("linux")
 
       # Stable assertion on structure
-      json <- normalize_plotly(pl) |> jsonlite::toJSON(pretty = TRUE, auto_unbox = TRUE)
+      json <- normalize_plotly(pl) |> 
+        jsonlite::toJSON(pretty = TRUE, auto_unbox = TRUE)
 
       json_path <- tempfile(fileext = ".json")
       writeLines(json, json_path)
       expect_snapshot_file(json_path, name = paste0(name[[i]], ".json"))
     }
   }
+
 
   # Visual artifacts for manual inspection, never fail. Run these only after all
   # stable JSON snapshots have been compared.
@@ -88,6 +76,9 @@ expect_snapshot_plot <- function(name, code, fileext = NULL, width = 4, height =
       Sys.getenv("SDBUILDR_CREATE_TEST_FIGS") != "true",
       "Skipping plot snapshot creation (SDBUILDR_CREATE_TEST_FIGS not set to 'true')"
     )
+
+    skip_if(!has_internet(), "No internet connection for plot snapshot test")
+
 
     if ("plotly" %in% plot_types) {
       skip_if_not_installed("webshot2")
@@ -100,7 +91,7 @@ expect_snapshot_plot <- function(name, code, fileext = NULL, width = 4, height =
     }
 
     for (i in plotly_idx) {
-      img_path <- tempfile(fileext = fileext[[i]])
+      img_path <- tempfile(fileext = img_ext[[i]])
       tryCatch(
         {
           # This block never runs on CRAN, so reuse one browser session
@@ -111,7 +102,7 @@ expect_snapshot_plot <- function(name, code, fileext = NULL, width = 4, height =
             close_browser = FALSE
           )
           expect_snapshot_file(img_path,
-            name = paste0(name[[i]], fileext[[i]]),
+            name = paste0(name[[i]], img_ext[[i]]),
             compare = function(old, new) TRUE
           )
         },
@@ -124,6 +115,60 @@ expect_snapshot_plot <- function(name, code, fileext = NULL, width = 4, height =
 
   invisible()
 }
+
+
+#' Snapshot files a plot of a given type can write
+#'
+#' The single source of truth for snapshot extensions, shared by
+#' announce_plot_snapshot_files() and expect_snapshot_plot() so the two cannot
+#' drift. "data" is the stable structural snapshot that is compared; "image" is
+#' the visual artifact, written only when SDBUILDR_CREATE_TEST_FIGS is set.
+#'
+#' grViz has no "data" entry: it snapshots via expect_snapshot_value(), which
+#' writes a _snaps/<file>.md entry rather than a file. Its "image" ext is not
+#' written yet either; announcing a file that never appears is inert, so this is
+#' already correct for when svg export lands.
+snapshot_exts <- function(type = c("plotly", "grViz")) {
+  type <- match.arg(type)
+  switch(type,
+    plotly = c(data = ".json", image = ".png"),
+    grViz  = c(image = ".svg")
+  )
+}
+
+#' Announce a plot snapshot group, then skip on CRAN
+#'
+#' Call at the TOP of a snapshot test, before any model or plot setup, so that
+#' setup does not run on CRAN. Announcing before the skip is what keeps testthat
+#' from deleting the group's snapshot files when the skip fires.
+#'
+#' @param name Snapshot names, without extension; the same vector passed to
+#'   expect_snapshot_plot().
+#' @param type Kind of plot the test will snapshot; see snapshot_exts().
+#' @param apply_skips Set FALSE to announce only, e.g. when the caller applies
+#'   its own skips.
+announce_plot_snapshot_files <- function(name, type = "plotly", apply_skips = TRUE) {
+  exts <- snapshot_exts(type)
+  plot_names <- paste0(rep(name, each = length(exts)), rep(exts, times = length(name)))
+
+  for (nm in plot_names) {
+    announce_snapshot_file(name = nm)
+  }
+
+  if (apply_skips) {
+    skip_on_cran()
+  }
+
+  invisible()
+}
+
+
+
+
+
+
+
+
 
 normalize_plotly <- function(pl, digits = 2) {
   # # normalize plotly's random internal IDs
@@ -828,3 +873,108 @@ expect_input_sim_equal <- function(input_eqn, tolerance = 1e-4) {
   ja <- j[["df"]][j[["df"]][["variable"]] == "a", "value"]
   expect_equal(ra, ja, tolerance = tolerance, info = input_eqn)
 }
+
+
+
+# Plot ensemble helpers
+
+
+# Per built trace: variable name, line width, trace opacity, and the line and
+# fill colours. The spread band is the only layer with a fill colour, so it can
+# be told apart from the central-tendency line traces.
+ens_trace_aes <- function(pl) {
+  b <- plotly::plotly_build(pl)[["x"]][["data"]]
+  do.call(rbind, lapply(b, function(t) {
+    data.frame(
+      name = t[["name"]] %||% NA_character_,
+      type = t[["type"]] %||% NA_character_,
+      width = if (is.null(t[["line"]][["width"]])) NA_real_ else as.numeric(t[["line"]][["width"]])[1],
+      opacity = if (is.null(t[["opacity"]])) NA_real_ else as.numeric(t[["opacity"]])[1],
+      line_color = t[["line"]][["color"]] %||% NA_character_,
+      fillcolor = t[["fillcolor"]] %||% NA_character_,
+      stringsAsFactors = FALSE
+    )
+  }))
+}
+
+# Alpha channel (0-1) of a plotly colour string: #RRGGBBAA, rgba(), else opaque.
+color_alpha <- function(col) {
+  if (is.null(col) || length(col) == 0L || is.na(col)) {
+    return(NA_real_)
+  }
+  col <- as.character(col)[1L]
+  if (grepl("^#[0-9A-Fa-f]{8}$", col)) {
+    return(strtoi(substr(col, 8, 9), 16L) / 255)
+  }
+  if (grepl("^rgba\\(", col)) {
+    nums <- as.numeric(strsplit(gsub("rgba\\(|\\)|\\s", "", col), ",")[[1L]])
+    return(nums[4L])
+  }
+  1
+}
+
+ens_var_labels <- function(sims) {
+  unique(plotly_traces(plot(sims, which = "summary"))[["name"]])
+}
+
+ens_var_names <- function(sims) {
+  unique(sims[["summary"]][["variable"]])
+}
+
+ens_label_for_name <- function(sims, var) {
+  names_df <- as.data.frame(sims[["object"]])
+  names_df[["label"]][match(var, names_df[["name"]])]
+}
+
+# A deterministic ensemble that always has a central line and a spread band.
+make_aes_ens <- function() {
+  make_r_ens(
+    n = 5, save_sims = TRUE,
+    central = c("mean", "median"), spread = c("quantile", "sd", "range")
+  )
+}
+
+
+# Helpers line width tests
+
+# Extract the line width of every built trace (NA when unset).
+trace_line_widths <- function(pl) {
+  traces <- plotly::plotly_build(pl)[["x"]][["data"]]
+  vapply(traces, function(t) {
+    w <- t[["line"]][["width"]]
+    if (is.null(w)) NA_real_ else as.numeric(w)[1L]
+  }, numeric(1))
+}
+
+trace_line_dashes <- function(pl) {
+  traces <- plotly::plotly_build(pl)[["x"]][["data"]]
+  vapply(traces, function(t) {
+    dash <- t[["line"]][["dash"]]
+    if (is.null(dash)) NA_character_ else as.character(dash)[1L]
+  }, character(1))
+}
+
+trace_fills <- function(pl) {
+  traces <- plotly::plotly_build(pl)[["x"]][["data"]]
+  vapply(traces, function(t) {
+    fill <- t[["fill"]]
+    if (is.null(fill)) NA_character_ else as.character(fill)[1L]
+  }, character(1))
+}
+
+
+# verify helper
+# Helper shared across this section: 2-test result with 2 distinct conditions
+# Test 1 → condition 1 (baseline)
+# Test 2 → condition 2 (rate = 0)
+make_two_condition_result <- function() {
+  sfm <- make_verifiable_sfm() |>
+    unit_test(label = "S non-negative", expr = all(S >= 0)) |>
+    unit_test(
+      label = "S constant at zero rate",
+      expr = all(diff(S) == 0),
+      conditions = list(rate = 0)
+    )
+  silence(verify(sfm))
+}
+
