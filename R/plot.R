@@ -3079,8 +3079,10 @@ plot_ensemble_helper <- function(subplot_label,
 #' # Select one condition at a time with a slider or dropdown
 #' plot(res, condition_display = "slider")
 #'
+#' @examplesIf Sys.getenv("NOT_CRAN") == "true"
 #' # Animate the simulation over time (one condition at a time)
 #' plot(res, animation = "time", condition = 1)
+#' 
 plot.verify_stockflow <- function(x,
                                   test = NULL,
                                   vars = NULL,

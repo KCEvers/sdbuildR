@@ -46,6 +46,15 @@ library(kableExtra)
 ```
 
 ```{r, include=FALSE, cache=FALSE}
+# htmlwidgets seeds its element-id stream from the global .Random.seed on its
+# first call, so the seeds set throughout this document (simulate(seed = ...))
+# make every knit produce the same id sequence. Cached chunks emit stored ids
+# without advancing that stream, so re-run chunks collide with them and their
+# divs render blank (the widget JS binds by getElementById, first match wins).
+# Burning one id from a random state makes the ids per-session unique again.
+set.seed(NULL)
+invisible(htmlwidgets:::createWidgetId())
+
 # Disable WebGL: many plotly widgets per HTML page can exceed the browser WebGL
 # context limit and render blank. SVG always renders.
 # cache=FALSE is essential: this option is a global side effect, invisible to
