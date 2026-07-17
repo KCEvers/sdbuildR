@@ -10,6 +10,7 @@ inst/Manifest.toml
 /notes/
 /Meta/
 /docs/
+/revdep/
 /tests/testthat/testdata/insightmaker/delay/
 /tests/testthat/testdata/insightmaker/fix/
 /tests/testthat/testdata/insightmaker/extra/

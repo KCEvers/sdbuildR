@@ -35,26 +35,16 @@ sfm <- stockflow("sir")
 plot(sfm)
 ```
 
-<figure>
 <img src="man/figures/README-sir-diagram.svg"
-alt="Stock-and-flow diagram of the SIR model, showing the Susceptible, Infected, and Recovered stocks connected by infection and recovery flows." />
-<figcaption aria-hidden="true">Stock-and-flow diagram of the SIR model,
-showing the Susceptible, Infected, and Recovered stocks connected by
-infection and recovery flows.</figcaption>
-</figure>
+data-fig-alt="Stock-and-flow diagram of the SIR model, showing the Susceptible, Infected, and Recovered stocks connected by infection and recovery flows." />
 
 ``` r
 # Simulate and visualize the dynamics over time
 simulate(sfm) |> plot()
 ```
 
-<figure>
 <img src="man/figures/README-sir-sim.png"
-alt="Simulated dynamics of the SIR model over time, showing the Susceptible stock declining, the Infected stock rising then falling, and the Recovered stock increasing." />
-<figcaption aria-hidden="true">Simulated dynamics of the SIR model over
-time, showing the Susceptible stock declining, the Infected stock rising
-then falling, and the Recovered stock increasing.</figcaption>
-</figure>
+data-fig-alt="Simulated dynamics of the SIR model over time, showing the Susceptible stock declining, the Infected stock rising then falling, and the Recovered stock increasing." />
 
 The [**Get started
 guide**](https://kcevers.github.io/sdbuildR/articles/sdbuildR.html)
