@@ -126,21 +126,24 @@ other model elements (see examples).
 }
 \examples{
 # Ensemble simulation in R (no parallelization)
-# Load example
+# Load example model
 sfm <- stockflow("predator_prey")
 
-# Set random initial conditions
+# Ensemble simulations can only show variation 
+# if there is some randomness in the model. 
+# For example, we can initialize both stocks with
+# random values between 20 and 80:
 sfm <- update(sfm, c(predator, prey),
   eqn = runif(1, min = 20, max = 80)
 )
 
-# For ensemble simulations, it is highly recommended to reduce the
-# returned output. For example, to save only 20 values per simulation:
+# Saving all timepoints is computationally expensive, 
+# so we save only 20 values per simulation:
 sfm <- sim_settings(sfm, save_length = 20)
 
-# Run ensemble simulation with a small number of simulations
+# Run ensemble simulation
 sims <- ensemble(sfm, n = 3)
-if (interactive()) plot(sims)
+plot(sims)
 
 \dontshow{if (Sys.getenv("NOT_CRAN") == "true") withAutoprint(\{ # examplesIf}
 # To plot individual trajectories, rerun the ensemble with save_sims = TRUE.
@@ -149,13 +152,15 @@ sims <- ensemble(sfm, n = 10, save_sims = TRUE)
 plot(sims, which = "sims")
 
 # Specify which trajectories to plot
-plot(sims, which = "sims", sim = 1)
+plot(sims, which = "sims", sim = 1:2)
 
-# Plot the median with lighter individual trajectories
-plot(sims, central = "median", which = "sims", alpha = 0.1)
+# Don't plot the central tendency 
+# with darker individual trajectories
+plot(sims, central = "none", which = "sims", alpha = 0.7)
 
-# For larger ensembles, we can use parallelization with future
-future::plan(future::multisession, workers = 4)
+# We can speed up ensemble simulations using parallelization
+future::plan(future::multisession, workers = 2)
+sims <- ensemble(sfm, n = 25, save_sims = TRUE)
 
 # Ensembles can also be run with exact values for the initial conditions
 # and parameters. Below, we vary the initial values of the predator and the
@@ -164,7 +169,8 @@ future::plan(future::multisession, workers = 4)
 # combinations of the parameters are run.
 sims <- ensemble(sfm,
   n = 50,
-  conditions = list(predator = c(10, 50), delta = c(.025, .05))
+  conditions = list(predator = c(10, 50),
+                    delta = c(.025, .05))
 )
 
 plot(sims)

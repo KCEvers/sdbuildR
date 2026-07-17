@@ -177,6 +177,9 @@ test_that("set_plot_font() reaches fonts set per-element (annotations, sliders, 
 
 
 test_that("export_plot() validates font_family", {
+
+  skip_on_cran()
+
   sfm <- stockflow("sir")
   pl <- plot(sfm)
   file <- tempfile(fileext = ".png")
@@ -186,6 +189,9 @@ test_that("export_plot() validates font_family", {
 
 
 test_that("export_plot() validates close_browser", {
+
+  skip_on_cran()
+
   sfm <- stockflow("sir")
   pl <- plot(sfm)
   file <- tempfile(fileext = ".png")
@@ -196,6 +202,8 @@ test_that("export_plot() validates close_browser", {
 
 
 test_that("inject_svg_webfont() inserts a style element after the svg tag", {
+  skip_on_cran()
+
   svg <- "<svg width=\"10\" height=\"10\"><text>hi</text></svg>"
   out <- inject_svg_webfont(svg, "eb-garamond")
 

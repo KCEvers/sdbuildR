@@ -6,8 +6,11 @@
 
 
 test_that("plot() honours direction for every valid value", {
-  sfm <- stockflow("predator_prey")
   directions <- c("LR", "TB", "RL", "BT")
+  snapshot_names <- paste0("plot_stockflow_direction_", directions)
+  announce_plot_snapshot_files(snapshot_names, type = "grViz")
+
+  sfm <- stockflow("predator_prey")
   for (dir in directions) {
     # print(plot(sfm, direction = dir))
     d <- plot(sfm, direction = dir)[["x"]][["diagram"]]
@@ -16,7 +19,7 @@ test_that("plot() honours direction for every valid value", {
 
   # snapshot tests
   expect_snapshot_plot(
-    paste0("plot_stockflow_direction_", directions),
+    snapshot_names,
     lapply(directions, function(dir) plot(sfm, direction = dir))
   )
 })

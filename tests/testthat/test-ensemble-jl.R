@@ -11,38 +11,30 @@ test_that("ensemble() passes additional arguments (language) to sim_settings", {
   )
 })
 
-test_that("ensemble() validates n argument", {
+test_that("ensemble() validates inputs", {
   sfm <- make_ensemble_error_sfm()
   expect_error(ensemble(sfm, n = 0), "must be greater than")
   expect_error(ensemble(sfm, n = -5), "must be greater than")
   expect_error(ensemble(sfm, n = "ten"), "must be.*numeric")
-})
 
-test_that("ensemble() validates quantiles argument", {
-  sfm <- make_ensemble_error_sfm()
+# ensemble() validates quantiles argument
   expect_error(ensemble(sfm, quantiles = 0.5), "at least.*2.*unique")
   expect_error(ensemble(sfm, quantiles = c(0.5, 0.5)), "at least.*2.*unique")
   expect_error(ensemble(sfm, quantiles = c(-0.1, 0.5)), "between.*0.*and.*1")
   expect_error(ensemble(sfm, quantiles = c(0.5, 1.1)), "between.*0.*and.*1")
   expect_error(ensemble(sfm, quantiles = "high"), "must be.*numeric")
-})
 
-test_that("ensemble() validates logical arguments", {
-  sfm <- make_ensemble_error_sfm()
+# ensemble() validates logical arguments
   expect_error(ensemble(sfm, cross = "yes"), "must be.*TRUE.*FALSE")
   expect_error(ensemble(sfm, save_sims = 1), "must be.*TRUE.*FALSE")
   expect_error(ensemble(sfm, only_stocks = "all"), "must be.*TRUE.*FALSE")
-})
-
-test_that("ensemble() validates conditions is a named list", {
-  sfm <- make_ensemble_error_sfm()
+ 
+ # ensemble() validates conditions is a named list
   expect_error(ensemble(sfm, conditions = "S"), "must be a.*list")
   expect_error(ensemble(sfm, conditions = list()), "at least one parameter")
   expect_error(ensemble(sfm, conditions = list(0.1, 0.2)), "must be named")
-})
 
-test_that("ensemble() validates conditions elements are numeric", {
-  sfm <- make_ensemble_error_sfm()
+# ensemble() validates conditions elements are numeric
   expect_error(
     ensemble(sfm, conditions = list("S" = "abc")),
     "must be.*numeric"
@@ -51,34 +43,26 @@ test_that("ensemble() validates conditions elements are numeric", {
     ensemble(sfm, conditions = list("S" = c(1, 2), "k" = c("a", "b"))),
     "must be.*numeric"
   )
-})
 
-test_that("ensemble() validates conditions names are unique", {
-  sfm <- make_ensemble_error_sfm()
+# ensemble() validates conditions names are unique
   expect_error(
     ensemble(sfm, conditions = list("S" = c(1, 2), "S" = c(3, 4))),
     "must be unique"
   )
-})
 
-test_that("ensemble() validates conditions names exist in model", {
-  sfm <- make_ensemble_error_sfm()
+# ensemble() validates conditions names exist in model
   expect_error(
     ensemble(sfm, conditions = list("nonexistent" = c(1, 2))),
     "do not exist in the model"
   )
-})
 
-test_that("ensemble() rejects flows and auxiliaries in conditions", {
-  sfm <- make_ensemble_error_sfm()
+# ensemble() rejects flows and auxiliaries in conditions
   expect_error(
     ensemble(sfm, conditions = list("Flow1" = c(1, 2))),
     "Flows or auxiliaries cannot be varied"
   )
-})
 
-test_that("ensemble() validates equal conditions lengths when cross = FALSE", {
-  sfm <- make_ensemble_error_sfm()
+# ensemble() validates equal conditions lengths when cross = FALSE
   expect_error(
     ensemble(sfm,
       conditions = list("S" = c(1, 2, 3), "k" = c(0.1, 0.2)),

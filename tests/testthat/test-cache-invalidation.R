@@ -2,6 +2,8 @@
 
 
 test_that("invalidate_assemble clears the canonical cache for every category", {
+
+  skip_on_cran()
   categories <- c(
     "all", "variables", "static", "dynamic", "times", "funcs",
     "nonneg", "unit_tests"

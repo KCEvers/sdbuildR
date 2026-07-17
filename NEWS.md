@@ -1,3 +1,5 @@
+# sdbuildR 2.2.2
+
 # sdbuildR 2.2.1
 
 * Updated the vignette "Formalizing Job-Demands Resources Theory" and added teaching materials for summer school Theory Building in Psychology in the Github Pages website.

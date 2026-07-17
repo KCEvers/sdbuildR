@@ -15,6 +15,7 @@
 ^vignettes($|/)
 ^cran-comments\.md$
 ^data-raw$
+^revdep$
 ^tests/testthat/testdata/insightmaker/validation($|/)
 ^tests/testthat/testdata/insightmaker/delay($|/)
 ^tests/testthat/testdata/insightmaker/fix($|/)

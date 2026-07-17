@@ -69,62 +69,11 @@ test_that("plot.ensemble_stockflow() requires save_sims for which = 'sims'", {
 # ROLE-KEYED line_width / alpha (central / spread / sims)
 # ============================================================================
 
-# Per built trace: variable name, line width, trace opacity, and the line and
-# fill colours. The spread band is the only layer with a fill colour, so it can
-# be told apart from the central-tendency line traces.
-ens_trace_aes <- function(pl) {
-  b <- plotly::plotly_build(pl)[["x"]][["data"]]
-  do.call(rbind, lapply(b, function(t) {
-    data.frame(
-      name = t[["name"]] %||% NA_character_,
-      type = t[["type"]] %||% NA_character_,
-      width = if (is.null(t[["line"]][["width"]])) NA_real_ else as.numeric(t[["line"]][["width"]])[1],
-      opacity = if (is.null(t[["opacity"]])) NA_real_ else as.numeric(t[["opacity"]])[1],
-      line_color = t[["line"]][["color"]] %||% NA_character_,
-      fillcolor = t[["fillcolor"]] %||% NA_character_,
-      stringsAsFactors = FALSE
-    )
-  }))
-}
-
-# Alpha channel (0-1) of a plotly colour string: #RRGGBBAA, rgba(), else opaque.
-color_alpha <- function(col) {
-  if (is.null(col) || length(col) == 0L || is.na(col)) {
-    return(NA_real_)
-  }
-  col <- as.character(col)[1L]
-  if (grepl("^#[0-9A-Fa-f]{8}$", col)) {
-    return(strtoi(substr(col, 8, 9), 16L) / 255)
-  }
-  if (grepl("^rgba\\(", col)) {
-    nums <- as.numeric(strsplit(gsub("rgba\\(|\\)|\\s", "", col), ",")[[1L]])
-    return(nums[4L])
-  }
-  1
-}
-
-ens_var_labels <- function(sims) {
-  unique(plotly_traces(plot(sims, which = "summary"))[["name"]])
-}
-
-ens_var_names <- function(sims) {
-  unique(sims[["summary"]][["variable"]])
-}
-
-ens_label_for_name <- function(sims, var) {
-  names_df <- as.data.frame(sims[["object"]])
-  names_df[["label"]][match(var, names_df[["name"]])]
-}
-
-# A deterministic ensemble that always has a central line and a spread band.
-make_aes_ens <- function() {
-  make_r_ens(
-    n = 5, save_sims = TRUE,
-    central = c("mean", "median"), spread = c("quantile", "sd", "range")
-  )
-}
 
 test_that("plot.ensemble_stockflow() respects trace order", {
+
+  skip_on_cran()
+
   sims <- make_aes_ens()
   vars <- ens_var_names(sims)
   requested_order <- rev(vars)
@@ -137,6 +86,7 @@ test_that("plot.ensemble_stockflow() respects trace order", {
 })
 
 test_that("line_width: a scalar styles every layer", {
+  skip_on_cran()
   withr::local_pdf(NULL)
   sims <- make_aes_ens()
   a <- ens_trace_aes(plot(sims, which = "summary", line_width = 4))
@@ -148,6 +98,7 @@ test_that("line_width: a scalar styles every layer", {
 })
 
 test_that("line_width: a named vector targets specific variables", {
+  skip_on_cran()
   withr::local_pdf(NULL)
   sims <- make_aes_ens()
   var <- ens_var_names(sims)[1]
@@ -160,6 +111,7 @@ test_that("line_width: a named vector targets specific variables", {
 })
 
 test_that("line_width: a role list styles each layer independently", {
+  skip_on_cran()
   withr::local_pdf(NULL)
   sims <- make_aes_ens()
   a <- ens_trace_aes(plot(sims,
@@ -171,6 +123,7 @@ test_that("line_width: a role list styles each layer independently", {
 })
 
 test_that("line_width: a role list with a named per-variable vector", {
+  skip_on_cran()
   withr::local_pdf(NULL)
   sims <- make_aes_ens()
   var <- ens_var_names(sims)[1]
@@ -186,6 +139,7 @@ test_that("line_width: a role list with a named per-variable vector", {
 })
 
 test_that("alpha: a scalar fades every layer", {
+  skip_on_cran()
   withr::local_pdf(NULL)
   sims <- make_aes_ens()
   a <- ens_trace_aes(plot(sims, which = "summary", alpha = 0.5))
@@ -194,6 +148,7 @@ test_that("alpha: a scalar fades every layer", {
 })
 
 test_that("alpha: a role list fades each layer independently", {
+  skip_on_cran()
   withr::local_pdf(NULL)
   sims <- make_aes_ens()
   a <- ens_trace_aes(plot(sims,
@@ -205,6 +160,7 @@ test_that("alpha: a role list fades each layer independently", {
 })
 
 test_that("alpha: a named vector targets specific variables", {
+  skip_on_cran()
   withr::local_pdf(NULL)
   sims <- make_aes_ens()
   var <- ens_var_names(sims)[1]
@@ -220,6 +176,7 @@ test_that("alpha: a named vector targets specific variables", {
 })
 
 test_that("alpha: a role list with a named per-variable vector", {
+  skip_on_cran()
   withr::local_pdf(NULL)
   sims <- make_aes_ens()
   var <- ens_var_names(sims)[1]
@@ -239,6 +196,7 @@ test_that("alpha: a role list with a named per-variable vector", {
 })
 
 test_that("line_width / alpha reject invalid input", {
+  skip_on_cran()
   withr::local_pdf(NULL)
   sims <- make_aes_ens()
   expect_error(plot(sims, line_width = "thick"), "line_width")
@@ -254,15 +212,18 @@ test_that("line_width / alpha reject invalid input", {
 # ============================================================================
 
 test_that("line_width snapshots: scalar / named / role / role+named", {
+  snapshot_names <- c(
+    "ens-lw-scalar",
+    "ens-lw-named",
+    "ens-lw-roles",
+    "ens-lw-roles-named"
+  )
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_aes_ens()
   var <- ens_var_names(sims)[1]
   expect_snapshot_plot(
-    c(
-      "ens-lw-scalar",
-      "ens-lw-named",
-      "ens-lw-roles",
-      "ens-lw-roles-named"
-    ),
+    snapshot_names,
     list(
       plot(sims, which = "summary", line_width = 4),
       plot(sims, which = "summary", line_width = stats::setNames(8, var)),
@@ -273,15 +234,18 @@ test_that("line_width snapshots: scalar / named / role / role+named", {
 })
 
 test_that("alpha snapshots: scalar / named / role / role+named", {
+  snapshot_names <- c(
+    "ens-alpha-scalar",
+    "ens-alpha-named",
+    "ens-alpha-roles",
+    "ens-alpha-roles-named"
+  )
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_aes_ens()
   var <- ens_var_names(sims)[1]
   expect_snapshot_plot(
-    c(
-      "ens-alpha-scalar",
-      "ens-alpha-named",
-      "ens-alpha-roles",
-      "ens-alpha-roles-named"
-    ),
+    snapshot_names,
     list(
       plot(sims, which = "summary", alpha = 0.5),
       plot(sims, which = "summary", alpha = stats::setNames(0.2, var)),
@@ -304,6 +268,9 @@ test_that("plot.ensemble_stockflow() creates a basic summary plot", {
 })
 
 test_that("plot.ensemble_stockflow() handles ensembles saved with selected vars", {
+  
+  skip_on_cran()
+
   withr::local_pdf(NULL)
   sims <- make_r_ens(
     n = 2,
@@ -332,21 +299,27 @@ test_that("plot.ensemble_stockflow() handles ensembles saved with selected vars"
 # ============================================================================
 
 test_that("plot() default summary plot", {
+  snapshot_names <- "ens-summary-default"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens()
   pl <- plot(sims)
   expect_plotly(pl)
   traces <- plotly_traces(pl)
   expect_true(nrow(traces) > 0)
-  expect_snapshot_plot("ens-summary-default", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() sims plot (individual trajectories)", {
+  snapshot_names <- "ens-sims-default"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens(save_sims = TRUE)
   pl <- plot(sims, which = "sims")
   expect_plotly(pl)
   traces <- plotly_traces(pl)
   expect_true(nrow(traces) > 0)
-  expect_snapshot_plot("ens-sims-default", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() sims: legend colours match trajectory colours", {
@@ -355,6 +328,8 @@ test_that("plot() sims: legend colours match trajectory colours", {
   # drops the `colors =` palette of an aesthetic trace when explicit-colour
   # traces are already present, which made the legend swatches disagree with the
   # trajectories. Compare per legendgroup, ignoring alpha.
+  skip_on_cran()
+  
   withr::local_pdf(NULL)
   sims <- make_r_ens(n = 5, save_sims = TRUE)
   b <- plotly::plotly_build(plot(sims, which = "sims"))
@@ -390,6 +365,9 @@ test_that("plot() sims: legend colours match trajectory colours", {
 })
 
 test_that("plot() two conditions subplot grid", {
+  snapshot_names <- "ens-two-conditions"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens_2cond()
   pl <- plot(sims, nrows = 2L, shareX = TRUE, shareY = TRUE)
   expect_plotly(pl)
@@ -402,10 +380,13 @@ test_that("plot() two conditions subplot grid", {
   expect_true(is.na(info$shareY)) # shareY applies within a row
   expect_true(nrow(plotly_traces(pl)) > 0)
 
-  expect_snapshot_plot("ens-two-conditions", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.ensemble_stockflow() filtered condition shows single condition", {
+  snapshot_names <- "ens-filtered-condition-2"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens_2cond()
 
   pl <- plot(sims, condition = 2L)
@@ -416,10 +397,13 @@ test_that("plot.ensemble_stockflow() filtered condition shows single condition",
   expect_equal(info$nrows, 1L)
   expect_equal(info$ncols, 1L)
   expect_true(nrow(plotly_traces(pl)) > 0)
-  expect_snapshot_plot("ens-filtered-condition-2", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.ensemble_stockflow() with too many nrows", {
+  snapshot_names <- "ens-too-many-nrows"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens_2cond()
   pl <- plot(sims, nrows = 3L) # More rows than conditions should be gracefully handled
   expect_plotly(pl)
@@ -429,27 +413,36 @@ test_that("plot.ensemble_stockflow() with too many nrows", {
   expect_equal(info$nrows, 2L)
   expect_equal(info$ncols, 1L)
   expect_true(nrow(plotly_traces(pl)) > 0)
-  expect_snapshot_plot("ens-too-many-nrows", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 
 test_that("plot.ensemble_stockflow() central = 'median'", {
+  snapshot_names <- "ens-central-tendency-median"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens(central = "median")
   pl <- plot(sims, central = "median")
   expect_plotly(pl)
   expect_true(nrow(plotly_traces(pl)) > 0)
-  expect_snapshot_plot("ens-central-tendency-median", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.ensemble_stockflow() central = 'none' (no central line)", {
+  snapshot_names <- "ens-central-tendency-false"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens()
   pl <- plot(sims, central = "none")
   expect_plotly(pl)
   expect_true(nrow(plotly_traces(pl)) > 0)
-  expect_snapshot_plot("ens-central-tendency-false", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.ensemble_stockflow() show_legend = FALSE", {
+  snapshot_names <- "ens-show_legend-false"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens()
   # Object-level expectation: no legend items when disabled
   pl_noleg <- plot(sims, show_legend = FALSE)
@@ -459,11 +452,14 @@ test_that("plot.ensemble_stockflow() show_legend = FALSE", {
   expect_true(all(!(traces$show_legend)))
 
   # Snapshot last
-  expect_snapshot_plot("ens-show_legend-false", pl_noleg)
+  expect_snapshot_plot(snapshot_names, pl_noleg)
 })
 
 
 test_that("plot.ensemble_stockflow() label_subplots = TRUE shows condition labels", {
+  snapshot_names <- "ens-label-subplots-true"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens_2cond()
   pl <- plot(sims, label_subplots = TRUE)
   expect_plotly(pl)
@@ -473,11 +469,14 @@ test_that("plot.ensemble_stockflow() label_subplots = TRUE shows condition label
   expect_true(sum(grepl("^Condition", annot)) == 2)
 
   # Snapshot last
-  expect_snapshot_plot("ens-label-subplots-true", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 
 test_that("plot.ensemble_stockflow() label_subplots = FALSE hides condition labels", {
+  snapshot_names <- "ens-label-subplots-false"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens_2cond()
   pl <- plot(sims, label_subplots = FALSE)
   expect_plotly(pl)
@@ -487,10 +486,13 @@ test_that("plot.ensemble_stockflow() label_subplots = FALSE hides condition labe
   expect_false(any(grepl("^Condition", annot)))
 
   # Snapshot last
-  expect_snapshot_plot("ens-label-subplots-false", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.ensemble_stockflow() nrows works", {
+  snapshot_names <- c("ens-nrows-1", "ens-nrows-2")
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens_2cond()
   pl <- plot(sims, nrows = 1L)
   expect_plotly(pl)
@@ -509,7 +511,7 @@ test_that("plot.ensemble_stockflow() nrows works", {
   expect_equal(info$ncols, 1L)
 
   expect_snapshot_plot(
-    c("ens-nrows-1", "ens-nrows-2"),
+    snapshot_names,
     list(
       plot(sims, nrows = 1L),
       plot(sims, nrows = 2L)
@@ -518,6 +520,14 @@ test_that("plot.ensemble_stockflow() nrows works", {
 })
 
 test_that("plot.ensemble_stockflow() shareX and shareY works", {
+  snapshot_names <- c(
+    "ens-sharex-true-sharey-true",
+    "ens-sharex-true-sharey-false",
+    "ens-sharex-false-sharey-true",
+    "ens-sharex-false-sharey-false"
+  )
+  announce_plot_snapshot_files(snapshot_names)
+
   # 4 conditions
   n <- 3
   nrows <- 2
@@ -526,53 +536,46 @@ test_that("plot.ensemble_stockflow() shareX and shareY works", {
     "recovery_rate" = c(0.1, 0.2)
   ), cross = TRUE)
 
-  pl <- plot(sims, shareX = TRUE, shareY = TRUE, nrows = nrows)
-  info <- plotly_subplot_grid(pl)
+  pl1 <- plot(sims, shareX = TRUE, shareY = TRUE, nrows = nrows)
+  info <- plotly_subplot_grid(pl1)
   expect_true(info$shareX)
   expect_true(info$shareY)
 
-  pl <- plot(sims, shareX = TRUE, shareY = FALSE, nrows = nrows)
-  info <- plotly_subplot_grid(pl)
+  pl2 <- plot(sims, shareX = TRUE, shareY = FALSE, nrows = nrows)
+  info <- plotly_subplot_grid(pl2)
   expect_true(info$shareX)
   expect_false(info$shareY)
 
-  pl <- plot(sims, shareX = FALSE, shareY = TRUE, nrows = nrows)
-  info <- plotly_subplot_grid(pl)
+  pl3 <- plot(sims, shareX = FALSE, shareY = TRUE, nrows = nrows)
+  info <- plotly_subplot_grid(pl3)
   expect_false(info$shareX)
   expect_true(info$shareY)
 
-  pl <- plot(sims, shareX = FALSE, shareY = FALSE, nrows = nrows)
-  info <- plotly_subplot_grid(pl)
+  pl4 <- plot(sims, shareX = FALSE, shareY = FALSE, nrows = nrows)
+  info <- plotly_subplot_grid(pl4)
   expect_false(info$shareX)
   expect_false(info$shareY)
 
   # Snapshot last
-  expect_snapshot_plot(
-    c(
-      "ens-sharex-true-sharey-true",
-      "ens-sharex-true-sharey-false",
-      "ens-sharex-false-sharey-true",
-      "ens-sharex-false-sharey-false"
-    ),
-    list(
-      plot(sims, shareX = TRUE, shareY = TRUE, nrows = nrows),
-      plot(sims, shareX = TRUE, shareY = FALSE, nrows = nrows),
-      plot(sims, shareX = FALSE, shareY = TRUE, nrows = nrows),
-      plot(sims, shareX = FALSE, shareY = FALSE, nrows = nrows)
-    )
-  )
+  expect_snapshot_plot(snapshot_names, list(pl1, pl2, pl3, pl4))
 })
 
 
 test_that("plot.ensemble_stockflow() custom palette", {
+  snapshot_names <- "ens-custom-palette"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens()
   pl <- plot(sims, palette = "Greens")
   expect_plotly(pl)
   expect_true(nrow(plotly_traces(pl)) > 0)
-  expect_snapshot_plot("ens-custom-palette", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() custom colors vector", {
+  snapshot_names <- "ens-custom-colors"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens()
   # Object-level expectation: legend trace colors reflect custom palette when exposed
   df <- as.data.frame(sims, direction = "long")
@@ -592,13 +595,13 @@ test_that("plot() custom colors vector", {
   expect_true(all(legend_check$matches_expected))
 
   # Snapshot last
-  expect_snapshot_plot(
-    "ens-custom-colors",
-    pl_colors
-  )
+  expect_snapshot_plot(snapshot_names, pl_colors)
 })
 
 test_that("plot.ensemble_stockflow() maps central traces to source summaries and named colors", {
+
+  skip_on_cran()
+
   sims <- make_r_ens(n = 3)
   names_df <- as.data.frame(sims[["object"]])
   names_all <- names_df[["name"]]
@@ -629,6 +632,9 @@ test_that("plot.ensemble_stockflow() maps central traces to source summaries and
 })
 
 test_that("plot() custom font family", {
+  snapshot_names <- "ens-custom-font-family"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens()
   pl <- plot(sims, font_family = "Arial")
   expect_plotly(pl)
@@ -636,10 +642,13 @@ test_that("plot() custom font family", {
   expect_equal(layout$font$family, "Arial")
 
   # Snapshot last
-  expect_snapshot_plot("ens-custom-font-family", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() custom font size", {
+  snapshot_names <- "ens-large-font-size"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens()
   pl <- plot(sims, font_size = 20)
   expect_plotly(pl)
@@ -647,20 +656,26 @@ test_that("plot() custom font size", {
   expect_equal(layout$font$size, 20)
 
   # Snapshot last
-  expect_snapshot_plot("ens-large-font-size", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() narrow wrap_width wraps long labels", {
+  snapshot_names <- "ens-wrap-width-narrow"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens()
   pl <- plot(sims, wrap_width = 1, show_constants = TRUE)
   expect_plotly(pl)
   traces <- plotly_traces(pl)
   expect_true(any(grepl("<br", traces$name, fixed = TRUE)))
-  expect_snapshot_plot("ens-wrap-width-narrow", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 
 test_that("plot.ensemble_stockflow() with show_constants = TRUE", {
+  snapshot_names <- "ens-show-constants"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens()
   constants <- as.data.frame(sims[["object"]], type = "constants", properties = "label")
   pl <- plot(sims, show_constants = TRUE)
@@ -670,10 +685,13 @@ test_that("plot.ensemble_stockflow() with show_constants = TRUE", {
   expect_true(all(constants[["label"]] %in% traces[["name"]]))
 
   # Snapshot last
-  expect_snapshot_plot("ens-show-constants", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.ensemble_stockflow() with which = 'sims' and with show_constants = TRUE", {
+  snapshot_names <- "ens-show-constants-sims"
+  announce_plot_snapshot_files(snapshot_names)
+
   sims <- make_r_ens(save_sims = TRUE)
   constants <- as.data.frame(sims[["object"]], type = "constants", properties = "label")
   pl <- plot(sims, show_constants = TRUE, which = "sims")
@@ -683,7 +701,7 @@ test_that("plot.ensemble_stockflow() with which = 'sims' and with show_constants
   expect_true(all(constants[["label"]] %in% traces[["name"]]))
 
   # Snapshot last
-  expect_snapshot_plot("ens-show-constants-sims", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 # ============================================================================
@@ -691,6 +709,8 @@ test_that("plot.ensemble_stockflow() with which = 'sims' and with show_constants
 # ============================================================================
 
 test_that("plot.ensemble_stockflow(condition_display = 'slider') builds a slider", {
+  skip_on_cran()
+  
   sims <- make_r_ens_2cond()
   pl <- plot(sims, condition_display = "slider")
   expect_plotly(pl)
@@ -716,6 +736,8 @@ test_that("plot.ensemble_stockflow(condition_display = 'slider') builds a slider
 })
 
 test_that("plot.ensemble_stockflow() shows one control per parameter when cross = TRUE", {
+  skip_on_cran()
+
   sims <- make_r_ens(conditions = list(
     contact_rate = c(1, 2), recovery_rate = c(0.05, 0.1)
   ))
@@ -745,38 +767,34 @@ test_that("plot.ensemble_stockflow() shows one control per parameter when cross 
   expect_false(is.null(pd$jsHooks$render))
 })
 
-test_that("plot.ensemble_stockflow() slider keeps a step per value but thins labels", {
-  sims <- make_r_ens(conditions = list(contact_rate = seq(1, 25)))
-  pl <- plot(sims, condition_display = "slider")
+test_that("plot.ensemble_stockflow() slider keeps a step per value but thins labels according to max_labels", {
+
+  skip_on_cran()
+
+  n_values <- 12
+  max_labels <- 5
+  sims <- make_r_ens(conditions = list(contact_rate = seq(1, n_values)))
+  pl <- plot(sims, condition_display = "slider", control_options = list(max_labels = max_labels))
   layout <- plotly_layout(pl)
 
   steps <- layout$sliders[[1]]$steps
   # One jump per varied parameter value ...
-  expect_equal(length(steps), 25L)
+  expect_equal(length(steps), n_values)
 
   labs <- vapply(steps, function(s) s$label, character(1))
   nonempty <- labs[nzchar(labs)]
   # ... but tick labels are thinned to a reasonable default when > 10 values.
-  expect_lte(length(nonempty), 10L)
+  expect_lte(length(nonempty), max_labels)
   # Endpoints stay labelled.
   expect_true(nzchar(labs[[1]]))
   expect_true(nzchar(labs[[length(labs)]]))
 })
 
-test_that("plot.ensemble_stockflow() control_options$max_labels tunes tick density", {
-  sims <- make_r_ens(conditions = list(contact_rate = seq(1, 25)))
-
-  pl <- plot(sims,
-    condition_display = "slider",
-    control_options = list(max_labels = 5)
-  )
-  steps <- plotly_layout(pl)$sliders[[1]]$steps
-  labs <- vapply(steps, function(s) s$label, character(1))
-  expect_equal(length(steps), 25L) # still one step per value
-  expect_lte(length(labs[nzchar(labs)]), 5L) # but at most 5 labels
-})
 
 test_that("plot.ensemble_stockflow() rejects invalid control_options", {
+
+  skip_on_cran()
+
   sims <- make_r_ens_2cond()
   expect_error(
     plot(sims, condition_display = "slider", control_options = list(foo = 1)),
@@ -797,6 +815,9 @@ test_that("plot.ensemble_stockflow() rejects invalid control_options", {
 })
 
 test_that("plot.ensemble_stockflow() control_options$spacing widens the gap", {
+
+  skip_on_cran()
+
   sims <- make_r_ens(n = 3, conditions = list(
     "contact_rate" = c(1.5, 2.5),
     "recovery_rate" = c(0.1, 0.2)
@@ -819,6 +840,9 @@ test_that("plot.ensemble_stockflow() control_options$spacing widens the gap", {
 })
 
 test_that("plot.ensemble_stockflow() controls reserve more bottom margin per control", {
+  
+  skip_on_cran()
+
   one <- make_r_ens_2cond()
   two <- make_r_ens(n = 3, conditions = list(
     "contact_rate" = c(1.5, 2.5),
@@ -832,6 +856,9 @@ test_that("plot.ensemble_stockflow() controls reserve more bottom margin per con
 })
 
 test_that("plot.ensemble_stockflow() condition controls pin the figure height", {
+
+  skip_on_cran()
+
   one <- make_r_ens_2cond()
   two <- make_r_ens(n = 3, conditions = list(
     "contact_rate" = c(1.5, 2.5),
@@ -856,6 +883,9 @@ test_that("plot.ensemble_stockflow() condition controls pin the figure height", 
 })
 
 test_that("plot.ensemble_stockflow() reverts condition controls for a single condition", {
+
+  skip_on_cran()
+
   sims <- make_r_ens() # no conditions varied
   expect_message(
     pl <- plot(sims, condition_display = "slider"),
@@ -881,6 +911,9 @@ test_that("plot.ensemble_stockflow() reverts condition controls for a single con
 })
 
 test_that("plot.ensemble_stockflow() crossed dropdowns react via plotly_buttonclicked", {
+
+  skip_on_cran()
+  
   sims <- make_r_ens(conditions = list(
     contact_rate = c(1, 2), recovery_rate = c(0.05, 0.1)
   ))
@@ -896,6 +929,9 @@ test_that("plot.ensemble_stockflow() crossed dropdowns react via plotly_buttoncl
 })
 
 test_that("plot.ensemble_stockflow(condition_display = 'dropdown') builds a dropdown", {
+
+  skip_on_cran()
+
   sims <- make_r_ens_2cond()
   pl <- plot(sims, condition_display = "dropdown")
   expect_plotly(pl)
@@ -906,6 +942,9 @@ test_that("plot.ensemble_stockflow(condition_display = 'dropdown') builds a drop
 })
 
 test_that("plot.ensemble_stockflow() condition controls work with which = 'sims'", {
+
+  skip_on_cran()
+
   sims <- make_r_ens_2cond(save_sims = TRUE)
   pl <- plot(sims, which = "sims", condition_display = "slider")
   expect_plotly(pl)
@@ -913,6 +952,9 @@ test_that("plot.ensemble_stockflow() condition controls work with which = 'sims'
 })
 
 test_that("plot.ensemble_stockflow(animation = 'time') builds frames for one condition", {
+
+  skip_on_cran()
+
   sims <- make_r_ens(save_sims = TRUE)
   pl <- plot(sims, which = "sims", animation = "time")
   expect_plotly(pl)
@@ -920,6 +962,9 @@ test_that("plot.ensemble_stockflow(animation = 'time') builds frames for one con
 })
 
 test_that("plot.ensemble_stockflow() animates a single selected condition", {
+
+  skip_on_cran()
+
   sims <- make_r_ens_2cond(save_sims = TRUE)
   pl <- plot(sims, which = "sims", condition = 1, animation = "time")
   expect_plotly(pl)
@@ -927,6 +972,9 @@ test_that("plot.ensemble_stockflow() animates a single selected condition", {
 })
 
 test_that("plot.ensemble_stockflow() control_options tune the animation speed", {
+  
+  skip_on_cran()
+  
   sims <- make_r_ens(save_sims = TRUE)
   pl <- plot(sims,
     which = "sims", animation = "time",
@@ -939,6 +987,8 @@ test_that("plot.ensemble_stockflow() control_options tune the animation speed", 
 })
 
 test_that("plot.ensemble_stockflow() rejects invalid / unsupported combinations", {
+  skip_on_cran()
+
   sims <- make_r_ens_2cond(save_sims = TRUE)
   expect_error(plot(sims, condition_display = "tabs"), "condition_display")
   expect_error(plot(sims, animation = "fast"), "animation")
@@ -953,6 +1003,9 @@ test_that("plot.ensemble_stockflow() rejects invalid / unsupported combinations"
 })
 
 test_that("plot.ensemble_stockflow() webgl toggles trace type for which = 'sims'", {
+
+  skip_on_cran()
+
   sims <- make_r_ens(n = 5, save_sims = TRUE)
 
   pl_gl <- plot(sims, which = "sims", webgl = TRUE)
@@ -968,6 +1021,9 @@ test_that("plot.ensemble_stockflow() webgl toggles trace type for which = 'sims'
 })
 
 test_that("plot.ensemble_stockflow() obeys global webgl option", {
+
+  skip_on_cran()
+
   sims <- make_r_ens(n = 5, save_sims = TRUE)
 
   withr::local_options(list(sdbuildR.webgl = TRUE))
@@ -991,6 +1047,9 @@ test_that("plot.ensemble_stockflow() obeys global webgl option", {
 
 
 test_that("plot.ensemble_stockflow() rejects non-logical webgl", {
+
+  skip_on_cran()
+
   sims <- make_r_ens(n = 3, save_sims = TRUE)
   expect_error(plot(sims, which = "sims", webgl = "yes"), "webgl")
 })

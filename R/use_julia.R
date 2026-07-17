@@ -21,7 +21,7 @@
 #' @seealso [use_julia()]
 #' @concept julia
 #'
-#' @examplesIf Sys.getenv("NOT_CRAN") == "true"
+#' @examples
 #' \dontrun{
 #' install_julia_env()
 #'

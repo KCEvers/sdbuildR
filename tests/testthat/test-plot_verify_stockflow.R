@@ -12,6 +12,9 @@ test_that("plot.verify_stockflow method exists", {
 # ============================================================================
 
 test_that("plot.verify_stockflow for single condition, n=1", {
+  snapshot_names <- "verify-single-cond-n1"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model()
   pl <- plot(res, test = 1L)
   expect_plotly(pl)
@@ -31,11 +34,12 @@ test_that("plot.verify_stockflow for single condition, n=1", {
   expect_equal(info$nrows, 1L)
   expect_equal(info$ncols, 1L)
 
-  expect_snapshot_plot("verify-single-cond-n1", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.verify_stockflow for two conditions", {
-  skip_on_cran()
+  snapshot_names <- "verify-two-conditions"
+  announce_plot_snapshot_files(snapshot_names)
 
   res <- make_verify_model(n_tests = 2)
   pl <- plot(res, nrows = 2L, shareX = TRUE, shareY = TRUE)
@@ -57,7 +61,7 @@ test_that("plot.verify_stockflow for two conditions", {
   expect_equal(info$ncols, 1L)
   expect_true(info$shareX)
 
-  expect_snapshot_plot("verify-two-conditions", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 
@@ -160,6 +164,9 @@ test_that("plot.verify_stockflow maps trace labels to source data and named colo
 # ============================================================================
 
 test_that("plot() filtered j selects one condition from two", {
+  snapshot_names <- "verify-filtered-j2"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model(n_tests = 2)
   pl <- plot(res, test = 2L)
   expect_plotly(pl)
@@ -172,7 +179,7 @@ test_that("plot() filtered j selects one condition from two", {
   expect_equal(nrow(traces), 1L)
   expect_setequal(traces[["name"]], label_names)
   expect_true(all(plotly_dedupe_legend(traces)$show_legend))
-  expect_snapshot_plot("verify-filtered-j2", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 
@@ -181,6 +188,9 @@ test_that("plot() filtered j selects one condition from two", {
 # ============================================================================
 
 test_that("plot() show_legend = FALSE hides legend", {
+  snapshot_names <- "verify-show_legend-false"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model()
   # Object-level expectation: no legend items when disabled
   pl <- plot(res, show_legend = FALSE)
@@ -190,7 +200,7 @@ test_that("plot() show_legend = FALSE hides legend", {
   expect_true(all(!(plotly_dedupe_legend(traces)$show_legend)))
 
   # Snapshot last
-  expect_snapshot_plot("verify-show_legend-false", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 
@@ -199,6 +209,9 @@ test_that("plot() show_legend = FALSE hides legend", {
 # ============================================================================
 
 test_that("plot() label filter selects matching condition from two", {
+  snapshot_names <- "verify-label-filter"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model(n_tests = 2)
   pl <- plot(res, label = "non-neg")
   df <- as.data.frame(res, which = "sims", direction = "long", label = "non-neg")
@@ -208,34 +221,43 @@ test_that("plot() label filter selects matching condition from two", {
   expect_plotly(pl)
   traces <- plotly_traces(pl)
   expect_true(nrow(traces) > 0)
-  expect_snapshot_plot("verify-label-filter", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() test and label filters intersect correctly", {
+  snapshot_names <- "verify-nr-label-intersection"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model(n_tests = 2)
   pl <- plot(res, test = 1L, label = "non-neg")
   expect_plotly(pl)
   traces <- plotly_traces(pl)
   expect_equal(nrow(traces), 1L)
-  expect_snapshot_plot("verify-nr-label-intersection", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() status = 'pass' shows only passing tests", {
+  snapshot_names <- "verify-status-pass-only"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model(with_fail = TRUE)
   pl <- plot(res, status = "pass")
   expect_plotly(pl)
   traces <- plotly_traces(pl)
   expect_true(nrow(traces) > 0)
-  expect_snapshot_plot("verify-status-pass-only", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() status = 'fail' shows only failing tests", {
+  snapshot_names <- "verify-status-fail-only"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model(with_fail = TRUE)
   pl <- plot(res, status = "fail")
   expect_plotly(pl)
   traces <- plotly_traces(pl)
   expect_true(nrow(traces) > 0)
-  expect_snapshot_plot("verify-status-fail-only", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 
@@ -244,6 +266,9 @@ test_that("plot() status = 'fail' shows only failing tests", {
 # ============================================================================
 
 test_that("plot() custom palette changes line colours", {
+  snapshot_names <- "verify-custom-palette"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model()
   pl <- plot(res, palette = "Pastel 1")
   expect_plotly(pl)
@@ -251,10 +276,13 @@ test_that("plot() custom palette changes line colours", {
   expect_true(nrow(traces) > 0)
   # Unique colors should be assigned across traces when a palette is used
   expect_true(length(unique(traces$color)) == nrow(traces))
-  expect_snapshot_plot("verify-custom-palette", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() custom colors vector overrides palette", {
+  snapshot_names <- "verify-custom-colors"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model()
   names_df <- as.data.frame(res[["object"]])
   var_names <- names_df$name
@@ -267,30 +295,39 @@ test_that("plot() custom colors vector overrides palette", {
   expect_true(nrow(legend_check) > 0)
   expect_true(all(legend_check$ok))
   expect_true(all(legend_check$matches_expected))
-  expect_snapshot_plot("verify-custom-colors", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() custom font_family changes annotation font", {
+  snapshot_names <- "verify-custom-font-family"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model()
   pl <- plot(res, font_family = "Arial")
   layout <- plotly_layout(pl)
   expect_equal(layout$font$family, "Arial")
 
   # Snapshots last
-  expect_snapshot_plot("verify-custom-font-family", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() custom font_size changes annotation font", {
+  snapshot_names <- "verify-custom-font-size"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model()
   pl <- plot(res, font_size = 20)
   layout <- plotly_layout(pl)
   expect_equal(layout$font$size, 20)
 
   # Snapshots last
-  expect_snapshot_plot("verify-custom-font-size", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot() narrow wrap_width wraps long labels", {
+  snapshot_names <- "verify-wrap-width-narrow"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model()
   res[["object"]] <- update(res[["object"]], S, label = "This is a very long label that should be wrapped when wrap_width is narrow")
   pl <- plot(res, wrap_width = 10)
@@ -299,7 +336,7 @@ test_that("plot() narrow wrap_width wraps long labels", {
   expect_true(nrow(traces) > 0)
   expect_true(all(grepl("<br", traces[["name"]], fixed = TRUE)))
 
-  expect_snapshot_plot("verify-wrap-width-narrow", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 
@@ -308,11 +345,14 @@ test_that("plot() narrow wrap_width wraps long labels", {
 # ============================================================================
 
 test_that("plot() custom alpha is accepted", {
+  snapshot_names <- "verify-alpha-low"
+  announce_plot_snapshot_files(snapshot_names)
+
   res <- make_verify_model()
   pl <- plot(res, alpha = 0.5)
   expect_plotly(pl)
   expect_true(nrow(plotly_traces(pl)) > 0)
-  expect_snapshot_plot("verify-alpha-low", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 # ============================================================================

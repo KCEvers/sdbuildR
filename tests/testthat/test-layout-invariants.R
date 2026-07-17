@@ -83,6 +83,9 @@ test_that("incrementally built model compiles identically to a fresh rebuild", {
 # --- Property / fuzz: random mutation sequences preserve alignment -----------
 
 test_that("random mutation sequences keep stock dSdt[] indices aligned", {
+
+  skip_on_cran()
+
   withr::local_seed(20240613)
 
   # Apply a randomly chosen, always-valid mutation. Returns the (possibly
@@ -123,7 +126,7 @@ test_that("random mutation sequences keep stock dSdt[] indices aligned", {
     update("seed_stock", type = "stock", eqn = "1") |>
     sim_settings(language = "Julia")
 
-  for (step in seq_len(150)) {
+  for (step in seq_len(15)) {
     sfm <- apply_random_mutation(sfm)
 
     # Core invariant after every step

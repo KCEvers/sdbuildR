@@ -60,7 +60,7 @@ export_plot(
 )
 ```
 
-![Stock-and-flow diagram of the SIR model, showing the Susceptible, Infected, and Recovered stocks connected by infection and recovery flows.](man/figures/README-sir-diagram.svg)
+![](man/figures/README-sir-diagram.svg){fig-alt="Stock-and-flow diagram of the SIR model, showing the Susceptible, Infected, and Recovered stocks connected by infection and recovery flows."}
 
 
 ```{r quickstart-sim, eval=FALSE}
@@ -78,7 +78,7 @@ export_plot(
 )
 ```
 
-![Simulated dynamics of the SIR model over time, showing the Susceptible stock declining, the Infected stock rising then falling, and the Recovered stock increasing.](man/figures/README-sir-sim.png)
+![](man/figures/README-sir-sim.png){fig-alt="Simulated dynamics of the SIR model over time, showing the Susceptible stock declining, the Infected stock rising then falling, and the Recovered stock increasing."}
 
 The [**Get started guide**](https://kcevers.github.io/sdbuildR/articles/sdbuildR.html) provides a step-by-step tutorial on building and simulating stock-and-flow models using interactive plots.
 

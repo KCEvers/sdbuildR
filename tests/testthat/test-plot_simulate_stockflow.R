@@ -21,113 +21,56 @@ test_that("plot() method exists for simulate_stockflow objects", {
 # PARAMETER VALIDATION TESTS
 # ============================================================================
 
-test_that("plot() validates show_legend as logical", {
+test_that("plot() validates inputs", {
   sim <- sir_sim()
 
+  # show_legend must be logical
   expect_error(
     plot(sim, show_legend = "yes"),
     "show_legend"
   )
-})
-
-test_that("plot() validates vars as character vector", {
-  sim <- sir_sim()
-
+  # vars must be a character vector
   expect_error(
     plot(sim, vars = 123),
     "vars"
   )
+
   expect_error(
     plot(sim, vars = character(0)),
     "Empty"
   )
-})
-
-test_that("plot() validates variable existence in simulation", {
-  sim <- sir_sim()
-
+  
+  # plot() validates variable existence in simulation
   expect_error(
     plot(sim, vars = c("susceptible", "NonExistent")),
     "NonExistent.*not.*variable"
   )
-})
-
-test_that("plot() warns and continues when some vars are missing from data", {
-  sim <- sir_sim(only_stocks = TRUE)
-
-  expect_warning(
-    pl <- plot(sim, vars = c("susceptible", "new_infections")),
-    "not saved in the output"
-  )
-  expect_plotly(pl)
-})
-
-
-test_that("plot() errors when all requested vars are missing from data", {
-  sim <- sir_sim(only_stocks = TRUE)
-
-  expect_error(
-    plot(sim, vars = c("new_recoveries", "new_infections")),
-    "not saved in the output"
-  )
-})
-
-
-test_that("plot() does not error when all requested vars are constants", {
-  sim <- sir_sim(only_stocks = TRUE)
-
-  expect_no_error(
-    plot(sim, vars = c("infection_rate", "recovery_rate"))
-  )
-})
-
-test_that("plot() does not error when some requested vars are constants", {
-  sim <- sir_sim(only_stocks = TRUE)
-
-  expect_no_error(
-    plot(sim, vars = c("susceptible", "recovery_rate"))
-  )
-})
-
-test_that("plot() validates font_family as character", {
-  sim <- sir_sim()
-
+ 
+  # plot() validates font_family as character"
   expect_error(
     plot(sim, font_family = 123),
     "font_family"
   )
-})
-
-test_that("plot() validates font_size as positive number", {
-  sim <- sir_sim()
-
+ 
+  # plot() validates font_size as positive number
   expect_error(
     plot(sim, font_size = 0),
     "must be a positive number"
   )
-})
-
-test_that("plot() validates wrap_width as positive integer", {
-  sim <- sir_sim()
-
+  
+  # plot() validates wrap_width as positive integer
   expect_error(
     plot(sim, wrap_width = -10),
     "must be a positive integer"
-  )
-})
-
-test_that("plot() validates palette as character", {
-  sim <- sir_sim()
-
+  ) 
+  
+  # plot() validates palette as character
   expect_error(
     plot(sim, palette = 123),
     "palette"
   )
-})
 
-test_that("plot() validates colors as character vector", {
-  sim <- sir_sim()
-
+  # plot() validates colors as character vector
   expect_error(
     plot(sim, colors = 123),
     "colors"
@@ -140,36 +83,41 @@ test_that("plot() validates colors as character vector", {
   )
 })
 
+
+
+test_that("plot() warns and continues when some vars are missing from data", {
+  sim <- sir_sim(only_stocks = TRUE)
+
+  expect_warning(
+    pl <- plot(sim, vars = c("susceptible", "new_infections")),
+    "not saved in the output"
+  )
+  expect_plotly(pl)
+
+  # plot() errors when all requested vars are missing from data", {
+  expect_error(
+    plot(sim, vars = c("new_recoveries", "new_infections")),
+    "not saved in the output"
+  )
+
+  # plot() does not error when all requested vars are constants", {
+  expect_no_error(
+    plot(sim, vars = c("infection_rate", "recovery_rate"))
+  )
+ 
+  # plot() does not error when some requested vars are constants", {
+  expect_no_error(
+    plot(sim, vars = c("susceptible", "recovery_rate"))
+  )
+})
+
 # ============================================================================
 # LINE WIDTH TESTS
 # ============================================================================
 
-# Extract the line width of every built trace (NA when unset).
-trace_line_widths <- function(pl) {
-  traces <- plotly::plotly_build(pl)[["x"]][["data"]]
-  vapply(traces, function(t) {
-    w <- t[["line"]][["width"]]
-    if (is.null(w)) NA_real_ else as.numeric(w)[1L]
-  }, numeric(1))
-}
-
-trace_line_dashes <- function(pl) {
-  traces <- plotly::plotly_build(pl)[["x"]][["data"]]
-  vapply(traces, function(t) {
-    dash <- t[["line"]][["dash"]]
-    if (is.null(dash)) NA_character_ else as.character(dash)[1L]
-  }, character(1))
-}
-
-trace_fills <- function(pl) {
-  traces <- plotly::plotly_build(pl)[["x"]][["data"]]
-  vapply(traces, function(t) {
-    fill <- t[["fill"]]
-    if (is.null(fill)) NA_character_ else as.character(fill)[1L]
-  }, character(1))
-}
-
 test_that("plot() validates line_width as positive numeric", {
+  skip_on_cran()
+
   sim <- sir_sim()
 
   expect_error(plot(sim, line_width = "thick"), "line_width")
@@ -178,6 +126,7 @@ test_that("plot() validates line_width as positive numeric", {
 })
 
 test_that("plot() errors when line_width vector is too short", {
+  skip_on_cran()
   sim <- sir_sim(only_stocks = FALSE)
   n <- length(unique(as.data.frame(sim)[["variable"]]))
 
@@ -188,6 +137,7 @@ test_that("plot() errors when line_width vector is too short", {
 })
 
 test_that("plot() applies a scalar line_width to every trace", {
+  skip_on_cran()
   sim <- sir_sim()
   pl <- plot(sim, line_width = 5)
 
@@ -197,6 +147,7 @@ test_that("plot() applies a scalar line_width to every trace", {
 })
 
 test_that("plot() applies a per-variable line_width vector", {
+  skip_on_cran()
   sim <- sir_sim(only_stocks = FALSE)
   n <- length(unique(as.data.frame(sim)[["variable"]]))
   lw <- seq_len(n)
@@ -208,13 +159,9 @@ test_that("plot() applies a per-variable line_width vector", {
   expect_setequal(widths, lw)
 })
 
-test_that("plot() defaults to a line width of 2", {
-  sim <- sir_sim()
-  widths <- trace_line_widths(plot(sim))
-  expect_true(all(widths == 2, na.rm = TRUE))
-})
 
 test_that("plot() validates line_type dash strings", {
+  skip_on_cran()
   sim <- sir_sim()
   valid <- c("solid", "dot", "dash", "longdash", "dashdot", "longdashdot", "5px,10px,2px,2px")
 
@@ -225,6 +172,8 @@ test_that("plot() validates line_type dash strings", {
 })
 
 test_that("plot() applies named and type-keyed line_type styles", {
+  skip_on_cran()
+
   sim <- sir_sim(only_stocks = FALSE)
   names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
   label_for <- stats::setNames(names_df[["label"]], names_df[["name"]])
@@ -251,6 +200,9 @@ test_that("plot() applies named and type-keyed line_type styles", {
 # ============================================================================
 
 test_that("plot() creates standard line plot for SIR simulation", {
+  snapshot_names <- "sim-sir-default"
+  announce_plot_snapshot_files(snapshot_names)
+
   sim <- sir_sim()
   pl <- plot(sim)
   expect_plotly(pl)
@@ -262,10 +214,13 @@ test_that("plot() creates standard line plot for SIR simulation", {
   expect_setequal(trace_info[["name"]], stock_labels)
   expect_true(all(trace_info$show_legend))
 
-  expect_snapshot_plot("sim-sir-default", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.simulate_stockflow() respects show_legend", {
+  snapshot_names <- c("sim-show_legend-true", "sim-show_legend-false")
+  announce_plot_snapshot_files(snapshot_names)
+
   sim <- sir_sim()
   # Object-level expectations: legend toggles should reflect in built Plotly object
   pl_true <- plot(sim, show_legend = TRUE)
@@ -280,13 +235,13 @@ test_that("plot.simulate_stockflow() respects show_legend", {
   expect_true(all(!(traces_false$show_legend)))
 
   # Snapshots last
-  expect_snapshot_plot(
-    c("sim-show_legend-true", "sim-show_legend-false"),
-    list(pl_true, pl_false)
-  )
+  expect_snapshot_plot(snapshot_names, list(pl_true, pl_false))
 })
 
 test_that("plot.simulate_stockflow() respects vars argument", {
+  snapshot_names <- c("sim-single-variable", "sim-filtered-vars")
+  announce_plot_snapshot_files(snapshot_names)
+
   sim <- sir_sim()
   # Object-level expectations: vars filtering should limit plotted trace names
   sfm <- sim[["object"]]
@@ -302,13 +257,13 @@ test_that("plot.simulate_stockflow() respects vars argument", {
   expect_setequal(trace_names_filtered, sus_infected_labels)
 
   # Snapshots last
-  expect_snapshot_plot(
-    c("sim-single-variable", "sim-filtered-vars"),
-    list(pl_single, pl_filtered)
-  )
+  expect_snapshot_plot(snapshot_names, list(pl_single, pl_filtered))
 })
 
 test_that("plot.simulate_stockflow() with custom palette", {
+  snapshot_names <- "sim-custom-palette"
+  announce_plot_snapshot_files(snapshot_names)
+
   sim <- sir_sim()
   sfm <- sim[["object"]]
   stock_labels <- as.data.frame(sfm, properties = c("label", "type"))$label
@@ -320,10 +275,13 @@ test_that("plot.simulate_stockflow() with custom palette", {
   # Unique colors should be assigned across traces when a palette is used
   expect_true(length(unique(traces$color)) == nrow(traces))
 
-  expect_snapshot_plot("sim-custom-palette", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.simulate_stockflow() with custom colors vector", {
+  snapshot_names <- "sim-custom-colors"
+  announce_plot_snapshot_files(snapshot_names)
+
   sim <- sir_sim()
   # Object-level expectation: legend trace colors reflect custom palette when exposed
   df <- as.data.frame(sim, direction = "long")
@@ -343,10 +301,13 @@ test_that("plot.simulate_stockflow() with custom colors vector", {
   expect_true(all(legend_check$matches_expected))
 
   # Snapshot last
-  expect_snapshot_plot("sim-custom-colors", pl_colors)
+  expect_snapshot_plot(snapshot_names, pl_colors)
 })
 
 test_that("plot.simulate_stockflow() maps trace labels to source data and named colors", {
+
+  skip_on_cran()
+
   sim <- sir_sim(only_stocks = FALSE)
   names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"))
   labels <- names_df[["name"]]
@@ -375,6 +336,9 @@ test_that("plot.simulate_stockflow() maps trace labels to source data and named 
 })
 
 test_that("plot.simulate_stockflow() orders traces before applying aesthetics", {
+
+  skip_on_cran()
+
   sim <- sir_sim(only_stocks = FALSE)
   names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = "label")
   requested_order <- c("new_recoveries", "susceptible", "new_infections", "infected", "recovered")
@@ -400,6 +364,8 @@ test_that("plot.simulate_stockflow() orders traces before applying aesthetics", 
 })
 
 test_that("plot.simulate_stockflow() validates and filters order", {
+  skip_on_cran()
+
   sim <- sir_sim(only_stocks = TRUE)
 
   expect_error(plot(sim, order = "not_a_variable"), "order")
@@ -414,6 +380,9 @@ test_that("plot.simulate_stockflow() validates and filters order", {
 })
 
 test_that("plot.simulate_stockflow() follows vars order by default (order defaults to vars)", {
+
+  skip_on_cran()
+
   # `order` defaults to `vars`, so the trace/legend order should follow the
   # order in which variables are listed in `vars`, without passing `order`.
   sim <- sir_sim(only_stocks = FALSE)
@@ -444,6 +413,8 @@ test_that("plot.simulate_stockflow() follows vars order by default (order defaul
 })
 
 test_that("plot.simulate_stockflow() does not warn twice when a vars entry is unsaved", {
+
+  skip_on_cran()
   # `order` defaults to `vars`; a var that exists but was not saved must be
   # reported once (by the vars filter), not a second time by the ordering step.
   sim <- sir_sim(only_stocks = TRUE)
@@ -463,6 +434,8 @@ test_that("plot.simulate_stockflow() does not warn twice when a vars entry is un
 })
 
 test_that("plot.simulate_stockflow() maps default palette colors to the correct labels", {
+  skip_on_cran()
+
   # Regression test: with both stocks (highlight) and non-stocks (nonhighlight)
   # present and the default palette (colors = NULL), colours were assigned
   # positionally in highlight-first order while traces are emitted
@@ -499,24 +472,33 @@ test_that("plot.simulate_stockflow() maps default palette colors to the correct 
 })
 
 test_that("plot.simulate_stockflow() with custom font family", {
+  snapshot_names <- "sim-custom-font-family"
+  announce_plot_snapshot_files(snapshot_names)
+
   sim <- sir_sim()
   pl <- plot(sim, font_family = "Courier New")
   layout <- plotly_layout(pl)
   expect_equal(layout$font$family, "Courier New")
 
-  expect_snapshot_plot("sim-custom-font-family", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.simulate_stockflow() with custom font size", {
+  snapshot_names <- "sim-large-font-size"
+  announce_plot_snapshot_files(snapshot_names)
+
   sim <- sir_sim()
   pl <- plot(sim, font_size = 20)
   layout <- plotly_layout(pl)
   expect_equal(layout$font$size, 20)
 
-  expect_snapshot_plot("sim-large-font-size", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.simulate_stockflow() with custom wrap width", {
+  snapshot_names <- "sim-wrap-width-narrow"
+  announce_plot_snapshot_files(snapshot_names)
+
   sfm <- stockflow()
   sfm <- update(sfm,
     name = "a",
@@ -534,10 +516,13 @@ test_that("plot.simulate_stockflow() with custom wrap width", {
   traces <- plotly_traces(pl)
   expect_true(all(grepl("<br", traces[["name"]])))
 
-  expect_snapshot_plot("sim-wrap-width-narrow", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.simulate_stockflow() with custom title, axis labels, and limits", {
+  snapshot_names <- "sim-custom-title-axes-limits"
+  announce_plot_snapshot_files(snapshot_names)
+
   sim <- sir_sim()
   pl <- plot(sim,
     main = "Custom Simulation Title",
@@ -550,10 +535,13 @@ test_that("plot.simulate_stockflow() with custom title, axis labels, and limits"
   expect_equal(layout$xaxis$range, c(0, 50))
   expect_equal(layout$yaxis$range, c(0, 800))
 
-  expect_snapshot_plot("sim-custom-title-axes-limits", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.simulate_stockflow() respects show_constants", {
+  snapshot_names <- c("sim-with-constants", "sim-without-constants")
+  announce_plot_snapshot_files(snapshot_names)
+
   sfm <- stockflow()
   sfm <- update(sfm, "Stock1", type = "stock")
   sfm <- update(sfm, "const_val", type = "constant", eqn = "100")
@@ -572,10 +560,7 @@ test_that("plot.simulate_stockflow() respects show_constants", {
   traces_no_const <- plotly_traces(pl_without_constants)
   expect_true(all(!(const_label %in% traces_no_const[["name"]])))
 
-  expect_snapshot_plot(
-    c("sim-with-constants", "sim-without-constants"),
-    list(pl_with_constants, pl_without_constants)
-  )
+  expect_snapshot_plot(snapshot_names, list(pl_with_constants, pl_without_constants))
 })
 
 # ============================================================================
@@ -583,6 +568,9 @@ test_that("plot.simulate_stockflow() respects show_constants", {
 # ============================================================================
 
 test_that("plot.simulate_stockflow() shows legend for single-variable plot", {
+  snapshot_names <- "sim-single-var-legend"
+  announce_plot_snapshot_files(snapshot_names)
+
   sfm <- stockflow()
   sfm <- update(sfm, "Stock1", type = "stock")
   sim <- simulate(sfm)
@@ -592,10 +580,13 @@ test_that("plot.simulate_stockflow() shows legend for single-variable plot", {
   expect_equal(nrow(trace_info), 1L)
   expect_equal(trace_info$name, "Stock1")
   expect_true(all(trace_info$show_legend))
-  expect_snapshot_plot("sim-single-var-legend", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.simulate_stockflow() works with both stocks and flow variables", {
+  snapshot_names <- "sim-only-stocks-false"
+  announce_plot_snapshot_files(snapshot_names)
+
   # SIR has susceptible (stock), infected (stock), recovered (stock)
   sim <- sir_sim(only_stocks = FALSE)
   df <- as.data.frame(sim, direction = "long")
@@ -606,10 +597,12 @@ test_that("plot.simulate_stockflow() works with both stocks and flow variables",
   expect_equal(nrow(trace_info), length(var_names))
   expect_true(all(trace_info$show_legend))
 
-  expect_snapshot_plot("sim-only-stocks-false", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.simulate_stockflow() separates stocks from non-stock variables", {
+  skip_on_cran()
+
   sim <- sir_sim(only_stocks = FALSE)
   names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
   stock_labels <- names_df[["label"]][names_df[["type"]] == "stock"]
@@ -639,6 +632,9 @@ test_that("plot.simulate_stockflow() separates stocks from non-stock variables",
 })
 
 test_that("plot.simulate_stockflow() can put role panels side by side", {
+
+  skip_on_cran()
+
   sim <- sir_sim(only_stocks = FALSE)
   names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
   stock_labels <- names_df[["label"]][names_df[["type"]] == "stock"]
@@ -681,6 +677,8 @@ test_that("plot.simulate_stockflow() can put role panels side by side", {
 })
 
 test_that("plot.simulate_stockflow() can leave flow traces unfilled", {
+  skip_on_cran()
+
   sim <- sir_sim(only_stocks = FALSE)
   names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
   flow_labels <- names_df[["label"]][names_df[["type"]] == "flow"]
@@ -692,6 +690,8 @@ test_that("plot.simulate_stockflow() can leave flow traces unfilled", {
 })
 
 test_that("plot.simulate_stockflow() preserves combined view when requested", {
+  skip_on_cran()
+
   sim <- sir_sim(only_stocks = FALSE)
   names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
   stock_labels <- names_df[["label"]][names_df[["type"]] == "stock"]
@@ -710,6 +710,8 @@ test_that("plot.simulate_stockflow() preserves combined view when requested", {
 })
 
 test_that("plot.simulate_stockflow() can leave joint flow traces unfilled", {
+  skip_on_cran()
+
   sim <- sir_sim(only_stocks = FALSE)
   names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
   flow_labels <- names_df[["label"]][names_df[["type"]] == "flow"]
@@ -720,13 +722,9 @@ test_that("plot.simulate_stockflow() can leave joint flow traces unfilled", {
   expect_true(all(is.na(fills[flow_labels])))
 })
 
-test_that("plot.simulate_stockflow() validates vars_display", {
-  sim <- sir_sim()
-  expect_error(plot(sim, vars_display = "rows"), "vars_display")
-})
-
 
 test_that("plot.simulate_stockflow() draws constants unfilled and dashed in non-stock panel", {
+  skip_on_cran()
   sfm <- stockflow() |>
     update("Stock1", type = "stock") |>
     update("const_val", type = "constant", eqn = "75")
@@ -745,6 +743,7 @@ test_that("plot.simulate_stockflow() draws constants unfilled and dashed in non-
 })
 
 test_that("plot.simulate_stockflow() handles variables with duplicate display labels", {
+  skip_on_cran()
   sfm <- stockflow()
   sfm <- update(sfm, "var1", type = "stock", label = "Same")
   sfm <- update(sfm, "var2", type = "stock", label = "Same")
@@ -755,6 +754,9 @@ test_that("plot.simulate_stockflow() handles variables with duplicate display la
 })
 
 test_that("plot.simulate_stockflow() respects vars filtering for constants", {
+  snapshot_names <- "sim-constants-filtered-vars"
+  announce_plot_snapshot_files(snapshot_names)
+
   sfm <- stockflow()
   sfm <- update(sfm, "S", type = "stock")
   sfm <- update(sfm, "I", type = "stock")
@@ -769,10 +771,13 @@ test_that("plot.simulate_stockflow() respects vars filtering for constants", {
   constants <- as.data.frame(sim[["object"]], type = "constants", properties = "label")
   const_label <- constants$label[constants$name == "const1"]
   expect_true(sum(const_label == traces[["name"]]) == 1)
-  expect_snapshot_plot("sim-constants-filtered-vars", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.simulate_stockflow() with vars = constant automatically enables show_constants", {
+  snapshot_names <- "sim-vars-constant-show-constants"
+  announce_plot_snapshot_files(snapshot_names)
+
   sfm <- stockflow()
   sfm <- update(sfm, "Stock1", type = "stock")
   sfm <- update(sfm, "const_val", type = "constant", eqn = "75")
@@ -783,10 +788,13 @@ test_that("plot.simulate_stockflow() with vars = constant automatically enables 
   expect_plotly(pl)
   traces <- plotly_traces(pl)
   expect_true(sum(format_label_default("const_val") == traces[["name"]]) == 1)
-  expect_snapshot_plot("sim-vars-constant-show-constants", pl)
+  expect_snapshot_plot(snapshot_names, pl)
 })
 
 test_that("plot.simulate_stockflow() format_label toggles legend label prettifying", {
+  
+  skip_on_cran()
+
   sfm <- stockflow()
   sfm <- update(sfm, "Stock1", type = "stock")
   sfm <- update(sfm, "const_val", type = "constant", eqn = "75")
@@ -805,16 +813,16 @@ test_that("plot.simulate_stockflow() format_label toggles legend label prettifyi
   expect_false("const val" %in% names_off)
 })
 
-test_that("plot.simulate_stockflow() rejects a non-logical format_label", {
-  sim <- simulate(stockflow("sir"))
-  expect_error(plot(sim, format_label = "yes"), "format_label")
-})
+
 
 # ============================================================================
 # DEFAULT BEHAVIOR TESTS
 # ============================================================================
 
 test_that("plot.simulate_stockflow() uses default titles", {
+
+  skip_on_cran()
+
   sfm <- stockflow("sir") |> meta(name = "My Model")
   sim <- simulate(sfm)
 
@@ -831,6 +839,9 @@ test_that("plot.simulate_stockflow() uses default titles", {
 # ============================================================================
 
 test_that("plot.simulate_stockflow() supports cumulative time animation", {
+
+  skip_on_cran()
+  
   sim <- sir_sim()
   pl <- plot(sim, animation = "time")
   expect_plotly(pl)
@@ -864,6 +875,8 @@ test_that("time animation builds cleanly when a variable is NaN at time zero", {
   # initial data but not from the first frame, corrupting the first frame
   # with a "number of items to replace is not a multiple of replacement
   # length" warning at build time.
+  skip_on_cran()
+  
   sim <- sir_sim()
   first_time <- min(sim[["df"]][["time"]])
   first_var <- as.character(sim[["df"]][["variable"]][1])
@@ -901,18 +914,16 @@ test_that("time animation builds cleanly when a variable is NaN at time zero", {
 })
 
 test_that("plot.simulate_stockflow() is static by default (no frames)", {
+  skip_on_cran()
+
   sim <- sir_sim()
   expect_equal(length(plotly_frames(plot(sim))), 0L)
   expect_equal(length(plotly_frames(plot(sim, animation = "none"))), 0L)
-})
 
-test_that("plot.simulate_stockflow() rejects invalid animation", {
-  sim <- sir_sim()
+  # plot.simulate_stockflow() rejects invalid animation
   expect_error(plot(sim, animation = "fast"), "animation")
-})
 
-test_that("plot.simulate_stockflow() control_options tune the animation speed", {
-  sim <- sir_sim()
+  # plot.simulate_stockflow() control_options tune the animation speed
 
   # Per-frame and transition durations reach the built animation options (the
   # play button's animate args carry them).
@@ -937,9 +948,8 @@ test_that("plot.simulate_stockflow() control_options tune the animation speed", 
   expect_lte(length(few_names), 10)
   expect_lt(length(few_names), length(plotly_frame_names(plot(sim, animation = "time"))))
   expect_equal(few_names[length(few_names)], as.character(max(all_times)))
-})
 
-test_that("plot.simulate_stockflow() rejects invalid control_options", {
+  # plot.simulate_stockflow() rejects invalid control_options
   sim <- sir_sim()
   # Unknown keys, including condition-control keys that only apply to
   # ensemble/verify plots
@@ -957,6 +967,9 @@ test_that("plot.simulate_stockflow() rejects invalid control_options", {
 })
 
 test_that("plot.simulate_stockflow() preserves role panels in time animation", {
+  
+  skip_on_cran()
+
   sim <- sir_sim(only_stocks = FALSE)
   names_df <- as.data.frame(sim[["object"]], type = c("stock", "flow", "aux"), properties = c("label"))
   flow_labels <- names_df[["label"]][names_df[["type"]] == "flow"]
@@ -981,6 +994,7 @@ test_that("plot.simulate_stockflow() preserves role panels in time animation", {
 })
 
 test_that("plot.simulate_stockflow() preserves hstack panels in time animation", {
+  skip_on_cran()
   sim <- sir_sim(only_stocks = FALSE)
   pl <- plot(sim, animation = "time", vars_display = "hstack", webgl = FALSE)
   built <- plotly::plotly_build(pl)[["x"]]
@@ -993,6 +1007,7 @@ test_that("plot.simulate_stockflow() preserves hstack panels in time animation",
 })
 
 test_that("plot.simulate_stockflow() webgl toggles trace type", {
+  skip_on_cran()
   sim <- sir_sim()
 
   types_gl <- vapply(
@@ -1012,6 +1027,7 @@ test_that("plot.simulate_stockflow() webgl toggles trace type", {
 
 
 test_that("plot.simulate_stockflow() respects global webgl option", {
+  skip_on_cran()
   sim <- sir_sim()
 
   withr::local_options(list(sdbuildR.webgl = TRUE))

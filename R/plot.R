@@ -47,28 +47,35 @@
 #'
 #' @examples
 #'
-#' # Only if dependencies are installed
-#' if (requireNamespace("DiagrammeRsvg", quietly = TRUE) &&
-#'   requireNamespace("rsvg", quietly = TRUE)) {
-#'   sfm <- stockflow("sir")
-#'   file <- tempfile(fileext = ".png")
-#'
-#'   # With a system font the diagram is rendered by rsvg; the default
-#'   # webfont would instead require webshot2 and a headless browser
-#'   export_plot(plot(sfm, font_family = "serif"), file)
-#'
-#'   # Remove plot
-#'   file.remove(file)
-#' }
-#'
-#' @examplesIf has_internet()
 #' \dontrun{
-#' # requires internet
-#' # Only if suggested dependencies are installed
-#' if (requireNamespace("htmlwidgets", quietly = TRUE) &&
-#'   requireNamespace("webshot2", quietly = TRUE)) {
-#'   # Requires Chrome to save plotly plot:
+#' # Exporting stock-and-flow diagrams requires the DiagrammeRsvg and rsvg packages
+#' if (!requireNamespace("DiagrammeRsvg", quietly = TRUE)) {
+#'   install.packages("DiagrammeRsvg")
+#' }
+#' if (!requireNamespace("rsvg", quietly = TRUE)) {
+#'   install.packages("rsvg")
+#' }
+#' 
+#' # Load example model
+#' sfm <- stockflow("sir")
+#' 
+#' # Temporary file path to save the plot
+#' file <- tempfile(fileext = ".svg")
+#'
+#' # Use system font (the default webfont requires webshot2 and a headless browser)
+#' export_plot(plot(sfm, font_family = "serif"), file)
+#'
+#' # Remove plot
+#' file.remove(file)
+#'
+#' # Export a simulation plot; requires Chrome
+#' if (has_internet()) {
+#' 
+#'   # Run a simulation
 #'   sim <- simulate(sfm)
+#' 
+#'   # Temporary file path to save the plot
+#'   file <- tempfile(fileext = ".pdf")
 #'   export_plot(plot(sim), file)
 #'
 #'   # Remove plot
@@ -1461,13 +1468,13 @@ clean_vars_display <- function(vars_display) {
 #' sim_all <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim_all)
 #' 
+#' @examplesIf Sys.getenv("NOT_CRAN") == "true"
 #' # Plot all variables in one panel:
 #' plot(sim_all, vars_display = "joint")
 #'
 #' # Animate the simulation over time:
 #' plot(sim_all, animation = "time")
 #'
-#' @examplesIf Sys.getenv("NOT_CRAN") == "true"
 #' # Slow the animation down to ~10 seconds in total, or speed up the
 #' # individual frames
 #' plot(sim, animation = "time", control_options = list(duration = 10))
@@ -3071,10 +3078,11 @@ plot_ensemble_helper <- function(subplot_label,
 #'
 #' # Select one condition at a time with a slider or dropdown
 #' plot(res, condition_display = "slider")
-#' plot(res, condition_display = "dropdown")
 #'
+#' @examplesIf Sys.getenv("NOT_CRAN") == "true"
 #' # Animate the simulation over time (one condition at a time)
 #' plot(res, animation = "time", condition = 1)
+#' 
 plot.verify_stockflow <- function(x,
                                   test = NULL,
                                   vars = NULL,

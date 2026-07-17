@@ -105,21 +105,24 @@
 #'
 #' @examples
 #' # Ensemble simulation in R (no parallelization)
-#' # Load example
+#' # Load example model
 #' sfm <- stockflow("predator_prey")
 #'
-#' # Set random initial conditions
+#' # Ensemble simulations can only show variation 
+#' # if there is some randomness in the model. 
+#' # For example, we can initialize both stocks with
+#' # random values between 20 and 80:
 #' sfm <- update(sfm, c(predator, prey),
 #'   eqn = runif(1, min = 20, max = 80)
 #' )
 #'
-#' # For ensemble simulations, it is highly recommended to reduce the
-#' # returned output. For example, to save only 20 values per simulation:
+#' # Saving all timepoints is computationally expensive, 
+#' # so we save only 20 values per simulation:
 #' sfm <- sim_settings(sfm, save_length = 20)
 #'
-#' # Run ensemble simulation with a small number of simulations
+#' # Run ensemble simulation
 #' sims <- ensemble(sfm, n = 3)
-#' if (interactive()) plot(sims)
+#' plot(sims)
 #'
 #' @examplesIf Sys.getenv("NOT_CRAN") == "true"
 #' # To plot individual trajectories, rerun the ensemble with save_sims = TRUE.
@@ -128,13 +131,15 @@
 #' plot(sims, which = "sims")
 #'
 #' # Specify which trajectories to plot
-#' plot(sims, which = "sims", sim = 1)
+#' plot(sims, which = "sims", sim = 1:2)
 #'
-#' # Plot the median with lighter individual trajectories
-#' plot(sims, central = "median", which = "sims", alpha = 0.1)
+#' # Don't plot the central tendency 
+#' # with darker individual trajectories
+#' plot(sims, central = "none", which = "sims", alpha = 0.7)
 #'
-#' # For larger ensembles, we can use parallelization with future
-#' future::plan(future::multisession, workers = 4)
+#' # We can speed up ensemble simulations using parallelization
+#' future::plan(future::multisession, workers = 2)
+#' sims <- ensemble(sfm, n = 25, save_sims = TRUE)
 #'
 #' # Ensembles can also be run with exact values for the initial conditions
 #' # and parameters. Below, we vary the initial values of the predator and the
@@ -143,7 +148,8 @@
 #' # combinations of the parameters are run.
 #' sims <- ensemble(sfm,
 #'   n = 50,
-#'   conditions = list(predator = c(10, 50), delta = c(.025, .05))
+#'   conditions = list(predator = c(10, 50),
+#'                     delta = c(.025, .05))
 #' )
 #'
 #' plot(sims)
@@ -562,14 +568,26 @@ print.ensemble_stockflow <- function(x, ...) {
 #' @seealso [`ensemble()`][ensemble()], [stockflow()]
 #'
 #' @examples
-#' sfm <- stockflow("sir")
-#' sims <- ensemble(sfm, n = 10)
+#' sfm <- stockflow("sir") |>
+#'   # Randomize initial values of the stocks to show variation in the ensemble
+#'   update(c(susceptible, infected, recovered),
+#'          eqn = runif(1, min = 20, max = 800))
+#' 
+#' # Run ensemble simulation with 3 simulations, 
+#' # saving only 20 timepoints per simulation
+#' sims <- ensemble(sfm, n = 3, save_length = 20, save_sims = TRUE)
+#' 
+#' # Get summary statistics in long format
 #' df <- as.data.frame(sims)
-#' head(df)
+#' head(df, n = 1)
 #'
-#' # Get results in wide format
+#' # Get summary statistics in wide format
 #' df_wide <- as.data.frame(sims, direction = "wide")
-#' head(df_wide)
+#' head(df_wide, n = 1)
+#' 
+#' # Get individual simulations in wide format
+#' df_wide_sims <- as.data.frame(sims, which = "sims", direction = "wide")
+#' head(df_wide_sims, n = 1)
 #'
 as.data.frame.ensemble_stockflow <- function(
   x, row.names = NULL,

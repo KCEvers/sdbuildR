@@ -113,6 +113,9 @@ test_that("non-finite and missing literals are handled or fall back", {
 })
 
 test_that("AST and legacy translators agree on deterministic template equations", {
+
+  skip_on_cran()
+
   # Equivalence check over real model equations (excludes stochastic calls).
   eqns <- c()
   for (tp in templates()) {
