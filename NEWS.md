@@ -1,4 +1,24 @@
+# sdbuildR (development version)
+
 # sdbuildR 2.2.2
+
+* `url_to_insightmaker()` again extracts models from Insight Maker URLs. Insight
+  Maker now serves the model as escaped JSON, which the previous pattern could
+  not match; the model is read from the embedded JSON instead.
+
+* Fixed several errors when importing Insight Maker models. Models with no flows
+  and no links, models whose `Setting` element has no `Version` or a
+  non-numeric one, and files whose root element has more than one child all
+  failed to import. A model without a `Setting` element now gives an
+  informative error instead of an internal one.
+
+* Fixed the model title, author, and id being truncated when the title contains
+  a comma or an equals sign. This meta-data is now stored as attributes of the
+  `<header>` element of an `.InsightMaker` file; files written by earlier
+  versions of `sdbuildR` are still read.
+
+* Fixed numeric values in `.json` models being reformatted on import, which
+  turned an initial value of `1` into `" 1.0"`.
 
 # sdbuildR 2.2.1
 
