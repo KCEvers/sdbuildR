@@ -72,15 +72,21 @@ install_julia_env <- function(remove = FALSE, force = FALSE, quiet = FALSE) {
     julia_cmd <- sprintf("using Pkg; Pkg.activate(\"%s\"; io=devnull)", jl_path(env_dir))
     julia_eval(julia_cmd)
 
-    # Is there anything to remove? (the package, or leftover environment files)
+    # Is there anything to remove? Only the files sdbuildR creates count: an empty
+    # directory is not an environment. Treating a bare `dir.exists(env_dir)` as "present"
+    # made this report that it had removed an environment that was never there, and made
+    # removing twice in a row nondeterministic - whether the second call said "no need to
+    # remove" depended on whether anything happened to leave the directory behind.
     status <- is_julia_env_setup(force = TRUE, error = FALSE)
     env_present <- isTRUE(status) ||
       file.exists(project_file) ||
       file.exists(manifest_file) ||
-      file.exists(julia_env_marker_file()) ||
-      dir.exists(env_dir)
+      file.exists(julia_env_marker_file())
 
     if (!env_present) {
+      # Still tidy up an empty leftover directory, so nothing is left in R_user_dir.
+      unlink(env_dir, recursive = TRUE, force = TRUE)
+
       if (!quiet) {
         cli::cli_inform(c("i" = paste0(P[["jl_pkg_name"]], ".jl not found in Julia environment; no need to remove.")))
       }

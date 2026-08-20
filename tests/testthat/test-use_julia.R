@@ -169,8 +169,10 @@ test_that("install_julia_env() works", {
   expect_false(is_julia_env_setup(error = FALSE))
   expect_false(is_julia_env_setup(error = FALSE, force = TRUE))
 
-  # Removing again should not cause an error
-  expect_no_error(install_julia_env(remove = TRUE))
+  # Removing again should not cause an error, and should say so rather than claiming it
+  # removed an environment that was not there.
+  expect_message(expect_no_error(install_julia_env(remove = TRUE)), "no need to remove")
+  expect_false(env_files_exist())
 
   # Install again and check that environment is ready
   expect_no_error(install_julia_env())

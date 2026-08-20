@@ -4,7 +4,7 @@ use_github_release <- TRUE
 # Names of variables and functions
 P <- list(
   debug = FALSE,
-  insightmaker_version = 38, # version sdbuildR was made with
+  insightmaker_version = 40, # version sdbuildR was made with
   jl_pkg_name = "SystemDynamicsBuildR",
   # jl_pkg_version = "0.2.5", # required version SystemDynamicsBuildR
   # jl_pkg_name = "StockFlowRSupport",
