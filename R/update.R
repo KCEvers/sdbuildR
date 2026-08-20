@@ -1128,6 +1128,7 @@ lookup <- function(object, name,
 #' @importFrom rlang enexpr is_symbol is_call as_name call_name call_args expr_deparse
 #' @importFrom stats update
 #' @method update stockflow
+#' @aliases update
 #' @export
 #'
 #' @examples

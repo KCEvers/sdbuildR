@@ -449,7 +449,7 @@ list_extract <- function(nested_list, entry, keep_entry_name = FALSE) {
 #'
 get_map <- function(x, element_name, change_null_to = "") {
   if (length(x) == 0) {
-    return(c())
+    return(character(0))
   }
 
   x_list <- lapply(x, `[[`, element_name)

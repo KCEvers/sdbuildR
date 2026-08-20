@@ -48,14 +48,26 @@ one column per variable.
 Convert simulation results to a data.frame.
 }
 \examples{
-sfm <- stockflow("sir")
-sims <- ensemble(sfm, n = 10)
-df <- as.data.frame(sims)
-head(df)
+sfm <- stockflow("sir") |>
+  # Randomize initial values of the stocks to show variation in the ensemble
+  update(c(susceptible, infected, recovered),
+         eqn = runif(1, min = 20, max = 800))
 
-# Get results in wide format
+# Run ensemble simulation with 3 simulations, 
+# saving only 20 timepoints per simulation
+sims <- ensemble(sfm, n = 3, save_length = 20, save_sims = TRUE)
+
+# Get summary statistics in long format
+df <- as.data.frame(sims)
+head(df, n = 1)
+
+# Get summary statistics in wide format
 df_wide <- as.data.frame(sims, direction = "wide")
-head(df_wide)
+head(df_wide, n = 1)
+
+# Get individual simulations in wide format
+df_wide_sims <- as.data.frame(sims, which = "sims", direction = "wide")
+head(df_wide_sims, n = 1)
 
 }
 \seealso{

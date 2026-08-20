@@ -26,6 +26,7 @@
 #' @export
 #' @importFrom stats simulate
 #' @method simulate stockflow
+#' @aliases simulate
 #' @concept simulate
 #' @seealso [update()], [stockflow()], [summary()], [sim_settings()], [use_julia()]
 #'

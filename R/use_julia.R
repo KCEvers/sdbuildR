@@ -14,6 +14,7 @@
 #' Note that this may take 10-25 minutes the first time as Julia downloads and compiles packages.
 #'
 #' @param remove If `TRUE`, remove Julia environment for sdbuildR. This will remove the SystemDynamicsBuildR.jl package and delete the environment directory (containing Project.toml and Manifest.toml). All other Julia packages remain untouched.
+#' @param force If `TRUE`, rebuild the environment from scratch even when it is already up to date. By default an environment that is already installed, built from the same dependencies, and resolved by a compatible version of Julia is left alone, since rebuilding re-resolves every package and forces Julia to precompile them all again. Defaults to `FALSE`.
 #' @param quiet If `TRUE`, suppress informational messages such as progress and status updates. Warnings and errors are always shown. Defaults to `FALSE`.
 #'
 #' @returns Invisibly returns `NULL` after instantiating the Julia environment.
@@ -28,7 +29,7 @@
 #' # Remove Julia environment
 #' install_julia_env(remove = TRUE)
 #' }
-install_julia_env <- function(remove = FALSE, quiet = FALSE) {
+install_julia_env <- function(remove = FALSE, force = FALSE, quiet = FALSE) {
   # Track whether setup ran to completion. If an error or a user interrupt
   # (likely during the 10-25 min install) stops us partway, the Manifest.toml
   # may have been deleted without being rebuilt, leaving a broken environment.
@@ -111,6 +112,24 @@ install_julia_env <- function(remove = FALSE, quiet = FALSE) {
       }
     }
   } else {
+    # Nothing to do if the environment is already installed, was built from the
+    # dependency list this version of sdbuildR ships, was resolved by a compatible
+    # Julia, and holds a current {jl_pkg_name}. Rebuilding anyway re-clones from GitHub
+    # and re-resolves against the live registry, which can pull newer package versions
+    # and make Julia precompile the whole tree again.
+    if (!force && isTRUE(is_julia_env_setup(force = TRUE, error = FALSE))) {
+      setup_complete <- TRUE
+
+      if (!quiet) {
+        cli::cli_inform(c(
+          "v" = "Julia environment is already up to date.",
+          ">" = "Run {.code install_julia_env(force = TRUE)} to rebuild it from scratch."
+        ))
+      }
+
+      return(invisible())
+    }
+
     # First stop Julia for a clean installation
     JuliaConnectoR::stopJulia()
 
@@ -163,7 +182,7 @@ install_julia_env <- function(remove = FALSE, quiet = FALSE) {
 #'
 #' Start Julia session and activate Julia environment to simulate stock-and-flow models. To do so, Julia needs to be installed (see [https://julialang.org/install/](https://julialang.org/install/)) and findable from within R. See [this vignette](https://kcevers.github.io/sdbuildR/articles/julia-setup.html) for guidance. In addition, the Julia environment specifically for sdbuildR needs to have been instantiated. This can be set up with [install_julia_env()].
 #'
-#' In every R session, [use_julia()] needs to be run once (which is done automatically in [`simulate()`][simulate.stockflow]), which can take around 30-60 seconds.
+#' In every R session, [use_julia()] needs to be run once (which is done automatically in [`simulate()`][simulate.stockflow]), which takes under 10 seconds while Julia starts and loads the packages.
 #'
 #' @param stop If `TRUE`, stop active Julia session. Defaults to `FALSE`.
 #' @param restart If `TRUE`, force Julia session to restart.
@@ -287,6 +306,15 @@ use_julia <- function(
 #'
 #' @noRd
 julia_eval <- function(string, suppressMessages = TRUE) {
+  # juliaEval() starts Julia if it is not already running, and this is the only place
+  # in the package that calls it. Setting the start-up options here rather than in
+  # use_julia() means Julia is started with the sdbuildR environment active no matter
+  # which entry point gets there first - is_julia_env_setup() and is_julia_working()
+  # both reach Julia before use_julia() does. When a session is already running the
+  # variable is simply ignored, and it is scoped so the user's environment is
+  # unchanged once this returns.
+  withr::local_envvar(JULIACONNECTOR_JULIAOPTS = jl_startup_opts())
+
   if (suppressMessages) {
     suppressMessages(JuliaConnectoR::juliaEval(string))
   } else {
@@ -859,6 +887,49 @@ jl_path <- function(path) {
 }
 
 
+#' Julia command-line options for an sdbuildR session
+#'
+#' Builds the value for `JULIACONNECTOR_JULIAOPTS`, which JuliaConnectoR passes
+#' verbatim onto the Julia command line when it starts the Julia process.
+#'
+#' Two flags matter for start-up cost:
+#' * `--project` activates the sdbuildR environment *before* any package is loaded.
+#'   JuliaConnectoR's own `main.jl` runs `import Tables` at start-up; without this,
+#'   that resolves against the default environment's manifest and Julia precompiles a
+#'   second copy of the dependency tree under a different cache key, which sdbuildR
+#'   then never reuses (JuliaLang/julia#56766).
+#' * `--startup-file=no` stops the user's `~/.julia/config/startup.jl` from pulling the
+#'   default environment's packages into the session, which causes the same problem.
+#'
+#' Options the user set themselves in `JULIACONNECTOR_JULIAOPTS` are preserved, and a
+#' flag they specified is never overridden.
+#'
+#' @returns Character string of Julia command-line options.
+#' @noRd
+jl_startup_opts <- function() {
+  user_flags <- strsplit(trimws(Sys.getenv("JULIACONNECTOR_JULIAOPTS")), "\\s+")[[1]]
+  user_flags <- user_flags[nzchar(user_flags)]
+
+  has_opt <- function(prefix) any(startsWith(user_flags, prefix))
+
+  # JuliaConnectoR splices these into the command line unquoted, so a path
+  # containing spaces has to be quoted here.
+  quote_if_needed <- function(x) if (grepl("\\s", x)) shQuote(x) else x
+
+  opts <- character()
+
+  if (!has_opt("--project")) {
+    opts <- c(opts, paste0("--project=", quote_if_needed(jl_path(julia_env_dir()))))
+  }
+
+  if (!has_opt("--startup-file")) {
+    opts <- c(opts, "--startup-file=no")
+  }
+
+  paste(c(user_flags, opts), collapse = " ")
+}
+
+
 #' Set up Julia environment for sdbuildR with init.jl
 #'
 #' @returns NULL
@@ -868,18 +939,33 @@ run_init_julia_env <- function(quiet = FALSE) {
   env_path <- julia_env_dir()
 
   if (!quiet) {
-    cli::cli_inform(c("i" = "Activating Julia environment for {.pkg sdbuildR} at {.file {env_path}}..."))
+    cli::cli_inform(c("i" = "Loading Julia environment for {.pkg sdbuildR} from {.file {env_path}}..."))
   }
 
-  # Activate the Julia environment for sdbuildR
-  julia_cmd <- sprintf("using Pkg; Pkg.activate(\"%s\"; io=devnull)", jl_path(env_path))
-  julia_eval(julia_cmd)
+  # Julia is normally started with --project already pointing here (see
+  # jl_startup_opts()), so activating again would be wasted work. It is only needed when
+  # something else started Julia first - e.g. the user called JuliaConnectoR::juliaEval()
+  # before use_julia(). Ask Julia to compare the paths, so path separators and
+  # normalisation are handled on that side.
+  needs_activate <- julia_eval(sprintf(
+    'string(normpath(something(Base.active_project(), "")) != normpath(joinpath("%s", "Project.toml")))',
+    jl_path(env_path)
+  ))
 
-  julia_eval("Pkg.precompile()")
+  if (!identical(as.character(needs_activate), "false")) {
+    julia_eval(sprintf(
+      'using Pkg; Pkg.activate("%s"; io=devnull)',
+      jl_path(env_path)
+    ))
+  }
 
-  # # Install all dependencies from Project.toml
-  # julia_eval("Pkg.instantiate()")
-  # julia_eval("Pkg.resolve()")
+  # Deliberately no precompilation check here. `Base.isprecompiled()` looks cheap but
+  # validates the entire cache chain: on this environment it measured 20 s per call -
+  # slower than simply loading the packages (~4 s) - and `Pkg.precompile()` is worse
+  # still, since it rebuilds the whole manifest rather than what init.jl needs.
+  #
+  # `using` already does the right thing: Julia precompiles on demand (and prints its own
+  # "Precompiling ..." progress) when a cache is stale, and costs nothing when it is not.
 
   # Source the init.jl script
   init_file <- system.file("init.jl", package = "sdbuildR")

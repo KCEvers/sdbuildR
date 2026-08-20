@@ -22,7 +22,7 @@ Returns \code{TRUE} invisibly after setting up the Julia environment, and \code{
 Start Julia session and activate Julia environment to simulate stock-and-flow models. To do so, Julia needs to be installed (see \url{https://julialang.org/install/}) and findable from within R. See \href{https://kcevers.github.io/sdbuildR/articles/julia-setup.html}{this vignette} for guidance. In addition, the Julia environment specifically for sdbuildR needs to have been instantiated. This can be set up with \code{\link[=install_julia_env]{install_julia_env()}}.
 }
 \details{
-In every R session, \code{\link[=use_julia]{use_julia()}} needs to be run once (which is done automatically in \code{\link[=simulate.stockflow]{simulate()}}), which can take around 30-60 seconds.
+In every R session, \code{\link[=use_julia]{use_julia()}} needs to be run once (which is done automatically in \code{\link[=simulate.stockflow]{simulate()}}), which takes under 10 seconds while Julia starts and loads the packages.
 }
 \examples{
 \dontshow{if (Sys.getenv("NOT_CRAN") == "true") withAutoprint(\{ # examplesIf}

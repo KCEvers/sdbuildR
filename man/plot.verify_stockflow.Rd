@@ -193,10 +193,11 @@ plot(res)
 
 # Select one condition at a time with a slider or dropdown
 plot(res, condition_display = "slider")
-plot(res, condition_display = "dropdown")
 
+\dontshow{if (Sys.getenv("NOT_CRAN") == "true") withAutoprint(\{ # examplesIf}
 # Animate the simulation over time (one condition at a time)
 plot(res, animation = "time", condition = 1)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=verify]{verify()}}, \code{\link[=plot.simulate_stockflow]{plot.simulate_stockflow()}}, \code{\link[=plot.ensemble_stockflow]{plot.ensemble_stockflow()}}

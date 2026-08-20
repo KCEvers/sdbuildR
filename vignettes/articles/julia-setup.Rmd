@@ -75,7 +75,7 @@ Start a Julia session and activate the Julia environment for sdbuildR:
 use_julia()
 ```
 
-This needs to be done in *each* new R session.
+This needs to be done in *each* new R session, and takes under 10 seconds while Julia starts and loads the packages.
 
 To close the Julia session:
 
@@ -88,12 +88,13 @@ use_julia(stop = TRUE)
 
 ### Julia not found 
 
-If JuliaConnectoR cannot find Julia, i.e., this evaluates to `FALSE`:
+If `JuliaConnectoR` cannot find Julia, i.e., this evaluates to `FALSE`:
 
 ```{r}
 juliaSetupOk()
 ```
 
+Try the following steps to make Julia accessible to R:
 
 #### Find your Julia installation path
 
@@ -193,16 +194,16 @@ This allows **juliaup** to manage which Julia version is used.
 
 #### If Julia is still not found
 
-JuliaConnectoR tries to find Julia in the following order:
+`JuliaConnectoR` tries to find Julia in the following order:
 
 ```{r eval=FALSE}
-Sys.getenv("JULIA_BINDIR") # "" if not found
+Sys.getenv("JULIA_BINDIR") # if not found, returns ""
 
-Sys.which("julia") # "" if not found
+Sys.which("julia") # if not found, returns ""
 
 # On Mac/Linux:
 julia_path <- file.path(Sys.getenv("HOME"), ".juliaup", "bin", "julia")
-file.exists(julia_path) # FALSE if not found
+file.exists(julia_path) # if not found, returns FALSE
 ```
 
 

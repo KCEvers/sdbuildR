@@ -5,8 +5,10 @@ using CSV
 using DataFrames
 using DiffEqCallbacks
 using Distributions
-using OrdinaryDiffEq
 using OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqTsit5
+using OrdinaryDiffEqVerner
 using Random
 using SciMLBase
 using Statistics

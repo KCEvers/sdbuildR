@@ -37,7 +37,8 @@ test_that("import_insightmaker() validates input arguments", {
 
 
 test_that("replace_safely() avoids strings, protected names, and partial overlaps", {
-  dict <- c("\\bfoo\\b" = "bar")
+  # Names are literal element names; replace_safely() quotes them itself
+  dict <- c("foo" = "bar")
   expect_equal(
     replace_safely('Foo + food + "foo" + [Foo]', dict, var_names = "Foo", ignore_case = TRUE),
     'Foo + food + "foo" + [Foo]'
@@ -281,4 +282,165 @@ test_that("ABM model issues error", {
       "Agent-Based Modelling"
     )
   }
+})
+
+
+# Structural edge cases are built inline rather than shipped as files, so the
+# repository does not need to carry deliberately degenerate models.
+im_setting <- paste0(
+  '<Setting Version="38" TimeLength="10" TimeStart="0" TimeStep="0.1"',
+  ' TimeUnits="Months" SolutionAlgorithm="RK4" id="2"><mxCell parent="1"/></Setting>'
+)
+im_stock <- '<Stock name="A" InitialValue="1" id="10"><mxCell parent="1"/></Stock>'
+im_variable <- '<Variable name="k" Equation="0.5" id="11"><mxCell parent="1"/></Variable>'
+
+im_header <- function(title = "Minimal") {
+  sprintf(
+    '<header model_id="1" model_title="%s" model_author_id="2" model_author_name="K"/>',
+    title
+  )
+}
+
+im_write <- function(body) {
+  file <- tempfile(fileext = ".InsightMaker")
+  writeLines(body, file)
+  file
+}
+
+im_model <- function(...) {
+  im_write(paste0("<insightmakermodel><root>", paste0(...), "</root></insightmakermodel>"))
+}
+
+
+test_that("models without flows or links import", {
+  # get_map() used to return NULL for an empty node set, which collapsed the
+  # source/target data frame to a single column and then to a bare vector.
+  file <- im_model(im_header(), im_setting, im_stock, im_variable)
+  expect_s3_class(import_insightmaker(file = file), "stockflow")
+})
+
+
+test_that("a missing or non-numeric Version does not abort the import", {
+  no_version <- im_model(
+    im_header(),
+    sub('Version="38" ', "", im_setting, fixed = TRUE),
+    im_stock, im_variable
+  )
+  expect_s3_class(import_insightmaker(file = no_version), "stockflow")
+
+  bad_version <- im_model(
+    im_header(),
+    sub('Version="38"', 'Version="v38"', im_setting, fixed = TRUE),
+    im_stock, im_variable
+  )
+  expect_s3_class(import_insightmaker(file = bad_version), "stockflow")
+})
+
+
+test_that("a missing Setting element gives a clear error", {
+  file <- im_model(im_header(), im_stock, im_variable)
+  expect_error(import_insightmaker(file = file), "Setting")
+})
+
+
+test_that("the model is found when the document root has several children", {
+  # xml_name() is vectorised over the node set, so comparing it to "root"
+  # directly raised "the condition has length > 1".
+  file <- im_write(paste0(
+    "<insightmakermodel><root>",
+    im_header(), im_setting, im_stock, im_variable,
+    "</root><extra/></insightmakermodel>"
+  ))
+  expect_s3_class(import_insightmaker(file = file), "stockflow")
+})
+
+
+test_that("header meta-data survives separators in the model title", {
+  # The header used to be a `key="value", key="value"` string re-split on ","
+  # and "=", so a title containing either was silently truncated.
+  for (title in c("Romeo &amp; Juliet", "Romeo, Juliet", "a=b", "Plain")) {
+    file <- im_model(im_header(title), im_setting, im_stock, im_variable)
+    expected <- gsub("&amp;", "&", title, fixed = TRUE)
+    expect_equal(import_insightmaker(file = file)[["meta"]][["name"]], expected)
+  }
+})
+
+
+test_that("headers written by earlier versions still read", {
+  # Older files store the meta-data as text rather than as attributes.
+  legacy <- paste0(
+    "<header> model_id=\"1\", model_title=\"Romeo, Juliet\",",
+    " model_author_id=\"2\", model_author_name=\"Kyra Evers\" </header>"
+  )
+  file <- im_model(legacy, im_setting, im_stock, im_variable)
+  meta <- import_insightmaker(file = file)[["meta"]]
+
+  expect_equal(meta[["name"]], "Romeo, Juliet")
+  expect_equal(meta[["author"]], "Kyra Evers")
+})
+
+
+test_that("connectors without a BiDirectional attribute do not inject NA", {
+  attrs <- list(list(source = "11", target = "10", id = "12"))
+  dict <- get_source_target_IM(attrs, "link", type = "InsightMaker")
+
+  expect_false(anyNA(dict[["sources"]]))
+  expect_false(anyNA(dict[["targets"]]))
+  expect_equal(dict[["sources"]], "11")
+  expect_equal(dict[["targets"]], "10")
+})
+
+
+test_that("get_map() returns an empty character vector, not NULL", {
+  expect_identical(get_map(list(), "anything"), character(0))
+})
+
+
+test_that("replace_safely() treats dictionary names as literal text", {
+  # Names are model element names, so a regex metacharacter must not widen the
+  # match, and an unbalanced bracket must not raise a regex error.
+  expect_equal(
+    replace_safely("a.b + axb", c("a.b" = "Z"), var_names = character(0)),
+    "Z + axb"
+  )
+  expect_equal(
+    replace_safely("rate(1)", c("rate" = "Z"), var_names = character(0)),
+    "Z(1)"
+  )
+})
+
+
+test_that("numeric fields of a json model keep their value", {
+  model <- list(
+    name = "Tiny", description = "",
+    simulation = list(
+      algorithm = "RK4", time_start = 0, time_length = 10,
+      time_step = 0.1, time_units = "SECONDS"
+    ),
+    elements = list(
+      list(type = "STOCK", name = "A", behavior = list(initial_value = 1)),
+      list(type = "VARIABLE", name = "k", behavior = list(value = "0.5"))
+    )
+  )
+
+  file <- tempfile(fileext = ".json")
+  writeLines(jsonlite::toJSON(model, auto_unbox = TRUE, null = "null"), file)
+
+  object <- import_insightmaker(file = file)
+  stock_eqn <- object[["variables"]][object[["variables"]][["name"]] == "A", "eqn"]
+
+  # apply() used to route the row through as.matrix(), turning 1 into " 1.0"
+  expect_equal(stock_eqn, "1")
+})
+
+
+test_that("a model imports from a live Insight Maker URL", {
+  skip_if_no_internet()
+
+  url <- "https://insightmaker.com/insight/43tz1nvUgbIiIOGSGtzIzj/Romeo-Juliet"
+  object <- import_insightmaker(url = url)
+
+  expect_s3_class(object, "stockflow")
+  expect_equal(object[["meta"]][["name"]], "Romeo & Juliet")
+  expect_gt(nrow(object[["variables"]]), 0)
 })

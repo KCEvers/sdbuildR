@@ -175,7 +175,7 @@ import_insightmaker <- function(url,
   }
 
   # Get Insight Maker model
-  out <- get_IM_model(url, file)
+  out <- get_insightmaker_model(url, file)
   read_file <- out[["read_file"]]
   ext <- out[["ext"]]
 
@@ -198,5 +198,6 @@ import_insightmaker <- function(url,
   object <- ctx$object
 
   object <- convert_imported_IM_object(object, keep_nonnegative_flow, keep_nonnegative_stock)
-  finalize_imported_IM_object(ctx, object, keep_nonnegative_flow, keep_nonnegative_stock)
+  object <- finalize_imported_IM_object(ctx, object, keep_nonnegative_flow, keep_nonnegative_stock)
+  object
 }

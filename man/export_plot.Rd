@@ -70,27 +70,34 @@ for the ps/eps formats, which fall back to system fonts.
 
 \examples{
 
-# Only if dependencies are installed
-if (requireNamespace("DiagrammeRsvg", quietly = TRUE) &&
-  requireNamespace("rsvg", quietly = TRUE)) {
-  sfm <- stockflow("sir")
-  file <- tempfile(fileext = ".svg")
-
-  # With a system font the diagram is rendered by rsvg; the default
-  # webfont would instead require webshot2 and a headless browser
-  export_plot(plot(sfm, font_family = "serif"), file)
-
-  # Remove plot
-  file.remove(file)
+\dontrun{
+# Exporting stock-and-flow diagrams requires the DiagrammeRsvg and rsvg packages
+if (!requireNamespace("DiagrammeRsvg", quietly = TRUE)) {
+  install.packages("DiagrammeRsvg")
+}
+if (!requireNamespace("rsvg", quietly = TRUE)) {
+  install.packages("rsvg")
 }
 
-\dontrun{
-# requires internet
-# Only if suggested dependencies are installed
-if (requireNamespace("htmlwidgets", quietly = TRUE) &&
-  requireNamespace("webshot2", quietly = TRUE)) {
-  # Requires Chrome to save plotly plot:
+# Load example model
+sfm <- stockflow("sir")
+
+# Temporary file path to save the plot
+file <- tempfile(fileext = ".svg")
+
+# Use system font (the default webfont requires webshot2 and a headless browser)
+export_plot(plot(sfm, font_family = "serif"), file)
+
+# Remove plot
+file.remove(file)
+
+# Export a simulation plot; requires Chrome
+if (has_internet()) {
+
+  # Run a simulation
   sim <- simulate(sfm)
+
+  # Temporary file path to save the plot
   file <- tempfile(fileext = ".pdf")
   export_plot(plot(sim), file)
 

@@ -179,3 +179,74 @@ test_that("install_julia_env() works", {
   expect_true(is_julia_env_setup())
   expect_true(is_julia_env_setup(force = TRUE))
 })
+
+test_that("jl_startup_opts() activates the sdbuildR environment without clobbering user options", {
+  # Julia is not needed: this is pure string construction.
+  withr::with_envvar(c(JULIACONNECTOR_JULIAOPTS = ""), {
+    opts <- jl_startup_opts()
+    expect_match(opts, "--project=", fixed = TRUE)
+    expect_match(opts, jl_path(julia_env_dir()), fixed = TRUE)
+    expect_match(opts, "--startup-file=no", fixed = TRUE)
+  })
+
+  # Options the user set are kept. Note this deliberately uses an option that does not
+  # affect Julia's precompilation cache key: flags like -O or --check-bounds do, and
+  # would make Julia recompile the whole environment under a second cache key.
+  withr::with_envvar(c(JULIACONNECTOR_JULIAOPTS = "--history-file=no"), {
+    opts <- jl_startup_opts()
+    expect_match(opts, "--history-file=no", fixed = TRUE)
+    expect_match(opts, "--project=", fixed = TRUE)
+    expect_match(opts, "--startup-file=no", fixed = TRUE)
+  })
+
+  # ... and flags they set themselves are not overridden.
+  withr::with_envvar(
+    c(JULIACONNECTOR_JULIAOPTS = "--project=@myenv --startup-file=yes"),
+    {
+      opts <- jl_startup_opts()
+      expect_equal(lengths(regmatches(opts, gregexpr("--project=", opts))), 1L)
+      expect_match(opts, "--project=@myenv", fixed = TRUE)
+      expect_match(opts, "--startup-file=yes", fixed = TRUE)
+      expect_false(grepl("--startup-file=no", opts, fixed = TRUE))
+    }
+  )
+})
+
+
+test_that("use_julia() does not leak JULIACONNECTOR_JULIAOPTS", {
+  skip_if_julia_not_ready()
+
+  # Unset: must stay unset.
+  withr::with_envvar(c(JULIACONNECTOR_JULIAOPTS = NA), {
+    expect_no_error(use_julia(quiet = TRUE))
+    expect_equal(Sys.getenv("JULIACONNECTOR_JULIAOPTS"), "")
+  })
+
+  # Set by the user: must come back unchanged.
+  withr::with_envvar(c(JULIACONNECTOR_JULIAOPTS = "--history-file=no"), {
+    expect_no_error(use_julia(quiet = TRUE))
+    expect_equal(Sys.getenv("JULIACONNECTOR_JULIAOPTS"), "--history-file=no")
+  })
+
+  JuliaConnectoR::stopJulia()
+})
+
+
+test_that("use_julia() starts Julia with the sdbuildR environment already active", {
+  skip_if_julia_not_ready()
+
+  use_julia(restart = TRUE, quiet = TRUE)
+
+  # --project is applied at start-up, so the environment is active without
+  # run_init_julia_env() having to call Pkg.activate().
+  active <- julia_eval("string(something(Base.active_project(), \"\"))")
+  expect_equal(normalizePath(active, winslash = "/", mustWork = FALSE),
+               norm_path(file.path(julia_env_dir(), "Project.toml")))
+
+  # Tables must resolve to the real package. JuliaConnectoR falls back to a stub
+  # (dummy_tables.jl) when `import Tables` fails, which would silently break data
+  # transfer, so it has to be a direct dependency of the environment.
+  expect_false(grepl("dummy_tables", julia_eval("string(pathof(Tables))"), fixed = TRUE))
+
+  JuliaConnectoR::stopJulia()
+})
