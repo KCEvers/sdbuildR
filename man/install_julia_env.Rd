@@ -7,7 +7,7 @@
 install_julia_env(remove = FALSE, force = FALSE, quiet = FALSE)
 }
 \arguments{
-\item{remove}{If \code{TRUE}, remove Julia environment for sdbuildR. This will remove the SystemDynamicsBuildR.jl package and delete the environment directory (containing Project.toml and Manifest.toml). All other Julia packages remain untouched.}
+\item{remove}{If \code{TRUE}, remove the Julia environment for sdbuildR by deleting its environment directory (containing Project.toml and Manifest.toml). All other Julia packages and environments remain untouched. The packages themselves stay in your Julia depot, so reinstalling is quick; run \code{Pkg.gc()} in Julia if you want to reclaim that disk space.}
 
 \item{force}{If \code{TRUE}, rebuild the environment from scratch even when it is already up to date. By default an environment that is already installed, built from the same dependencies, and resolved by a compatible version of Julia is left alone, since rebuilding re-resolves every package and forces Julia to precompile them all again. Defaults to \code{FALSE}.}
 

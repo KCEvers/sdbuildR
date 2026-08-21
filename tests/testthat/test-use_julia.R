@@ -138,7 +138,7 @@ test_that("Project.toml hash drift is detected", {
 
 test_that("install_julia_env() works", {
   skip_if_julia_not_ready()
-  skip_if(interactive())
+  # skip_if(interactive())
   skip_if_no_internet()
 
   manifest_exists <- function() {

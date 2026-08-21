@@ -13,7 +13,7 @@
 #'
 #' Note that this may take 10-25 minutes the first time as Julia downloads and compiles packages.
 #'
-#' @param remove If `TRUE`, remove Julia environment for sdbuildR. This will remove the SystemDynamicsBuildR.jl package and delete the environment directory (containing Project.toml and Manifest.toml). All other Julia packages remain untouched.
+#' @param remove If `TRUE`, remove the Julia environment for sdbuildR by deleting its environment directory (containing Project.toml and Manifest.toml). All other Julia packages and environments remain untouched. The packages themselves stay in your Julia depot, so reinstalling is quick; run `Pkg.gc()` in Julia if you want to reclaim that disk space.
 #' @param force If `TRUE`, rebuild the environment from scratch even when it is already up to date. By default an environment that is already installed, built from the same dependencies, and resolved by a compatible version of Julia is left alone, since rebuilding re-resolves every package and forces Julia to precompile them all again. Defaults to `FALSE`.
 #' @param quiet If `TRUE`, suppress informational messages such as progress and status updates. Warnings and errors are always shown. Defaults to `FALSE`.
 #'
@@ -41,6 +41,7 @@ install_julia_env <- function(remove = FALSE, force = FALSE, quiet = FALSE) {
 
       # Stop Julia
       JuliaConnectoR::stopJulia()
+      .sdbuildR_env[["jl"]][["initialized"]] <- FALSE
 
       # Warn if the install was interrupted before completing (on.exit also
       # runs on user interrupts, which tryCatch(error=) would miss)
@@ -54,12 +55,6 @@ install_julia_env <- function(remove = FALSE, force = FALSE, quiet = FALSE) {
     add = TRUE
   )
 
-  # Julia should be able to be started; JuliaConnectoR will handle errors if this is not the case
-  is_julia_working()
-
-  # Julia version needs to be correct
-  is_julia_version_ok()
-
   # Invalidate cached env check
   .sdbuildR_env[["jl"]][["env_checked"]] <- FALSE
 
@@ -68,49 +63,29 @@ install_julia_env <- function(remove = FALSE, force = FALSE, quiet = FALSE) {
   manifest_file <- file.path(env_dir, "Manifest.toml")
 
   if (remove) {
-    # Activate the Julia environment for sdbuildR; juliaEval() automatically starts Julia
-    julia_cmd <- sprintf("using Pkg; Pkg.activate(\"%s\"; io=devnull)", jl_path(env_dir))
-    julia_eval(julia_cmd)
-
-    # Is there anything to remove? Only the files sdbuildR creates count: an empty
-    # directory is not an environment. Treating a bare `dir.exists(env_dir)` as "present"
-    # made this report that it had removed an environment that was never there, and made
-    # removing twice in a row nondeterministic - whether the second call said "no need to
-    # remove" depended on whether anything happened to leave the directory behind.
-    status <- is_julia_env_setup(force = TRUE, error = FALSE)
-    env_present <- isTRUE(status) ||
-      file.exists(project_file) ||
+    # Removal deliberately does not touch Julia. The directory *is* the environment, so
+    # deleting it is sufficient - and starting Julia here would point it at this very
+    # directory (see jl_startup_opts()), where any Pkg operation writes Project.toml and
+    # Manifest.toml straight back. That is what made removing twice in a row report
+    # "environment removed" the second time instead of "no need to remove".
+    env_present <- file.exists(project_file) ||
       file.exists(manifest_file) ||
       file.exists(julia_env_marker_file())
 
-    if (!env_present) {
-      # Still tidy up an empty leftover directory, so nothing is left in R_user_dir.
-      unlink(env_dir, recursive = TRUE, force = TRUE)
+    # A running session has this project active; stop it before deleting underneath it.
+    JuliaConnectoR::stopJulia()
+    .sdbuildR_env[["jl"]][["initialized"]] <- FALSE
 
+    unlink(env_dir, recursive = TRUE, force = TRUE)
+
+    if (!env_present) {
       if (!quiet) {
         cli::cli_inform(c("i" = paste0(P[["jl_pkg_name"]], ".jl not found in Julia environment; no need to remove.")))
       }
       return(invisible())
     }
 
-    # Delete SystemDynamicsBuildR.jl, but only if it is installed, to avoid unnecessary warnings
-    if (isTRUE(status)) {
-      julia_eval(sprintf(
-        'Pkg.rm("%s")',
-        P[["jl_pkg_name"]]
-      ))
-      julia_eval("Pkg.gc()")
-    }
-
-    # Remove the environment files. The environment lives in its own
-    # directory (R_user_dir), delete the whole directory so nothing is left
-    # behind.
-    unlink(env_dir, recursive = TRUE, force = TRUE)
-
-
-    status <- is_julia_env_setup(force = TRUE, error = FALSE)
-
-    if (isTRUE(status)) {
+    if (dir.exists(env_dir)) {
       cli::cli_inform(c("x" = "Failed to remove Julia environment."))
     } else {
       if (!quiet) {
@@ -118,6 +93,12 @@ install_julia_env <- function(remove = FALSE, force = FALSE, quiet = FALSE) {
       }
     }
   } else {
+    # Julia should be able to be started; JuliaConnectoR will handle errors if not
+    is_julia_working()
+
+    # Julia version needs to be correct
+    is_julia_version_ok()
+
     # Nothing to do if the environment is already installed, was built from the
     # dependency list this version of sdbuildR ships, was resolved by a compatible
     # Julia, and holds a current {jl_pkg_name}. Rebuilding anyway re-clones from GitHub
@@ -138,6 +119,7 @@ install_julia_env <- function(remove = FALSE, force = FALSE, quiet = FALSE) {
 
     # First stop Julia for a clean installation
     JuliaConnectoR::stopJulia()
+      .sdbuildR_env[["jl"]][["initialized"]] <- FALSE
 
     # For a clean installation, remove the environment files.
     # The environment lives in its own
@@ -222,6 +204,7 @@ use_julia <- function(
   if (stop || restart) {
     .sdbuildR_env[["jl"]][["use_threads"]] <- FALSE
     JuliaConnectoR::stopJulia()
+      .sdbuildR_env[["jl"]][["initialized"]] <- FALSE
 
     if (!quiet) {
       cli::cli_inform(c("v" = "Closed Julia session."))
@@ -252,11 +235,23 @@ use_julia <- function(
 
       # If nthreads was set, need to restart Julia to apply new thread setting (regardless of whether environment was already initialized, since thread setting applies to Julia session, not environment)
       JuliaConnectoR::stopJulia()
+      .sdbuildR_env[["jl"]][["initialized"]] <- FALSE
 
       # Find current thread setting to restore it after Julia session is started (this won't affect the new Julia session)
       .sdbuildR_env[["jl"]][["use_threads"]] <- TRUE
       withr::local_envvar(JULIA_NUM_THREADS = nthreads)
     }
+  }
+
+  # Starting Julia is the longest silent stretch in this function - the process spawn and
+  # handshake alone take several seconds, all of it before init.jl is even reached. Say
+  # what is happening before that wait rather than after it. Skipped when a session is
+  # already up, since use_julia() is called on every simulate() and returns immediately
+  # in that case.
+  if (!quiet && !isTRUE(.sdbuildR_env[["jl"]][["initialized"]])) {
+    cli::cli_inform(c(
+      "i" = "Starting Julia with the {.pkg sdbuildR} environment at {.file {julia_env_dir()}}..."
+    ))
   }
 
   # First check if Julia environment was already initialized. If so, we know:
@@ -265,13 +260,21 @@ use_julia <- function(
   # - Julia environment is set up and up to date
   status <- is_julia_init()
   if (is.null(nthreads) && status) {
+    # This path returns early, so record the session here too - otherwise the flag stays
+    # FALSE and the "Starting Julia" notice above reprints on every later call.
+    .sdbuildR_env[["jl"]][["initialized"]] <- TRUE
+
+    if (!quiet) {
+      cli::cli_inform(c("i" = "Julia session already initialized; environment is ready.",
+      "i" = "In case of issues, run {.code use_julia(restart = TRUE)} to restart Julia."))
+    }
     return(invisible())
   }
 
   # If not, check whether install_julia_env() has been run
   env_checked <- is_julia_env_setup(error = TRUE)
 
-  # If Julia environment is set up, it just has not been initialized
+  # If Julia environment is set up, it just has not been initialized in this R session
   if (!status && env_checked) {
     run_init_julia_env(quiet = quiet)
     status <- is_julia_init()
@@ -298,6 +301,8 @@ use_julia <- function(
   } else {
     cli::cli_abort(c("x" = "Julia environment setup failed."))
   }
+
+  .sdbuildR_env[["jl"]][["initialized"]] <- isTRUE(status)
 
   invisible(TRUE)
 }
@@ -624,6 +629,7 @@ is_julia_env_setup <- function(force = FALSE, error = TRUE) {
     if (error) {
       .sdbuildR_env[["jl"]][["use_threads"]] <- FALSE
       JuliaConnectoR::stopJulia()
+      .sdbuildR_env[["jl"]][["initialized"]] <- FALSE
       cli::cli_abort(c(
         "x" = "Julia packages need updating.",
         ">" = "Run {.fn install_julia_env}."
@@ -945,7 +951,7 @@ run_init_julia_env <- function(quiet = FALSE) {
   env_path <- julia_env_dir()
 
   if (!quiet) {
-    cli::cli_inform(c("i" = "Loading Julia environment for {.pkg sdbuildR} from {.file {env_path}}..."))
+    cli::cli_inform(c("i" = "Loading Julia packages..."))
   }
 
   # Julia is normally started with --project already pointing here (see
@@ -965,13 +971,7 @@ run_init_julia_env <- function(quiet = FALSE) {
     ))
   }
 
-  # Deliberately no precompilation check here. `Base.isprecompiled()` looks cheap but
-  # validates the entire cache chain: on this environment it measured 20 s per call -
-  # slower than simply loading the packages (~4 s) - and `Pkg.precompile()` is worse
-  # still, since it rebuilds the whole manifest rather than what init.jl needs.
-  #
-  # `using` already does the right thing: Julia precompiles on demand (and prints its own
-  # "Precompiling ..." progress) when a cache is stale, and costs nothing when it is not.
+  # No precompilation check here because the environment was already built and precompiled by install_julia_env(), and precompilation is only needed when a package is added or updated. Precompilation will automatically be triggered if needed, and it is also slow, so we avoid it here.
 
   # Source the init.jl script
   init_file <- system.file("init.jl", package = "sdbuildR")
