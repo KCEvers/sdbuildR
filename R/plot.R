@@ -3073,15 +3073,15 @@ plot_ensemble_helper <- function(subplot_label,
 #' sfm <- stockflow("sir") |>
 #'   unit_test(expr = all(susceptible >= 0)) |>
 #'   unit_test(expr = all(infected >= 0), conditions = list(infected = 100))
-#' res <- verify(sfm)
-#' plot(res)
-#'
-#' # Select one condition at a time with a slider or dropdown
-#' plot(res, condition_display = "slider")
+#' result <- verify(sfm)
+#' plot(result)
 #'
 #' @examplesIf Sys.getenv("NOT_CRAN") == "true"
+#' # Select one condition at a time with a slider or dropdown
+#' plot(result, condition_display = "slider")
+#' 
 #' # Animate the simulation over time (one condition at a time)
-#' plot(res, animation = "time", condition = 1)
+#' plot(result, animation = "time", condition = 1)
 #' 
 plot.verify_stockflow <- function(x,
                                   test = NULL,

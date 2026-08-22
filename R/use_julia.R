@@ -107,6 +107,14 @@ install_julia_env <- function(remove = FALSE, force = FALSE, quiet = FALSE) {
     if (!force && isTRUE(is_julia_env_setup(force = TRUE, error = FALSE))) {
       setup_complete <- TRUE
 
+      # is_julia_env_setup() deliberately passes when the provenance marker is missing,
+      # so an environment can be current without one (e.g. built by an older version).
+      # Write it here, so that install_julia_env() always leaves a marker behind
+      # whether it rebuilt or not.
+      if (!file.exists(julia_env_marker_file())) {
+        write_julia_env_marker()
+      }
+
       if (!quiet) {
         cli::cli_inform(c(
           "v" = "Julia environment is already up to date.",
@@ -140,10 +148,36 @@ install_julia_env <- function(remove = FALSE, force = FALSE, quiet = FALSE) {
     # Tell setup.jl which environment directory to activate
     julia_eval(sprintf('sdbuildR_env_path = "%s"', jl_path(env_dir)))
 
-    # Run the setup script
+    # Run the setup script. This is the only step that needs the internet: setup.jl
+    # installs {jl_pkg_name}.jl from GitHub and resolves the rest from the Julia
+    # registry. Without this, a dropped connection surfaces as a raw Julia stacktrace.
     setup_script <- system.file("setup.jl", package = "sdbuildR")
-    julia_eval(paste0('include("', jl_path(setup_script), '")'))
-    status <- is_julia_env_setup(force = TRUE, error = TRUE)
+    jl_pkg <- P[["jl_pkg_name"]]
+
+    tryCatch(
+      julia_eval(paste0('include("', jl_path(setup_script), '")')),
+      error = function(e) {
+        cause <- if (has_internet()) {
+          "GitHub or the Julia package registry may be unreachable, or the download may have been interrupted."
+        } else {
+          "You appear to be offline."
+        }
+
+        cli::cli_abort(
+          c(
+            "x" = "Could not install the Julia environment for {.pkg sdbuildR}.",
+            "i" = "Installing downloads {jl_pkg}.jl from GitHub and its dependencies from the Julia registry. {cause}",
+            ">" = "Run {.fn install_julia_env} again once the connection is restored.",
+            "i" = "Original error: {conditionMessage(e)}"
+          ),
+          call = NULL
+        )
+      }
+    )
+
+    # Verify without erroring: is_julia_env_setup()'s own message tells the user to run
+    # install_julia_env(), which is unhelpful advice from inside install_julia_env().
+    status <- is_julia_env_setup(force = TRUE, error = FALSE)
 
     if (isTRUE(status)) {
       # Record provenance (sdbuildR version + Project.toml hash) so a future
@@ -156,7 +190,10 @@ install_julia_env <- function(remove = FALSE, force = FALSE, quiet = FALSE) {
         ))
       }
     } else {
-      cli::cli_inform(c("x" = "Failed to install Julia environment."))
+      cli::cli_inform(c(
+        "x" = "The Julia environment was set up but does not look complete.",
+        ">" = "Run {.code install_julia_env(force = TRUE)} to rebuild it from scratch."
+      ))
     }
 
     setup_complete <- TRUE
@@ -265,7 +302,7 @@ use_julia <- function(
     .sdbuildR_env[["jl"]][["initialized"]] <- TRUE
 
     if (!quiet) {
-      cli::cli_inform(c("i" = "Julia session already initialized; environment is ready.",
+      cli::cli_inform(c("i" = "Julia session is already initialized",
       "i" = "In case of issues, run {.code use_julia(restart = TRUE)} to restart Julia."))
     }
     return(invisible())
@@ -539,6 +576,59 @@ is_julia_project_current <- function() {
 }
 
 
+#' Dependencies the shipped Project.toml declares that the environment is missing
+#'
+#' The other checks in is_julia_env_setup() look only at whether files exist and at
+#' the version of {jl_pkg_name}. An environment can pass all of them and still be
+#' unusable: one built before a dependency was added, or left behind by an interrupted
+#' install, has a Manifest.toml that simply does not mention some of the packages
+#' `init.jl` loads. That surfaces as a raw Julia "package not found" error at load time.
+#'
+#' Comparing the shipped Project.toml's `[deps]` against the environment's
+#' Manifest.toml catches it up front, and is a pure file comparison - no Julia needed.
+#'
+#' @returns Character vector of missing dependency names; empty if the environment is
+#'   complete or either file cannot be read.
+#' @noRd
+julia_env_missing_deps <- function() {
+  project_file <- system.file("Project.toml", package = "sdbuildR")
+  manifest_file <- file.path(julia_env_dir(), "Manifest.toml")
+
+  if (!nzchar(project_file) || !file.exists(project_file) || !file.exists(manifest_file)) {
+    return(character())
+  }
+
+  tryCatch(
+    {
+      project <- readLines(project_file, warn = FALSE)
+
+      # Names in the [deps] section, i.e. everything up to the next [section] header.
+      deps_start <- which(trimws(project) == "[deps]")
+      if (length(deps_start) != 1) {
+        return(character())
+      }
+      headers <- which(startsWith(trimws(project), "["))
+      deps_end <- headers[headers > deps_start][1]
+      if (is.na(deps_end)) deps_end <- length(project) + 1
+
+      deps_lines <- project[(deps_start + 1):(deps_end - 1)]
+      deps <- trimws(sub("=.*$", "", deps_lines[grepl("=", deps_lines)]))
+      deps <- deps[nzchar(deps)]
+
+      # Manifest records each package as a [[deps.Name]] block.
+      manifest <- readLines(manifest_file, warn = FALSE)
+      installed <- trimws(manifest[startsWith(trimws(manifest), "[[deps.")])
+      # Strip the "[[deps." prefix and "]]" suffix without regex, so there are no
+      # escapes to get wrong.
+      installed <- substr(installed, nchar("[[deps.") + 1L, nchar(installed) - 2L)
+
+      setdiff(deps, installed)
+    },
+    error = function(e) character()
+  )
+}
+
+
 #' Check if Julia environment for sdbuildR is set up and up to date
 #'
 #' Checks if the Julia environment for sdbuildR has been instantiated by verifying that the required package is installed and up to date. This should only be run if a Julia session was already initialized with JuliaConnectoR.
@@ -602,6 +692,23 @@ is_julia_env_setup <- function(force = FALSE, error = TRUE) {
       cli::cli_abort(c(
         "x" = "Julia environment for sdbuildR has not been set up.",
         ">" = "Run {.fn install_julia_env}."
+      ))
+    } else {
+      return(invisible(FALSE))
+    }
+  }
+
+  # The environment can exist, hold a current {jl_pkg_name}, and still be missing
+  # packages init.jl loads - from an interrupted install, or from a version of sdbuildR
+  # with a shorter dependency list. Catch that here rather than letting Julia fail.
+  missing_deps <- julia_env_missing_deps()
+
+  if (length(missing_deps) > 0) {
+    if (error) {
+      cli::cli_abort(c(
+        "x" = "The {.pkg sdbuildR} Julia environment is missing {length(missing_deps)} package{?s}: {.pkg {missing_deps}}.",
+        "i" = "It was probably built by an earlier version of {.pkg sdbuildR}, or an installation was interrupted.",
+        ">" = "Run {.code install_julia_env(force = TRUE)} to rebuild it."
       ))
     } else {
       return(invisible(FALSE))
@@ -982,10 +1089,28 @@ run_init_julia_env <- function(quiet = FALSE) {
 
   # No precompilation check here because the environment was already built and precompiled by install_julia_env(), and precompilation is only needed when a package is added or updated. Precompilation will automatically be triggered if needed, and it is also slow, so we avoid it here.
 
-  # Source the init.jl script
+  # Source the init.jl script. A failure here almost always means the environment is
+  # stale rather than broken code: a Manifest.toml built by an older sdbuildR does not
+  # contain the packages the current init.jl loads. The provenance marker normally
+  # catches that, but is_julia_env_marker_current() deliberately passes when the marker
+  # is missing, so a stale environment can reach this point.
   init_file <- system.file("init.jl", package = "sdbuildR")
   julia_cmd <- paste0('include("', jl_path(init_file), '")')
-  julia_eval(julia_cmd)
+
+  tryCatch(
+    julia_eval(julia_cmd),
+    error = function(e) {
+      cli::cli_abort(
+        c(
+          "x" = "Could not load the Julia environment for {.pkg sdbuildR}.",
+          "i" = "The environment at {.file {env_path}} looks incomplete or out of date - it may have been built by an earlier version of {.pkg sdbuildR} with different dependencies.",
+          ">" = "Run {.code install_julia_env(force = TRUE)} to rebuild it.",
+          "i" = "Original error: {conditionMessage(e)}"
+        ),
+        call = NULL
+      )
+    }
+  )
 
   invisible(NULL)
 }

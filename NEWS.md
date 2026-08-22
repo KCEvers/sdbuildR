@@ -1,35 +1,9 @@
 # sdbuildR (development version)
 
-* Fixed 15 of the 31 integration methods listed by `sim_methods(from = "R")` failing with
-  "argument is of length zero". `deSolve::ode()` accepts only its own built-in solvers by
-  name; the Runge-Kutta tableaux from `deSolve::rkMethod()` have to be passed as an
-  object, so `rk2`, `rk23bs`, `rk45dp6`, `rk45dp7`, `rk45e`, `rk45f`, `rk45ck`, `rk78dp`,
-  `rk78f`, `irk3r`, `irk5r`, `irk4hh`, `irk4l`, `irk6kb` and `irk6l` could not be used.
-
-* Fixed `method = "ForwardEuler()"` failing in Julia. `sim_methods()` accepted the name
-  but 'OrdinaryDiffEq' does not define it; it now resolves to `Euler()`.
-
-* Fixed the translation of the R method `rk2`. Its Butcher tableau is Heun's method, not
-  the midpoint method, so it now maps to `Heun()` rather than `Midpoint()`; the two agree
-  to floating-point precision. `Midpoint()` has no exact 'deSolve' equivalent and now
-  reports itself as an approximate translation to `rk2`.
-
-* Every integration method offered by `sim_methods()` is now tested in both R and Julia
-  against a model with a known closed-form solution.
-
-* `use_julia()` is about four times faster, down from roughly 30 seconds to under
-  8 seconds per R session. Julia is now started with the sdbuildR environment already
-  active (`--project`) instead of activating it afterwards, and with the user's
-  `startup.jl` disabled. Previously the packages loaded before activation resolved
-  against the default Julia environment, so Julia precompiled a second copy of the
-  dependency tree that sdbuildR never reused - which is what caused packages to appear
-  to recompile again and again.
-
-* `use_julia()` no longer runs `Pkg.precompile()` on every call, which cost around
-  7 seconds even when there was nothing to compile. It does not check the cache either:
-  `Base.isprecompiled()` sounds cheap but validates the whole dependency chain, which
-  measured 20 seconds - longer than simply loading the packages. Julia already
-  precompiles on demand when the packages are loaded, so neither is needed.
+* Loading a model from the model library with `stockflow()` is about three times
+  faster. Each template was assembled after every step of its construction; the
+  model is now assembled once, when it is finished. The models returned are
+  unchanged.
 
 * `install_julia_env()` no longer rebuilds an environment that is already up to date.
   Re-running it re-resolved every dependency against the package registry, which could

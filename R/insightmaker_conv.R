@@ -1,6 +1,6 @@
 #' Extract Insight Maker model from URL
 #'
-#' Create XML string from Insight Maker URL. For internal use; use `import_insightmaker()` to import an Insight Maker model.
+#' Create XML string from Insight Maker URL. This function is for internal use; use `import_insightmaker()` to import an Insight Maker model.
 #'
 #' @param url String with URL to an Insight Maker model
 #' @param file If specified, file path to save Insight Maker model to. If NULL, do not save model.

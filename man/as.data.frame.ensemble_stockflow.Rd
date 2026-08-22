@@ -49,11 +49,11 @@ Convert simulation results to a data.frame.
 }
 \examples{
 sfm <- stockflow("sir") |>
-  # Randomize initial values of the stocks to show variation in the ensemble
+  # Randomize initial values of all stocks to show variation in the ensemble
   update(c(susceptible, infected, recovered),
          eqn = runif(1, min = 20, max = 800))
 
-# Run ensemble simulation with 3 simulations, 
+# Run ensemble simulation with 3 simulations,
 # saving only 20 timepoints per simulation
 sims <- ensemble(sfm, n = 3, save_length = 20, save_sims = TRUE)
 

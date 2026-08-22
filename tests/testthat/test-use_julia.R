@@ -268,3 +268,76 @@ test_that("use_julia() starts Julia with the sdbuildR environment already active
 
   JuliaConnectoR::stopJulia()
 })
+
+test_that("install_julia_env() fails gracefully when the download fails", {
+  # setup.jl is the one step that needs the internet: it installs
+  # SystemDynamicsBuildR.jl from GitHub and resolves the rest from the Julia registry.
+  # Simulate that failing and check the user gets an explanation rather than a raw Julia
+  # stacktrace.
+  #
+  # julia_env_dir() is redirected at a temporary directory so this cannot touch the real
+  # environment - install_julia_env() deletes the directory before it gets as far as the
+  # download. Julia itself is never started, since julia_eval() is mocked.
+  tmp_env <- file.path(tempdir(), "sdbuildR-graceful-test")
+  on.exit(unlink(tmp_env, recursive = TRUE, force = TRUE), add = TRUE)
+
+  local_mocked_bindings(
+    julia_env_dir = function() tmp_env,
+    has_internet = function() FALSE,
+    julia_eval = function(string, ...) {
+      if (grepl("setup.jl", string, fixed = TRUE)) {
+        stop("Evaluation in Julia failed. failed to clone from https://github.com/...")
+      }
+      # Everything else this reaches is a probe: the liveness check and the version query.
+      if (grepl("VERSION", string, fixed = TRUE)) "99.0.0" else "0"
+    }
+  )
+
+  expect_error(install_julia_env(), "Could not install the Julia environment")
+
+  # The underlying Julia error is kept, so the cause is still diagnosable ...
+  expect_error(install_julia_env(), "failed to clone")
+
+  # ... and being offline is named as the likely cause rather than blaming GitHub.
+  expect_error(install_julia_env(), "You appear to be offline")
+})
+
+test_that("julia_env_missing_deps() spots an incomplete environment", {
+  # Pure file comparison against the shipped Project.toml, so no Julia is involved.
+  # This is the check that stops a partial environment passing is_julia_env_setup():
+  # before it existed, an environment missing packages that init.jl loads was reported
+  # as up to date, install_julia_env() skipped the rebuild, and Julia failed later with
+  # a raw "package not found" error.
+  env <- withr::local_tempdir()
+  local_mocked_bindings(julia_env_dir = function() env)
+
+  shipped <- system.file("Project.toml", package = "sdbuildR")
+  skip_if_not(nzchar(shipped) && file.exists(shipped))
+
+  project <- readLines(shipped, warn = FALSE)
+  deps_start <- which(trimws(project) == "[deps]")
+  headers <- which(startsWith(trimws(project), "["))
+  deps_end <- headers[headers > deps_start][1]
+  deps <- trimws(sub("=.*$", "", project[(deps_start + 1):(deps_end - 1)]))
+  deps <- deps[nzchar(deps)]
+  expect_gt(length(deps), 1)
+
+  manifest <- file.path(env, "Manifest.toml")
+
+  # A Manifest listing every declared dependency is complete.
+  writeLines(paste0("[[deps.", deps, "]]"), manifest)
+  expect_equal(julia_env_missing_deps(), character())
+
+  # Drop one and it is named, so the error message can be specific.
+  dropped <- deps[[length(deps)]]
+  writeLines(paste0("[[deps.", setdiff(deps, dropped), "]]"), manifest)
+  expect_equal(julia_env_missing_deps(), dropped)
+
+  # Extra packages in the Manifest are fine - it also records indirect dependencies.
+  writeLines(c(paste0("[[deps.", deps, "]]"), "[[deps.SomeIndirectDep]]"), manifest)
+  expect_equal(julia_env_missing_deps(), character())
+
+  # No Manifest at all is handled by the separate "not set up" check, not this one.
+  unlink(manifest)
+  expect_equal(julia_env_missing_deps(), character())
+})
