@@ -83,7 +83,6 @@ test_that("incrementally built model compiles identically to a fresh rebuild", {
 # --- Property / fuzz: random mutation sequences preserve alignment -----------
 
 test_that("random mutation sequences keep stock dSdt[] indices aligned", {
-
   skip_on_cran()
 
   withr::local_seed(20240613)

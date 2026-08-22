@@ -188,15 +188,15 @@ drawn.
 sfm <- stockflow("sir") |>
   unit_test(expr = all(susceptible >= 0)) |>
   unit_test(expr = all(infected >= 0), conditions = list(infected = 100))
-res <- verify(sfm)
-plot(res)
+result <- verify(sfm)
+plot(result)
 
 \dontshow{if (Sys.getenv("NOT_CRAN") == "true") withAutoprint(\{ # examplesIf}
 # Select one condition at a time with a slider or dropdown
-plot(res, condition_display = "slider")
+plot(result, condition_display = "slider")
 
 # Animate the simulation over time (one condition at a time)
-plot(res, animation = "time", condition = 1)
+plot(result, animation = "time", condition = 1)
 \dontshow{\}) # examplesIf}
 }
 \seealso{

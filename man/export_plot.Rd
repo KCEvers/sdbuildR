@@ -69,7 +69,6 @@ for the ps/eps formats, which fall back to system fonts.
 }
 
 \examples{
-
 \dontrun{
 # Exporting stock-and-flow diagrams requires the DiagrammeRsvg and rsvg packages
 if (!requireNamespace("DiagrammeRsvg", quietly = TRUE)) {
@@ -93,7 +92,6 @@ file.remove(file)
 
 # Export a simulation plot; requires Chrome
 if (has_internet()) {
-
   # Run a simulation
   sim <- simulate(sfm)
 

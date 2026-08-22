@@ -91,7 +91,6 @@ test_that("import_metadata structure is created correctly", {
   expect_type(im$vendor_meta, "list")
 
 
-
   ## import_metadata preserves original InsightMaker info
   # Original variables should match current variables in count
   expect_equal(nrow(im$original_variables), nrow(sfm[["variables"]]))

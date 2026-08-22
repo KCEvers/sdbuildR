@@ -177,7 +177,6 @@ test_that("set_plot_font() reaches fonts set per-element (annotations, sliders, 
 
 
 test_that("export_plot() validates font_family", {
-
   skip_on_cran()
 
   sfm <- stockflow("sir")
@@ -189,7 +188,6 @@ test_that("export_plot() validates font_family", {
 
 
 test_that("export_plot() validates close_browser", {
-
   skip_on_cran()
 
   sfm <- stockflow("sir")

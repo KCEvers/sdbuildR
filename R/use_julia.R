@@ -127,7 +127,7 @@ install_julia_env <- function(remove = FALSE, force = FALSE, quiet = FALSE) {
 
     # First stop Julia for a clean installation
     JuliaConnectoR::stopJulia()
-      .sdbuildR_env[["jl"]][["initialized"]] <- FALSE
+    .sdbuildR_env[["jl"]][["initialized"]] <- FALSE
 
     # For a clean installation, remove the environment files.
     # The environment lives in its own
@@ -241,7 +241,7 @@ use_julia <- function(
   if (stop || restart) {
     .sdbuildR_env[["jl"]][["use_threads"]] <- FALSE
     JuliaConnectoR::stopJulia()
-      .sdbuildR_env[["jl"]][["initialized"]] <- FALSE
+    .sdbuildR_env[["jl"]][["initialized"]] <- FALSE
 
     if (!quiet) {
       cli::cli_inform(c("v" = "Closed Julia session."))
@@ -302,8 +302,10 @@ use_julia <- function(
     .sdbuildR_env[["jl"]][["initialized"]] <- TRUE
 
     if (!quiet) {
-      cli::cli_inform(c("i" = "Julia session is already initialized",
-      "i" = "In case of issues, run {.code use_julia(restart = TRUE)} to restart Julia."))
+      cli::cli_inform(c(
+        "i" = "Julia session is already initialized",
+        "i" = "In case of issues, run {.code use_julia(restart = TRUE)} to restart Julia."
+      ))
     }
     return(invisible())
   }

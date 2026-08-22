@@ -15,8 +15,8 @@ test_that("new_stockflow() initialises unit_tests as empty list", {
 # ==============================================================================
 
 test_that("unit_test() adds a test to the list", {
-    skip_on_cran()
-sfm <- make_verifiable_sfm() |>
+  skip_on_cran()
+  sfm <- make_verifiable_sfm() |>
     unit_test(label = "S is non-negative", expr = all(S >= 0))
 
   expect_equal(length(sfm[["unit_tests"]]), 1L)
@@ -31,8 +31,8 @@ sfm <- make_verifiable_sfm() |>
 })
 
 test_that("unit_test() auto-generates label from expression", {
-    skip_on_cran()
-sfm <- make_verifiable_sfm() |>
+  skip_on_cran()
+  sfm <- make_verifiable_sfm() |>
     unit_test(expr = all(S >= 0))
 
   # A human-readable label should be generated (not the raw deparse)
@@ -43,8 +43,8 @@ sfm <- make_verifiable_sfm() |>
 
 
 test_that("unit_test() auto-generates unique labels for similar expressions", {
-   skip_on_cran()
- sfm <- make_verifiable_sfm() |>
+  skip_on_cran()
+  sfm <- make_verifiable_sfm() |>
     unit_test(expr = mean(S >= 0)) |>
     unit_test(expr = mean(S) >= 0)
 
@@ -55,8 +55,8 @@ test_that("unit_test() auto-generates unique labels for similar expressions", {
 })
 
 test_that("unit_test() upserts: same label replaces existing test", {
-   skip_on_cran()
- sfm <- make_verifiable_sfm() |>
+  skip_on_cran()
+  sfm <- make_verifiable_sfm() |>
     unit_test(label = "test A", expr = all(S >= 0)) |>
     unit_test(label = "test A", expr = all(S > 0)) # overwrite
 
@@ -65,8 +65,8 @@ test_that("unit_test() upserts: same label replaces existing test", {
 })
 
 test_that("unit_test() upserts: same test replaces existing test", {
-   skip_on_cran()
- sfm <- make_verifiable_sfm() |>
+  skip_on_cran()
+  sfm <- make_verifiable_sfm() |>
     unit_test(label = "test A", expr = all(S >= 0)) |>
     unit_test(test = 1, expr = all(S > 0)) # overwrite
 
@@ -88,7 +88,6 @@ test_that("unit_test() stores conditions correctly", {
 })
 
 test_that("unit_test() respects active = FALSE", {
-
   skip_on_cran()
 
   sfm <- make_verifiable_sfm() |>
@@ -107,7 +106,7 @@ test_that("unit_test() allows base-R symbols in expr (e.g., Inf, pi)", {
 })
 
 test_that("unit_test() errors appropriately", {
-    skip_on_cran()
+  skip_on_cran()
 
   sfm <- make_verifiable_sfm()
 
@@ -117,31 +116,31 @@ test_that("unit_test() errors appropriately", {
     regexp = "invalid R syntax|Failed to parse"
   )
 
-# unit_test() errors on bad conditions (unknown name)
+  # unit_test() errors on bad conditions (unknown name)
   expect_error(
     unit_test(sfm, label = "x", expr = all(S >= 0), conditions = list(nonexistent = 1)),
     regexp = "not found as stocks or constants"
   )
 
-# unit_test() errors on unnamed conditions
+  # unit_test() errors on unnamed conditions
   expect_error(
     unit_test(sfm, label = "x", expr = all(S >= 0), conditions = list(1)),
     regexp = "must be named"
   )
 
-# unit_test() errors when expr references undefined variable
+  # unit_test() errors when expr references undefined variable
   expect_error(
     unit_test(sfm, label = "x", expr = all(Nonexistent >= 0)),
     regexp = "not found in model"
   )
 
-# unit_test() errors when character expr contains multiple expressions
+  # unit_test() errors when character expr contains multiple expressions
   expect_error(
     unit_test(sfm, label = "multi expr", expr = "all(S >= 0); all(S < 200)"),
     regexp = "exactly one expression"
   )
 
-# unit_test() requires explicit label when auto-generated label collides
+  # unit_test() requires explicit label when auto-generated label collides
   sfm1 <- make_verifiable_sfm() |>
     unit_test(expr = all(S >= 0))
 
@@ -244,7 +243,7 @@ test_that("verify.stockflow() returns verify_stockflow class", {
   result <- silence(verify(sfm))
   expect_s3_class(result, "verify_stockflow")
 
-#  verify.stockflow() passes a correct test
+  #  verify.stockflow() passes a correct test
   expect_equal(result[["results"]][[1]][["status"]], "pass")
 
   # verify result includes expr_str, conditions, and outcome for passing test
@@ -257,7 +256,6 @@ test_that("verify.stockflow() returns verify_stockflow class", {
 })
 
 test_that("verify.stockflow() fails an incorrect test", {
-
   skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S is always zero", expr = all(S == 0))
@@ -265,7 +263,7 @@ test_that("verify.stockflow() fails an incorrect test", {
   result <- silence(verify(sfm))
   expect_equal(result[["results"]][[1]][["status"]], "fail")
 
-#verify result includes outcome = FALSE for failing test
+  # verify result includes outcome = FALSE for failing test
   res_entry <- result[["results"]][[1]]
 
   expect_equal(res_entry[["expr_str"]], "all(S == 0)")
@@ -275,7 +273,6 @@ test_that("verify.stockflow() fails an incorrect test", {
 })
 
 test_that("verify.stockflow() fails FALSE character expression", {
-
   skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "char false", expr = "all(S == 0)")
@@ -285,7 +282,6 @@ test_that("verify.stockflow() fails FALSE character expression", {
 })
 
 test_that("verify.stockflow() errors if expression returns numeric scalar", {
-
   skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "numeric output", expr = mean(S > 0.2))
@@ -294,7 +290,7 @@ test_that("verify.stockflow() errors if expression returns numeric scalar", {
   expect_equal(result[["results"]][[1]][["status"]], "error")
   expect_match(result[["results"]][[1]][["message"]], "logical scalar")
 
-# verify result includes outcome and conditions for error status
+  # verify result includes outcome and conditions for error status
   res_entry <- result[["results"]][[1]]
 
   expect_equal(res_entry[["expr_str"]], "mean(S > 0.2)")
@@ -315,7 +311,6 @@ test_that("verify.stockflow() errors if expression returns logical vector", {
 
 
 test_that("verify.stockflow() works with conditions", {
-
   skip_on_cran()
   sfm <- make_verifiable_sfm() |>
     unit_test(
@@ -412,7 +407,6 @@ test_that("as.data.frame.verify_stockflow returns a data frame with expected col
   expect_true(all(c("test", "label", "status") %in% names(df)))
   expect_equal(nrow(df), 1L)
 })
-
 
 
 test_that("as.data.frame.verify_stockflow test filter works", {
@@ -623,12 +617,12 @@ test_that("unit_tests() label is case-insensitive by default", {
   res <- unit_tests(sfm, label = "non-negative")
   expect_equal(res$n, 1L)
 
-# unit_tests() label ignore_case = FALSE respects case
+  # unit_tests() label ignore_case = FALSE respects case
   expect_warning(unit_tests(sfm, label = "non-negative", ignore_case = FALSE),
     regexp = "No tests matched"
   )
 
-# unit_tests() label warns on no match
+  # unit_tests() label warns on no match
   expect_warning(unit_tests(sfm, label = "xyz_no_match"), regexp = "No tests matched")
 })
 
@@ -728,9 +722,8 @@ test_that("print.verify_stockflow() snapshot for failing FALSE tests", {
 # ==============================================================================
 
 test_that("discard() removes unit test that only references the discarded variable", {
-  
   skip_on_cran()
-  
+
   sfm <- make_verifiable_sfm() |>
     unit_test(label = "S only", expr = all(S >= 0))
 
@@ -1111,7 +1104,6 @@ test_that("verify() augments sfm vars with test refs (fixes vars/only_stocks con
 # ==============================================================================
 
 
-
 test_that("condition column in which='tests' output is an integer vector", {
   skip_on_cran()
   res <- make_two_condition_result()
@@ -1120,7 +1112,7 @@ test_that("condition column in which='tests' output is an integer vector", {
   expect_equal(df[["condition"]], c(1L, 2L))
 
 
-# as.data.frame condition filter (tests): single condition keeps only matching tests
+  # as.data.frame condition filter (tests): single condition keeps only matching tests
   df1 <- as.data.frame(res, condition = 1)
   expect_equal(nrow(df1), 1L)
   expect_equal(df1[["label"]], "S non-negative")
@@ -1131,12 +1123,12 @@ test_that("condition column in which='tests' output is an integer vector", {
   expect_equal(df2[["label"]], "S constant at zero rate")
   expect_equal(df2[["condition"]], 2L)
 
-#  as.data.frame condition filter (tests): vector keeps tests from all listed conditions
+  #  as.data.frame condition filter (tests): vector keeps tests from all listed conditions
   df <- as.data.frame(res, condition = c(1, 2))
   expect_equal(nrow(df), 2L)
   expect_setequal(df[["condition"]], c(1L, 2L))
 
-# as.data.frame condition filter (tests): combined with test filter gives intersection
+  # as.data.frame condition filter (tests): combined with test filter gives intersection
   # test = 1 is condition 1, so condition = 1 should return 1 row
   df <- as.data.frame(res, test = 1L, condition = 1)
   expect_equal(nrow(df), 1L)
@@ -1147,13 +1139,13 @@ test_that("condition column in which='tests' output is an integer vector", {
     regexp = "No tests with condition"
   )
 
-#  as.data.frame condition filter (tests): combined with status filter gives intersection
+  #  as.data.frame condition filter (tests): combined with status filter gives intersection
   # Both tests pass; filtering to passing tests in condition 1 gives 1 row
   df <- as.data.frame(res, condition = 1, status = "pass")
   expect_equal(nrow(df), 1L)
   expect_equal(df[["condition"]], 1L)
 
-# as.data.frame condition filter (tests): combined with label filter gives intersection
+  # as.data.frame condition filter (tests): combined with label filter gives intersection
   df <- as.data.frame(res, condition = 1, label = "non-negative")
   expect_equal(nrow(df), 1L)
   expect_equal(df[["label"]], "S non-negative")
@@ -1163,25 +1155,25 @@ test_that("condition column in which='tests' output is an integer vector", {
     regexp = "No tests with condition number"
   )
 
-# as.data.frame condition filter (tests): out-of-range condition errors
+  # as.data.frame condition filter (tests): out-of-range condition errors
   expect_error(
     as.data.frame(res, condition = 99),
     regexp = "Condition number.*not found"
   )
 
-# as.data.frame condition filter (tests): non-integer condition errors
+  # as.data.frame condition filter (tests): non-integer condition errors
   expect_error(
     as.data.frame(res, condition = 1.5),
     regexp = "must be an integer"
   )
 
-# as.data.frame condition filter (tests): NA condition errors
+  # as.data.frame condition filter (tests): NA condition errors
   expect_error(
     as.data.frame(res, condition = NA_integer_),
     regexp = "must be an integer"
   )
 
-#as.data.frame condition filter (tests): no-match after other filters errors clearly
+  # as.data.frame condition filter (tests): no-match after other filters errors clearly
   # Filter status to "fail" first (both pass → nothing left) then condition
   expect_error(
     as.data.frame(res, status = "fail", condition = 1),
@@ -1206,11 +1198,11 @@ test_that("as.data.frame condition filter (sims): single condition keeps only th
   expect_true(all(df2[["condition"]] == 2L))
   expect_false(any(df2[["condition"]] == 1L))
 
-# as.data.frame condition filter (sims): vector keeps all listed conditions
+  # as.data.frame condition filter (sims): vector keeps all listed conditions
   df <- as.data.frame(res, which = "sims", condition = c(1, 2))
   expect_setequal(unique(df[["condition"]]), c(1L, 2L))
 
-# as.data.frame condition filter (sims): combined with test filter is intersection
+  # as.data.frame condition filter (sims): combined with test filter is intersection
   # test 1 maps to condition 1 — requesting condition 1 is consistent
   df <- as.data.frame(res, which = "sims", test = 1L, condition = 1)
   expect_true(all(df[["condition"]] == 1L))
@@ -1221,30 +1213,30 @@ test_that("as.data.frame condition filter (sims): single condition keeps only th
     regexp = "No simulations match"
   )
 
-# as.data.frame condition filter (sims): combined with status filter is intersection
+  # as.data.frame condition filter (sims): combined with status filter is intersection
   # Both conditions pass; filtering to pass + condition 1 keeps condition 1 only
   df <- as.data.frame(res, which = "sims", condition = 1, status = "pass")
   expect_true(all(df[["condition"]] == 1L))
 
-# as.data.frame condition filter (sims): out-of-range condition errors
+  # as.data.frame condition filter (sims): out-of-range condition errors
   expect_error(
     as.data.frame(res, which = "sims", condition = 99),
     regexp = "Condition number.*not found"
   )
 
-# as.data.frame condition filter (sims): non-integer condition errors
+  # as.data.frame condition filter (sims): non-integer condition errors
   expect_error(
     as.data.frame(res, which = "sims", condition = 1.5),
     regexp = "must be an integer"
   )
 
-# as.data.frame condition filter (sims): NA condition errors
+  # as.data.frame condition filter (sims): NA condition errors
   expect_error(
     as.data.frame(res, which = "sims", condition = NA_integer_),
     regexp = "must be an integer"
   )
 
-# as.data.frame condition filter (sims): wide direction still respects condition filter
+  # as.data.frame condition filter (sims): wide direction still respects condition filter
   df <- as.data.frame(res, which = "sims", direction = "wide", condition = 1)
   expect_true(all(df[["condition"]] == 1L))
   # wide format: variables become columns
@@ -1261,18 +1253,18 @@ test_that("as.data.frame(verify, which='sims', vars=) filters by variable", {
   df <- as.data.frame(res, which = "sims", vars = "S")
   expect_equal(unique(df$variable), "S")
 
-# as.data.frame(verify, which='sims', type=) filters by type
+  # as.data.frame(verify, which='sims', type=) filters by type
   df <- as.data.frame(res, which = "sims", type = "stock")
   expect_true(all(df$variable == "S"))
 
-# as.data.frame(verify, which='sims'): unknown vars errors as a typo
+  # as.data.frame(verify, which='sims'): unknown vars errors as a typo
   expect_error(as.data.frame(res, which = "sims", vars = "nope"), "not.*variable")
 
-# as.data.frame(verify, which='sims'): variable not saved gives informative error
+  # as.data.frame(verify, which='sims'): variable not saved gives informative error
   # 'drain' is a flow in the model but is not saved in the verify output by default
   expect_error(as.data.frame(res, which = "sims", vars = "drain"), "not saved in the output")
 
-# as.data.frame(verify, which='tests') informs that vars/type apply only to sims
+  # as.data.frame(verify, which='tests') informs that vars/type apply only to sims
   expect_message(df <- as.data.frame(res, which = "tests", type = "stock"), "only apply")
   # tests table is returned unaffected by the ignored filter
   expect_false("variable" %in% names(df))

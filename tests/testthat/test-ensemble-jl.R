@@ -17,24 +17,24 @@ test_that("ensemble() validates inputs", {
   expect_error(ensemble(sfm, n = -5), "must be greater than")
   expect_error(ensemble(sfm, n = "ten"), "must be.*numeric")
 
-# ensemble() validates quantiles argument
+  # ensemble() validates quantiles argument
   expect_error(ensemble(sfm, quantiles = 0.5), "at least.*2.*unique")
   expect_error(ensemble(sfm, quantiles = c(0.5, 0.5)), "at least.*2.*unique")
   expect_error(ensemble(sfm, quantiles = c(-0.1, 0.5)), "between.*0.*and.*1")
   expect_error(ensemble(sfm, quantiles = c(0.5, 1.1)), "between.*0.*and.*1")
   expect_error(ensemble(sfm, quantiles = "high"), "must be.*numeric")
 
-# ensemble() validates logical arguments
+  # ensemble() validates logical arguments
   expect_error(ensemble(sfm, cross = "yes"), "must be.*TRUE.*FALSE")
   expect_error(ensemble(sfm, save_sims = 1), "must be.*TRUE.*FALSE")
   expect_error(ensemble(sfm, only_stocks = "all"), "must be.*TRUE.*FALSE")
- 
- # ensemble() validates conditions is a named list
+
+  # ensemble() validates conditions is a named list
   expect_error(ensemble(sfm, conditions = "S"), "must be a.*list")
   expect_error(ensemble(sfm, conditions = list()), "at least one parameter")
   expect_error(ensemble(sfm, conditions = list(0.1, 0.2)), "must be named")
 
-# ensemble() validates conditions elements are numeric
+  # ensemble() validates conditions elements are numeric
   expect_error(
     ensemble(sfm, conditions = list("S" = "abc")),
     "must be.*numeric"
@@ -44,25 +44,25 @@ test_that("ensemble() validates inputs", {
     "must be.*numeric"
   )
 
-# ensemble() validates conditions names are unique
+  # ensemble() validates conditions names are unique
   expect_error(
     ensemble(sfm, conditions = list("S" = c(1, 2), "S" = c(3, 4))),
     "must be unique"
   )
 
-# ensemble() validates conditions names exist in model
+  # ensemble() validates conditions names exist in model
   expect_error(
     ensemble(sfm, conditions = list("nonexistent" = c(1, 2))),
     "do not exist in the model"
   )
 
-# ensemble() rejects flows and auxiliaries in conditions
+  # ensemble() rejects flows and auxiliaries in conditions
   expect_error(
     ensemble(sfm, conditions = list("Flow1" = c(1, 2))),
     "Flows or auxiliaries cannot be varied"
   )
 
-# ensemble() validates equal conditions lengths when cross = FALSE
+  # ensemble() validates equal conditions lengths when cross = FALSE
   expect_error(
     ensemble(sfm,
       conditions = list("S" = c(1, 2, 3), "k" = c(0.1, 0.2)),

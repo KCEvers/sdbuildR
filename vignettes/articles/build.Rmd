@@ -953,7 +953,6 @@ fig_sfm_inflow_outflow <- function() {
 }
 
 
-
 fig_queue_sfm <- function() {
   export_plot(pl_queue_sfm, file.path(filepath_figs, "build_queue_sfm.pdf"),
     font_family = font_family

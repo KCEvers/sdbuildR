@@ -16,7 +16,6 @@ test_that("templates() with unknown name throws an error", {
 # ============================================================================
 
 test_that("templates() with valid name creates stockflow and simulates without error/warning/message", {
-
   if (Sys.getenv("NOT_CRAN") == "true") {
     template_names <- templates()
   } else {
@@ -76,14 +75,13 @@ test_that("logistic_model template has exactly 1 stock", {
 })
 
 
-
 # ============================================================================
 # Simulation accuracy — conservation and convergence (language = "R" where possible)
 # ============================================================================
 
 test_that("SIR: sum of all stocks is constant over time (population conservation)", {
   skip_on_cran()
-  
+
   sfm <- sim_settings(templates("sir"), only_stocks = TRUE)
   sim <- simulate(sfm, seed = 42)
   wide <- as.data.frame(sim, direction = "wide")

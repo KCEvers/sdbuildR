@@ -258,8 +258,10 @@ test_that("use_julia() starts Julia with the sdbuildR environment already active
   # --project is applied at start-up, so the environment is active without
   # run_init_julia_env() having to call Pkg.activate().
   active <- julia_eval("string(something(Base.active_project(), \"\"))")
-  expect_equal(normalizePath(active, winslash = "/", mustWork = FALSE),
-               norm_path(file.path(julia_env_dir(), "Project.toml")))
+  expect_equal(
+    normalizePath(active, winslash = "/", mustWork = FALSE),
+    norm_path(file.path(julia_env_dir(), "Project.toml"))
+  )
 
   # Tables must resolve to the real package. JuliaConnectoR falls back to a stub
   # (dummy_tables.jl) when `import Tables` fails, which would silently break data

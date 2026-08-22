@@ -18,7 +18,6 @@
 #' xml <- url_to_insightmaker(url, file = file)
 #' file.remove(file)
 url_to_insightmaker <- function(url, file = NULL) {
-
   .check_insightmaker_url(url)
 
   if (!is.null(file)) {
@@ -37,12 +36,10 @@ url_to_insightmaker <- function(url, file = NULL) {
       ))
     }
   )
-  
 }
 
 
 .url_to_insightmaker <- function(url, file) {
-
   # Read URL
   url_data <- xml2::read_html(url)
 
@@ -118,7 +115,6 @@ url_to_insightmaker <- function(url, file = NULL) {
   # Write model to file and read back in to ensure it is valid
   xml2::write_xml(doc, file)
   xml2::read_xml(file)
-
 }
 
 
@@ -130,7 +126,6 @@ url_to_insightmaker <- function(url, file = NULL) {
 #' @returns Parsed file
 #' @noRd
 read_IM_file <- function(file, fileext) {
-
   # Check if file exists
   if (!file.exists(file)) {
     cli::cli_abort(c(
@@ -182,7 +177,6 @@ read_IM_file <- function(file, fileext) {
 
 
 .check_insightmaker_url <- function(url) {
-
   is_valid_url <- stringr::str_detect(
     url,
     stringr::regex("http[s]?\\:\\/\\/[www\\.]?insightmaker")
@@ -202,7 +196,6 @@ read_IM_file <- function(file, fileext) {
 
 
 .check_insightmaker_file <- function(file, must_exist = TRUE) {
-
   # Check if file exists
   if (must_exist && !file.exists(file)) {
     cli::cli_abort(c(
@@ -266,7 +259,6 @@ get_insightmaker_model <- function(url, file, fileext = c("InsightMaker", "json"
       }
     )
   } else {
-
     # Read file
     ext <- tools::file_ext(file)
     read_file <- read_IM_file(file, fileext = fileext)

@@ -39,31 +39,31 @@ test_that("plot() validates inputs", {
     plot(sim, vars = character(0)),
     "Empty"
   )
-  
+
   # plot() validates variable existence in simulation
   expect_error(
     plot(sim, vars = c("susceptible", "NonExistent")),
     "NonExistent.*not.*variable"
   )
- 
+
   # plot() validates font_family as character"
   expect_error(
     plot(sim, font_family = 123),
     "font_family"
   )
- 
+
   # plot() validates font_size as positive number
   expect_error(
     plot(sim, font_size = 0),
     "must be a positive number"
   )
-  
+
   # plot() validates wrap_width as positive integer
   expect_error(
     plot(sim, wrap_width = -10),
     "must be a positive integer"
-  ) 
-  
+  )
+
   # plot() validates palette as character
   expect_error(
     plot(sim, palette = 123),
@@ -82,7 +82,6 @@ test_that("plot() validates inputs", {
     "Insufficient colors provided"
   )
 })
-
 
 
 test_that("plot() warns and continues when some vars are missing from data", {
@@ -104,7 +103,7 @@ test_that("plot() warns and continues when some vars are missing from data", {
   expect_no_error(
     plot(sim, vars = c("infection_rate", "recovery_rate"))
   )
- 
+
   # plot() does not error when some requested vars are constants", {
   expect_no_error(
     plot(sim, vars = c("susceptible", "recovery_rate"))
@@ -305,7 +304,6 @@ test_that("plot.simulate_stockflow() with custom colors vector", {
 })
 
 test_that("plot.simulate_stockflow() maps trace labels to source data and named colors", {
-
   skip_on_cran()
 
   sim <- sir_sim(only_stocks = FALSE)
@@ -336,7 +334,6 @@ test_that("plot.simulate_stockflow() maps trace labels to source data and named 
 })
 
 test_that("plot.simulate_stockflow() orders traces before applying aesthetics", {
-
   skip_on_cran()
 
   sim <- sir_sim(only_stocks = FALSE)
@@ -380,7 +377,6 @@ test_that("plot.simulate_stockflow() validates and filters order", {
 })
 
 test_that("plot.simulate_stockflow() follows vars order by default (order defaults to vars)", {
-
   skip_on_cran()
 
   # `order` defaults to `vars`, so the trace/legend order should follow the
@@ -413,7 +409,6 @@ test_that("plot.simulate_stockflow() follows vars order by default (order defaul
 })
 
 test_that("plot.simulate_stockflow() does not warn twice when a vars entry is unsaved", {
-
   skip_on_cran()
   # `order` defaults to `vars`; a var that exists but was not saved must be
   # reported once (by the vars filter), not a second time by the ordering step.
@@ -632,7 +627,6 @@ test_that("plot.simulate_stockflow() separates stocks from non-stock variables",
 })
 
 test_that("plot.simulate_stockflow() can put role panels side by side", {
-
   skip_on_cran()
 
   sim <- sir_sim(only_stocks = FALSE)
@@ -792,7 +786,6 @@ test_that("plot.simulate_stockflow() with vars = constant automatically enables 
 })
 
 test_that("plot.simulate_stockflow() format_label toggles legend label prettifying", {
-  
   skip_on_cran()
 
   sfm <- stockflow()
@@ -814,13 +807,11 @@ test_that("plot.simulate_stockflow() format_label toggles legend label prettifyi
 })
 
 
-
 # ============================================================================
 # DEFAULT BEHAVIOR TESTS
 # ============================================================================
 
 test_that("plot.simulate_stockflow() uses default titles", {
-
   skip_on_cran()
 
   sfm <- stockflow("sir") |> meta(name = "My Model")
@@ -839,9 +830,8 @@ test_that("plot.simulate_stockflow() uses default titles", {
 # ============================================================================
 
 test_that("plot.simulate_stockflow() supports cumulative time animation", {
-
   skip_on_cran()
-  
+
   sim <- sir_sim()
   pl <- plot(sim, animation = "time")
   expect_plotly(pl)
@@ -876,7 +866,7 @@ test_that("time animation builds cleanly when a variable is NaN at time zero", {
   # with a "number of items to replace is not a multiple of replacement
   # length" warning at build time.
   skip_on_cran()
-  
+
   sim <- sir_sim()
   first_time <- min(sim[["df"]][["time"]])
   first_var <- as.character(sim[["df"]][["variable"]][1])
@@ -967,7 +957,6 @@ test_that("plot.simulate_stockflow() is static by default (no frames)", {
 })
 
 test_that("plot.simulate_stockflow() preserves role panels in time animation", {
-  
   skip_on_cran()
 
   sim <- sir_sim(only_stocks = FALSE)

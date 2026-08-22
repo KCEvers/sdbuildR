@@ -1,28 +1,14 @@
 # sdbuildR (development version)
 
-* Loading a model from the model library with `stockflow()` is about three times
-  faster. Each template was assembled after every step of its construction; the
-  model is now assembled once, when it is finished. The models returned are
-  unchanged.
+* `import_insightmaker()`, `url_to_insightmaker()`, and `insightmaker_to_json()` now fail gracefully, e.g., when internet is not available.
 
 * `install_julia_env()` no longer rebuilds an environment that is already up to date.
-  Re-running it re-resolved every dependency against the package registry, which could
-  pull in newer versions and make Julia recompile everything. Use the new
-  `install_julia_env(force = TRUE)` for a deliberate clean rebuild.
+  Use the new `install_julia_env(force = TRUE)` for a deliberate clean rebuild.
 
 * The Julia environment now installs only the four `OrdinaryDiffEq` solver
-  sub-packages sdbuildR actually uses, rather than the full meta-package. This removes
-  12 packages from the environment and makes loading faster. All integration methods
-  offered by `sim_methods()` are unchanged and produce identical results.
-
-* Simulating in Julia is faster on the first call in each session. The
-  `SystemDynamicsBuildR.jl` package now ships a `PrecompileTools` workload covering
-  every solver, the callback path, the ensemble path, and writing results, so that work
-  is done once at installation instead of on first use in every session.
-
-* Updating to this version changes the Julia dependencies, so you will be prompted to
-  run `install_julia_env()` once.
-
+  sub-packages sdbuildR actually uses, rather than `OrdinaryDiffEq`. This removes
+  12 packages from the environment and makes loading faster. In addition, 
+  `PrecompileTools` is added as a Julia dependency for faster Julia simulations.Updating to this sdbuildR version thus requires re-running `install_julia_env()` again.
 
 # sdbuildR 2.2.2
 

@@ -46,10 +46,10 @@ options(sdbuildR.font_family = font_family)
 ```
 
 ```{r, include = FALSE, echo = FALSE, eval = interactive()}
-# # Check if the Julia environment is set up, and if not, install it (for local pkgdown::build_site())
-# if (!nzchar(system.file("Manifest.toml", package = "sdbuildR"))) {
-#   install_julia_env()
-# }
+# Check if the Julia environment is set up, and if not, install it (for local pkgdown::build_site())
+if (!nzchar(system.file("Manifest.toml", package = "sdbuildR"))) {
+  install_julia_env()
+}
 ```
 
 After having built a stock-and-flow model, you may want to explore how different parameter values affect the model's behaviour. Running multiple simulations (possibly with varying parameters) is also called an ensemble, which provides insight into the range of possible model behaviours and associated uncertainty. In this vignette, we will explore how to set up and run ensemble simulations using the sdbuildR package. 
