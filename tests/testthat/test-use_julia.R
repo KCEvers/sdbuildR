@@ -182,8 +182,24 @@ test_that("install_julia_env() works", {
   expect_true(is_julia_env_setup(force = TRUE))
 })
 
-test_that("jl_startup_opts() activates the sdbuildR environment without clobbering user options", {
-  # Julia is not needed: this is pure string construction.
+test_that("jl_startup_opts() does not point Julia at a missing environment", {
+  # If the environment is not installed there is nothing to activate, and pointing Julia
+  # at the missing directory is actively harmful: JuliaConnectoR's `import Tables` would
+  # make Julia install Tables into it, recreating an environment that was just removed.
+  withr::with_envvar(c(JULIACONNECTOR_JULIAOPTS = ""), {
+    local_mocked_bindings(julia_env_dir = function() file.path(tempdir(), "no-such-env"))
+    opts <- jl_startup_opts()
+    expect_false(grepl("--project=", opts, fixed = TRUE))
+    expect_match(opts, "--startup-file=no", fixed = TRUE)
+  })
+})
+
+test_that("jl_startup_opts() activates the sdbuildR environment without permanently changing user options", {
+  # Julia is not needed: this is pure string construction. It does depend on whether the
+  # environment is installed, though, so this test states which case it is exercising.
+  env_installed <- file.exists(file.path(julia_env_dir(), "Manifest.toml"))
+  skip_if_not(env_installed, "Julia environment not installed")
+
   withr::with_envvar(c(JULIACONNECTOR_JULIAOPTS = ""), {
     opts <- jl_startup_opts()
     expect_match(opts, "--project=", fixed = TRUE)

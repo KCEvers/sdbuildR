@@ -6,8 +6,6 @@ P <- list(
   debug = FALSE,
   insightmaker_version = 40, # version sdbuildR was made with
   jl_pkg_name = "SystemDynamicsBuildR",
-  # jl_pkg_version = "0.2.5", # required version SystemDynamicsBuildR
-  # jl_pkg_name = "StockFlowRSupport",
   jl_pkg_version_github_release = "0.4.0", # required version SystemDynamicsBuildR
   model_setup_name = "model_setup",
   func_name = "func",

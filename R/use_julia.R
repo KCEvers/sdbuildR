@@ -930,7 +930,16 @@ jl_startup_opts <- function() {
 
   opts <- character()
 
-  if (!has_opt("--project")) {
+  # Only activate the environment when it actually exists. Pointing Julia at a missing
+  # directory is worse than not activating at all: JuliaConnectoR's main.jl runs
+  # `import Tables` at start-up, and if that cannot resolve, Julia installs Tables into
+  # the active project - recreating the very directory install_julia_env(remove = TRUE)
+  # has just deleted, and making a second removal report that it removed an environment.
+  # It resolves silently on machines that happen to have Tables in the default shared
+  # environment, which is why this only shows up on clean ones such as CI.
+  env_installed <- file.exists(file.path(julia_env_dir(), "Manifest.toml"))
+
+  if (!has_opt("--project") && env_installed) {
     opts <- c(opts, paste0("--project=", quote_if_needed(jl_path(julia_env_dir()))))
   }
 
