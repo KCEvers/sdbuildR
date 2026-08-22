@@ -1,6 +1,6 @@
 Package: sdbuildR
 Title: An Accessible Interface for Stock-and-Flow Modelling
-Version: 2.2.2.9000
+Version: 2.2.3
 Authors@R: c(
     person("Kyra Caitlin", "Evers", , "kyra.c.evers@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0001-6890-3482")),

@@ -1,4 +1,4 @@
-# sdbuildR (development version)
+# sdbuildR 2.2.3
 
 * `import_insightmaker()`, `url_to_insightmaker()`, and `insightmaker_to_json()` now fail gracefully, e.g., when internet is not available.
 
