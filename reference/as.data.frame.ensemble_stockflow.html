@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Create data frame of simulation results</h1>
-      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/v2.2.2/R/ensemble.R" class="external-link"><code>R/ensemble.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/v2.2.3/R/ensemble.R" class="external-link"><code>R/ensemble.R</code></a></small>
       <div class="d-none name"><code>as.data.frame.ensemble_stockflow.Rd</code></div>
     </div>
 
@@ -51,7 +51,7 @@
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'ensemble_stockflow'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="sdbuildR-as.data.frame.html">as.data.frame</a></span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  row.names <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  optional <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -123,58 +123,43 @@ one column per variable.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">sfm</span> <span class="op">&lt;-</span> <span class="fu"><a href="stockflow.html">stockflow</a></span><span class="op">(</span><span class="st">"sir"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">sims</span> <span class="op">&lt;-</span> <span class="fu"><a href="ensemble.html">ensemble</a></span><span class="op">(</span><span class="va">sfm</span>, n <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting ensemble simulation in <span style="color: #0000BB;">"R"</span> with <span style="color: #0000BB;">10</span> simulations.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Ensemble simulation completed in <span style="color: #0000BB;">0.4023</span> seconds.</span>
-<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sims</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   condition variable time     mean   median missing_count   quant1   quant2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1         1 infected 0.00 1.000000 1.000000             0 1.000000 1.000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2         1 infected 0.01 1.019000 1.019000             0 1.019000 1.019000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3         1 infected 0.02 1.038361 1.038361             0 1.038361 1.038361</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4         1 infected 0.03 1.058089 1.058089             0 1.058089 1.058089</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5         1 infected 0.04 1.078193 1.078193             0 1.078193 1.078193</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6         1 infected 0.05 1.098678 1.098678             0 1.098678 1.098678</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">sfm</span> <span class="op">&lt;-</span> <span class="fu"><a href="stockflow.html">stockflow</a></span><span class="op">(</span><span class="st">"sir"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="co"># Randomize initial values of all stocks to show variation in the ensemble</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="update.stockflow.html">update</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">susceptible</span>, <span class="va">infected</span>, <span class="va">recovered</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    eqn <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">1</span>, min <span class="op">=</span> <span class="fl">20</span>, max <span class="op">=</span> <span class="fl">800</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Get results in wide format</span></span></span>
-<span class="r-in"><span><span class="va">df_wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sims</span>, direction <span class="op">=</span> <span class="st">"wide"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df_wide</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Run ensemble simulation with 3 simulations,</span></span></span>
+<span class="r-in"><span><span class="co"># saving only 20 timepoints per simulation</span></span></span>
+<span class="r-in"><span><span class="va">sims</span> <span class="op">&lt;-</span> <span class="fu"><a href="ensemble.html">ensemble</a></span><span class="op">(</span><span class="va">sfm</span>, n <span class="op">=</span> <span class="fl">3</span>, save_length <span class="op">=</span> <span class="fl">20</span>, save_sims <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting ensemble simulation in <span style="color: #0000BB;">"R"</span> with <span style="color: #0000BB;">3</span> simulations.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Ensemble simulation completed in <span style="color: #0000BB;">0.2116</span> seconds.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Get summary statistics in long format</span></span></span>
+<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="sdbuildR-as.data.frame.html">as.data.frame</a></span><span class="op">(</span><span class="va">sims</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="sdbuildR-head-tail.html">head</a></span><span class="op">(</span><span class="va">df</span>, n <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   condition variable time     mean   median missing_count   quant1   quant2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1         1 infected    0 314.1899 246.0185             0 36.78391 649.5417</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Get summary statistics in wide format</span></span></span>
+<span class="r-in"><span><span class="va">df_wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="sdbuildR-as.data.frame.html">as.data.frame</a></span><span class="op">(</span><span class="va">sims</span>, direction <span class="op">=</span> <span class="st">"wide"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="sdbuildR-head-tail.html">head</a></span><span class="op">(</span><span class="va">df_wide</span>, n <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   condition time mean.infected median.infected missing_count.infected</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1         1 0.00      1.000000        1.000000                      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2         1 0.01      1.019000        1.019000                      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3         1 0.02      1.038361        1.038361                      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4         1 0.03      1.058089        1.058089                      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5         1 0.04      1.078193        1.078193                      0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6         1 0.05      1.098678        1.098678                      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1         1    0      314.1899        246.0185                      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   quant1.infected quant2.infected mean.recovered median.recovered</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1        1.000000        1.000000    0.000000000      0.000000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2        1.019000        1.019000    0.001000000      0.001000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3        1.038361        1.038361    0.002019000      0.002019000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4        1.058089        1.058089    0.003057360      0.003057360</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5        1.078193        1.078193    0.004115450      0.004115450</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6        1.098678        1.098678    0.005193642      0.005193642</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1        36.78391        649.5417       488.0095         488.5935</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   missing_count.recovered quant1.recovered quant2.recovered mean.susceptible</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                       0      0.000000000      0.000000000         99999.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                       0      0.001000000      0.001000000         99998.98</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3                       0      0.002019000      0.002019000         99998.96</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                       0      0.003057360      0.003057360         99998.94</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5                       0      0.004115450      0.004115450         99998.92</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6                       0      0.005193642      0.005193642         99998.90</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                       0         389.0273         586.4952         211.2914</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   median.susceptible missing_count.susceptible quant1.susceptible</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1           99999.00                         0           99999.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2           99998.98                         0           99998.98</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3           99998.96                         0           99998.96</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4           99998.94                         0           99998.94</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5           99998.92                         0           99998.92</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6           99998.90                         0           99998.90</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1           142.6226                         0           85.96698</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   quant2.susceptible</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1           99999.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2           99998.98</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3           99998.96</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4           99998.94</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5           99998.92</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6           99998.90</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1           394.9842</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Get individual simulations in wide format</span></span></span>
+<span class="r-in"><span><span class="va">df_wide_sims</span> <span class="op">&lt;-</span> <span class="fu"><a href="sdbuildR-as.data.frame.html">as.data.frame</a></span><span class="op">(</span><span class="va">sims</span>, which <span class="op">=</span> <span class="st">"sims"</span>, direction <span class="op">=</span> <span class="st">"wide"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="sdbuildR-head-tail.html">head</a></span><span class="op">(</span><span class="va">df_wide_sims</span>, n <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   time sim condition infected recovered susceptible</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1    0   1         1 670.7798  488.5935    82.98511</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

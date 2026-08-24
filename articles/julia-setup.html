@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +68,7 @@
       <h1>Setting Up Julia</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/v2.2.2/vignettes/articles/julia-setup.Rmd" class="external-link"><code>vignettes/articles/julia-setup.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/v2.2.3/vignettes/articles/julia-setup.Rmd" class="external-link"><code>vignettes/articles/julia-setup.Rmd</code></a></small>
       <div class="d-none name"><code>julia-setup.Rmd</code></div>
     </div>
 
@@ -125,10 +125,12 @@ downloads and compiles packages.</p>
 sdbuildR:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/use_julia.html">use_julia</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Activating Julia environment for <span style="color: #0000BB;">sdbuildR</span> at</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Starting Julia with the <span style="color: #0000BB;">sdbuildR</span> environment at</span></span>
 <span><span class="co">#&gt;   <span style="color: #0000BB;">/home/runner/.local/share/R/sdbuildR/julia</span>...</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Loading Julia packages...</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Julia environment ready.</span></span></code></pre></div>
-<p>This needs to be done in <em>each</em> new R session.</p>
+<p>This needs to be done in <em>each</em> new R session, and takes under
+10 seconds while Julia starts and loads the packages.</p>
 <p>To close the Julia session:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/use_julia.html">use_julia</a></span><span class="op">(</span>stop <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -140,12 +142,13 @@ sdbuildR:</p>
 <div class="section level3">
 <h3 id="julia-not-found">Julia not found<a class="anchor" aria-label="anchor" href="#julia-not-found"></a>
 </h3>
-<p>If JuliaConnectoR cannot find Julia, i.e., this evaluates to
-<code>FALSE</code>:</p>
+<p>If <code>JuliaConnectoR</code> cannot find Julia, i.e., this
+evaluates to <code>FALSE</code>:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/JuliaConnectoR/man/juliaSetupOk.html" class="external-link">juliaSetupOk</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting Julia ...</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>Try the following steps to make Julia accessible to R:</p>
 <div class="section level4">
 <h4 id="find-your-julia-installation-path">Find your Julia installation path<a class="anchor" aria-label="anchor" href="#find-your-julia-installation-path"></a>
 </h4>
@@ -238,15 +241,16 @@ R)</li>
 <div class="section level4">
 <h4 id="if-julia-is-still-not-found">If Julia is still not found<a class="anchor" aria-label="anchor" href="#if-julia-is-still-not-found"></a>
 </h4>
-<p>JuliaConnectoR tries to find Julia in the following order:</p>
+<p><code>JuliaConnectoR</code> tries to find Julia in the following
+order:</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"JULIA_BINDIR"</span><span class="op">)</span> <span class="co"># "" if not found</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"JULIA_BINDIR"</span><span class="op">)</span> <span class="co"># if not found, returns ""</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Sys.which.html" class="external-link">Sys.which</a></span><span class="op">(</span><span class="st">"julia"</span><span class="op">)</span> <span class="co"># "" if not found</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Sys.which.html" class="external-link">Sys.which</a></span><span class="op">(</span><span class="st">"julia"</span><span class="op">)</span> <span class="co"># if not found, returns ""</span></span>
 <span></span>
 <span><span class="co"># On Mac/Linux:</span></span>
 <span><span class="va">julia_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"HOME"</span><span class="op">)</span>, <span class="st">".juliaup"</span>, <span class="st">"bin"</span>, <span class="st">"julia"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">julia_path</span><span class="op">)</span> <span class="co"># FALSE if not found</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">julia_path</span><span class="op">)</span> <span class="co"># if not found, returns FALSE</span></span></code></pre></div>
 <ol style="list-style-type: decimal">
 <li>Double-check the path you added to <code>.Renviron</code>
 </li>

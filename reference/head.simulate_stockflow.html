@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,18 +40,18 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Print first rows of a simulation</h1>
-      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/v2.2.2/R/simulate.R" class="external-link"><code>R/simulate.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/v2.2.3/R/simulate.R" class="external-link"><code>R/simulate.R</code></a></small>
       <div class="d-none name"><code>head.simulate_stockflow.Rd</code></div>
     </div>
 
     <div class="ref-description section level2">
-    <p>Print the first rows of a simulation data frame of a stock-and-flow model. This is a wrapper around <code><a href="https://rdrr.io/r/utils/head.html" class="external-link">head()</a></code> that first converts the simulation results to a data frame using <a href="as.data.frame.simulate_stockflow.html">as.data.frame()</a>.</p>
+    <p>Print the first rows of a simulation data frame of a stock-and-flow model. This is a wrapper around <code><a href="sdbuildR-head-tail.html">head()</a></code> that first converts the simulation results to a data frame using <a href="as.data.frame.simulate_stockflow.html">as.data.frame()</a>.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'simulate_stockflow'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">x</span>, n <span class="op">=</span> <span class="fl">6L</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="sdbuildR-head-tail.html">head</a></span><span class="op">(</span><span class="va">x</span>, n <span class="op">=</span> <span class="fl">6L</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -78,8 +78,8 @@
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">sfm</span> <span class="op">&lt;-</span> <span class="fu"><a href="stockflow.html">stockflow</a></span><span class="op">(</span><span class="st">"sir"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate.stockflow.html">simulate</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="sdbuildR-head-tail.html">head</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   time variable    value</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.00 infected 1.000000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.01 infected 1.019000</span>

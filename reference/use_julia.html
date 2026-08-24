@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Start Julia and activate environment</h1>
-      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/v2.2.2/R/use_julia.R" class="external-link"><code>R/use_julia.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/v2.2.3/R/use_julia.R" class="external-link"><code>R/use_julia.R</code></a></small>
       <div class="d-none name"><code>use_julia.Rd</code></div>
     </div>
 
@@ -79,7 +79,7 @@
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>In every R session, <code>use_julia()</code> needs to be run once (which is done automatically in <code><a href="simulate.stockflow.html">simulate()</a></code>), which can take around 30-60 seconds.</p>
+    <p>In every R session, <code>use_julia()</code> needs to be run once (which is done automatically in <code><a href="simulate.stockflow.html">simulate()</a></code>), which takes under 10 seconds while Julia starts and loads the packages.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -90,21 +90,24 @@
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Start a Julia session and activate the Julia environment for sdbuildR</span></span></span>
 <span class="r-in"><span><span class="fu">use_julia</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Activating Julia environment for <span style="color: #0000BB;">sdbuildR</span> at</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Starting Julia with the <span style="color: #0000BB;">sdbuildR</span> environment at</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   <span style="color: #0000BB;">/home/runner/.local/share/R/sdbuildR/julia</span>...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Loading Julia packages...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Julia environment ready.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Start Julia with 2 threads (only works if threading is supported)</span></span></span>
 <span class="r-in"><span><span class="fu">use_julia</span><span class="op">(</span>nthreads <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Activating Julia environment for <span style="color: #0000BB;">sdbuildR</span> at</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Starting Julia with the <span style="color: #0000BB;">sdbuildR</span> environment at</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   <span style="color: #0000BB;">/home/runner/.local/share/R/sdbuildR/julia</span>...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Loading Julia packages...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Julia environment ready with 2 threads.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Restart Julia session (in case of issues)</span></span></span>
 <span class="r-in"><span><span class="fu">use_julia</span><span class="op">(</span>restart <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Closed Julia session.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Activating Julia environment for <span style="color: #0000BB;">sdbuildR</span> at</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Starting Julia with the <span style="color: #0000BB;">sdbuildR</span> environment at</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   <span style="color: #0000BB;">/home/runner/.local/share/R/sdbuildR/julia</span>...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Loading Julia packages...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Julia environment ready.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Stop Julia session</span></span></span>

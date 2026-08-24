@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sdbuildR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Internal function to save data frame at specific times</h1>
-      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/v2.2.2/R/sdbuildR_custom_func.R" class="external-link"><code>R/sdbuildR_custom_func.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/KCEvers/sdbuildR/blob/v2.2.3/R/sdbuildR_custom_func.R" class="external-link"><code>R/sdbuildR_custom_func.R</code></a></small>
       <div class="d-none name"><code>saveat_func.Rd</code></div>
     </div>
 
@@ -79,11 +79,11 @@ one column per variable.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Recommended: Use save_by in sim_settings() to downsample simulations</span></span></span>
 <span class="r-in"><span><span class="va">sfm</span> <span class="op">&lt;-</span> <span class="fu"><a href="stockflow.html">stockflow</a></span><span class="op">(</span><span class="st">"sir"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="sim_settings.html">sim_settings</a></span><span class="op">(</span>dt <span class="op">=</span> <span class="fl">0.01</span>, save_by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate.stockflow.html">simulate</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="sdbuildR-as.data.frame.html">as.data.frame</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="co"># Returns only times at intervals of 1</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 63</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="sdbuildR-head-tail.html">head</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   time variable        value</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1    0 infected     1.000000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2    1 infected     6.567386</span>
@@ -95,14 +95,14 @@ one column per variable.</p>
 <span class="r-in"><span><span class="co"># The saveat_func() is the underlying function used by simulate()</span></span></span>
 <span class="r-in"><span><span class="co"># Direct use is not recommended, but shown here for completeness:</span></span></span>
 <span class="r-in"><span><span class="va">sfm</span> <span class="op">&lt;-</span> <span class="va">sfm</span> <span class="op">|&gt;</span> <span class="fu"><a href="sim_settings.html">sim_settings</a></span><span class="op">(</span>save_by <span class="op">=</span> <span class="fl">0.01</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate.stockflow.html">simulate</a></span><span class="op">(</span><span class="va">sfm</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="sdbuildR-as.data.frame.html">as.data.frame</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="co"># Many more rows</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 6003</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Manual downsampling (not recommended - use save_by instead)</span></span></span>
 <span class="r-in"><span><span class="va">new_times</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">time</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">time</span><span class="op">)</span>, by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">df_wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sim</span>, direction <span class="op">=</span> <span class="st">"wide"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="sdbuildR-as.data.frame.html">as.data.frame</a></span><span class="op">(</span><span class="va">sim</span>, direction <span class="op">=</span> <span class="st">"wide"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">df_manual</span> <span class="op">&lt;-</span> <span class="fu">saveat_func</span><span class="op">(</span><span class="va">df_wide</span>, <span class="st">"time"</span>, <span class="va">new_times</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df_manual</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 21</span>
