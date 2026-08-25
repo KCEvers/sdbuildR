@@ -140,7 +140,7 @@ sfm <- stockflow("sir")
 sim <- simulate(sfm)
 plot(sim)
 
-# When all variables are saved in the output, the stocks are plotted 
+# When all variables are saved in the output, the stocks are plotted
 # separately from the other variables by default:
 sim_all <- simulate(sfm, only_stocks = FALSE)
 plot(sim_all)

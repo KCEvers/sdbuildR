@@ -59,7 +59,7 @@ expect_snapshot_plot <- function(name, code, width = 4, height = 4) {
       # skip_on_os("linux")
 
       # Stable assertion on structure
-      json <- normalize_plotly(pl) |> 
+      json <- normalize_plotly(pl) |>
         jsonlite::toJSON(pretty = TRUE, auto_unbox = TRUE)
 
       json_path <- tempfile(fileext = ".json")
@@ -161,13 +161,6 @@ announce_plot_snapshot_files <- function(name, type = "plotly", apply_skips = TR
 
   invisible()
 }
-
-
-
-
-
-
-
 
 
 normalize_plotly <- function(pl, digits = 2) {
@@ -875,7 +868,6 @@ expect_input_sim_equal <- function(input_eqn, tolerance = 1e-4) {
 }
 
 
-
 # Plot ensemble helpers
 
 
@@ -977,4 +969,3 @@ make_two_condition_result <- function() {
     )
   silence(verify(sfm))
 }
-

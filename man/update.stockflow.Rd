@@ -2,6 +2,7 @@
 % Please edit documentation in R/update.R
 \name{update.stockflow}
 \alias{update.stockflow}
+\alias{update}
 \title{Create or modify variables}
 \usage{
 \method{update}{stockflow}(

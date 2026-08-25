@@ -46,7 +46,6 @@
 #' @concept convenience
 #'
 #' @examples
-#'
 #' \dontrun{
 #' # Exporting stock-and-flow diagrams requires the DiagrammeRsvg and rsvg packages
 #' if (!requireNamespace("DiagrammeRsvg", quietly = TRUE)) {
@@ -55,10 +54,10 @@
 #' if (!requireNamespace("rsvg", quietly = TRUE)) {
 #'   install.packages("rsvg")
 #' }
-#' 
+#'
 #' # Load example model
 #' sfm <- stockflow("sir")
-#' 
+#'
 #' # Temporary file path to save the plot
 #' file <- tempfile(fileext = ".svg")
 #'
@@ -70,10 +69,9 @@
 #'
 #' # Export a simulation plot; requires Chrome
 #' if (has_internet()) {
-#' 
 #'   # Run a simulation
 #'   sim <- simulate(sfm)
-#' 
+#'
 #'   # Temporary file path to save the plot
 #'   file <- tempfile(fileext = ".pdf")
 #'   export_plot(plot(sim), file)
@@ -1463,11 +1461,11 @@ clean_vars_display <- function(vars_display) {
 #' sim <- simulate(sfm)
 #' plot(sim)
 #'
-#' # When all variables are saved in the output, the stocks are plotted 
+#' # When all variables are saved in the output, the stocks are plotted
 #' # separately from the other variables by default:
 #' sim_all <- simulate(sfm, only_stocks = FALSE)
 #' plot(sim_all)
-#' 
+#'
 #' @examplesIf Sys.getenv("NOT_CRAN") == "true"
 #' # Plot all variables in one panel:
 #' plot(sim_all, vars_display = "joint")
@@ -1486,7 +1484,7 @@ clean_vars_display <- function(vars_display) {
 #'
 #' # Add constants to the plot
 #' plot(sim, show_constants = TRUE)
-#' 
+#'
 #' # Plot selected variables:
 #' plot(sim, vars = c("susceptible", "infected"))
 plot.simulate_stockflow <- function(x,
@@ -1571,7 +1569,7 @@ plot.simulate_stockflow <- function(x,
 
   # Append subtitle to main title
   main <- paste0(main, "<span style='font-size:", font_size, "px;'>\n", sub, "</span>")
-  
+
   out <- prep_plot(
     x[["object"]], "sim", x[["df"]], x[["constants"]], show_constants,
     vars, palette, colors, wrap_width, format_label,
@@ -3073,16 +3071,16 @@ plot_ensemble_helper <- function(subplot_label,
 #' sfm <- stockflow("sir") |>
 #'   unit_test(expr = all(susceptible >= 0)) |>
 #'   unit_test(expr = all(infected >= 0), conditions = list(infected = 100))
-#' res <- verify(sfm)
-#' plot(res)
-#'
-#' # Select one condition at a time with a slider or dropdown
-#' plot(res, condition_display = "slider")
+#' result <- verify(sfm)
+#' plot(result)
 #'
 #' @examplesIf Sys.getenv("NOT_CRAN") == "true"
+#' # Select one condition at a time with a slider or dropdown
+#' plot(result, condition_display = "slider")
+#'
 #' # Animate the simulation over time (one condition at a time)
-#' plot(res, animation = "time", condition = 1)
-#' 
+#' plot(result, animation = "time", condition = 1)
+#'
 plot.verify_stockflow <- function(x,
                                   test = NULL,
                                   vars = NULL,

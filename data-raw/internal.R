@@ -4,11 +4,9 @@ use_github_release <- TRUE
 # Names of variables and functions
 P <- list(
   debug = FALSE,
-  insightmaker_version = 38, # version sdbuildR was made with
+  insightmaker_version = 40, # version sdbuildR was made with
   jl_pkg_name = "SystemDynamicsBuildR",
-  # jl_pkg_version = "0.2.5", # required version SystemDynamicsBuildR
-  # jl_pkg_name = "StockFlowRSupport",
-  jl_pkg_version_github_release = "0.3.3", # required version SystemDynamicsBuildR
+  jl_pkg_version_github_release = "0.4.0", # required version SystemDynamicsBuildR
   model_setup_name = "model_setup",
   func_name = "func",
   initial_value_name = "init",
@@ -737,7 +735,15 @@ create_julia_project_toml_init <- function(use_github_release = TRUE) {
   write_script(script_project_toml, filepath)
 
   # init.jl
-  using_lines <- paste0("using ", deps_names, collapse = "\n")
+  # Dependencies the environment needs but that Main does not have to load:
+  #  * PrecompileTools is build-time only - it defines SystemDynamicsBuildR's
+  #    @compile_workload and is never referenced by generated code.
+  #  * Tables only has to be a *direct* dependency of the project, so the
+  #    `import Tables` in JuliaConnectoR's main.jl resolves when Julia is started
+  #    with --project; otherwise it silently falls back to its dummy_tables.jl
+  #    stub. main.jl already binds it in Main, and generated code never uses it.
+  init_skip <- c("PrecompileTools", "Tables")
+  using_lines <- paste0("using ", setdiff(deps_names, init_skip), collapse = "\n")
 
   script_init <- paste0(
     "# init.jl - Script to initialize Julia environment for ", pkg_name, "\n\n",

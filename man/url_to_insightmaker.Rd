@@ -15,7 +15,7 @@ url_to_insightmaker(url, file = NULL)
 XML string with Insight Maker model
 }
 \description{
-Create XML string from Insight Maker URL. For internal use; use \code{import_insightmaker()} to import an Insight Maker model.
+Create XML string from Insight Maker URL. This function is for internal use; use \code{import_insightmaker()} to import an Insight Maker model.
 }
 \examples{
 \dontshow{if (has_internet()) withAutoprint(\{ # examplesIf}

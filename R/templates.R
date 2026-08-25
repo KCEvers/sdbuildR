@@ -654,8 +654,20 @@ templates <- function(template, version = NULL) {
   }
 
   entry <- entries[[which(available == chosen)[1]]]
-  object <- entry$build()
+
+  # Each builder chains ~10 update()/sim_settings() calls, every one of which
+  # eagerly rebuilds the assembly cache. Defer that during the build and
+  # assemble once at the end: the cache is hash-gated, so the resulting model
+  # is identical for a fraction of the cost.
+  object <- withr::with_envvar(
+    new = c(SDBUILDR_DEFER_CODEGEN = "true"),
+    entry$build()
+  )
   object <- meta(object, version = chosen)
+
+  # Outside the with_envvar() block, so a session that globally defers codegen
+  # stays deferred.
+  object <- maybe_pre_assemble(object)
 
   object
 }

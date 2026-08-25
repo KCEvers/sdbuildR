@@ -1,6 +1,6 @@
 #' Extract Insight Maker model from URL
 #'
-#' Create XML string from Insight Maker URL. For internal use; use `import_insightmaker()` to import an Insight Maker model.
+#' Create XML string from Insight Maker URL. This function is for internal use; use `import_insightmaker()` to import an Insight Maker model.
 #'
 #' @param url String with URL to an Insight Maker model
 #' @param file If specified, file path to save Insight Maker model to. If NULL, do not save model.
@@ -18,6 +18,28 @@
 #' xml <- url_to_insightmaker(url, file = file)
 #' file.remove(file)
 url_to_insightmaker <- function(url, file = NULL) {
+  .check_insightmaker_url(url)
+
+  if (!is.null(file)) {
+    .check_insightmaker_file(file, must_exist = FALSE)
+  }
+
+  tryCatch(
+    {
+      .url_to_insightmaker(url, file)
+    },
+    error = function(e) {
+      cli::cli_abort(c(
+        "x" = "Failed to extract Insight Maker model from URL.",
+        "i" = "Original error: {conditionMessage(e)}.",
+        ">" = "Ensure the URL is correct and points to a public Insight Maker model."
+      ))
+    }
+  )
+}
+
+
+.url_to_insightmaker <- function(url, file) {
   # Read URL
   url_data <- xml2::read_html(url)
 
@@ -34,65 +56,48 @@ url_to_insightmaker <- function(url, file = NULL) {
   script_texts <- xml2::xml_find_all(iframe_page, ".//script")
 
   # Keep script with certain keywords
-  # script_model <- as.character(
-  #   script_texts[stringr::str_detect(
-  #     xml2::xml_text(script_texts, trim = TRUE), "model_id"
-  #   ) & stringr::str_detect(xml2::xml_text(script_texts, trim = TRUE), "model_title")]
-  # )
   script_texts_xml <- xml2::xml_text(script_texts, trim = TRUE)
   script_model <- as.character(
     script_texts[grepl("model_id", script_texts_xml) &
       grepl("model_title", script_texts_xml)]
   )
 
-  # Extract part of interest
-  # xml_str <- stringr::str_match_all(
-  #   script_model,
-  #   stringr::regex("<mxGraphModel>(.*?)</mxGraphModel>", dotall = TRUE)
-  # )[[1]][1] |>
-  #   stringr::str_replace_all("mxGraphModel", "insightmakermodel") |>
-  #   # Remove escape characters for writing an XML file
-  #   stringr::str_replace_all(stringr::fixed("\\\\\""), "\\\"") |>
-  #   stringr::str_replace_all(stringr::fixed("\\\""), "\"") |>
-  #   stringr::str_replace_all(stringr::fixed("\\\\n"), "\\n")
-  # xml_str
-  xml_str <- regmatches(
-    script_model,
-    gregexpr("<mxGraphModel>(.*?)</mxGraphModel>", script_model, perl = TRUE)
-  )
-  if (length(xml_str) == 0) {
-    cli::cli_abort(c(
-      "Failed to extract model from URL.",
-      "x" = "Could not extract {.pkg InsightMaker} model from the provided URL.",
-      "i" = "Ensure the model is public and the URL is correct.",
-      ">" = "Check that the URL is accessible and points to a valid model."
-    ))
+  # Extract part of interest; the model is embedded as a JSON object in the script
+  json_line <- trimws(grep("initialModel", unlist(strsplit(script_model, "\n")),
+    fixed = TRUE, value = TRUE
+  ))
+
+  if (length(json_line) == 0) {
+    stop("Could not find model in the script tags of the html page")
   }
 
-  xml_str <- xml_str[[1]][1]
-  xml_str <- gsub("mxGraphModel", "insightmakermodel", xml_str, fixed = TRUE)
-  xml_str <- gsub("\\\\\"", "\\\"", xml_str, fixed = TRUE)
-  xml_str <- gsub("\\\"", "\"", xml_str, fixed = TRUE)
-  xml_str <- gsub("\\\\n", "\\n", xml_str, fixed = TRUE)
+  # Parsing the JSON unescapes the model XML
+  model <- jsonlite::fromJSON(
+    sub(";$", "", substring(json_line[1], regexpr("{", json_line[1], fixed = TRUE)))
+  )
+
+  xml_str <- gsub("mxGraphModel", "insightmakermodel", model[["model_xml"]], fixed = TRUE)
 
   # Extract meta-data - this is embedded in the webpage, but not saved in the .InsightMaker file. Add to .InsightMaker file to preserve the original author of the model.
   meta_names <- c("model_id", "model_title", "model_author_id", "model_author_name")
-  meta_info <- vapply(meta_names, function(x) {
-    stringr::str_match(
-      script_model,
-      sprintf("\"%s\":\"(.*?)\"", x)
-    )[, 2]
-  }, character(1)) |> as.list()
-  meta_str <- sprintf("<header> %s </header>", paste0(names(meta_info),
-    "=\"",
-    unname(textutils::HTMLencode(meta_info, encode.only = c("&", "<", ">"))),
-    "\"",
-    collapse = ", "
-  ))
+  meta_info <- model[meta_names]
+  names(meta_info) <- meta_names
+  meta_info <- lapply(compact_(meta_info), as.character)
 
-  # Insert meta in xml_str
-  idx_root <- stringr::str_locate(xml_str, "<root>")
-  stringr::str_sub(xml_str, idx_root[, "start"], idx_root[, "end"]) <- paste0("<root> \\n", meta_str)
+  # Insert meta as attributes of a <header> node. Storing them as attributes
+  # rather than as delimited text lets the XML writer escape whatever the model
+  # happens to contain, so a value with a comma or a quote cannot break parsing.
+  doc <- xml2::read_xml(xml_str)
+  root_node <- xml2::xml_find_first(doc, "root")
+
+  if (inherits(root_node, "xml_missing")) {
+    stop("the extracted model has no <root> element")
+  }
+
+  do.call(
+    xml2::xml_add_child,
+    c(list(root_node, "header", .where = 0), meta_info)
+  )
 
   # Save and read .InsightMaker file to ensure it is the correct format
   if (is.null(file)) {
@@ -107,11 +112,9 @@ url_to_insightmaker <- function(url, file = NULL) {
     on.exit(remove_files(file), add = TRUE)
   }
 
-  writeLines(xml_str, file)
-  read_file <- xml2::read_xml(file)
-
-
-  read_file
+  # Write model to file and read back in to ensure it is valid
+  xml2::write_xml(doc, file)
+  xml2::read_xml(file)
 }
 
 
@@ -123,6 +126,16 @@ url_to_insightmaker <- function(url, file = NULL) {
 #' @returns Parsed file
 #' @noRd
 read_IM_file <- function(file, fileext) {
+  # Check if file exists
+  if (!file.exists(file)) {
+    cli::cli_abort(c(
+      "x" = "File not found.",
+      "i" = "The specified {.arg file} does not exist: {.file {file}}.",
+      ">" = "Check the file path."
+    ))
+  }
+
+  # Get file extension
   ext <- tools::file_ext(file)
 
   if (!ext %in% fileext) {
@@ -135,16 +148,8 @@ read_IM_file <- function(file, fileext) {
     cli::cli_abort(c(
       "Invalid file extension.",
       "x" = "The {.arg file} does not have the required extension {.code {expected_exts}}.",
-      "i" = "Download your {.pkg InsightMaker} model from the share button (top right).",
+      "i" = "Download an {.pkg InsightMaker} model from the share button (top right).",
       ">" = "Go to 'Import/Export', click the down arrow, and select {download_instructions}."
-    ))
-  }
-
-  if (!file.exists(file)) {
-    cli::cli_abort(c(
-      "File not found.",
-      "x" = "The specified {.arg file} does not exist: {.file {file}}.",
-      ">" = "Check the file path and ensure the file exists."
     ))
   }
 
@@ -159,22 +164,64 @@ read_IM_file <- function(file, fileext) {
     },
     error = function(e) {
       cli::cli_abort(c(
-        "Failed to parse file.",
-        "x" = "Could not parse the file: {.file {file}}.",
+        "x" = "Failed to parse file.",
+        "i" = "Could not parse the file: {.file {file}}.",
         "i" = "Original error: {conditionMessage(e)}.",
         ">" = "Ensure the file is a valid {.pkg InsightMaker} or {.code .json} file."
       ))
     }
   )
 
-  return(read_file)
+  read_file
 }
 
 
-get_IM_model <- function(url, file, fileext = c("InsightMaker", "json")) {
+.check_insightmaker_url <- function(url) {
+  is_valid_url <- stringr::str_detect(
+    url,
+    stringr::regex("http[s]?\\:\\/\\/[www\\.]?insightmaker")
+  )
+
+  if (!is_valid_url) {
+    cli::cli_abort(c(
+      "Invalid {.pkg InsightMaker} URL.",
+      "x" = "The {.arg url} is not a valid {.pkg InsightMaker} model URL.",
+      "i" = "URLs must start with {.code http://insightmaker} or {.code https://insightmaker}.",
+      ">" = "Provide a valid {.pkg InsightMaker} URL."
+    ))
+  }
+
+  invisible(TRUE)
+}
+
+
+.check_insightmaker_file <- function(file, must_exist = TRUE) {
+  # Check if file exists
+  if (must_exist && !file.exists(file)) {
+    cli::cli_abort(c(
+      "x" = "File not found.",
+      "i" = "The specified {.arg file} does not exist: {.file {file}}.",
+      ">" = "Check the file path."
+    ))
+  }
+
+  if (!grepl("\\.InsightMaker$", file, ignore.case = TRUE)) {
+    cli::cli_abort(c(
+      "Invalid file extension.",
+      "x" = "The {.arg file} must have a {.code .InsightMaker} extension.",
+      ">" = "Provide a valid file path with the correct extension."
+    ))
+  }
+
+  invisible(TRUE)
+}
+
+
+get_insightmaker_model <- function(url, file, fileext = c("InsightMaker", "json")) {
   # Validate inputs
   url_spec <- !missing(url) && !is.null(url) && !is.na(url)
   file_spec <- !missing(file) && !is.null(file) && !is.na(file)
+
   if (!url_spec && !file_spec) {
     cli::cli_abort(c(
       "Missing required arguments.",
@@ -196,19 +243,7 @@ get_IM_model <- function(url, file, fileext = c("InsightMaker", "json")) {
   if (url_spec) {
     file <- NULL
 
-    is_valid_url <- stringr::str_detect(
-      url,
-      stringr::regex("http[s]?\\:\\/\\/[www\\.]?insightmaker")
-    )
-
-    if (!is_valid_url) {
-      cli::cli_abort(c(
-        "Invalid {.pkg InsightMaker} URL.",
-        "x" = "The {.arg url} is not a valid {.pkg InsightMaker} model URL.",
-        "i" = "URLs must start with {.code http://insightmaker} or {.code https://insightmaker}.",
-        ">" = "Provide a valid {.pkg InsightMaker} URL."
-      ))
-    }
+    .check_insightmaker_url(url)
 
     ext <- "InsightMaker"
     tryCatch(
@@ -229,7 +264,7 @@ get_IM_model <- function(url, file, fileext = c("InsightMaker", "json")) {
     read_file <- read_IM_file(file, fileext = fileext)
   }
 
-  return(list(read_file = read_file, ext = ext))
+  list(read_file = read_file, ext = ext)
 }
 
 
@@ -364,7 +399,7 @@ insightmaker_to_json <- function(url, file, destfile = NULL) {
   }
 
   # Read .InsightMaker file
-  out <- get_IM_model(url, file, fileext = "InsightMaker")
+  out <- get_insightmaker_model(url, file, fileext = "InsightMaker")
   read_file <- out[["read_file"]]
 
   # Prepare .InsightMaker file into more common intermediate format
@@ -563,18 +598,21 @@ prep_IM <- function(read_file) {
 
   # Get the children nodes
   children <- xml2::xml_children(read_file)
-  if (xml2::xml_name(children) == "root") {
-    children <- xml2::xml_children(children) # Double to remove nested layer
+
+  # Descend into <root> if present. xml_name() is vectorised over the node set,
+  # so this has to select the node rather than compare the whole vector.
+  root_idx <- which(xml2::xml_name(children) == "root")
+  if (length(root_idx) > 0) {
+    children <- xml2::xml_children(children[[root_idx[1]]]) # Remove nested layer
   }
 
   # Get attributes, also of children
   tags <- c("Setting", "Variable", "Converter", "Stock", "Flow", "Link", "Ghost")
   node_types <- xml2::xml_name(children)
 
-  meta_str <- xml2::xml_text(children[match("header",
-    node_types,
-    nomatch = 0
-  )[[1]]], trim = TRUE)
+  # Locate the <header> node holding the meta-data added by url_to_insightmaker()
+  header_idx <- match("header", node_types)
+  header_node <- if (is.na(header_idx)) NULL else children[[header_idx]]
 
   # Get attributes as well as deeper attributes
   children_attrs <- lapply(children, function(x) {
@@ -597,12 +635,21 @@ prep_IM <- function(read_file) {
 
 
   # Get first setting (multiple exist sometimes)
-  settings <- children_attrs[[match("setting", node_types)[1]]]
+  setting_idx <- match("setting", node_types)
+  if (is.na(setting_idx)) {
+    cli::cli_abort(c(
+      "Missing simulation settings.",
+      "x" = "The model contains no {.code <Setting>} element.",
+      "i" = "{.pkg InsightMaker} stores the solver and time settings there.",
+      ">" = "Re-export the model from {.pkg InsightMaker}."
+    ))
+  }
+  settings <- children_attrs[[setting_idx]]
   macros <- settings[["macros"]]
 
   # Prepare settings with canonical names
   settings <- prep_settings_IM(settings, type = type)
-  meta <- prep_meta_IM(meta_str, settings, type = type)
+  meta <- prep_meta_IM(header_node, settings, type = type)
 
   # Find source-target dictionary for changing names
   source_target_dict <- get_source_target_IM(children_attrs, node_types, type = type)
@@ -690,27 +737,77 @@ im_eqn_field <- function(adapter, element_type) {
 }
 
 
-prep_meta_IM <- function(meta_str, settings, name, caption,
+#' Read the meta-data header of an .InsightMaker file
+#'
+#' The header is written by [url_to_insightmaker()] to preserve the original
+#' author, which Insight Maker embeds in the webpage but not in the model file.
+#'
+#' @param header_node `<header>` node, or NULL if the file has none.
+#'
+#' @returns Named list of meta-data; empty list if there is no header.
+#' @noRd
+read_header_IM <- function(header_node) {
+  if (is.null(header_node)) {
+    return(list())
+  }
+
+  # Meta-data is stored as XML attributes, so that the parser takes care of
+  # quoting and escaping and no value can break the format.
+  attrs <- xml2::xml_attrs(header_node)
+  if (length(attrs) > 0) {
+    return(as.list(attrs))
+  }
+
+  # Fall back to the `key="value", key="value"` text used by earlier versions of
+  # sdbuildR. Matching quoted values rather than splitting on the separators
+  # keeps values containing a comma or an "=" intact.
+  meta_str <- xml2::xml_text(header_node, trim = TRUE)
+  if (length(meta_str) != 1 || !nzchar(meta_str)) {
+    return(list())
+  }
+
+  pairs <- regmatches(
+    meta_str,
+    gregexpr('[^=,[:space:]]+="[^"]*"', meta_str)
+  )[[1]]
+
+  if (length(pairs) == 0) {
+    return(list())
+  }
+
+  keys <- sub('=".*$', "", pairs)
+  values <- sub('"$', "", sub('^[^=]*="', "", pairs))
+
+  stats::setNames(as.list(values), keys)
+}
+
+
+#' Numeric value of a single setting
+#'
+#' @param settings List of settings.
+#' @param key Name of the setting.
+#'
+#' @returns Numeric of length 1, or NA_real_ if absent or not parseable.
+#' @noRd
+setting_num_IM <- function(settings, key) {
+  value <- settings[[key]]
+
+  if (length(value) != 1) {
+    return(NA_real_)
+  }
+
+  suppressWarnings(as.numeric(value))
+}
+
+
+prep_meta_IM <- function(header_node, settings, name = NULL, caption = NULL,
                          type = c("InsightMaker", "json")) {
   adapter <- im_source_adapter(type)
 
   if (adapter[["meta_from_header"]]) {
-    if (length(meta_str) > 0) {
-      # Step 1: Split by comma and trim spaces
-      pairs <- strsplit(meta_str, ",\\s*")[[1]]
+    meta <- read_header_IM(header_node)
 
-      # Step 2: Split each pair into name and value, then clean up extra quotes
-      meta <- vapply(pairs, function(pair) {
-        key_value <- strsplit(pair, "=\\s*")[[1]]
-        return(gsub('\"', "", key_value[2])) # Remove extra quotes
-      }, character(1))
-
-      # Convert to named list
-      names(meta) <- vapply(pairs, function(pair) {
-        strsplit(pair, "=\\s*")[[1]][1]
-      }, character(1))
-      meta <- as.list(meta)
-
+    if (length(meta) > 0) {
       # Rename elements in meta
       new_names <- names(meta)
       new_names[new_names == "model_author_name"] <- "author"
@@ -718,8 +815,6 @@ prep_meta_IM <- function(meta_str, settings, name, caption,
       new_names[new_names == "model_title"] <- "name"
       new_names[new_names == "model_id"] <- "insightmaker_model_id"
       names(meta) <- new_names
-    } else {
-      meta <- list()
     }
 
 
@@ -749,8 +844,11 @@ prep_settings_IM <- function(settings, type = c("InsightMaker", "json")) {
   }
 
   if (adapter[["type"]] == "InsightMaker") {
+    # Version may be absent or non-numeric; skip both checks rather than error
+    version <- setting_num_IM(settings, "version")
+
     # Check whether the model uses an early version of Insight Maker
-    if (as.numeric(settings[["version"]]) < 37) {
+    if (!is.na(version) && version < 37) {
       cli::cli_warn(c(
         "Old {.pkg InsightMaker} version detected.",
         "i" = "This model uses version {.val {settings[[\"version\"]]}} where links were bi-directional by default.",
@@ -761,7 +859,7 @@ prep_settings_IM <- function(settings, type = c("InsightMaker", "json")) {
 
 
     # Check whether model is later version of Insight Maker than the package was made for
-    if (as.numeric(settings[["version"]]) > P[["insightmaker_version"]]) {
+    if (!is.na(version) && version > P[["insightmaker_version"]]) {
       cli::cli_warn(c(
         "Newer {.pkg InsightMaker} version detected.",
         "i" = "This model uses version {.val {settings[[\"version\"]]}}, but {.pkg sdbuildR} was based on version {.val {P[[\"insightmaker_version\"]]}}.",
@@ -963,8 +1061,16 @@ prep_json <- function(read_file) {
   ]
   colnames(model_df) <- gsub("^behavior.", "", colnames(model_df))
 
-  # Convert each row to a named list element
-  model_elements <- apply(model_df, 1, as.list, simplify = FALSE)
+  # Convert each row to a named list element. apply() would route the whole data
+  # frame through as.matrix(), turning every atomic field into a format()ted
+  # string (1 becomes " 1.0"), so go row by row instead. List columns such as
+  # the lookup data of a converter are unwrapped to the value they hold.
+  model_elements <- lapply(seq_len(nrow(model_df)), function(i) {
+    row <- as.list(model_df[i, , drop = FALSE])
+    lapply(row, function(value) {
+      if (is.list(value) && length(value) == 1) value[[1]] else value
+    })
+  })
 
   # Assign id
   ids <- as.character(seq_along(model_elements))
@@ -1285,7 +1391,8 @@ sim_settings_IM <- function(object, method, time_units, start, length, dt) {
   }
 
   if ("dt" %in% names(args)) {
-    if ("method" %in% names(args) && as.numeric(args[["dt"]]) >= 1 && args[["method"]] == "rk4") {
+    dt <- setting_num_IM(args, "dt")
+    if ("method" %in% names(args) && !is.na(dt) && dt >= 1 && args[["method"]] == "rk4") {
       cli::cli_inform(c(
         "Adjusting timestep for solver.",
         "i" = "The timestep {.code dt = {args[[\"dt\"]]}} is too large for {.fn rk4} solver.",
@@ -1391,9 +1498,12 @@ get_source_target_IM <- function(children_attrs, node_types,
       targets <- stringr::str_replace_all(targets, replace_dict)
     }
 
-    # In case of a bidirectional link, switch around source and target and add
-    add_bi_targets <- sources[bidirectional == "true"]
-    add_bi_sources <- targets[bidirectional == "true"]
+    # In case of a bidirectional link, switch around source and target and add.
+    # which() drops connectors without a BiDirectional attribute, which would
+    # otherwise index with NA and inject NA into the dictionary.
+    idx_bi <- which(bidirectional == "true")
+    add_bi_targets <- sources[idx_bi]
+    add_bi_sources <- targets[idx_bi]
 
     idx <- tolower(converter_sources) == "time"
     converter_sources[idx] <- ""
@@ -1412,7 +1522,7 @@ get_source_target_IM <- function(children_attrs, node_types,
     }
 
     # Remove empty strings
-    idx <- length(sources) == 0 | length(targets) == 0
+    idx <- !nzchar(sources) | !nzchar(targets)
     if (any(idx)) {
       sources <- sources[!idx]
       targets <- targets[!idx]
@@ -1432,7 +1542,7 @@ get_source_target_IM <- function(children_attrs, node_types,
 
   # Remove doubles
   temp <- data.frame(target = targets, source = sources)
-  temp <- temp[!duplicated(temp), ]
+  temp <- temp[!duplicated(temp), , drop = FALSE]
   targets <- temp[["target"]]
   sources <- temp[["source"]]
 
@@ -2022,7 +2132,7 @@ replace_macro_names_IM <- function(object) {
     for (i in rev(seq_len(nrow(assignment)))) {
       if (length(split_macros[[i]][["names_arg"]]) > 0) {
         # Construct replacement dictionary for replacing argument names in this equation
-        dict <- stats::setNames(split_macros[[i]][["names_arg"]], paste0("\\b", stringr::str_escape(split_macros[[i]][["names_arg_insightmaker"]]), "\\b"))
+        dict <- stats::setNames(split_macros[[i]][["names_arg"]], split_macros[[i]][["names_arg_insightmaker"]])
 
         # Important! Don't simply replace names **
         # Even arguments are not case-sensitive
@@ -2039,7 +2149,7 @@ replace_macro_names_IM <- function(object) {
     # Important: even if the name did not need to be changed, still apply dict because of differences in case
     old_names <- vapply(split_macros, `[[`, character(1), "name_insightmaker")
     new_names <- vapply(split_macros, `[[`, character(1), "name")
-    dict <- stats::setNames(new_names, paste0("\\b", stringr::str_escape(old_names), "\\b"))
+    dict <- stats::setNames(new_names, old_names)
 
     # Insight Maker is not case-sensitive!
     # Important! Don't simply replace names **
@@ -2081,7 +2191,11 @@ replace_safely <- function(eqn, dict, var_names, ignore_case = TRUE) {
   idxs_exclude <- get_seq_exclude(eqn, var_names)
 
   idx_df <- lapply(seq_along(dict), function(i) {
-    matches <- gregexpr(names(dict)[i], eqn, perl = TRUE, ignore.case = ignore_case)[[1]]
+    # Names are model element names, not patterns: quote them with \Q...\E so a
+    # name containing a regex metacharacter matches literally, and require a
+    # word boundary so partial overlaps are left alone.
+    pattern <- paste0("\\b\\Q", names(dict)[i], "\\E\\b")
+    matches <- gregexpr(pattern, eqn, perl = TRUE, ignore.case = ignore_case)[[1]]
 
     if (matches[1] == -1) {
       return(data.frame(start = integer(), end = integer()))

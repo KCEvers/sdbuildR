@@ -108,15 +108,15 @@
 #' # Load example model
 #' sfm <- stockflow("predator_prey")
 #'
-#' # Ensemble simulations can only show variation 
-#' # if there is some randomness in the model. 
+#' # Ensemble simulations can only show variation
+#' # if there is some randomness in the model.
 #' # For example, we can initialize both stocks with
 #' # random values between 20 and 80:
 #' sfm <- update(sfm, c(predator, prey),
 #'   eqn = runif(1, min = 20, max = 80)
 #' )
 #'
-#' # Saving all timepoints is computationally expensive, 
+#' # Saving all timepoints is computationally expensive,
 #' # so we save only 20 values per simulation:
 #' sfm <- sim_settings(sfm, save_length = 20)
 #'
@@ -133,7 +133,7 @@
 #' # Specify which trajectories to plot
 #' plot(sims, which = "sims", sim = 1:2)
 #'
-#' # Don't plot the central tendency 
+#' # Don't plot the central tendency
 #' # with darker individual trajectories
 #' plot(sims, central = "none", which = "sims", alpha = 0.7)
 #'
@@ -148,8 +148,10 @@
 #' # combinations of the parameters are run.
 #' sims <- ensemble(sfm,
 #'   n = 50,
-#'   conditions = list(predator = c(10, 50),
-#'                     delta = c(.025, .05))
+#'   conditions = list(
+#'     predator = c(10, 50),
+#'     delta = c(.025, .05)
+#'   )
 #' )
 #'
 #' plot(sims)
@@ -569,14 +571,15 @@ print.ensemble_stockflow <- function(x, ...) {
 #'
 #' @examples
 #' sfm <- stockflow("sir") |>
-#'   # Randomize initial values of the stocks to show variation in the ensemble
+#'   # Randomize initial values of all stocks to show variation in the ensemble
 #'   update(c(susceptible, infected, recovered),
-#'          eqn = runif(1, min = 20, max = 800))
-#' 
-#' # Run ensemble simulation with 3 simulations, 
+#'     eqn = runif(1, min = 20, max = 800)
+#'   )
+#'
+#' # Run ensemble simulation with 3 simulations,
 #' # saving only 20 timepoints per simulation
 #' sims <- ensemble(sfm, n = 3, save_length = 20, save_sims = TRUE)
-#' 
+#'
 #' # Get summary statistics in long format
 #' df <- as.data.frame(sims)
 #' head(df, n = 1)
@@ -584,7 +587,7 @@ print.ensemble_stockflow <- function(x, ...) {
 #' # Get summary statistics in wide format
 #' df_wide <- as.data.frame(sims, direction = "wide")
 #' head(df_wide, n = 1)
-#' 
+#'
 #' # Get individual simulations in wide format
 #' df_wide_sims <- as.data.frame(sims, which = "sims", direction = "wide")
 #' head(df_wide_sims, n = 1)

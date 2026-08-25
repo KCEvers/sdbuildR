@@ -393,7 +393,7 @@ compile_run_ode <- function(
 
   if (language == "R") {
     script <- fmt_script("run_ode", language,
-      method = object[["sim_settings"]][["method"]],
+      method = r_solver_arg(object[["sim_settings"]][["method"]]),
       root_arg = nonneg_stocks[["root_arg"]],
       check_root = nonneg_stocks[["check_root"]]
     )

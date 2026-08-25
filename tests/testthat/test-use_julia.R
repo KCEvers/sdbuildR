@@ -138,7 +138,7 @@ test_that("Project.toml hash drift is detected", {
 
 test_that("install_julia_env() works", {
   skip_if_julia_not_ready()
-  skip_if(interactive())
+  # skip_if(interactive())
   skip_if_no_internet()
 
   manifest_exists <- function() {
@@ -169,8 +169,10 @@ test_that("install_julia_env() works", {
   expect_false(is_julia_env_setup(error = FALSE))
   expect_false(is_julia_env_setup(error = FALSE, force = TRUE))
 
-  # Removing again should not cause an error
+  # Removing again should not cause an error, and should say so rather than claiming it
+  # removed an environment that was not there.
   expect_message(expect_no_error(install_julia_env(remove = TRUE)), "no need to remove")
+  expect_false(env_files_exist())
 
   # Install again and check that environment is ready
   expect_no_error(install_julia_env())
@@ -178,4 +180,166 @@ test_that("install_julia_env() works", {
   expect_true(marker_exists())
   expect_true(is_julia_env_setup())
   expect_true(is_julia_env_setup(force = TRUE))
+})
+
+test_that("jl_startup_opts() does not point Julia at a missing environment", {
+  # If the environment is not installed there is nothing to activate, and pointing Julia
+  # at the missing directory is actively harmful: JuliaConnectoR's `import Tables` would
+  # make Julia install Tables into it, recreating an environment that was just removed.
+  withr::with_envvar(c(JULIACONNECTOR_JULIAOPTS = ""), {
+    local_mocked_bindings(julia_env_dir = function() file.path(tempdir(), "no-such-env"))
+    opts <- jl_startup_opts()
+    expect_false(grepl("--project=", opts, fixed = TRUE))
+    expect_match(opts, "--startup-file=no", fixed = TRUE)
+  })
+})
+
+test_that("jl_startup_opts() activates the sdbuildR environment without permanently changing user options", {
+  # Julia is not needed: this is pure string construction. It does depend on whether the
+  # environment is installed, though, so this test states which case it is exercising.
+  env_installed <- file.exists(file.path(julia_env_dir(), "Manifest.toml"))
+  skip_if_not(env_installed, "Julia environment not installed")
+
+  withr::with_envvar(c(JULIACONNECTOR_JULIAOPTS = ""), {
+    opts <- jl_startup_opts()
+    expect_match(opts, "--project=", fixed = TRUE)
+    expect_match(opts, jl_path(julia_env_dir()), fixed = TRUE)
+    expect_match(opts, "--startup-file=no", fixed = TRUE)
+  })
+
+  # Options the user set are kept. Note this deliberately uses an option that does not
+  # affect Julia's precompilation cache key: flags like -O or --check-bounds do, and
+  # would make Julia recompile the whole environment under a second cache key.
+  withr::with_envvar(c(JULIACONNECTOR_JULIAOPTS = "--history-file=no"), {
+    opts <- jl_startup_opts()
+    expect_match(opts, "--history-file=no", fixed = TRUE)
+    expect_match(opts, "--project=", fixed = TRUE)
+    expect_match(opts, "--startup-file=no", fixed = TRUE)
+  })
+
+  # ... and flags they set themselves are not overridden.
+  withr::with_envvar(
+    c(JULIACONNECTOR_JULIAOPTS = "--project=@myenv --startup-file=yes"),
+    {
+      opts <- jl_startup_opts()
+      expect_equal(lengths(regmatches(opts, gregexpr("--project=", opts))), 1L)
+      expect_match(opts, "--project=@myenv", fixed = TRUE)
+      expect_match(opts, "--startup-file=yes", fixed = TRUE)
+      expect_false(grepl("--startup-file=no", opts, fixed = TRUE))
+    }
+  )
+})
+
+
+test_that("use_julia() does not leak JULIACONNECTOR_JULIAOPTS", {
+  skip_if_julia_not_ready()
+
+  # Unset: must stay unset.
+  withr::with_envvar(c(JULIACONNECTOR_JULIAOPTS = NA), {
+    expect_no_error(use_julia(quiet = TRUE))
+    expect_equal(Sys.getenv("JULIACONNECTOR_JULIAOPTS"), "")
+  })
+
+  # Set by the user: must come back unchanged.
+  withr::with_envvar(c(JULIACONNECTOR_JULIAOPTS = "--history-file=no"), {
+    expect_no_error(use_julia(quiet = TRUE))
+    expect_equal(Sys.getenv("JULIACONNECTOR_JULIAOPTS"), "--history-file=no")
+  })
+
+  JuliaConnectoR::stopJulia()
+})
+
+
+test_that("use_julia() starts Julia with the sdbuildR environment already active", {
+  skip_if_julia_not_ready()
+
+  use_julia(restart = TRUE, quiet = TRUE)
+
+  # --project is applied at start-up, so the environment is active without
+  # run_init_julia_env() having to call Pkg.activate().
+  active <- julia_eval("string(something(Base.active_project(), \"\"))")
+  expect_equal(
+    normalizePath(active, winslash = "/", mustWork = FALSE),
+    norm_path(file.path(julia_env_dir(), "Project.toml"))
+  )
+
+  # Tables must resolve to the real package. JuliaConnectoR falls back to a stub
+  # (dummy_tables.jl) when `import Tables` fails, which would silently break data
+  # transfer, so it has to be a direct dependency of the environment.
+  expect_false(grepl("dummy_tables", julia_eval("string(pathof(Tables))"), fixed = TRUE))
+
+  JuliaConnectoR::stopJulia()
+})
+
+test_that("install_julia_env() fails gracefully when the download fails", {
+  # setup.jl is the one step that needs the internet: it installs
+  # SystemDynamicsBuildR.jl from GitHub and resolves the rest from the Julia registry.
+  # Simulate that failing and check the user gets an explanation rather than a raw Julia
+  # stacktrace.
+  #
+  # julia_env_dir() is redirected at a temporary directory so this cannot touch the real
+  # environment - install_julia_env() deletes the directory before it gets as far as the
+  # download. Julia itself is never started, since julia_eval() is mocked.
+  tmp_env <- file.path(tempdir(), "sdbuildR-graceful-test")
+  on.exit(unlink(tmp_env, recursive = TRUE, force = TRUE), add = TRUE)
+
+  local_mocked_bindings(
+    julia_env_dir = function() tmp_env,
+    has_internet = function() FALSE,
+    julia_eval = function(string, ...) {
+      if (grepl("setup.jl", string, fixed = TRUE)) {
+        stop("Evaluation in Julia failed. failed to clone from https://github.com/...")
+      }
+      # Everything else this reaches is a probe: the liveness check and the version query.
+      if (grepl("VERSION", string, fixed = TRUE)) "99.0.0" else "0"
+    }
+  )
+
+  expect_error(install_julia_env(), "Could not install the Julia environment")
+
+  # The underlying Julia error is kept, so the cause is still diagnosable ...
+  expect_error(install_julia_env(), "failed to clone")
+
+  # ... and being offline is named as the likely cause rather than blaming GitHub.
+  expect_error(install_julia_env(), "You appear to be offline")
+})
+
+test_that("julia_env_missing_deps() spots an incomplete environment", {
+  # Pure file comparison against the shipped Project.toml, so no Julia is involved.
+  # This is the check that stops a partial environment passing is_julia_env_setup():
+  # before it existed, an environment missing packages that init.jl loads was reported
+  # as up to date, install_julia_env() skipped the rebuild, and Julia failed later with
+  # a raw "package not found" error.
+  env <- withr::local_tempdir()
+  local_mocked_bindings(julia_env_dir = function() env)
+
+  shipped <- system.file("Project.toml", package = "sdbuildR")
+  skip_if_not(nzchar(shipped) && file.exists(shipped))
+
+  project <- readLines(shipped, warn = FALSE)
+  deps_start <- which(trimws(project) == "[deps]")
+  headers <- which(startsWith(trimws(project), "["))
+  deps_end <- headers[headers > deps_start][1]
+  deps <- trimws(sub("=.*$", "", project[(deps_start + 1):(deps_end - 1)]))
+  deps <- deps[nzchar(deps)]
+  expect_gt(length(deps), 1)
+
+  manifest <- file.path(env, "Manifest.toml")
+
+  # A Manifest listing every declared dependency is complete.
+  writeLines(paste0("[[deps.", deps, "]]"), manifest)
+  expect_equal(julia_env_missing_deps(), character())
+
+  # Drop one and it is named, so the error message can be specific.
+  dropped <- deps[[length(deps)]]
+  writeLines(paste0("[[deps.", setdiff(deps, dropped), "]]"), manifest)
+  expect_equal(julia_env_missing_deps(), dropped)
+
+  # Extra packages in the Manifest are fine - it also records indirect dependencies.
+  writeLines(c(paste0("[[deps.", deps, "]]"), "[[deps.SomeIndirectDep]]"), manifest)
+  expect_equal(julia_env_missing_deps(), character())
+
+  # No Manifest at all is handled by the separate "not set up" check, not this one.
+  unlink(manifest)
+  expect_equal(julia_env_missing_deps(), character())
 })

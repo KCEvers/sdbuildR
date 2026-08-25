@@ -2,6 +2,7 @@
 % Please edit documentation in R/simulate.R
 \name{simulate.stockflow}
 \alias{simulate.stockflow}
+\alias{simulate}
 \title{Simulate stock-and-flow model}
 \usage{
 \method{simulate}{stockflow}(object, nsim = 1, seed = NULL, quiet = FALSE, ...)

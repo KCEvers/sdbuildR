@@ -71,7 +71,6 @@ test_that("plot.ensemble_stockflow() requires save_sims for which = 'sims'", {
 
 
 test_that("plot.ensemble_stockflow() respects trace order", {
-
   skip_on_cran()
 
   sims <- make_aes_ens()
@@ -268,7 +267,6 @@ test_that("plot.ensemble_stockflow() creates a basic summary plot", {
 })
 
 test_that("plot.ensemble_stockflow() handles ensembles saved with selected vars", {
-  
   skip_on_cran()
 
   withr::local_pdf(NULL)
@@ -329,7 +327,7 @@ test_that("plot() sims: legend colours match trajectory colours", {
   # traces are already present, which made the legend swatches disagree with the
   # trajectories. Compare per legendgroup, ignoring alpha.
   skip_on_cran()
-  
+
   withr::local_pdf(NULL)
   sims <- make_r_ens(n = 5, save_sims = TRUE)
   b <- plotly::plotly_build(plot(sims, which = "sims"))
@@ -599,7 +597,6 @@ test_that("plot() custom colors vector", {
 })
 
 test_that("plot.ensemble_stockflow() maps central traces to source summaries and named colors", {
-
   skip_on_cran()
 
   sims <- make_r_ens(n = 3)
@@ -710,7 +707,7 @@ test_that("plot.ensemble_stockflow() with which = 'sims' and with show_constants
 
 test_that("plot.ensemble_stockflow(condition_display = 'slider') builds a slider", {
   skip_on_cran()
-  
+
   sims <- make_r_ens_2cond()
   pl <- plot(sims, condition_display = "slider")
   expect_plotly(pl)
@@ -768,7 +765,6 @@ test_that("plot.ensemble_stockflow() shows one control per parameter when cross 
 })
 
 test_that("plot.ensemble_stockflow() slider keeps a step per value but thins labels according to max_labels", {
-
   skip_on_cran()
 
   n_values <- 12
@@ -792,7 +788,6 @@ test_that("plot.ensemble_stockflow() slider keeps a step per value but thins lab
 
 
 test_that("plot.ensemble_stockflow() rejects invalid control_options", {
-
   skip_on_cran()
 
   sims <- make_r_ens_2cond()
@@ -815,7 +810,6 @@ test_that("plot.ensemble_stockflow() rejects invalid control_options", {
 })
 
 test_that("plot.ensemble_stockflow() control_options$spacing widens the gap", {
-
   skip_on_cran()
 
   sims <- make_r_ens(n = 3, conditions = list(
@@ -840,7 +834,6 @@ test_that("plot.ensemble_stockflow() control_options$spacing widens the gap", {
 })
 
 test_that("plot.ensemble_stockflow() controls reserve more bottom margin per control", {
-  
   skip_on_cran()
 
   one <- make_r_ens_2cond()
@@ -856,7 +849,6 @@ test_that("plot.ensemble_stockflow() controls reserve more bottom margin per con
 })
 
 test_that("plot.ensemble_stockflow() condition controls pin the figure height", {
-
   skip_on_cran()
 
   one <- make_r_ens_2cond()
@@ -883,7 +875,6 @@ test_that("plot.ensemble_stockflow() condition controls pin the figure height", 
 })
 
 test_that("plot.ensemble_stockflow() reverts condition controls for a single condition", {
-
   skip_on_cran()
 
   sims <- make_r_ens() # no conditions varied
@@ -911,9 +902,8 @@ test_that("plot.ensemble_stockflow() reverts condition controls for a single con
 })
 
 test_that("plot.ensemble_stockflow() crossed dropdowns react via plotly_buttonclicked", {
-
   skip_on_cran()
-  
+
   sims <- make_r_ens(conditions = list(
     contact_rate = c(1, 2), recovery_rate = c(0.05, 0.1)
   ))
@@ -929,7 +919,6 @@ test_that("plot.ensemble_stockflow() crossed dropdowns react via plotly_buttoncl
 })
 
 test_that("plot.ensemble_stockflow(condition_display = 'dropdown') builds a dropdown", {
-
   skip_on_cran()
 
   sims <- make_r_ens_2cond()
@@ -942,7 +931,6 @@ test_that("plot.ensemble_stockflow(condition_display = 'dropdown') builds a drop
 })
 
 test_that("plot.ensemble_stockflow() condition controls work with which = 'sims'", {
-
   skip_on_cran()
 
   sims <- make_r_ens_2cond(save_sims = TRUE)
@@ -952,7 +940,6 @@ test_that("plot.ensemble_stockflow() condition controls work with which = 'sims'
 })
 
 test_that("plot.ensemble_stockflow(animation = 'time') builds frames for one condition", {
-
   skip_on_cran()
 
   sims <- make_r_ens(save_sims = TRUE)
@@ -962,7 +949,6 @@ test_that("plot.ensemble_stockflow(animation = 'time') builds frames for one con
 })
 
 test_that("plot.ensemble_stockflow() animates a single selected condition", {
-
   skip_on_cran()
 
   sims <- make_r_ens_2cond(save_sims = TRUE)
@@ -972,9 +958,8 @@ test_that("plot.ensemble_stockflow() animates a single selected condition", {
 })
 
 test_that("plot.ensemble_stockflow() control_options tune the animation speed", {
-  
   skip_on_cran()
-  
+
   sims <- make_r_ens(save_sims = TRUE)
   pl <- plot(sims,
     which = "sims", animation = "time",
@@ -1003,7 +988,6 @@ test_that("plot.ensemble_stockflow() rejects invalid / unsupported combinations"
 })
 
 test_that("plot.ensemble_stockflow() webgl toggles trace type for which = 'sims'", {
-
   skip_on_cran()
 
   sims <- make_r_ens(n = 5, save_sims = TRUE)
@@ -1021,7 +1005,6 @@ test_that("plot.ensemble_stockflow() webgl toggles trace type for which = 'sims'
 })
 
 test_that("plot.ensemble_stockflow() obeys global webgl option", {
-
   skip_on_cran()
 
   sims <- make_r_ens(n = 5, save_sims = TRUE)
@@ -1047,7 +1030,6 @@ test_that("plot.ensemble_stockflow() obeys global webgl option", {
 
 
 test_that("plot.ensemble_stockflow() rejects non-logical webgl", {
-
   skip_on_cran()
 
   sims <- make_r_ens(n = 3, save_sims = TRUE)
